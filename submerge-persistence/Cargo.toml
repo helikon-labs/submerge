@@ -1,0 +1,12 @@
+[package]
+name = "submerge-persistence"
+version = "0.0.1"
+rust-version = "1.83.0"
+edition = "2021"
+authors = ["kukabi <kutsal@helikon.io>"]
+
+[dependencies]
+anyhow = { workspace = true }
+log = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "chrono"] }
+submerge-config = { path = "../submerge-config" }

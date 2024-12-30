@@ -1,0 +1,14 @@
+[package]
+name = "submerge-metrics"
+version = "0.0.1"
+rust-version = "1.83.0"
+edition = "2021"
+authors = ["kukabi <kutsal@helikon.io>"]
+
+[dependencies]
+log = { workspace = true }
+once_cell = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["time", "rt-multi-thread"] }
+prometheus = { workspace = true }
+warp = { version = "0.3", default-features = false }

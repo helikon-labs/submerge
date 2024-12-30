@@ -1,0 +1,35 @@
+[common]
+recovery_retry_seconds = 5
+
+[log]
+subvt_level = "debug"
+other_level = "warn"
+
+[substrate]
+chain = "polkadot"
+chain_display = "Polkadot"
+chain_genesis_hash = "0x91B171BB158E2D3848FA23A9F1C25182FB8E20313B2C1EB49219DA7A70CE90C3"
+ss58_prefix = 0
+rpc_url = "wss://rpc.helikon.io/polkadot"
+token_ticker = "DOT"
+token_decimals = 10
+connection_timeout_seconds = 30
+request_timeout_seconds = 30
+
+[metrics]
+host = "127.0.0.1"
+crystal_port = 21000
+
+[http]
+request_timeout_seconds = 60
+service_host = "0.0.0.0"
+crystal_api_port = 22000
+
+[postgres]
+host = "127.0.0.1"
+port = 5432
+username = "submerge"
+password = "submerge"
+database_name = "submerge_crystal"
+pool_max_connections = 64
+connection_timeout_seconds = 5

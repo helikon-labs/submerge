@@ -1,0 +1,24 @@
+[package]
+name = "submerge-crystal"
+version = "0.0.1"
+rust-version = "1.83.0"
+edition = "2021"
+authors = ["kukabi <kutsal@helikon.io>"]
+
+[dependencies]
+actix-web = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+futures-util = { workspace = true }
+hex = { workspace = true }
+lazy_static = { workspace = true }
+log = { workspace = true }
+once_cell = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "chrono"] }
+submerge-base = { path = "../submerge-base" }
+submerge-config = { path = "../submerge-config" }
+submerge-metrics = { path = "../submerge-metrics" }
+submerge-persistence = { path = "../submerge-persistence" }
+submerge-substrate-client = { path = "../submerge-substrate-client" }
+submerge-types = { path = "../submerge-types" }
+tokio = { workspace = true, features = ["full"] }

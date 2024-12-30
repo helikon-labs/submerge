@@ -1,0 +1,9 @@
+.DS_Store
+target/
+.idea
+.env
+certificate/
+.vscode
+_cert
+_tmp
+.DS_Store
