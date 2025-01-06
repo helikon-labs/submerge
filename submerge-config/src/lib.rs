@@ -82,6 +82,11 @@ pub struct PostgreSQLConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct CrystalConfig {
+    pub chainspec_dir: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     pub common: CommonConfig,
     pub log: LogConfig,
@@ -89,6 +94,7 @@ pub struct Config {
     pub metrics: MetricsConfig,
     pub http: HTTPConfig,
     pub postgres: PostgreSQLConfig,
+    pub crystal: CrystalConfig,
 }
 
 fn get_config(
