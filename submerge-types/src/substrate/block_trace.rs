@@ -42,7 +42,6 @@ impl StorageMethod {
 pub struct BlockTraceData {
     pub key: String,
     pub value: String,
-    pub value_encoded: Option<String>,
     pub ext_id: String,
     pub method: StorageMethod,
 }

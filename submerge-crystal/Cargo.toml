@@ -9,16 +9,23 @@ authors = ["kukabi <kutsal@helikon.io>"]
 actix-web = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+clap = { workspace = true }
 futures-util = { workspace = true }
 hex = { workspace = true }
 lazy_static = { workspace = true }
 log = { workspace = true }
 once_cell = { workspace = true }
-sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "chrono"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "chrono", "macros", "runtime-tokio-native-tls"] }
 submerge-base = { path = "../submerge-base" }
-submerge-config = { path = "../submerge-config" }
+submerge-cli = { path = "../submerge-cli" }
 submerge-metrics = { path = "../submerge-metrics" }
 submerge-persistence = { path = "../submerge-persistence" }
 submerge-substrate-client = { path = "../submerge-substrate-client" }
 submerge-types = { path = "../submerge-types" }
-tokio = { workspace = true, features = ["full"] }
+tokio = { workspace = true }
+
+[dev-dependencies]
+log = { workspace = true }
+serde_json = { workspace = true }
+test-log = { workspace = true }

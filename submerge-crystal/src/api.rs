@@ -8,8 +8,8 @@ use crate::metrics;
 
 pub(crate) type ResultResponse = Result<HttpResponse, InternalServerError>;
 
-pub(crate) async fn on_server_ready() {
-    log::info!("HTTP API started.");
+pub(crate) async fn on_server_ready(host: &str, port: u16) {
+    log::info!("🌐 HTTP API started on {host}:{port}.");
 }
 
 pub(crate) async fn run_api(host: &str, port: u16) -> anyhow::Result<()> {
@@ -42,7 +42,7 @@ pub(crate) async fn run_api(host: &str, port: u16) -> anyhow::Result<()> {
     .disable_signals()
     .bind(format!("{}:{}", host, port,))?
     .run();
-    let (server_result, _) = tokio::join!(server, on_server_ready());
+    let (server_result, _) = tokio::join!(server, on_server_ready(host, port));
     Ok(server_result?)
 }
 

@@ -1,33 +1,36 @@
 #![warn(clippy::disallowed_types)]
 use async_trait::async_trait;
-use submerge_config::Config;
+use log::LevelFilter;
 
 pub mod err;
 
 #[async_trait(?Send)]
 pub trait BaseService {
-    fn get_metrics_server_addr() -> (&'static str, u16);
+    fn get_metrics_server_addr() -> Option<(&'static str, u16)>;
+
+    fn get_sleep_secs() -> u64;
 
     async fn run(&'static self) -> anyhow::Result<()>;
 
     async fn start(&'static self) {
-        let config = Config::default();
-        submerge_logging::init(&config);
-        log::info!("Starting service...");
-        tokio::spawn(submerge_metrics::server::start(
-            Self::get_metrics_server_addr(),
-        ));
-        let delay_seconds = config.common.recovery_retry_seconds;
+        submerge_logging::init(LevelFilter::Debug, LevelFilter::Warn);
+        log::info!("⚙️ Starting service.");
+        if let Some(metrics_server_addr) = Self::get_metrics_server_addr() {
+            tokio::spawn(submerge_metrics::server::start(metrics_server_addr));
+        } else {
+            log::info!("⛔ Metrics disabled.");
+        }
+        let sleep_seconds = Self::get_sleep_secs();
         loop {
             let result = self.run().await;
             if let Err(error) = result {
                 log::error!("{:?}", error);
+                log::warn!("Process exited. Will restart in {} seconds.", sleep_seconds,);
+                tokio::time::sleep(std::time::Duration::from_secs(sleep_seconds)).await;
+            } else {
+                log::info!("Process completed.");
+                break;
             }
-            log::error!(
-                "Process exited. Will try again in {} seconds.",
-                delay_seconds,
-            );
-            std::thread::sleep(std::time::Duration::from_secs(delay_seconds));
         }
     }
 }

@@ -82,6 +82,11 @@ pub struct PostgreSQLConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct CrystalConfig {
+    pub chainspec_path: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     pub common: CommonConfig,
     pub log: LogConfig,
@@ -89,6 +94,7 @@ pub struct Config {
     pub metrics: MetricsConfig,
     pub http: HTTPConfig,
     pub postgres: PostgreSQLConfig,
+    pub crystal: CrystalConfig,
 }
 
 fn get_config(
@@ -107,7 +113,7 @@ fn get_config(
         .add_source(config::File::with_name(&format!(
             "{config_dir}/network/{network}",
         )))
-        .add_source(config::Environment::with_prefix("subvt").separator("__"))
+        .add_source(config::Environment::with_prefix("submerge").separator("__"))
         .build()?;
     config.try_deserialize()
 }
@@ -124,7 +130,7 @@ impl Config {
                 .unwrap_or_else(|_| "Production".into())
                 .as_str(),
         );
-        let network = std::env::var("SUBVT_NETWORK").unwrap_or_else(|_| DEFAULT_NETWORK.into());
+        let network = std::env::var("SUBMERGE_NETWORK").unwrap_or_else(|_| DEFAULT_NETWORK.into());
         let config_dir = if cfg!(debug_assertions) {
             std::env::var("SUBMERGE_CONFIG_DIR").unwrap_or_else(|_| DEV_CONFIG_DIR.into())
         } else {

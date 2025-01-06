@@ -5,6 +5,5 @@ edition = "2021"
 rust-version = "1.67.0"
 
 [dependencies]
-env_logger ={ workspace = true }
+env_logger = { workspace = true }
 log = { workspace = true }
-submerge-config = { path = "../submerge-config" }

@@ -1,7 +1,7 @@
 [substrate]
 chain = "polkadot"
 chain_display = "Polkadot"
-chain_genesis_hash = "0x91B171BB158E2D3848FA23A9F1C25182FB8E20313B2C1EB49219DA7A70CE90C3"
+chain_genesis_hash = "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
 ss58_prefix = 0
 rpc_url = "wss://rpc.helikon.io/polkadot"
 token_ticker = "DOT"

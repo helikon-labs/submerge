@@ -9,4 +9,3 @@ authors = ["kukabi <kutsal@helikon.io>"]
 anyhow = { workspace = true }
 log = { workspace = true }
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "chrono"] }
-submerge-config = { path = "../submerge-config" }

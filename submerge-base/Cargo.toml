@@ -12,7 +12,6 @@ async-trait = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-submerge-config = { path = "../submerge-config" }
 submerge-logging = { path = "../submerge-logging" }
 submerge-metrics = { path = "../submerge-metrics" }
 tokio = { workspace = true, features = ["full"] }

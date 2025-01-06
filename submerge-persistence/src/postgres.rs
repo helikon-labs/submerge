@@ -1,27 +1,25 @@
 use sqlx::{Pool, Postgres};
 use std::time::Duration;
-use submerge_config::Config;
 
-fn get_postgres_url(config: &Config) -> String {
-    format!(
+pub async fn new_postgres_connection_pool(
+    host: &str,
+    port: u16,
+    username: &str,
+    password: &str,
+    database_name: &str,
+    connection_timeout_secs: u64,
+    pool_max_connections: u32,
+) -> anyhow::Result<Pool<Postgres>> {
+    log::info!("⚙️ Establishing PostgreSQL connection pool.");
+    let connection_str = format!(
         "postgres://{}:{}@{}:{}/{}?sslmode=disable",
-        config.postgres.username,
-        config.postgres.password,
-        config.postgres.host,
-        config.postgres.port,
-        config.postgres.database_name,
-    )
-}
-
-pub async fn new_postgres_connection_pool(config: &Config) -> anyhow::Result<Pool<Postgres>> {
-    log::info!("Establishing PostgreSQL connection pool...");
+        username, password, host, port, database_name,
+    );
     let connection_pool = sqlx::postgres::PgPoolOptions::new()
-        .acquire_timeout(Duration::from_secs(
-            config.postgres.connection_timeout_seconds,
-        ))
-        .max_connections(config.postgres.pool_max_connections)
-        .connect(&get_postgres_url(config))
+        .acquire_timeout(Duration::from_secs(connection_timeout_secs))
+        .max_connections(pool_max_connections)
+        .connect(&connection_str)
         .await?;
-    log::info!("PostgreSQL connection pool established.");
+    log::info!("✅ PostgreSQL connection pool established.");
     Ok(connection_pool)
 }

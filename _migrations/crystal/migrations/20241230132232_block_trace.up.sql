@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS block_trace
     trace_index     INT NOT NULL,
     key             BYTEA NOT NULL,
     value           TEXT NOT NULL,
-    value_encoded   TEXT,
     ext_id          TEXT NOT NULL,
     method          VARCHAR(64) NOT NULL,
     parent_id       TEXT,

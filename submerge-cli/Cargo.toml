@@ -6,3 +6,4 @@ edition = "2021"
 authors = ["kukabi <kutsal@helikon.io>"]
 
 [dependencies]
+clap = { workspace = true }

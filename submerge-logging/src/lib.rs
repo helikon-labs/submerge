@@ -1,15 +1,11 @@
 #![warn(clippy::disallowed_types)]
 use env_logger::{Builder, Env, Target, WriteStyle};
-use std::str::FromStr;
+pub use log::LevelFilter;
 
-pub fn init(config: &submerge_config::Config) {
-    let other_modules_log_level = log::LevelFilter::from_str(config.log.other_level.as_str())
-        .expect("Cannot read log level configuration for outside modules.");
-    let log_level = log::LevelFilter::from_str(config.log.subvt_level.as_str())
-        .expect("Cannot read log level configuration for SubVT modules.");
+pub fn init(log_level: LevelFilter, other_log_level: LevelFilter) {
     let mut builder = Builder::from_env(Env::default());
     builder.target(Target::Stdout);
-    builder.filter(None, other_modules_log_level);
+    builder.filter(None, other_log_level);
     builder.filter(Some("submerge_api"), log_level);
     builder.filter(Some("submerge_auth"), log_level);
     builder.filter(Some("submerge_base"), log_level);

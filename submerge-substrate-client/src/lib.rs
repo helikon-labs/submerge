@@ -1,6 +1,8 @@
+use jsonrpsee::tokio::time::timeout;
 use jsonrpsee::ws_client::WsClientBuilder;
-use jsonrpsee_core::client::{Client, ClientT};
+use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT};
 use jsonrpsee_core::rpc_params;
+use std::future::Future;
 use storage_utility::{decode_hex_string, get_rpc_storage_plain_params};
 use submerge_types::substrate::block::BlockHeader;
 use submerge_types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
@@ -14,15 +16,16 @@ pub struct SubstrateClient {
 impl SubstrateClient {
     pub async fn new(
         rpc_url: &str,
-        connection_timeout: u64,
-        request_timeout: u64,
+        connection_timeout_secs: u64,
+        request_timeout_secs: u64,
     ) -> anyhow::Result<Self> {
-        log::info!("Constructing Substrate client.");
+        log::info!("⚙️ Constructing Substrate client.");
         let ws_client = WsClientBuilder::default()
-            .connection_timeout(std::time::Duration::from_secs(connection_timeout))
-            .request_timeout(std::time::Duration::from_secs(request_timeout))
+            .connection_timeout(std::time::Duration::from_secs(connection_timeout_secs))
+            .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
             .build(rpc_url)
             .await?;
+        log::info!("✅ Substrate client constructed.");
         Ok(SubstrateClient { ws_client })
     }
 }
@@ -84,5 +87,91 @@ impl SubstrateClient {
             )
             .await?;
         Ok(trace_wrapper.block_trace)
+    }
+
+    async fn subscribe_to_blocks<F>(
+        &self,
+        subscribe_method_name: &str,
+        unsubscribe_method_name: &str,
+        timeout_seconds: u64,
+        callback: impl Fn(BlockHeader) -> F,
+    ) where
+        F: Future<Output = anyhow::Result<()>>,
+    {
+        let mut subscription: Subscription<BlockHeader> = match self
+            .ws_client
+            .subscribe(
+                subscribe_method_name,
+                rpc_params!(),
+                unsubscribe_method_name,
+            )
+            .await
+        {
+            Ok(subscription) => subscription,
+            Err(error) => {
+                log::error!("Error while subscribing to blocks: {:?}", error);
+                return;
+            }
+        };
+
+        while let Ok(maybe_block_header_result) = timeout(
+            std::time::Duration::from_secs(timeout_seconds),
+            subscription.next(),
+        )
+        .await
+        {
+            match maybe_block_header_result {
+                Some(block_header_result) => match block_header_result {
+                    Ok(block_header) => {
+                        if let Err(error) = callback(block_header).await {
+                            log::error!("Error in callback: {:?}", error);
+                            break;
+                        }
+                    }
+                    Err(error) => {
+                        log::error!("Error while getting block header: {:?}", error);
+                        log::error!("Will exit new block subscription.");
+                        break;
+                    }
+                },
+                None => {
+                    log::error!("Empty block header. Will exit new block subscription.");
+                    break;
+                }
+            }
+        }
+    }
+
+    pub async fn subscribe_to_new_blocks<F>(
+        &self,
+        timeout_seconds: u64,
+        callback: impl Fn(BlockHeader) -> F,
+    ) where
+        F: Future<Output = anyhow::Result<()>>,
+    {
+        self.subscribe_to_blocks(
+            "chain_subscribeNewHeads",
+            "chain_unsubscribeNewHeads",
+            timeout_seconds,
+            callback,
+        )
+        .await;
+    }
+
+    /// Subscribes to finalized blocks.
+    pub async fn subscribe_to_finalized_blocks<F>(
+        &self,
+        timeout_seconds: u64,
+        callback: impl Fn(BlockHeader) -> F,
+    ) where
+        F: Future<Output = anyhow::Result<()>>,
+    {
+        self.subscribe_to_blocks(
+            "chain_subscribeFinalizedHeads",
+            "chain_unsubscribeFinalizedHeads",
+            timeout_seconds,
+            callback,
+        )
+        .await;
     }
 }
