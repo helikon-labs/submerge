@@ -11,6 +11,7 @@ pub enum StorageMethod {
     ClearPrefix,
     ChildClearPrefix,
     Append,
+    Genesis,
 }
 
 impl Display for StorageMethod {
@@ -22,6 +23,7 @@ impl Display for StorageMethod {
             Self::ClearPrefix => "ClearPrefix",
             Self::ChildClearPrefix => "ChildClearPrefix",
             Self::Append => "Append",
+            Self::Genesis => "Genesis",
         };
         write!(f, "{str}")
     }
