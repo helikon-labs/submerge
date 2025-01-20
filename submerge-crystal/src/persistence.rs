@@ -10,7 +10,6 @@ pub(crate) async fn save_block_trace(
     for (trace_index, event) in trace.events.iter().enumerate() {
         let hash = hex::decode(&trace.block_hash)?;
         let parent_hash = hex::decode(&trace.parent_hash)?;
-        let key = hex::decode(&event.data_wrapper.data.key)?;
         sqlx::query(
             r#"
             INSERT INTO block_trace (hash, number, parent_hash, trace_index, key, value, value_encoded, ext_id, method, parent_id)
@@ -22,7 +21,7 @@ pub(crate) async fn save_block_trace(
         .bind(number as i64)
         .bind(parent_hash)
         .bind(trace_index as i32)
-        .bind(key)
+        .bind(&event.data_wrapper.data.key)
         .bind(&event.data_wrapper.data.value)
         .bind(&event.data_wrapper.data.value_encoded)
         .bind(&event.data_wrapper.data.ext_id)

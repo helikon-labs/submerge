@@ -7,7 +7,7 @@ authors = ["kukabi <kutsal@helikon.io>"]
 
 [dependencies]
 anyhow = { workspace = true }
-frame-metadata = { workspace = true, features = ["default"] }
+frame-metadata = { workspace = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["full"] }
 jsonrpsee-core = { workspace = true }

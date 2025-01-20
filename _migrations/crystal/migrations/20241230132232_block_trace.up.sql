@@ -4,13 +4,14 @@ CREATE TABLE IF NOT EXISTS block_trace
     number          BIGINT NOT NULL,
     parent_hash     BYTEA NOT NULL,
     trace_index     INT NOT NULL,
-    key             BYTEA NOT NULL,
+    key             TEXT NOT NULL,
     value           TEXT NOT NULL,
     value_encoded   TEXT,
     ext_id          TEXT NOT NULL,
     method          VARCHAR(64) NOT NULL,
     parent_id       TEXT,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    PRIMARY KEY(hash, trace_index),
     CONSTRAINT block_trace_pk UNIQUE (hash, trace_index)
 );
 

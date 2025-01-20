@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use strum::VariantNames;
 use strum_macros::VariantNames;
 
-#[derive(Serialize, Deserialize, Debug, VariantNames)]
+#[derive(Serialize, Deserialize, Debug, VariantNames, Clone, PartialEq)]
 pub enum StorageMethod {
     Put,
     ChildPut,
@@ -26,6 +27,23 @@ impl Display for StorageMethod {
             Self::Genesis => "Genesis",
         };
         write!(f, "{str}")
+    }
+}
+
+impl FromStr for StorageMethod {
+    type Err = std::string::ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Put" => Ok(Self::Put),
+            "ChildPut" => Ok(Self::ChildPut),
+            "ChildKill" => Ok(Self::ChildKill),
+            "ClearPrefix" => Ok(Self::ClearPrefix),
+            "ChildClearPrefix" => Ok(Self::ChildClearPrefix),
+            "Append" => Ok(Self::Append),
+            "Genesis" => Ok(Self::Genesis),
+            _ => panic!("Unknown storage method: {s}"),
+        }
     }
 }
 

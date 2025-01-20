@@ -1,8 +1,7 @@
 #![warn(clippy::disallowed_types)]
-use std::time::Duration;
-
 use async_trait::async_trait;
 use lazy_static::lazy_static;
+use std::time::Duration;
 use submerge_base::BaseService;
 use submerge_config::Config;
 use submerge_persistence::postgres::new_postgres_connection_pool;
@@ -33,12 +32,12 @@ impl BaseService for Crystal {
         });
 
         let substrate_client =
-            SubstrateClient::new("wss://rpc.helikon.io/polkadot", 30, 30).await?;
-        for number in 24_000_000..24_001_000 {
+            SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
+        for number in 1..1000 {
             log::info!("Process block {number}.");
-            let hash = substrate_client.get_block_hash(number as u64).await?;
+            let hash = substrate_client.get_block_hash(number).await?;
             let trace = substrate_client.get_block_trace(&hash).await?;
-            persistence::save_block_trace(&postgres, 10, &trace).await?;
+            persistence::save_block_trace(&postgres, number, &trace).await?;
             log::info!("Saved {} traces for block {number}.", trace.events.len());
         }
         loop {

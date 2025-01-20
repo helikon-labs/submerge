@@ -6,3 +6,28 @@ edition = "2021"
 authors = ["kukabi <kutsal@helikon.io>"]
 
 [dependencies]
+actix-web = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+frame-metadata = { workspace = true }
+futures-util = { workspace = true }
+hex = { workspace = true }
+lazy_static = { workspace = true }
+log = { workspace = true }
+once_cell = { workspace = true }
+parity-scale-codec = { workspace = true }
+rustc-hash = { workspace = true }
+scale-bits = { workspace = true }
+scale-info = { workspace = true }
+serde_json = { workspace = true }
+sp-core = { workspace = true }
+sp-storage = { workspace = true }
+sqlx = { workspace = true }
+submerge-base = { path = "../submerge-base" }
+submerge-config = { path = "../submerge-config" }
+submerge-metrics = { path = "../submerge-metrics" }
+submerge-persistence = { path = "../submerge-persistence" }
+submerge-substrate-client = { path = "../submerge-substrate-client" }
+submerge-types = { path = "../submerge-types" }
+thiserror = { workspace = true }
+tokio = { workspace = true }
