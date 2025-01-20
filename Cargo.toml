@@ -24,7 +24,7 @@ resolver = "2"
 actix-web = "4.9"
 async-trait = "0.1"
 anyhow = "1"
-clap = { version = "4.5.24", features = ["derive"] }
+clap = { version = "4.5.26", features = ["derive"] }
 config = "0.15"
 frame-metadata = "18.0"
 futures-util = "0.3"
