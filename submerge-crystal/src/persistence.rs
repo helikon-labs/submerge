@@ -178,7 +178,7 @@ mod tests {
             5,
             100,
         )
-            .await?;
+        .await?;
         let substrate_client =
             SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
         for number in 100..120 {
