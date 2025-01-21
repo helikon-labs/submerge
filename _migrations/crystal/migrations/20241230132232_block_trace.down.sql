@@ -1,2 +1,1 @@
-DROP TABLE block_trace CASCADE;
-DROP TYPE IF EXISTS trace_method;
+DROP TABLE IF EXISTS block_trace CASCADE;

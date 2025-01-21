@@ -67,12 +67,24 @@ impl Crystal {
                 log::info!("🔁 Block {number} had already been ingested.");
                 continue;
             }
-            let trace = substrate_client.get_block_trace(&hash).await?;
-            postgres.ingest_block_trace(number, &trace).await?;
-            log::info!(
-                "🔽 Ingested {} traces for block {number}.",
-                trace.events.len(),
-            );
+            match substrate_client.get_block_trace(&hash).await {
+                Ok(trace) => {
+                    postgres.ingest_block_trace(number, true, &trace).await?;
+                    log::info!(
+                        "🔽 Ingested {} traces for block {number}.",
+                        trace.events.len(),
+                    );
+                }
+                Err(error) => {
+                    log::error!(
+                        "❌ Error while getting traces for block {number}: {:?}",
+                        error,
+                    );
+                    postgres
+                        .save_trace_error(&hash, number, &error.to_string())
+                        .await?;
+                }
+            }
         }
         Ok(())
     }

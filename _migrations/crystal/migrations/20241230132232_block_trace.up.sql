@@ -1,10 +1,11 @@
 CREATE TABLE IF NOT EXISTS block_trace
 (
     hash            BYTEA NOT NULL,
-    number          BIGINT NOT NULL,
     parent_hash     BYTEA NOT NULL,
+    number          BIGINT NOT NULL,
+    is_finalized    BOOLEAN NOT NULL,
     trace_index     INT NOT NULL,
-    key             BYTEA NOT NULL,
+    key             TEXT NOT NULL,
     value           TEXT NOT NULL,
     ext_id          TEXT NOT NULL,
     method          VARCHAR(64) NOT NULL,

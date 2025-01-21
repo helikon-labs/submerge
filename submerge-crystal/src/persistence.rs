@@ -111,28 +111,52 @@ impl PostgreSQLStorage {
         Ok(record_count.0 > 0)
     }
 
+    pub(crate) async fn save_trace_error(
+        &self,
+        hash: &str,
+        number: u64,
+        description: &str,
+    ) -> anyhow::Result<()> {
+        let hash = hex::decode(hash)?;
+        sqlx::query(
+            r#"
+            INSERT INTO trace_error (hash, number, description)
+            VALUES ($1, $2, $3)
+            ON CONFLICT(hash) DO UPDATE
+            SET description = EXCLUDED.description, created_at = now()
+        "#,
+        )
+        .bind(hash)
+        .bind(number as i64)
+        .bind(description)
+        .execute(&self.connection_pool)
+        .await?;
+        Ok(())
+    }
+
     pub(crate) async fn ingest_block_trace(
         &self,
         number: u64,
+        is_finalized: bool,
         trace: &BlockTrace,
     ) -> anyhow::Result<()> {
         let mut tx = self.connection_pool.begin().await?;
         for (trace_index, event) in trace.events.iter().enumerate() {
             let hash = hex::decode(&trace.block_hash)?;
             let parent_hash = hex::decode(&trace.parent_hash)?;
-            let key = hex::decode(&event.data_wrapper.data.key)?;
             sqlx::query(
                 r#"
-                INSERT INTO block_trace (hash, number, parent_hash, trace_index, key, value, ext_id, method, parent_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                INSERT INTO block_trace (hash, parent_hash, number, is_finalized, trace_index, key, value, ext_id, method, parent_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 ON CONFLICT (hash, trace_index) DO NOTHING
                 "#,
             )
                 .bind(hash)
-                .bind(number as i64)
                 .bind(parent_hash)
+                .bind(number as i64)
+                .bind(is_finalized)
                 .bind(trace_index as i32)
-                .bind(key)
+                .bind(&event.data_wrapper.data.key)
                 .bind(&event.data_wrapper.data.value)
                 .bind(&event.data_wrapper.data.ext_id)
                 .bind(event.data_wrapper.data.method.to_string())
@@ -150,9 +174,8 @@ mod tests {
     use crate::persistence::PostgreSQLStorage;
     use submerge_substrate_client::SubstrateClient;
 
-    #[test_log::test(tokio::test)]
-    async fn test_genesis_ingestion() -> Result<(), Box<dyn std::error::Error>> {
-        let postgres = PostgreSQLStorage::new(
+    async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
+        PostgreSQLStorage::new(
             "localhost",
             5432,
             "submerge",
@@ -161,30 +184,26 @@ mod tests {
             5,
             100,
         )
-        .await?;
+        .await
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_genesis_ingestion() -> Result<(), Box<dyn std::error::Error>> {
         let chainspecs_path = "../_chainspecs/coretime-westend.json";
+        let postgres = get_test_postgres().await?;
         postgres.ingest_genesis(chainspecs_path).await?;
         Ok(())
     }
 
     #[test_log::test(tokio::test)]
     async fn test_substrate_rpc_url() -> Result<(), Box<dyn std::error::Error>> {
-        let postgres = PostgreSQLStorage::new(
-            "localhost",
-            5432,
-            "submerge",
-            "submerge",
-            "submerge_crystal_test",
-            5,
-            100,
-        )
-        .await?;
+        let postgres = get_test_postgres().await?;
         let substrate_client =
             SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
         for number in 100..120 {
             let hash = substrate_client.get_block_hash(number).await?;
             let trace = substrate_client.get_block_trace(&hash).await?;
-            postgres.ingest_block_trace(number, &trace).await?;
+            postgres.ingest_block_trace(number, true, &trace).await?;
         }
         Ok(())
     }

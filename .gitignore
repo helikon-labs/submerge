@@ -8,3 +8,4 @@ _cert
 _tmp
 chainspecs
 _chainspecs/*.json
+*.profraw
