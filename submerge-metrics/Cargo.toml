@@ -9,6 +9,6 @@ authors = ["kukabi <kutsal@helikon.io>"]
 log = { workspace = true }
 once_cell = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["time", "rt-multi-thread"] }
+tokio = { workspace = true }
 prometheus = { workspace = true }
-warp = { version = "0.3", default-features = false }
+warp = { workspace = true }

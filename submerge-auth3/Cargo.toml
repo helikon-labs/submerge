@@ -1,5 +1,5 @@
 [package]
-name = "submerge-auth"
+name = "submerge-auth3"
 version = "0.0.1"
 rust-version = "1.83.0"
 edition = "2021"

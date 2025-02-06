@@ -6,6 +6,5 @@ edition = "2021"
 authors = ["kukabi <kutsal@helikon.io>"]
 
 [dependencies]
-anyhow = { workspace = true }
 config = { workspace = true }
 serde = { workspace = true }

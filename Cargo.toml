@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "submerge-api",
-    "submerge-auth",
+    "submerge-auth3",
     "submerge-base",
     "submerge-bloom",
     "submerge-cli",
@@ -42,9 +42,10 @@ rustc-hash = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sp-core = "35.0"
-sqlx = "0.8"
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "chrono", "macros", "runtime-tokio-native-tls"] }
 strum = "0.26"
 strum_macros = "0.26"
 test-log = "0.2.17"
 thiserror = "2.0"
 tokio = { version = "1.43", features = ["full"] }
+warp = { version = "0.3", default-features = false }

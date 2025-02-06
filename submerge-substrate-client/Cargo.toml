@@ -11,10 +11,6 @@ frame-metadata = { workspace = true, features = ["default"] }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["full"] }
 jsonrpsee-core = { workspace = true }
-jsonrpsee-types = { workspace = true }
 log = { workspace = true }
-parity-scale-codec = { workspace = true }
-rustc-hash = { workspace = true }
 sp-core = { workspace = true }
-submerge-config = { path = "../submerge-config" }
 submerge-types = { path = "../submerge-types" }

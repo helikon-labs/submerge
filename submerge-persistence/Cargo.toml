@@ -8,4 +8,4 @@ authors = ["kukabi <kutsal@helikon.io>"]
 [dependencies]
 anyhow = { workspace = true }
 log = { workspace = true }
-sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "chrono"] }
+sqlx = { workspace = true }
