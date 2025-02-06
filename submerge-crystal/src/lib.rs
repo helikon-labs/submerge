@@ -110,7 +110,7 @@ impl BaseService for Crystal {
     async fn run(&'static self) -> anyhow::Result<()> {
         let args = Args::parse();
         println!(
-r#"┌──────────────────────────────────────────────────────────────────────────────────────────
+            r#"┌──────────────────────────────────────────────────────────────────────────────────────────
 │ RPC URL:          {}
 │ Start Block:      {}
 │ End Block:        {}

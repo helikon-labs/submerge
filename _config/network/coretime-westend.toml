@@ -1,8 +1,0 @@
-[substrate]
-chain = "coretime-westend"
-chain_display = "Westend Coretime"
-chain_genesis_hash = "0xf938510edee7c23efa6e9db74f227c827a1b518bffe92e2f6c9842dc53d38840"
-ss58_prefix = 2
-rpc_url = "wss://rpc.helikon.io/coretime-westend-dev"
-token_ticker = "WND"
-token_decimals = 12

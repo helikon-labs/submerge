@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS trace_error
     created_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS block_trace_idx_hash
+CREATE INDEX IF NOT EXISTS trace_error_idx_number
     ON trace_error (number);

@@ -1,8 +1,0 @@
-[substrate]
-chain = "kusama"
-chain_display = "Kusama"
-chain_genesis_hash = "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe"
-ss58_prefix = 2
-rpc_url = "wss://rpc.helikon.io/kusama"
-token_ticker = "KSM"
-token_decimals = 12

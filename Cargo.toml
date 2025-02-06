@@ -5,7 +5,6 @@ members = [
     "submerge-base",
     "submerge-bloom",
     "submerge-cli",
-    "submerge-config",
     "submerge-cortex",
     "submerge-crystal",
     "submerge-fractal",
