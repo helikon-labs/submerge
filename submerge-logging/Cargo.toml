@@ -1,8 +1,11 @@
 [package]
 name = "submerge-logging"
-version = "0.22.4"
-edition = "2021"
-rust-version = "1.67.0"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
 env_logger = { workspace = true }

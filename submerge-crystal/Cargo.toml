@@ -1,9 +1,11 @@
 [package]
 name = "submerge-crystal"
-version = "0.0.1"
-rust-version = "1.83.0"
-edition = "2021"
-authors = ["kukabi <kutsal@helikon.io>"]
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
 actix-web = { workspace = true }

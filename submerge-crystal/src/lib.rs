@@ -109,10 +109,8 @@ impl BaseService for Crystal {
 
     async fn run(&'static self) -> anyhow::Result<()> {
         let args = Args::parse();
-        log::info!("💎 Submerge Crystal 💎");
-        log::info!(
-            r#"🚀 Starting with configuration:
-┌──────────────────────────────────────────────────────────────────────────────────────────
+        println!(
+r#"┌──────────────────────────────────────────────────────────────────────────────────────────
 │ RPC URL:          {}
 │ Start Block:      {}
 │ End Block:        {}

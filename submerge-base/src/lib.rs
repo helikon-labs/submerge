@@ -14,6 +14,17 @@ pub trait BaseService {
 
     async fn start(&'static self) {
         submerge_logging::init(LevelFilter::Debug, LevelFilter::Warn);
+        println!(
+            r#"
+███████╗██╗   ██╗██████╗ ███╗   ███╗███████╗██████╗  ██████╗ ███████╗
+██╔════╝██║   ██║██╔══██╗████╗ ████║██╔════╝██╔══██╗██╔════╝ ██╔════╝
+███████╗██║   ██║██████╔╝██╔████╔██║█████╗  ██████╔╝██║  ███╗█████╗
+╚════██║██║   ██║██╔══██╗██║╚██╔╝██║██╔══╝  ██╔══██╗██║   ██║██╔══╝
+███████║╚██████╔╝██████╔╝██║ ╚═╝ ██║███████╗██║  ██║╚██████╔╝███████╗
+╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+Submerge v{} © Helikon 2025"#,
+            env!("CARGO_PKG_VERSION"),
+        );
         log::info!("⚙️ Starting service.");
         if let Some(metrics_server_addr) = Self::get_metrics_server_addr() {
             tokio::spawn(submerge_metrics::server::start(metrics_server_addr));

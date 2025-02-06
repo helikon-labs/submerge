@@ -4347,15 +4347,15 @@ dependencies = [
 
 [[package]]
 name = "submerge-api"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-auth3"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-base"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -4370,18 +4370,18 @@ dependencies = [
 
 [[package]]
 name = "submerge-bloom"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-cli"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "submerge-config"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "config",
  "serde",
@@ -4389,11 +4389,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-cortex"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-crystal"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -4418,11 +4418,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-fractal"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-logging"
-version = "0.22.4"
+version = "0.1.0"
 dependencies = [
  "env_logger",
  "log",
@@ -4430,7 +4430,7 @@ dependencies = [
 
 [[package]]
 name = "submerge-metrics"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "log",
  "once_cell",
@@ -4442,7 +4442,7 @@ dependencies = [
 
 [[package]]
 name = "submerge-persistence"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "log",
@@ -4451,15 +4451,15 @@ dependencies = [
 
 [[package]]
 name = "submerge-reflex"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-sentinel"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-substrate-client"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "frame-metadata",
@@ -4473,7 +4473,7 @@ dependencies = [
 
 [[package]]
 name = "submerge-types"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "log",
@@ -4487,7 +4487,7 @@ dependencies = [
 
 [[package]]
 name = "submerge-web"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "substrate-bip39"
