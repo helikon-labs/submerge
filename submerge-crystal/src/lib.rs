@@ -159,7 +159,6 @@ impl BaseService for Crystal {
             }
             None => loop {
                 let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
-                IS_BUSY.store(false, Ordering::SeqCst);
                 self.substrate_client
                     .subscribe_to_finalized_blocks(
                         ARGS.rpc.rpc_request_timeout_secs,
