@@ -138,6 +138,7 @@ impl PostgreSQLStorage {
         &self,
         number: u64,
         is_finalized: bool,
+        runtime_version: u32,
         trace: &BlockTrace,
     ) -> anyhow::Result<()> {
         let mut tx = self.connection_pool.begin().await?;
@@ -146,14 +147,15 @@ impl PostgreSQLStorage {
             let parent_hash = hex::decode(&trace.parent_hash)?;
             sqlx::query(
                 r#"
-                INSERT INTO block_trace (hash, parent_hash, number, is_finalized, trace_index, key, value, ext_id, method, parent_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                INSERT INTO block_trace (hash, parent_hash, number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (hash, trace_index) DO NOTHING
                 "#,
             )
                 .bind(hash)
                 .bind(parent_hash)
                 .bind(number as i64)
+                .bind(runtime_version as i32)
                 .bind(is_finalized)
                 .bind(trace_index as i32)
                 .bind(&event.data_wrapper.data.key)
@@ -202,8 +204,13 @@ mod tests {
             SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
         for number in 100..120 {
             let hash = substrate_client.get_block_hash(number).await?;
+            let last_runtime_upgrade = substrate_client
+                .get_last_runtime_upgrade_info(&hash)
+                .await?;
             let trace = substrate_client.get_block_trace(&hash).await?;
-            postgres.ingest_block_trace(number, true, &trace).await?;
+            postgres
+                .ingest_block_trace(number, true, last_runtime_upgrade.spec_version, &trace)
+                .await?;
         }
         Ok(())
     }

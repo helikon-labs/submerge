@@ -1,5 +1,5 @@
 [package]
-name = "submerge-substrate-client"
+name = "submerge-util"
 version.workspace = true
 rust-version.workspace = true
 edition.workspace = true
@@ -9,8 +9,7 @@ license.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-jsonrpsee = { workspace = true, features = ["full"] }
+frame-metadata = { workspace = true }
+hex = { workspace = true }
 jsonrpsee-core = { workspace = true }
-log = { workspace = true }
-submerge-types = { path = "../submerge-types" }
-submerge-util = { path = "../submerge-util" }
+sp-core = { workspace = true }

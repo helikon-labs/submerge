@@ -63,13 +63,18 @@ impl Crystal {
         for number in start_block_number..=end_block_number {
             log::info!("🔧 Ingesting block {number}. Target {end_block_number}.");
             let hash = substrate_client.get_block_hash(number).await?;
+            let last_runtime_upgrade = substrate_client
+                .get_last_runtime_upgrade_info(&hash)
+                .await?;
             if postgres.block_trace_exists(&hash).await? {
                 log::info!("🔁 Block {number} had already been ingested.");
                 continue;
             }
             match substrate_client.get_block_trace(&hash).await {
                 Ok(trace) => {
-                    postgres.ingest_block_trace(number, true, &trace).await?;
+                    postgres
+                        .ingest_block_trace(number, true, last_runtime_upgrade.spec_version, &trace)
+                        .await?;
                     log::info!(
                         "🔽 Ingested {} traces for block {number}.",
                         trace.events.len(),

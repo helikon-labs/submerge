@@ -3,11 +3,10 @@ use jsonrpsee::ws_client::WsClientBuilder;
 use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT};
 use jsonrpsee_core::rpc_params;
 use std::future::Future;
-use storage_utility::{decode_hex_string, get_rpc_storage_plain_params};
 use submerge_types::substrate::block::BlockHeader;
 use submerge_types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
-
-mod storage_utility;
+use submerge_types::substrate::runtime::LastRuntimeUpgradeInfo;
+use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 
 pub struct SubstrateClient {
     ws_client: Client,
@@ -173,5 +172,20 @@ impl SubstrateClient {
             callback,
         )
         .await;
+    }
+
+    pub async fn get_last_runtime_upgrade_info(
+        &self,
+        block_hash: &str,
+    ) -> anyhow::Result<LastRuntimeUpgradeInfo> {
+        let hex_string: String = self
+            .ws_client
+            .request(
+                "state_getStorage",
+                get_rpc_storage_plain_params("System", "LastRuntimeUpgrade", Some(block_hash)),
+            )
+            .await?;
+        let upgrade_info = LastRuntimeUpgradeInfo::from_substrate_hex_string(hex_string)?;
+        Ok(upgrade_info)
     }
 }

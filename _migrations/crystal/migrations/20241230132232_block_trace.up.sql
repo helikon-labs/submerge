@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS block_trace
     hash            BYTEA NOT NULL,
     parent_hash     BYTEA NOT NULL,
     number          BIGINT NOT NULL,
+    runtime_version INT NOT NULL,
     is_finalized    BOOLEAN NOT NULL,
     trace_index     INT NOT NULL,
     key             TEXT NOT NULL,
