@@ -1,11 +1,12 @@
-use once_cell::sync::OnceCell;
+use lazy_static::lazy_static;
 use submerge_base::BaseService;
 use submerge_crystal::Crystal;
 
-static SERVICE: OnceCell<Crystal> = OnceCell::new();
+lazy_static! {
+    static ref SERVICE: Crystal = Crystal;
+}
 
 #[tokio::main]
 async fn main() {
-    let _ = SERVICE.set(Crystal::new().await.unwrap());
-    SERVICE.get().unwrap().start().await;
+    SERVICE.start().await;
 }

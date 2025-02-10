@@ -20,37 +20,29 @@ lazy_static! {
     static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
 }
 
-pub struct Crystal {
-    postgres: Arc<PostgreSQLStorage>,
-    substrate_client: Arc<SubstrateClient>,
+async fn get_postgres() -> anyhow::Result<PostgreSQLStorage> {
+    PostgreSQLStorage::new(
+        &ARGS.postgres.postgres_host,
+        ARGS.postgres.postgres_port,
+        &ARGS.postgres.postgres_username,
+        &ARGS.postgres.postgres_password,
+        &ARGS.postgres.postgres_db_name,
+        ARGS.postgres.postgres_connection_timeout_secs,
+        ARGS.postgres.postgres_pool_max_connections,
+    )
+    .await
 }
 
-impl Crystal {
-    pub async fn new() -> anyhow::Result<Self> {
-        Ok(Crystal {
-            postgres: Arc::new(
-                PostgreSQLStorage::new(
-                    &ARGS.postgres.postgres_host,
-                    ARGS.postgres.postgres_port,
-                    &ARGS.postgres.postgres_username,
-                    &ARGS.postgres.postgres_password,
-                    &ARGS.postgres.postgres_db_name,
-                    ARGS.postgres.postgres_connection_timeout_secs,
-                    ARGS.postgres.postgres_pool_max_connections,
-                )
-                .await?,
-            ),
-            substrate_client: Arc::new(
-                SubstrateClient::new(
-                    &ARGS.rpc.rpc_url,
-                    ARGS.rpc.rpc_connection_timeout_secs,
-                    ARGS.rpc.rpc_request_timeout_secs,
-                )
-                .await?,
-            ),
-        })
-    }
+async fn get_substrate() -> anyhow::Result<SubstrateClient> {
+    SubstrateClient::new(
+        &ARGS.rpc.rpc_url,
+        ARGS.rpc.rpc_connection_timeout_secs,
+        ARGS.rpc.rpc_request_timeout_secs,
+    )
+    .await
 }
+
+pub struct Crystal;
 
 impl Crystal {
     async fn ingest_blocks(
@@ -140,23 +132,18 @@ impl BaseService for Crystal {
             log::info!("⛔ API disabled.");
         }
 
-        self.postgres.ingest_genesis(&args.chainspec_path).await?;
-
         match ARGS.end_block {
             Some(end_block) => {
+                let postgres = get_postgres().await?;
+                postgres.ingest_genesis(&args.chainspec_path).await?;
+                let substrate_client = get_substrate().await?;
                 let start_block = ARGS.start_block.unwrap_or(1);
-                let next_block = self
-                    .postgres
+                let next_block = postgres
                     .get_next_block_number(start_block, end_block)
                     .await?;
                 if next_block < end_block {
-                    Self::ingest_blocks(
-                        &self.postgres,
-                        &self.substrate_client,
-                        next_block,
-                        end_block,
-                    )
-                    .await?;
+                    Self::ingest_blocks(&postgres, &substrate_client, next_block, end_block)
+                        .await?;
                 } else {
                     log::info!("All blocks in range {start_block}-{end_block} had been ingested.");
                 }
@@ -164,13 +151,16 @@ impl BaseService for Crystal {
             }
             None => loop {
                 let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
-                self.substrate_client
+                let postgres = Arc::new(get_postgres().await?);
+                postgres.ingest_genesis(&args.chainspec_path).await?;
+                let substrate_client = Arc::new(get_substrate().await?);
+                substrate_client
                     .subscribe_to_finalized_blocks(
                         ARGS.rpc.rpc_request_timeout_secs,
                         |finalized_block_header| {
                             let error_cell = error_cell.clone();
-                            let postgres = self.postgres.clone();
-                            let substrate_client = self.substrate_client.clone();
+                            let postgres = postgres.clone();
+                            let substrate_client = substrate_client.clone();
                             async move {
                                 if let Some(error) = error_cell.get() {
                                     return Err(anyhow::anyhow!("{:?}", error));
