@@ -1,6 +1,4 @@
 use sqlx::{Pool, Postgres, Transaction};
-use std::fs;
-use std::path::Path;
 use submerge_persistence::postgres::new_postgres_connection_pool;
 use submerge_types::substrate::block_trace::BlockTrace;
 use submerge_types::substrate::chainspec::Chainspec;
@@ -42,16 +40,8 @@ impl PostgreSQLStorage {
         Ok(record_count.0 as u64)
     }
 
-    pub(crate) async fn ingest_genesis(
-        &self,
-        chainspec_path: impl AsRef<Path>,
-    ) -> anyhow::Result<()> {
-        log::info!(
-            "🔽 Processing genesis from chainspec file: {:?}",
-            chainspec_path.as_ref(),
-        );
-        let chainspec_json = fs::read_to_string(&chainspec_path)?;
-        let chainspec: Chainspec = serde_json::from_str(&chainspec_json)?;
+    pub(crate) async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
+        log::info!("🔽 Processing genesis from chainspec file.");
         if self.get_genesis_record_count().await? > 0 {
             log::info!("🔁 Genesis had already been processed.");
             return Ok(());
@@ -174,7 +164,9 @@ impl PostgreSQLStorage {
 #[cfg(test)]
 mod tests {
     use crate::persistence::PostgreSQLStorage;
+    use std::fs;
     use submerge_substrate_client::SubstrateClient;
+    use submerge_types::substrate::chainspec::Chainspec;
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
         PostgreSQLStorage::new(
@@ -191,9 +183,11 @@ mod tests {
 
     #[test_log::test(tokio::test)]
     async fn test_genesis_ingestion() -> Result<(), Box<dyn std::error::Error>> {
-        let chainspecs_path = "../_chainspecs/coretime-westend.json";
+        let chainspec_path = "../_chainspecs/coretime-westend.json";
+        let chainspec_json = fs::read_to_string(chainspec_path)?;
+        let chainspec: Chainspec = serde_json::from_str(&chainspec_json)?;
         let postgres = get_test_postgres().await?;
-        postgres.ingest_genesis(chainspecs_path).await?;
+        postgres.ingest_genesis(&chainspec).await?;
         Ok(())
     }
 

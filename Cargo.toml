@@ -10,6 +10,7 @@ members = [
     "submerge-fractal",
     "submerge-logging",
     "submerge-metrics",
+    "submerge-mycelium",
     "submerge-persistence",
     "submerge-reflex",
     "submerge-sentinel",

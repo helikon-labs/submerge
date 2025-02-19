@@ -1,50 +1,58 @@
 #![warn(clippy::disallowed_types)]
+
 use crate::args::Args;
 use crate::persistence::PostgreSQLStorage;
 use async_trait::async_trait;
-use clap::Parser;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
+use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::BaseService;
 use submerge_substrate_client::SubstrateClient;
+use submerge_types::substrate::chainspec::Chainspec;
 
 mod api;
-mod args;
+pub mod args;
 mod metrics;
 mod persistence;
 
 lazy_static! {
-    static ref ARGS: Args = Args::parse();
     static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
 }
 
-async fn get_postgres() -> anyhow::Result<PostgreSQLStorage> {
+async fn get_postgres(args: &PostgreSQLArgs) -> anyhow::Result<PostgreSQLStorage> {
     PostgreSQLStorage::new(
-        &ARGS.postgres.postgres_host,
-        ARGS.postgres.postgres_port,
-        &ARGS.postgres.postgres_username,
-        &ARGS.postgres.postgres_password,
-        &ARGS.postgres.postgres_db_name,
-        ARGS.postgres.postgres_connection_timeout_secs,
-        ARGS.postgres.postgres_pool_max_connections,
+        &args.postgres_host,
+        args.postgres_port,
+        &args.postgres_username,
+        &args.postgres_password,
+        &args.postgres_db_name,
+        args.postgres_connection_timeout_secs,
+        args.postgres_pool_max_connections,
     )
     .await
 }
 
-async fn get_substrate() -> anyhow::Result<SubstrateClient> {
+async fn get_substrate(args: &RPCArgs) -> anyhow::Result<SubstrateClient> {
     SubstrateClient::new(
-        &ARGS.rpc.rpc_url,
-        ARGS.rpc.rpc_connection_timeout_secs,
-        ARGS.rpc.rpc_request_timeout_secs,
+        &args.rpc_url,
+        args.rpc_connection_timeout_secs,
+        args.rpc_request_timeout_secs,
     )
     .await
 }
 
-pub struct Crystal;
+pub struct Crystal {
+    args: Args,
+}
 
 impl Crystal {
+    pub fn new(args: Args) -> Self {
+        Self { args }
+    }
+
     async fn ingest_blocks(
         postgres: &PostgreSQLStorage,
         substrate_client: &SubstrateClient,
@@ -87,57 +95,67 @@ impl Crystal {
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 impl BaseService for Crystal {
-    fn get_metrics_server_addr() -> Option<(&'static str, u16)> {
-        if ARGS.no_metrics {
+    fn get_metrics_server_addr(&self) -> Option<(String, u16)> {
+        if self.args.no_metrics {
             None
         } else {
             Some((
-                ARGS.metrics.metrics_host.as_str(),
-                ARGS.metrics.metrics_port,
+                self.args.metrics.metrics_host.clone(),
+                self.args.metrics.metrics_port,
             ))
         }
     }
 
-    fn get_sleep_secs() -> u64 {
-        ARGS.service.recovery_sleep_seconds
+    fn get_sleep_secs(&self) -> u64 {
+        self.args.service.recovery_sleep_seconds
     }
 
-    async fn run(&'static self) -> anyhow::Result<()> {
-        let args = Args::parse();
+    fn get_name(&self) -> String {
+        "💠 Submerge Crystal".to_string()
+    }
+
+    async fn run(&self) -> anyhow::Result<()> {
+        let chainspec_json = fs::read_to_string(&self.args.chainspec_path)?;
+        let chainspec: Chainspec = serde_json::from_str(&chainspec_json)?;
         println!(
             r#"┌──────────────────────────────────────────────────────────────────────────────────────────
+| Chain:            {}
 │ RPC URL:          {}
 │ Start Block:      {}
 │ End Block:        {}
-│ Chainspec Path:   {}
-| API Disabled:     {}
-| Metrics Disabled: {}
+| API Enabled:      {}
+| Metrics Enabled:  {}
 └──────────────────────────────────────────────────────────────────────────────────────────"#,
-            args.rpc.rpc_url,
-            args.start_block
+            chainspec.name,
+            self.args.rpc.rpc_url,
+            self.args
+                .start_block
                 .map_or("None".to_string(), |v| v.to_string()),
-            args.end_block.map_or("None".to_string(), |v| v.to_string()),
-            args.chainspec_path,
-            args.no_api,
-            args.no_metrics,
+            self.args
+                .end_block
+                .map_or("None".to_string(), |v| v.to_string()),
+            !self.args.no_api,
+            !self.args.no_metrics,
         );
 
-        if !ARGS.no_api {
+        if !self.args.no_api {
+            let host = self.args.api.api_host.clone();
+            let port = self.args.api.api_port;
             tokio::spawn(async move {
-                let _ = api::run_api(&args.api.api_host, args.api.api_port).await;
+                let _ = api::run_api(host.as_str(), port).await;
             });
         } else {
             log::info!("⛔ API disabled.");
         }
 
-        match ARGS.end_block {
+        match self.args.end_block {
             Some(end_block) => {
-                let postgres = get_postgres().await?;
-                postgres.ingest_genesis(&args.chainspec_path).await?;
-                let substrate_client = get_substrate().await?;
-                let start_block = ARGS.start_block.unwrap_or(1);
+                let postgres = get_postgres(&self.args.postgres).await?;
+                postgres.ingest_genesis(&chainspec).await?;
+                let substrate_client = get_substrate(&self.args.rpc).await?;
+                let start_block = self.args.start_block.unwrap_or(1);
                 let next_block = postgres
                     .get_next_block_number(start_block, end_block)
                     .await?;
@@ -151,12 +169,12 @@ impl BaseService for Crystal {
             }
             None => loop {
                 let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
-                let postgres = Arc::new(get_postgres().await?);
-                postgres.ingest_genesis(&args.chainspec_path).await?;
-                let substrate_client = Arc::new(get_substrate().await?);
+                let postgres = Arc::new(get_postgres(&self.args.postgres).await?);
+                postgres.ingest_genesis(&chainspec).await?;
+                let substrate_client = Arc::new(get_substrate(&self.args.rpc).await?);
                 substrate_client
                     .subscribe_to_finalized_blocks(
-                        ARGS.rpc.rpc_request_timeout_secs,
+                        self.args.rpc.rpc_request_timeout_secs,
                         |finalized_block_header| {
                             let error_cell = error_cell.clone();
                             let postgres = postgres.clone();
@@ -178,7 +196,7 @@ impl BaseService for Crystal {
                                 IS_BUSY.store(true, Ordering::SeqCst);
 
                                 let start_block = postgres
-                                    .get_next_block_number(ARGS.start_block.unwrap_or(1), finalized_block_number)
+                                    .get_next_block_number(self.args.start_block.unwrap_or(1), finalized_block_number)
                                     .await?;
                                 if start_block <= finalized_block_number {
                                     let postgres = postgres.clone();
@@ -205,7 +223,7 @@ impl BaseService for Crystal {
                         },
                     )
                     .await;
-                let delay_seconds = ARGS.service.recovery_sleep_seconds;
+                let delay_seconds = self.args.service.recovery_sleep_seconds;
                 log::error!(
                     "New block subscription exited. Will refresh connection and subscription after {} seconds.",
                     delay_seconds

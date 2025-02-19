@@ -2,17 +2,20 @@
 use async_trait::async_trait;
 use log::LevelFilter;
 
+pub mod args;
 pub mod err;
 
-#[async_trait(?Send)]
+#[async_trait]
 pub trait BaseService {
-    fn get_metrics_server_addr() -> Option<(&'static str, u16)>;
+    fn get_metrics_server_addr(&self) -> Option<(String, u16)>;
 
-    fn get_sleep_secs() -> u64;
+    fn get_sleep_secs(&self) -> u64;
 
-    async fn run(&'static self) -> anyhow::Result<()>;
+    fn get_name(&self) -> String;
 
-    async fn start(&'static self) {
+    async fn run(&self) -> anyhow::Result<()>;
+
+    async fn start(&self) {
         submerge_logging::init(LevelFilter::Debug, LevelFilter::Warn);
         println!(
             r#"
@@ -22,16 +25,18 @@ pub trait BaseService {
 ╚════██║██║   ██║██╔══██╗██║╚██╔╝██║██╔══╝  ██╔══██╗██║   ██║██╔══╝
 ███████║╚██████╔╝██████╔╝██║ ╚═╝ ██║███████╗██║  ██║╚██████╔╝███████╗
 ╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-Submerge v{} © Helikon 2025"#,
+{} v{} • © Helikon 2025"#,
+            self.get_name(),
             env!("CARGO_PKG_VERSION"),
         );
         log::info!("⚙️ Starting service.");
-        if let Some(metrics_server_addr) = Self::get_metrics_server_addr() {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        if let Some(metrics_server_addr) = self.get_metrics_server_addr() {
             tokio::spawn(submerge_metrics::server::start(metrics_server_addr));
         } else {
             log::info!("⛔ Metrics disabled.");
         }
-        let sleep_seconds = Self::get_sleep_secs();
+        let sleep_seconds = self.get_sleep_secs();
         loop {
             let result = self.run().await;
             if let Err(error) = result {

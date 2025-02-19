@@ -4909,6 +4909,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
+ "clap",
  "log",
  "serde",
  "serde_json",
@@ -4926,6 +4927,11 @@ name = "submerge-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "log",
+ "submerge-base",
+ "submerge-crystal",
+ "submerge-logging",
+ "tokio",
 ]
 
 [[package]]
@@ -4948,7 +4954,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "submerge-base",
- "submerge-cli",
  "submerge-metrics",
  "submerge-persistence",
  "submerge-substrate-client",
@@ -4980,6 +4985,10 @@ dependencies = [
  "tokio",
  "warp",
 ]
+
+[[package]]
+name = "submerge-mycelium"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-persistence"

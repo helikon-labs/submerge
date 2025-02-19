@@ -20,7 +20,6 @@ once_cell = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
 submerge-base = { path = "../submerge-base" }
-submerge-cli = { path = "../submerge-cli" }
 submerge-metrics = { path = "../submerge-metrics" }
 submerge-persistence = { path = "../submerge-persistence" }
 submerge-substrate-client = { path = "../submerge-substrate-client" }

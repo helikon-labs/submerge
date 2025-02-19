@@ -7,5 +7,14 @@ authors.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[[bin]]
+name = "submerge"
+path = "src/main.rs"
+
 [dependencies]
 clap = { workspace = true }
+log = { workspace = true }
+submerge-base = { path = "../submerge-base" }
+submerge-crystal = { path = "../submerge-crystal" }
+submerge-logging = { path = "../submerge-logging" }
+tokio = { workspace = true }

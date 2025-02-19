@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS block_trace
     parent_id       TEXT,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT block_trace_pk UNIQUE (hash, trace_index)
-);
+); -- PARTITION BY HASH(hash);
 
 CREATE INDEX IF NOT EXISTS block_trace_idx_hash
     ON block_trace (hash);
@@ -21,3 +21,11 @@ CREATE INDEX IF NOT EXISTS block_trace_idx_number
     ON block_trace (number);
 CREATE INDEX IF NOT EXISTS block_trace_idx_key
     ON block_trace (key);
+
+-- CREATE TABLE block_trace_0 PARTITION OF block_trace
+--     FOR VALUES WITH (MODULUS 2, REMAINDER 0)
+--     TABLESPACE n03;
+
+-- CREATE TABLE block_trace_1 PARTITION OF block_trace
+--     FOR VALUES WITH (MODULUS 2, REMAINDER 1)
+--     TABLESPACE n04;
