@@ -179,14 +179,11 @@ impl SubstrateClient {
         &self,
         block_hash: &str,
     ) -> anyhow::Result<LastRuntimeUpgradeInfo> {
-        let hex_string: String = self
+        let upgrade_info: LastRuntimeUpgradeInfo = self
             .ws_client
-            .request(
-                "state_getStorage",
-                get_rpc_storage_plain_params("System", "LastRuntimeUpgrade", Some(block_hash)),
-            )
+            .request("state_getRuntimeVersion", rpc_params!(block_hash))
             .await?;
-        let upgrade_info = LastRuntimeUpgradeInfo::from_substrate_hex_string(hex_string)?;
+        // let upgrade_info = LastRuntimeUpgradeInfo::from_substrate_hex_string(hex_string)?;
         Ok(upgrade_info)
     }
 }
