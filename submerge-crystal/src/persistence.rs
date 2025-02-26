@@ -1,6 +1,9 @@
 use sqlx::{Pool, Postgres, Transaction};
+use std::str::FromStr;
 use submerge_persistence::postgres::new_postgres_connection_pool;
-use submerge_types::substrate::block_trace::BlockTrace;
+use submerge_types::submerge::BlockTrace as SubmergeBlockTrace;
+use submerge_types::submerge::BlockTraces;
+use submerge_types::substrate::block_trace::{BlockTrace as SubstrateBlockTrace, StorageMethod};
 use submerge_types::substrate::chainspec::Chainspec;
 
 pub struct PostgreSQLStorage {
@@ -73,7 +76,7 @@ impl PostgreSQLStorage {
 
     pub(crate) async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64> {
         let row: (Option<i64>,) = sqlx::query_as(
-            "SELECT MAX(number) FROM block_trace WHERE number >= $1 AND number <= $2",
+            "SELECT MAX(block_number) FROM trace WHERE block_number >= $1 AND block_number <= $2",
         )
         .bind(min as i64)
         .bind(max as i64)
@@ -86,16 +89,16 @@ impl PostgreSQLStorage {
         })
     }
 
-    pub(crate) async fn block_trace_exists(&self, hash: &str) -> anyhow::Result<bool> {
-        let hash = hex::decode(hash)?;
+    pub(crate) async fn block_trace_exists(&self, block_hash: &str) -> anyhow::Result<bool> {
+        let block_hash = hex::decode(block_hash)?;
         let record_count: (i64,) = sqlx::query_as(
             r#"
             SELECT COUNT(DISTINCT trace_index)
-            FROM block_trace
-            WHERE hash = $1
+            FROM trace
+            WHERE block_hash = $1
             "#,
         )
-        .bind(hash)
+        .bind(block_hash)
         .fetch_one(&self.connection_pool)
         .await?;
         Ok(record_count.0 > 0)
@@ -103,48 +106,63 @@ impl PostgreSQLStorage {
 
     pub(crate) async fn save_trace_error(
         &self,
-        hash: &str,
-        number: u64,
+        block_hash: &str,
+        block_number: u64,
         description: &str,
     ) -> anyhow::Result<()> {
-        let hash = hex::decode(hash)?;
         sqlx::query(
             r#"
-            INSERT INTO trace_error (hash, number, description)
+            INSERT INTO trace_error (block_hash, block_number, description)
             VALUES ($1, $2, $3)
-            ON CONFLICT(hash) DO UPDATE
+            ON CONFLICT(block_hash) DO UPDATE
             SET description = EXCLUDED.description, created_at = now()
         "#,
         )
-        .bind(hash)
-        .bind(number as i64)
+        .bind(hex::decode(block_hash)?)
+        .bind(block_number as i64)
         .bind(description)
         .execute(&self.connection_pool)
         .await?;
         Ok(())
     }
 
+    pub(crate) async fn delete_trace_error(&self, block_hash: &str) -> anyhow::Result<()> {
+        sqlx::query("DELETE FROM trace_error WHERE block_hash = $1")
+            .bind(hex::decode(block_hash)?)
+            .execute(&self.connection_pool)
+            .await?;
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn get_trace_error_count(&self) -> anyhow::Result<u32> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT block_number) FROM trace_error")
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(row.0 as u32)
+    }
+
     pub(crate) async fn ingest_block_trace(
         &self,
-        number: u64,
+        block_number: u64,
         is_finalized: bool,
         runtime_version: u32,
-        trace: &BlockTrace,
+        trace: &SubstrateBlockTrace,
     ) -> anyhow::Result<()> {
         let mut tx = self.connection_pool.begin().await?;
         for (trace_index, event) in trace.events.iter().enumerate() {
-            let hash = hex::decode(&trace.block_hash)?;
-            let parent_hash = hex::decode(&trace.parent_hash)?;
+            let block_hash = hex::decode(&trace.block_hash)?;
+            let block_parent_hash = hex::decode(&trace.parent_hash)?;
             sqlx::query(
                 r#"
-                INSERT INTO block_trace (hash, parent_hash, number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
+                INSERT INTO trace (block_hash, block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                ON CONFLICT (hash, trace_index) DO NOTHING
+                ON CONFLICT (block_hash, trace_index) DO NOTHING
                 "#,
             )
-                .bind(hash)
-                .bind(parent_hash)
-                .bind(number as i64)
+                .bind(block_hash)
+                .bind(block_parent_hash)
+                .bind(block_number as i64)
                 .bind(runtime_version as i32)
                 .bind(is_finalized)
                 .bind(trace_index as i32)
@@ -158,6 +176,61 @@ impl PostgreSQLStorage {
         }
         tx.commit().await?;
         Ok(())
+    }
+
+    pub(crate) async fn get_block_traces_by_number(
+        &self,
+        block_number: u64,
+    ) -> anyhow::Result<Vec<BlockTraces>> {
+        let block_hash_rows: Vec<(Vec<u8>,)> =
+            sqlx::query_as("SELECT DISTINCT block_hash FROM trace WHERE block_number = $1")
+                .bind(block_number as i64)
+                .fetch_all(&self.connection_pool)
+                .await?;
+        let mut result = vec![];
+        for block_hash_row in block_hash_rows.iter() {
+            if let Some(block_traces) = self.get_block_traces_by_hash(&block_hash_row.0).await? {
+                result.push(block_traces);
+            }
+        }
+        Ok(result)
+    }
+
+    pub(crate) async fn get_block_traces_by_hash(
+        &self,
+        block_hash: &Vec<u8>,
+    ) -> anyhow::Result<Option<BlockTraces>> {
+        #[allow(clippy::type_complexity)]
+        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY trace_index ASC")
+            .bind(block_hash)
+            .fetch_all(&self.connection_pool)
+            .await?;
+
+        if let Some(first_row) = rows.first() {
+            let block_hash_hex = format!("0x{}", hex::encode(block_hash));
+            let block_parent_hash_hex = format!("0x{}", hex::encode(&first_row.0));
+            let mut block_traces = BlockTraces {
+                block_hash: block_hash_hex,
+                block_parent_hash: block_parent_hash_hex,
+                block_number: first_row.1 as u64,
+                runtime_version: first_row.2 as u32,
+                is_finalized: first_row.3,
+                traces: vec![],
+            };
+            for row in rows.iter() {
+                block_traces.traces.push(SubmergeBlockTrace {
+                    index: row.4 as u32,
+                    key: row.5.clone(),
+                    value: row.6.clone(),
+                    ext_id: row.7.clone(),
+                    method: StorageMethod::from_str(&row.8)?,
+                    parent_id: row.9.clone(),
+                })
+            }
+            Ok(Some(block_traces))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -183,7 +256,7 @@ mod tests {
 
     #[test_log::test(tokio::test)]
     async fn test_genesis_ingestion() -> Result<(), Box<dyn std::error::Error>> {
-        let chainspec_path = "../_chainspecs/coretime-westend.json";
+        let chainspec_path = "../_chainspecs/westend/sys/coretime-westend.json";
         let chainspec_json = fs::read_to_string(chainspec_path)?;
         let chainspec: Chainspec = serde_json::from_str(&chainspec_json)?;
         let postgres = get_test_postgres().await?;
@@ -192,11 +265,11 @@ mod tests {
     }
 
     #[test_log::test(tokio::test)]
-    async fn test_substrate_rpc_url() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_ingest_blocks() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let substrate_client =
             SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
-        for number in 100..120 {
+        for number in 100..150 {
             let hash = substrate_client.get_block_hash(number).await?;
             let last_runtime_upgrade = substrate_client
                 .get_last_runtime_upgrade_info(&hash)
@@ -206,6 +279,23 @@ mod tests {
                 .ingest_block_trace(number, true, last_runtime_upgrade.spec_version, &trace)
                 .await?;
         }
+        Ok(())
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_trace_error() -> Result<(), Box<dyn std::error::Error>> {
+        let postgres = get_test_postgres().await?;
+        let block_number = 100;
+        let substrate_client =
+            SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
+        let block_hash = substrate_client.get_block_hash(block_number).await?;
+        postgres.delete_trace_error(&block_hash).await?;
+        let pre_trace_error_count = postgres.get_trace_error_count().await?;
+        postgres
+            .save_trace_error(&block_hash, block_number, "error_description")
+            .await?;
+        let post_trace_error_count = postgres.get_trace_error_count().await?;
+        assert_eq!(post_trace_error_count, pre_trace_error_count + 1);
         Ok(())
     }
 }

@@ -55,6 +55,10 @@ jobs:
           toolchain: nightly #-2022-11-15 # toolchain
           command: clippy
           args: --all-targets -- -D warnings -W clippy::cognitive_complexity
+      - name: Make the chainspec init script executable
+        run: chmod +x ./_chainspecs/init.sh
+      - name: Init chainspecs
+        run: ./_chainspecs/init.sh
       - name: Test
         uses: actions-rs/cargo@v1
         env:

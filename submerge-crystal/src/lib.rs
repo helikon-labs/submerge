@@ -75,6 +75,7 @@ impl Crystal {
                     postgres
                         .ingest_block_trace(number, true, last_runtime_upgrade.spec_version, &trace)
                         .await?;
+                    postgres.delete_trace_error(&hash).await?;
                     log::info!(
                         "🔽 Ingested {} traces for block {number}.",
                         trace.events.len(),
@@ -143,8 +144,9 @@ impl BaseService for Crystal {
         if !self.args.no_api {
             let host = self.args.api.api_host.clone();
             let port = self.args.api.api_port;
+            let postgres_args = self.args.postgres.clone();
             tokio::spawn(async move {
-                let _ = api::run_api(host.as_str(), port).await;
+                let _ = api::run_api(&postgres_args, host.as_str(), port).await;
             });
         } else {
             log::info!("⛔ API disabled.");

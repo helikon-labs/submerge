@@ -1,9 +1,41 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use strum::VariantNames;
 use strum_macros::VariantNames;
 
-#[derive(Serialize, Deserialize, Debug, VariantNames)]
+#[derive(Debug)]
+pub struct ParseStorageMethodError(String);
+
+impl Display for ParseStorageMethodError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for ParseStorageMethodError {}
+
+impl FromStr for StorageMethod {
+    type Err = ParseStorageMethodError;
+
+    /// Get chain from string.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Put" => Ok(Self::Put),
+            "ChildPut" => Ok(Self::ChildPut),
+            "ChildKill" => Ok(Self::ChildKill),
+            "ClearPrefix" => Ok(Self::ClearPrefix),
+            "ChildClearPrefix" => Ok(Self::ChildClearPrefix),
+            "Append" => Ok(Self::Append),
+            "Genesis" => Ok(Self::Genesis),
+            _ => Err(ParseStorageMethodError(format!(
+                "Unknown storage method: {s}"
+            ))),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, VariantNames)]
 pub enum StorageMethod {
     Put,
     ChildPut,
@@ -38,7 +70,7 @@ impl StorageMethod {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BlockTraceData {
     pub key: String,
     pub value: String,
@@ -46,14 +78,14 @@ pub struct BlockTraceData {
     pub method: StorageMethod,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTraceDataWrapper {
     #[serde(rename(deserialize = "stringValues"))]
     pub data: BlockTraceData,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTraceEvent {
     pub target: String,
@@ -62,7 +94,7 @@ pub struct BlockTraceEvent {
     pub parent_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTrace {
     pub block_hash: String,
@@ -73,7 +105,7 @@ pub struct BlockTrace {
     pub events: Vec<BlockTraceEvent>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockTraceWrapper {
     pub block_trace: BlockTrace,

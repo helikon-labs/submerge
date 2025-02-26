@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# coretime westend
+# set working directory
 cd "$(dirname "$0")"
 
 # polkadot

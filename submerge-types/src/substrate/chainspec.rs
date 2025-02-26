@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn test_parse_chainspec_json() {
         submerge_logging::init(LevelFilter::Debug, LevelFilter::Warn);
-        let file_path = "../_chainspecs/coretime-westend.json";
+        let file_path = "../_chainspecs/westend/sys/coretime-westend.json";
         log::info!("Parse chainspec file: {}", &file_path);
         let json_data = fs::read_to_string(file_path).expect("Failed to read JSON file.");
         let parsed: Chainspec = serde_json::from_str(&json_data).expect("Failed to parse JSON.");
