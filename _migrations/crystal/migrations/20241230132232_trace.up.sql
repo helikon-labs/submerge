@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS trace
 (
+    id                  BIGSERIAL NOT NULL,
     block_hash          BYTEA NOT NULL,
     block_parent_hash   BYTEA NOT NULL,
     block_number        BIGINT NOT NULL,
@@ -12,9 +13,11 @@ CREATE TABLE IF NOT EXISTS trace
     method              VARCHAR(64) NOT NULL,
     parent_id           TEXT,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT trace_pk UNIQUE (block_hash, trace_index)
-); -- PARTITION BY HASH(hash);
+    PRIMARY KEY (block_hash, trace_index)
+); -- PARTITION BY HASH(block_hash, trace_index);
 
+CREATE INDEX IF NOT EXISTS trace_idx_id
+    ON trace (id);
 CREATE INDEX IF NOT EXISTS trace_idx_hash
     ON trace (block_hash);
 CREATE INDEX IF NOT EXISTS trace_idx_number

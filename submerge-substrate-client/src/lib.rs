@@ -20,7 +20,7 @@ impl SubstrateClient {
     ) -> anyhow::Result<Self> {
         log::info!("⚙️ Constructing Substrate client.");
         let ws_client = WsClientBuilder::default()
-            .max_response_size(100 * 1024 * 1024)
+            .max_response_size(500 * 1024 * 1024)
             .connection_timeout(std::time::Duration::from_secs(connection_timeout_secs))
             .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
             .build(rpc_url)

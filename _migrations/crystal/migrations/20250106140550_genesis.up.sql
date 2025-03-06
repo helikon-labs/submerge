@@ -1,5 +1,7 @@
 CREATE TABLE IF NOT EXISTS genesis(
-       key VARCHAR PRIMARY KEY,
-       value VARCHAR NOT NULL,
-       created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()
+    id          SERIAL PRIMARY KEY,
+    key         VARCHAR NOT NULL,
+    value       VARCHAR NOT NULL,
+    created_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT genesis_u_key UNIQUE (key)
 );
