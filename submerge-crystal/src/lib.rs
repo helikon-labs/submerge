@@ -63,13 +63,13 @@ impl Crystal {
         for number in start_block_number..=end_block_number {
             log::info!("🔧 Ingesting block {number}. Target {end_block_number}.");
             let hash = substrate_client.get_block_hash(number).await?;
-            let last_runtime_upgrade = substrate_client
-                .get_last_runtime_upgrade_info(&hash)
-                .await?;
             if postgres.block_trace_exists(&hash).await? {
                 log::info!("🔁 Block {number} had already been ingested.");
                 continue;
             }
+            let last_runtime_upgrade = substrate_client
+                .get_last_runtime_upgrade_info(&hash)
+                .await?;
             match substrate_client.get_block_trace(&hash).await {
                 Ok(trace) => {
                     postgres
@@ -158,9 +158,13 @@ impl BaseService for Crystal {
                 postgres.ingest_genesis(&chainspec).await?;
                 let substrate_client = get_substrate(&self.args.rpc).await?;
                 let start_block = self.args.start_block.unwrap_or(1);
-                let next_block = postgres
-                    .get_next_block_number(start_block, end_block)
-                    .await?;
+                let next_block = if self.args.scan {
+                    start_block
+                } else {
+                    postgres
+                        .get_next_block_number(start_block, end_block)
+                        .await?
+                };
                 if next_block < end_block {
                     Self::ingest_blocks(&postgres, &substrate_client, next_block, end_block)
                         .await?;
@@ -197,9 +201,13 @@ impl BaseService for Crystal {
                                 }
                                 IS_BUSY.store(true, Ordering::SeqCst);
 
-                                let start_block = postgres
-                                    .get_next_block_number(self.args.start_block.unwrap_or(1), finalized_block_number)
-                                    .await?;
+                                let start_block = if self.args.scan {
+                                    self.args.start_block.unwrap_or(1)
+                                } else {
+                                    postgres
+                                        .get_next_block_number(self.args.start_block.unwrap_or(1), finalized_block_number)
+                                        .await?
+                                };
                                 if start_block <= finalized_block_number {
                                     let postgres = postgres.clone();
                                     let substrate_client = substrate_client.clone();

@@ -16,6 +16,11 @@ pub struct Args {
     pub chainspec_path: String,
 
     #[arg(long)]
+    /// Check each block in the range to see if it was ingested before, rather than relying on
+    /// range checks by block number
+    pub scan: bool,
+
+    #[arg(long)]
     /// Do not start the Prometheus server
     pub no_metrics: bool,
 
