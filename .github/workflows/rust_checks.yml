@@ -38,12 +38,29 @@ jobs:
       - run: rustup default nightly #-2022-11-15 # toolchain
       - run: rustup target add wasm32-unknown-unknown --toolchain nightly #-2022-11-15 # toolchain
       - run: rustup default stable
-      - name: Install SQLx
-        run: cargo install sqlx-cli --no-default-features --features native-tls,postgres
       - name: Make the DB reset script executable
         run: chmod +x ./_scripts/reset-crystal-test-db.sh
       - name: Reset test DB
-        run: ./_scripts/reset-crystal-test-db.sh
+        env:
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGHOST: 127.0.0.1
+        run: |
+          psql -c "CREATE USER submerge WITH ENCRYPTED PASSWORD 'submerge';"
+          psql -c "CREATE DATABASE submerge_crystal_test;"
+          psql -c "GRANT ALL ON DATABASE submerge_crystal_test TO submerge;"
+          psql -c "ALTER DATABASE submerge_crystal_test OWNER TO submerge;"
+      - name: Migrate test DB
+        env:
+          PGUSER: submerge
+          PGPASSWORD: submerge
+          PGHOST: 127.0.0.1
+          PGDATABASE: submerge_crystal_test
+        run: |
+          for file in ./_migrations/crystal/migrations/*.up.sql; do
+            echo "Executing $file..."
+            psql -f "$file"
+          done
       - name: Format
         uses: actions-rs/cargo@v1
         with:

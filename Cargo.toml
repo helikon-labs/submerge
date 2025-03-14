@@ -34,7 +34,7 @@ actix-web = "4.9"
 async-trait = "0.1"
 anyhow = "1"
 clap = { version = "4.5", features = ["derive"] }
-frame-metadata = "18.0"
+frame-metadata = "20.0.0"
 frame-system = "39.1"
 futures-util = "0.3"
 env_logger = "0.11"
