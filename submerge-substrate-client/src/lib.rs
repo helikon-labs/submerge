@@ -3,9 +3,9 @@ use jsonrpsee::ws_client::WsClientBuilder;
 use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT};
 use jsonrpsee_core::rpc_params;
 use std::future::Future;
-use submerge_types::substrate::block::BlockHeader;
-use submerge_types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
-use submerge_types::substrate::runtime::LastRuntimeUpgradeInfo;
+use submerge_base::types::substrate::block::BlockHeader;
+use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
+use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 
 pub struct SubstrateClient {

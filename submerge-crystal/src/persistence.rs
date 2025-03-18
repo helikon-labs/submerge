@@ -1,10 +1,12 @@
 use sqlx::{Pool, Postgres, Transaction};
 use std::str::FromStr;
+use submerge_base::types::submerge::BlockTrace as SubmergeBlockTrace;
+use submerge_base::types::submerge::BlockTraces;
+use submerge_base::types::substrate::block_trace::{
+    BlockTrace as SubstrateBlockTrace, StorageMethod,
+};
+use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::new_postgres_connection_pool;
-use submerge_types::submerge::BlockTrace as SubmergeBlockTrace;
-use submerge_types::submerge::BlockTraces;
-use submerge_types::substrate::block_trace::{BlockTrace as SubstrateBlockTrace, StorageMethod};
-use submerge_types::substrate::chainspec::Chainspec;
 
 pub struct PostgreSQLStorage {
     connection_pool: Pool<Postgres>,
@@ -238,8 +240,8 @@ impl PostgreSQLStorage {
 mod tests {
     use crate::persistence::PostgreSQLStorage;
     use std::fs;
+    use submerge_base::types::substrate::chainspec::Chainspec;
     use submerge_substrate_client::SubstrateClient;
-    use submerge_types::substrate::chainspec::Chainspec;
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
         PostgreSQLStorage::new(

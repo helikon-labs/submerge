@@ -12,5 +12,5 @@ anyhow = { workspace = true }
 jsonrpsee = { workspace = true, features = ["full"] }
 jsonrpsee-core = { workspace = true }
 log = { workspace = true }
-submerge-types = { path = "../submerge-types" }
+submerge-base = { path = "../submerge-base" }
 submerge-util = { path = "../submerge-util" }

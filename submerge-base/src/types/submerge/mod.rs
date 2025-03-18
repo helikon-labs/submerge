@@ -1,4 +1,4 @@
-use crate::substrate::block_trace::StorageMethod;
+use crate::types::substrate::block_trace::StorageMethod;
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]

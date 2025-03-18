@@ -4,6 +4,7 @@ use log::LevelFilter;
 
 pub mod args;
 pub mod err;
+pub mod types;
 
 #[async_trait]
 pub trait BaseService {

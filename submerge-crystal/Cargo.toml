@@ -23,7 +23,6 @@ submerge-base = { path = "../submerge-base" }
 submerge-metrics = { path = "../submerge-metrics" }
 submerge-persistence = { path = "../submerge-persistence" }
 submerge-substrate-client = { path = "../submerge-substrate-client" }
-submerge-types = { path = "../submerge-types" }
 tokio = { workspace = true }
 serde = { version = "1.0.217", features = ["derive"] }
 

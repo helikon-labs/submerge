@@ -4986,11 +4986,16 @@ dependencies = [
  "anyhow",
  "async-trait",
  "clap",
+ "frame-system",
  "log",
+ "rustc-hash",
  "serde",
  "serde_json",
+ "strum",
+ "strum_macros",
  "submerge-logging",
  "submerge-metrics",
+ "submerge-util",
  "tokio",
 ]
 
@@ -5034,7 +5039,6 @@ dependencies = [
  "submerge-metrics",
  "submerge-persistence",
  "submerge-substrate-client",
- "submerge-types",
  "test-log",
  "tokio",
 ]
@@ -5092,23 +5096,7 @@ dependencies = [
  "jsonrpsee",
  "jsonrpsee-core",
  "log",
- "submerge-types",
- "submerge-util",
-]
-
-[[package]]
-name = "submerge-types"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "frame-system",
- "log",
- "rustc-hash",
- "serde",
- "serde_json",
- "strum",
- "strum_macros",
- "submerge-logging",
+ "submerge-base",
  "submerge-util",
 ]
 

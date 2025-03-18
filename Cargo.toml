@@ -15,7 +15,6 @@ members = [
     "submerge-reflex",
     "submerge-sentinel",
     "submerge-substrate-client",
-    "submerge-types",
     "submerge-util",
     "submerge-web",
 ]

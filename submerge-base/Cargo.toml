@@ -10,11 +10,16 @@ license.workspace = true
 [dependencies]
 actix-web = { workspace = true }
 anyhow = { workspace = true }
+frame-system = { workspace = true }
 async-trait = { workspace = true }
 clap = { workspace = true }
 log = { workspace = true }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 submerge-logging = { path = "../submerge-logging" }
 submerge-metrics = { path = "../submerge-metrics" }
+submerge-util = { path = "../submerge-util" }
 tokio = { workspace = true }

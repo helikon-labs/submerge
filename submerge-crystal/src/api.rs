@@ -8,8 +8,8 @@ use serde::Deserialize;
 use std::sync::Arc;
 use submerge_base::args::PostgreSQLArgs;
 use submerge_base::err::{InternalServerError, ServiceError};
-use submerge_types::submerge::BlockTraces;
-use submerge_types::substrate::BLOCK_HASH_HEX_LENGTH;
+use submerge_base::types::submerge::BlockTraces;
+use submerge_base::types::substrate::BLOCK_HASH_HEX_LENGTH;
 
 pub(crate) type ResultResponse = Result<HttpResponse, InternalServerError>;
 

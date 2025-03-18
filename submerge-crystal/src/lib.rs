@@ -9,9 +9,9 @@ use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
+use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
 use submerge_substrate_client::SubstrateClient;
-use submerge_types::substrate::chainspec::Chainspec;
 
 mod api;
 pub mod args;
