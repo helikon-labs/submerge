@@ -9,6 +9,7 @@ members = [
     "submerge-crystal",
     "submerge-fractal",
     "submerge-logging",
+    "submerge-merkle-science-client",
     "submerge-metrics",
     "submerge-mycelium",
     "submerge-persistence",
@@ -32,6 +33,7 @@ license = "GPL-3"
 actix-web = "4.9"
 async-trait = "0.1"
 anyhow = "1"
+chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 frame-metadata = "20.0.0"
 frame-system = "39.1"
@@ -47,6 +49,7 @@ prometheus = "0.13"
 rustc-hash = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_repr = "0.1"
 sp-core = "35.0"
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "chrono", "macros", "runtime-tokio-native-tls"] }
 strum = "0.27"

@@ -16,6 +16,7 @@ pub fn init(log_level: LevelFilter, other_log_level: LevelFilter) {
     builder.filter(Some("submerge_crystal"), log_level);
     builder.filter(Some("submerge_fractal"), log_level);
     builder.filter(Some("submerge_logging"), log_level);
+    builder.filter(Some("submerge_merkle_science_client"), log_level);
     builder.filter(Some("submerge_metrics"), log_level);
     builder.filter(Some("submerge_persistence"), log_level);
     builder.filter(Some("submerge_reflex"), log_level);

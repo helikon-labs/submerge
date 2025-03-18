@@ -1,0 +1,25 @@
+[package]
+name = "submerge-merkle-science-client"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true, features = ["env"] }
+log = { workspace = true }
+reqwest = { version = "0.12", features = ["blocking", "json", "gzip", "brotli"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_repr = { workspace = true }
+submerge-util = { path = "../submerge-util" }
+
+[dev-dependencies]
+log = { workspace = true }
+serde_json = { workspace = true }
+test-log = { workspace = true }
+tokio = { workspace = true }
