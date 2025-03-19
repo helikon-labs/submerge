@@ -68,6 +68,14 @@ pub struct DigitalAsset {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct DigitalAssetWithBalance {
+    pub name: String,
+    pub symbol: String,
+    pub value: String,
+    pub value_usd: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Entity {
     #[serde(flatten)]
     pub tag: Tag,
@@ -125,4 +133,50 @@ pub struct AddressScreening {
     pub digital_assets: Vec<DigitalAsset>,
     pub custom_tags: Vec<String>,
     pub is_megahub: bool,
+}
+
+#[derive(Serialize, Debug)]
+pub struct TransactionScreeningRequest {
+    pub identifier: String,
+    pub blockchain: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub customer_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[serde(rename(deserialize = "type"))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transfer_type: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub show_alerts: Option<bool>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TransactionScreening {
+    pub identifier: String,
+    #[serde(flatten)]
+    pub blockchain: Blockchain,
+    pub customer_id: Option<String>,
+    #[serde(rename(deserialize = "type"))]
+    pub transaction_type: Option<u16>,
+    #[serde(rename(deserialize = "type_verbose"))]
+    pub transaction_type_verbose: Option<String>,
+    pub address: Option<String>,
+    pub value: String,
+    pub value_usd: String,
+    pub fee: String,
+    pub fee_usd: String,
+    #[serde(flatten)]
+    pub risk: Risk,
+    #[serde(deserialize_with = "iso_8601_to_naive_datetime")]
+    pub block_timestamp: NaiveDateTime,
+    #[serde(deserialize_with = "iso_8601_to_naive_datetime")]
+    pub created_at: NaiveDateTime,
+    #[serde(deserialize_with = "iso_8601_to_naive_datetime")]
+    pub updated_at: NaiveDateTime,
+    pub workspace: Option<Workspace>,
+    pub digital_assets: Vec<DigitalAssetWithBalance>,
+    #[serde(rename(deserialize = "originator"))]
+    pub originators: Vec<Entity>,
+    #[serde(rename(deserialize = "beneficiary"))]
+    pub beneficiaries: Vec<Entity>,
 }
