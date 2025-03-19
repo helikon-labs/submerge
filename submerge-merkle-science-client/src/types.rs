@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
 use submerge_util::serde::{
     deserialize_empty_object_as_none, float_to_string, iso_8601_to_naive_datetime,
+    iso_8601_to_optional_naive_datetime,
 };
 
 #[derive(Deserialize_repr, PartialEq, Debug)]
@@ -68,6 +69,21 @@ pub struct DigitalAsset {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct SupportedDigitalAsset {
+    pub name: String,
+    pub symbol: String,
+    #[serde(rename(deserialize = "contracts"))]
+    pub contact_addresses: Vec<String>,
+    #[serde(rename(deserialize = "type"))]
+    pub asset_type: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub(crate) struct SupportedDigitalAssetListResponse {
+    pub results: Vec<SupportedDigitalAsset>,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct DigitalAssetWithBalance {
     pub name: String,
     pub symbol: String,
@@ -82,6 +98,50 @@ pub struct Entity {
     #[serde(deserialize_with = "float_to_string")]
     pub total_value_usd: String,
     pub exposure_type: String,
+}
+
+#[derive(Clone, Deserialize_repr, PartialEq, Debug)]
+#[repr(u8)]
+pub enum ServiceStatusCode {
+    Down = 0,
+    Up = 1,
+    PartialDown = 2,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct ServiceStatus {
+    #[serde(rename(deserialize = "status"))]
+    pub code: ServiceStatusCode,
+    #[serde(rename(deserialize = "status_verbose"))]
+    pub description: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AggregateServiceStatus {
+    #[serde(rename(deserialize = "aggregate_status"))]
+    pub code: ServiceStatusCode,
+    #[serde(rename(deserialize = "aggregate_status_verbose"))]
+    pub description: String,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct BlockchainServiceStatus {
+    #[serde(flatten)]
+    pub blockchain: Blockchain,
+    #[serde(flatten)]
+    pub status: ServiceStatus,
+    pub last_synced_block: u64,
+    #[serde(deserialize_with = "iso_8601_to_optional_naive_datetime")]
+    pub last_synced_block_timestamp: Option<NaiveDateTime>,
+    #[serde(deserialize_with = "iso_8601_to_naive_datetime")]
+    pub last_updated_at: NaiveDateTime,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AggregateServiceStatusResponse {
+    #[serde(flatten)]
+    pub aggregate_status: AggregateServiceStatus,
+    pub statuses_by_blockchain: Vec<BlockchainServiceStatus>,
 }
 
 #[derive(Serialize, Debug)]

@@ -2,8 +2,9 @@
 
 use crate::args::Args;
 use crate::types::{
-    AddressScreening, AddressScreeningRequest, Blockchain, BlockchainListResponse,
-    TransactionScreening, TransactionScreeningRequest,
+    AddressScreening, AddressScreeningRequest, AggregateServiceStatusResponse, Blockchain,
+    BlockchainListResponse, BlockchainServiceStatus, SupportedDigitalAsset,
+    SupportedDigitalAssetListResponse, TransactionScreening, TransactionScreeningRequest,
 };
 use reqwest::header::{ACCEPT, CONTENT_TYPE};
 
@@ -64,6 +65,67 @@ impl MerkleScienceClient {
             None => Err(anyhow::Error::msg(format!(
                 "{} not found in supported blockchains.",
                 name,
+            ))),
+        }
+    }
+
+    pub async fn get_blockchain_supported_digital_assets(
+        &self,
+        blockchain: &Blockchain,
+    ) -> anyhow::Result<Vec<SupportedDigitalAsset>> {
+        let url = format!(
+            "https://api.merklescience.com/api/v4.2/blockchains/{}/digital-assets/",
+            blockchain.id
+        );
+        let response = self
+            .http_client
+            .get(&url)
+            .header("X-API-KEY", &self.api_key)
+            .header(ACCEPT, "application/json")
+            .send()
+            .await?;
+        let status_code = response.status();
+        let response_text = response.text().await?;
+        if !status_code.is_success() {
+            let error_message = format!(
+                "Error while fetching supported digital assets for {}.",
+                blockchain.name,
+            );
+            log::error!("{error_message}");
+            return Err(anyhow::Error::msg(error_message));
+        }
+        let response: SupportedDigitalAssetListResponse = serde_json::from_str(&response_text)?;
+        Ok(response.results)
+    }
+
+    pub async fn get_blockchain_service_health(
+        &self,
+        blockchain: &Blockchain,
+    ) -> anyhow::Result<BlockchainServiceStatus> {
+        let response = self
+            .http_client
+            .get("https://api.merklescience.com/api/v4.2/health-check/")
+            .header("X-API-KEY", &self.api_key)
+            .header(ACCEPT, "application/json")
+            .send()
+            .await?;
+        let status_code = response.status();
+        let response_text = response.text().await?;
+        if !status_code.is_success() {
+            let error_message = "Error while fetching aggregate service status.";
+            log::error!("{error_message}");
+            return Err(anyhow::Error::msg(error_message));
+        }
+        let response: AggregateServiceStatusResponse = serde_json::from_str(&response_text)?;
+        match response
+            .statuses_by_blockchain
+            .iter()
+            .find(|s| s.blockchain.id == blockchain.id)
+        {
+            Some(status) => Ok(status.clone()),
+            None => Err(anyhow::Error::msg(format!(
+                "Status not found for {}.",
+                blockchain.name
             ))),
         }
     }
@@ -212,6 +274,29 @@ mod tests {
         assert!(!screening.originators.is_empty());
         assert!(!screening.beneficiaries.is_empty());
         assert!(!screening.digital_assets.is_empty());
+        Ok(())
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_get_polkadot_supported_digital_assets() -> anyhow::Result<()> {
+        let args = Args::parse();
+        let client = MerkleScienceClient::new(&args).await?;
+        let chain = client.get_blockchain_by_name("polkadot")?;
+        let assets = client
+            .get_blockchain_supported_digital_assets(&chain)
+            .await?;
+        assert!(!assets.is_empty());
+        assert_eq!(assets.first().unwrap().symbol, "DOT");
+        Ok(())
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_get_polkadot_service_health() -> anyhow::Result<()> {
+        let args = Args::parse();
+        let client = MerkleScienceClient::new(&args).await?;
+        let chain = client.get_blockchain_by_name("polkadot")?;
+        let status = client.get_blockchain_service_health(&chain).await?;
+        assert!(status.last_synced_block > 25202200);
         Ok(())
     }
 }
