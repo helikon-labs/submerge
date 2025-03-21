@@ -269,8 +269,13 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_ingest_blocks() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
-        let substrate_client =
-            SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
+        let substrate_client = SubstrateClient::new(
+            "https://rpc.helikon.io/coretime-westend-dev",
+            "wss://rpc.helikon.io/coretime-westend-dev",
+            30,
+            30,
+        )
+        .await?;
         for number in 100..150 {
             let hash = substrate_client.get_block_hash(number).await?;
             let last_runtime_upgrade = substrate_client
@@ -288,8 +293,13 @@ mod tests {
     async fn test_trace_error() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let block_number = 100;
-        let substrate_client =
-            SubstrateClient::new("wss://rpc.helikon.io/coretime-westend-dev", 30, 30).await?;
+        let substrate_client = SubstrateClient::new(
+            "https://rpc.helikon.io/coretime-westend-dev",
+            "wss://rpc.helikon.io/coretime-westend-dev",
+            30,
+            30,
+        )
+        .await?;
         let block_hash = substrate_client.get_block_hash(block_number).await?;
         postgres.delete_trace_error(&block_hash).await?;
         let pre_trace_error_count = postgres.get_trace_error_count().await?;

@@ -2,9 +2,13 @@ use clap::Parser;
 
 #[derive(Parser, Clone, Debug)]
 pub struct RPCArgs {
-    #[arg(short = 'r', long, default_value = "wss://rpc.helikon.io/polkadot")]
-    /// JSON-RPC server URL
-    pub rpc_url: String,
+    #[arg(short = 'w', long, default_value = "wss://rpc.helikon.io/polkadot")]
+    /// JSON-RPC server WS URL
+    pub ws_rpc_url: String,
+
+    #[arg(short = 'h', long, default_value = "https://rpc.helikon.io/polkadot")]
+    /// JSON-RPC server HTTP URL
+    pub http_rpc_url: String,
 
     #[arg(long, default_value = "20")]
     /// JSON-RPC connection timeout in seconds

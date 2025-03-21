@@ -16,7 +16,8 @@ pub struct SubstrateClient {
 
 impl SubstrateClient {
     pub async fn new(
-        rpc_url: &str,
+        http_rpc_url: &str,
+        ws_rpc_url: &str,
         connection_timeout_secs: u64,
         request_timeout_secs: u64,
     ) -> anyhow::Result<Self> {
@@ -25,12 +26,12 @@ impl SubstrateClient {
             .max_response_size(1024 * 1024 * 1024)
             .connection_timeout(std::time::Duration::from_secs(connection_timeout_secs))
             .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
-            .build(rpc_url)
+            .build(ws_rpc_url)
             .await?;
         let http_client = HttpClientBuilder::default()
             .max_response_size(1024 * 1024 * 1024)
             .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
-            .build(rpc_url)?;
+            .build(http_rpc_url)?;
         log::info!("✅ Substrate client constructed.");
         Ok(SubstrateClient {
             ws_client,

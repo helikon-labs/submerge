@@ -37,7 +37,8 @@ async fn get_postgres(args: &PostgreSQLArgs) -> anyhow::Result<PostgreSQLStorage
 
 async fn get_substrate(args: &RPCArgs) -> anyhow::Result<SubstrateClient> {
     SubstrateClient::new(
-        &args.rpc_url,
+        &args.http_rpc_url,
+        &args.ws_rpc_url,
         args.rpc_connection_timeout_secs,
         args.rpc_request_timeout_secs,
     )
@@ -123,14 +124,16 @@ impl BaseService for Crystal {
         println!(
             r#"┌──────────────────────────────────────────────────────────────────────────────────────────
 | Chain:            {}
-│ RPC URL:          {}
+│ HTTP RPC URL:     {}
+│ WS RPC URL:       {}
 │ Start Block:      {}
 │ End Block:        {}
 | API Enabled:      {}
 | Metrics Enabled:  {}
 └──────────────────────────────────────────────────────────────────────────────────────────"#,
             chainspec.name,
-            self.args.rpc.rpc_url,
+            self.args.rpc.http_rpc_url,
+            self.args.rpc.ws_rpc_url,
             self.args
                 .start_block
                 .map_or("None".to_string(), |v| v.to_string()),
