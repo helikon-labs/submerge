@@ -83,10 +83,7 @@ impl Crystal {
                     );
                 }
                 Err(error) => {
-                    log::error!(
-                        "❌ Error while getting traces for block {number}: {:?}",
-                        error,
-                    );
+                    log::error!("❌ Error while getting traces for block {number}: {error:?}");
                     postgres
                         .save_trace_error(&hash, number, &error.to_string())
                         .await?;
@@ -196,10 +193,7 @@ impl BaseService for Crystal {
                                 log::info!("📦 New finalized block {finalized_block_number}.");
 
                                 if IS_BUSY.load(Ordering::SeqCst) {
-                                    log::info!(
-                                        "⏳ Busy ingesting past blocks. Skip block #{}.",
-                                        finalized_block_number
-                                    );
+                                    log::info!("⏳ Busy ingesting past blocks. Skip block #{finalized_block_number}.");
                                     return Ok(());
                                 }
                                 IS_BUSY.store(true, Ordering::SeqCst);
@@ -237,10 +231,7 @@ impl BaseService for Crystal {
                     )
                     .await;
                 let delay_seconds = self.args.service.recovery_sleep_seconds;
-                log::error!(
-                    "New block subscription exited. Will refresh connection and subscription after {} seconds.",
-                    delay_seconds
-                );
+                log::error!("New block subscription exited. Will refresh connection and subscription after {delay_seconds} seconds.");
                 tokio::time::sleep(std::time::Duration::from_secs(delay_seconds)).await;
             },
         }

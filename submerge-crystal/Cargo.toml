@@ -24,7 +24,7 @@ submerge-metrics = { path = "../submerge-metrics" }
 submerge-persistence = { path = "../submerge-persistence" }
 submerge-substrate-client = { path = "../submerge-substrate-client" }
 tokio = { workspace = true }
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { workspace = true }
 
 [dev-dependencies]
 log = { workspace = true }

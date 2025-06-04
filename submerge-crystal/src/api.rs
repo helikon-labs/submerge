@@ -59,7 +59,7 @@ pub(crate) async fn run_api(
     })
     .workers(10)
     .disable_signals()
-    .bind(format!("{}:{}", host, port,))?
+    .bind(format!("{host}:{port}"))?
     .run();
     let (server_result, _) = tokio::join!(server, on_server_ready(host, port));
     Ok(server_result?)

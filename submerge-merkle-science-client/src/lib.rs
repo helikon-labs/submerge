@@ -44,10 +44,8 @@ impl MerkleScienceClient {
         let status_code = response.status();
         let response_text = response.text().await?;
         if !status_code.is_success() {
-            let error_message = format!(
-                "Error while fetching supported blockchains: {}",
-                response_text
-            );
+            let error_message =
+                format!("Error while fetching supported blockchains: {response_text}");
             log::error!("{error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
@@ -63,8 +61,7 @@ impl MerkleScienceClient {
         {
             Some(blockchain) => Ok(blockchain.clone()),
             None => Err(anyhow::Error::msg(format!(
-                "{} not found in supported blockchains.",
-                name,
+                "{name} not found in supported blockchains."
             ))),
         }
     }
@@ -156,21 +153,20 @@ impl MerkleScienceClient {
         let response = match response_result {
             Ok(response) => response,
             Err(error) => {
-                log::error!("Error while screening address: {}", error);
+                log::error!("Error while screening address: {error}");
                 return Err(error.into());
             }
         };
         let status_code = response.status();
         let response_text = response.text().await?;
         if !status_code.is_success() {
-            let error_message = format!("Error response from the API: {}", response_text);
+            let error_message = format!("Error response from the API: {response_text}");
             log::error!("{error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: AddressScreening = serde_json::from_str(&response_text)?;
         log::info!(
-            "Screening completed for address {} on {}.",
-            address,
+            "Screening completed for address {address} on {}.",
             blockchain.name,
         );
         Ok(response)
@@ -202,14 +198,14 @@ impl MerkleScienceClient {
         let response = match response_result {
             Ok(response) => response,
             Err(error) => {
-                log::error!("Error while screening address: {}", error);
+                log::error!("Error while screening address: {error}");
                 return Err(error.into());
             }
         };
         let status_code = response.status();
         let response_text = response.text().await?;
         if !status_code.is_success() {
-            let error_message = format!("Error response from the API: {}", response_text);
+            let error_message = format!("Error response from the API: {response_text}");
             log::error!("{error_message}");
             return Err(anyhow::Error::msg(error_message));
         }

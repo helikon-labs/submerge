@@ -11,10 +11,8 @@ pub async fn new_postgres_connection_pool(
     pool_max_connections: u32,
 ) -> anyhow::Result<Pool<Postgres>> {
     log::info!("⚙️ Establishing PostgreSQL connection pool.");
-    let connection_str = format!(
-        "postgres://{}:{}@{}:{}/{}?sslmode=disable",
-        username, password, host, port, database_name,
-    );
+    let connection_str =
+        format!("postgres://{username}:{password}@{host}:{port}/{database_name}?sslmode=disable");
     let connection_pool = sqlx::postgres::PgPoolOptions::new()
         .acquire_timeout(Duration::from_secs(connection_timeout_secs))
         .max_connections(pool_max_connections)

@@ -41,8 +41,8 @@ pub trait BaseService {
         loop {
             let result = self.run().await;
             if let Err(error) = result {
-                log::error!("{:?}", error);
-                log::warn!("Process exited. Will restart in {} seconds.", sleep_seconds,);
+                log::error!("{error:?}");
+                log::warn!("Process exited. Will restart in {sleep_seconds} seconds.");
                 tokio::time::sleep(std::time::Duration::from_secs(sleep_seconds)).await;
             } else {
                 log::info!("Process completed.");
