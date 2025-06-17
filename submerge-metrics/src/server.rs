@@ -1,9 +1,10 @@
-use std::fmt::Debug;
-use std::{convert::Infallible, net::ToSocketAddrs, string::FromUtf8Error};
-
 use crate::registry::get_default_registry;
 use prometheus::{Encoder, Registry, TextEncoder};
+use std::fmt::Debug;
+use std::sync::Arc;
+use std::{convert::Infallible, net::ToSocketAddrs, string::FromUtf8Error};
 use tokio::{task, task::JoinError};
+use warp::http::Response;
 use warp::{reject::Reject, Filter, Rejection, Reply};
 
 #[derive(Debug, thiserror::Error)]
@@ -21,27 +22,28 @@ pub async fn start<T: ToSocketAddrs + Debug>(address: T) {
     let route = warp::path!("metrics")
         .and(with(registry))
         .and_then(metrics_text_handler);
-
-    log::info!("📊 Metrics server started on {address:?}.");
-    let routes = route.with(warp::log("subvt_metrics_server"));
-    warp::serve(routes)
-        .run(
-            address
-                .to_socket_addrs()
-                .expect("Invalid server address.")
-                .next()
-                .unwrap(),
-        )
-        .await;
+    log::info!("📊 Metrics server started on {address:?}");
+    let routes = route.with(warp::log("submerge_metrics_server"));
+    let socket_addr = address
+        .to_socket_addrs()
+        .expect("Invalid server address.")
+        .next()
+        .expect("Could not resolve address.");
+    warp::serve(routes).run(socket_addr).await;
 }
 
-async fn metrics_text_handler(registry: Registry) -> Result<impl Reply, Rejection> {
-    task::spawn_blocking::<_, Result<_, Error>>(move || {
+async fn metrics_text_handler(registry: Arc<Registry>) -> Result<impl Reply, Rejection> {
+    task::spawn_blocking(move || {
         let encoder = TextEncoder::new();
         let mut buffer = Vec::new();
         encoder.encode(&registry.gather(), &mut buffer)?;
         let encoded = String::from_utf8(buffer)?;
-        Ok(encoded)
+        Ok::<_, Error>(
+            Response::builder()
+                .header("Content-Type", encoder.format_type())
+                .body(encoded)
+                .unwrap(),
+        )
     })
     .await
     .map_err(Error::BlockingThreadFailed)?

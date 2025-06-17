@@ -12,6 +12,7 @@ name = "submerge"
 path = "src/main.rs"
 
 [dependencies]
+anyhow = { workspace = true }
 clap = { workspace = true }
 log = { workspace = true }
 submerge-base = { path = "../submerge-base" }

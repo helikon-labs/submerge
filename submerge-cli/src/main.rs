@@ -1,6 +1,7 @@
+use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
-use submerge_base::BaseService;
+use submerge_base::Supervisor;
 use submerge_crystal::Crystal;
 
 #[derive(Parser)]
@@ -19,20 +20,22 @@ pub enum Command {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
+    submerge_logging::init(LevelFilter::Debug, LevelFilter::Warn);
     let cli = match CLI::try_parse() {
         Ok(cli) => cli,
-        Err(e) => return println!("{e}"),
+        Err(e) => return Err(e.into()),
     };
     if let Some(command) = &cli.command {
         match command {
             Command::Crystal(args) => {
                 let crystal = Crystal::new(args.clone());
-                crystal.start().await;
+                Supervisor::new(crystal, args.service.recovery_sleep_seconds) // 10 second retry delay
+                    .start()
+                    .await
             }
-        };
+        }
     } else {
-        submerge_logging::init(LevelFilter::Debug, LevelFilter::Warn);
-        log::info!("No subcommand provided. Launch interactive CLI.");
+        Err(anyhow!("No subcommand provided. Launch interactive CLI."))
     }
 }

@@ -14,6 +14,7 @@ curl -o ./polkadot/sys/coretime-polkadot.json https://raw.githubusercontent.com/
 curl -o ./polkadot/sys/people-polkadot.json https://raw.githubusercontent.com/paritytech/polkadot-sdk/refs/heads/master/cumulus/parachains/chain-specs/people-polkadot.json
 # polkadot parachains
 mkdir -p polkadot/para
+curl -o ./polkadot/para/acala.json https://raw.githubusercontent.com/AcalaNetwork/Acala/refs/heads/master/resources/acala-dist.json
 curl -o ./polkadot/para/astar.json https://raw.githubusercontent.com/AstarNetwork/Astar/refs/heads/master/bin/collator/res/astar.raw.json
 curl -o ./polkadot/para/bifrost-polkadot.json https://raw.githubusercontent.com/bifrost-io/bifrost/refs/heads/develop/node/service/res/bifrost-polkadot.json
 curl -o ./polkadot/para/centrifuge.json https://raw.githubusercontent.com/centrifuge/centrifuge-chain/refs/heads/main/node/res/genesis/centrifuge-genesis-spec-raw.json

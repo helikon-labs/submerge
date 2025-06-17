@@ -94,25 +94,17 @@ impl Crystal {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl BaseService for Crystal {
-    fn get_metrics_server_addr(&self) -> Option<(String, u16)> {
-        if self.args.no_metrics {
-            None
-        } else {
-            Some((
-                self.args.metrics.metrics_host.clone(),
-                self.args.metrics.metrics_port,
-            ))
-        }
-    }
-
-    fn get_sleep_secs(&self) -> u64 {
-        self.args.service.recovery_sleep_seconds
-    }
-
     fn get_name(&self) -> String {
         "💠 Submerge Crystal".to_string()
+    }
+
+    fn get_metrics_server_addr(&self) -> (String, u16) {
+        (
+            self.args.metrics.metrics_host.clone(),
+            self.args.metrics.metrics_port,
+        )
     }
 
     async fn run(&self) -> anyhow::Result<()> {
