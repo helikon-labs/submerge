@@ -21,3 +21,32 @@ pub async fn new_postgres_connection_pool(
     log::info!("✅ PostgreSQL connection pool established.");
     Ok(connection_pool)
 }
+
+pub struct PostgreSQLStorage {
+    pub connection_pool: Pool<Postgres>,
+}
+
+impl PostgreSQLStorage {
+    pub async fn new(
+        host: &str,
+        port: u16,
+        username: &str,
+        password: &str,
+        database_name: &str,
+        connection_timeout_secs: u64,
+        pool_max_connections: u32,
+    ) -> anyhow::Result<PostgreSQLStorage> {
+        Ok(PostgreSQLStorage {
+            connection_pool: new_postgres_connection_pool(
+                host,
+                port,
+                username,
+                password,
+                database_name,
+                connection_timeout_secs,
+                pool_max_connections,
+            )
+            .await?,
+        })
+    }
+}

@@ -1,7 +1,7 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
-use crate::persistence::PostgreSQLStorage;
+use crate::persistence::CrystalPostgreSQLStorage;
 use async_trait::async_trait;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
@@ -11,6 +11,7 @@ use std::sync::Arc;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
+use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
 
 mod api;
@@ -54,6 +55,53 @@ impl Crystal {
         Self { args }
     }
 
+    async fn ingest_block(
+        postgres: &PostgreSQLStorage,
+        substrate_client: &SubstrateClient,
+        hash: &str,
+        number: u64,
+    ) -> anyhow::Result<()> {
+        if postgres.block_trace_exists(hash).await? {
+            log::info!("🔁 Block {number} had already been ingested.");
+            return Ok(());
+        }
+        let header = substrate_client.get_block_header(hash).await?;
+        for (i, log) in header.digest.logs.iter().enumerate() {
+            log::info!("log #{i}: {log}");
+        }
+        let timestamp = substrate_client.get_block_timestamp(hash).await?;
+        let last_runtime_upgrade = substrate_client.get_last_runtime_upgrade_info(hash).await?;
+        let mut tx = postgres.connection_pool.begin().await?;
+        postgres
+            .ingest_block(
+                number,
+                hash,
+                &header,
+                timestamp,
+                true,
+                last_runtime_upgrade.spec_version,
+                0,
+                0,
+                &mut tx,
+            )
+            .await?;
+        let trace = substrate_client.get_block_trace(hash).await?;
+        postgres
+            .ingest_block_trace(
+                number,
+                hash,
+                &header,
+                true,
+                last_runtime_upgrade.spec_version,
+                &trace,
+                &mut tx,
+            )
+            .await?;
+        postgres.delete_trace_error(hash, &mut tx).await?;
+        tx.commit().await?;
+        Ok(())
+    }
+
     async fn ingest_blocks(
         postgres: &PostgreSQLStorage,
         substrate_client: &SubstrateClient,
@@ -64,23 +112,9 @@ impl Crystal {
         for number in start_block_number..=end_block_number {
             log::info!("🔧 Ingesting block {number}. Target {end_block_number}.");
             let hash = substrate_client.get_block_hash(number).await?;
-            if postgres.block_trace_exists(&hash).await? {
-                log::info!("🔁 Block {number} had already been ingested.");
-                continue;
-            }
-            let last_runtime_upgrade = substrate_client
-                .get_last_runtime_upgrade_info(&hash)
-                .await?;
-            match substrate_client.get_block_trace(&hash).await {
-                Ok(trace) => {
-                    postgres
-                        .ingest_block_trace(number, true, last_runtime_upgrade.spec_version, &trace)
-                        .await?;
-                    postgres.delete_trace_error(&hash).await?;
-                    log::info!(
-                        "🔽 Ingested {} traces for block {number}.",
-                        trace.events.len(),
-                    );
+            match Self::ingest_block(postgres, substrate_client, &hash, number).await {
+                Ok(_) => {
+                    log::info!("🔽 Ingested block {number}.");
                 }
                 Err(error) => {
                     log::error!("❌ Error while getting traces for block {number}: {error:?}");

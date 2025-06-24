@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventDigest {
-    logs: Vec<String>,
+    pub logs: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

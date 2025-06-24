@@ -1,4 +1,4 @@
-use crate::persistence::PostgreSQLStorage;
+use crate::persistence::CrystalPostgreSQLStorage;
 use crate::{get_postgres, metrics};
 use actix_web::dev::Service as _;
 use actix_web::{get, http::header::ContentType, web, HttpResponse};
@@ -10,6 +10,7 @@ use submerge_base::args::PostgreSQLArgs;
 use submerge_base::err::{InternalServerError, ServiceError};
 use submerge_base::types::submerge::BlockTraces;
 use submerge_base::types::substrate::BLOCK_HASH_HEX_LENGTH;
+use submerge_persistence::postgres::PostgreSQLStorage;
 
 pub(crate) type ResultResponse = Result<HttpResponse, InternalServerError>;
 

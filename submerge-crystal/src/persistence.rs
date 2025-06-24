@@ -1,51 +1,88 @@
-use sqlx::{Pool, Postgres, Transaction};
+use sqlx::{Postgres, Transaction};
 use std::str::FromStr;
 use submerge_base::types::submerge::BlockTrace as SubmergeBlockTrace;
 use submerge_base::types::submerge::BlockTraces;
+use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block_trace::{
     BlockTrace as SubstrateBlockTrace, StorageMethod,
 };
 use submerge_base::types::substrate::chainspec::Chainspec;
-use submerge_persistence::postgres::new_postgres_connection_pool;
+use submerge_persistence::postgres::PostgreSQLStorage;
 
-pub struct PostgreSQLStorage {
-    connection_pool: Pool<Postgres>,
-}
+pub(crate) trait CrystalPostgreSQLStorage {
+    async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
+    async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
+    async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64>;
+    async fn save_trace_error(
+        &self,
+        block_hash: &str,
+        block_number: u64,
+        description: &str,
+    ) -> anyhow::Result<()>;
+    async fn delete_trace_error(
+        &self,
+        block_hash: &str,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
+    #[cfg(test)]
+    async fn get_trace_error_count(&self) -> anyhow::Result<u32>;
+    #[allow(clippy::too_many_arguments)]
+    async fn ingest_block(
+        &self,
+        number: u64,
+        hash: &str,
+        header: &BlockHeader,
+        timestamp: u64,
+        is_finalized: bool,
+        runtime_version: u32,
+        extrinsic_count: u32,
+        event_count: u32,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
+    #[allow(clippy::too_many_arguments)]
+    async fn ingest_block_trace(
+        &self,
+        number: u64,
+        hash: &str,
+        header: &BlockHeader,
+        is_finalized: bool,
+        runtime_version: u32,
+        trace: &SubstrateBlockTrace,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
+    async fn get_block_traces_by_number(
+        &self,
+        block_number: u64,
+    ) -> anyhow::Result<Vec<BlockTraces>>;
+    async fn get_block_traces_by_hash(
+        &self,
+        block_hash: &[u8],
+    ) -> anyhow::Result<Option<BlockTraces>>;
+    async fn block_trace_exists(&self, block_hash: &str) -> anyhow::Result<bool>;
 
-impl PostgreSQLStorage {
-    pub async fn new(
-        host: &str,
-        port: u16,
-        username: &str,
-        password: &str,
-        database_name: &str,
-        connection_timeout_secs: u64,
-        pool_max_connections: u32,
-    ) -> anyhow::Result<PostgreSQLStorage> {
-        Ok(PostgreSQLStorage {
-            connection_pool: new_postgres_connection_pool(
-                host,
-                port,
-                username,
-                password,
-                database_name,
-                connection_timeout_secs,
-                pool_max_connections,
-            )
-            .await?,
-        })
+    async fn ingest_genesis_item(
+        tx: &mut Transaction<'_, Postgres>,
+        key: &str,
+        value: &str,
+    ) -> anyhow::Result<()> {
+        sqlx::query("INSERT INTO genesis (key, value) VALUES ($1, $2) ON CONFLICT(key) DO NOTHING")
+            .bind(key)
+            .bind(value)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
     }
 }
 
-impl PostgreSQLStorage {
-    pub async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {
+impl CrystalPostgreSQLStorage for PostgreSQLStorage {
+    async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {
         let record_count: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT key) FROM genesis")
             .fetch_one(&self.connection_pool)
             .await?;
         Ok(record_count.0 as u64)
     }
 
-    pub(crate) async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
+    async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
         log::info!("🔽 Processing genesis from chainspec file.");
         if self.get_genesis_record_count().await? > 0 {
             log::info!("🔁 Genesis had already been processed.");
@@ -63,20 +100,7 @@ impl PostgreSQLStorage {
         Ok(())
     }
 
-    async fn ingest_genesis_item(
-        tx: &mut Transaction<'_, Postgres>,
-        key: &str,
-        value: &str,
-    ) -> anyhow::Result<()> {
-        sqlx::query("INSERT INTO genesis (key, value) VALUES ($1, $2) ON CONFLICT(key) DO NOTHING")
-            .bind(key)
-            .bind(value)
-            .execute(&mut **tx)
-            .await?;
-        Ok(())
-    }
-
-    pub(crate) async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64> {
+    async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64> {
         let row: (Option<i64>,) = sqlx::query_as(
             "SELECT MAX(block_number) FROM trace WHERE block_number >= $1 AND block_number <= $2",
         )
@@ -91,22 +115,7 @@ impl PostgreSQLStorage {
         })
     }
 
-    pub(crate) async fn block_trace_exists(&self, block_hash: &str) -> anyhow::Result<bool> {
-        let block_hash = hex::decode(block_hash)?;
-        let record_count: (i64,) = sqlx::query_as(
-            r#"
-            SELECT COUNT(DISTINCT trace_index)
-            FROM trace
-            WHERE block_hash = $1
-            "#,
-        )
-        .bind(block_hash)
-        .fetch_one(&self.connection_pool)
-        .await?;
-        Ok(record_count.0 > 0)
-    }
-
-    pub(crate) async fn save_trace_error(
+    async fn save_trace_error(
         &self,
         block_hash: &str,
         block_number: u64,
@@ -128,43 +137,87 @@ impl PostgreSQLStorage {
         Ok(())
     }
 
-    pub(crate) async fn delete_trace_error(&self, block_hash: &str) -> anyhow::Result<()> {
+    async fn delete_trace_error(
+        &self,
+        block_hash: &str,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
         sqlx::query("DELETE FROM trace_error WHERE block_hash = $1")
             .bind(hex::decode(block_hash)?)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         Ok(())
     }
 
     #[cfg(test)]
-    pub(crate) async fn get_trace_error_count(&self) -> anyhow::Result<u32> {
+    async fn get_trace_error_count(&self) -> anyhow::Result<u32> {
         let row: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT block_number) FROM trace_error")
             .fetch_one(&self.connection_pool)
             .await?;
         Ok(row.0 as u32)
     }
 
-    pub(crate) async fn ingest_block_trace(
+    async fn ingest_block(
         &self,
-        block_number: u64,
+        number: u64,
+        hash: &str,
+        header: &BlockHeader,
+        timestamp: u64,
+        is_finalized: bool,
+        runtime_version: u32,
+        extrinsic_count: u32,
+        event_count: u32,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        let hash = hex::decode(hash)?;
+        let parent_hash = hex::decode(&header.parent_hash)?;
+        let state_root = hex::decode(&header.state_root)?;
+        let extrinsic_root = hex::decode(&header.extrinsics_root)?;
+        sqlx::query(
+            r#"
+                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, runtime_version, is_finalized, extrinsic_count, event_count)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT (hash) DO NOTHING
+                "#,
+        )
+            .bind(&hash)
+            .bind(&parent_hash)
+            .bind(&state_root)
+            .bind(&extrinsic_root)
+            .bind(number as i64)
+            .bind(timestamp as i64)
+            .bind(runtime_version as i32)
+            .bind(is_finalized)
+            .bind(extrinsic_count as i32)
+            .bind(event_count as i32)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
+    }
+
+    async fn ingest_block_trace(
+        &self,
+        number: u64,
+        hash: &str,
+        header: &BlockHeader,
         is_finalized: bool,
         runtime_version: u32,
         trace: &SubstrateBlockTrace,
+        tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let mut tx = self.connection_pool.begin().await?;
+        let hash = hex::decode(hash)?;
+        let parent_hash = hex::decode(&header.parent_hash)?;
         for (trace_index, event) in trace.events.iter().enumerate() {
-            let block_hash = hex::decode(&trace.block_hash)?;
-            let block_parent_hash = hex::decode(&trace.parent_hash)?;
             sqlx::query(
                 r#"
                 INSERT INTO trace (block_hash, block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                ON CONFLICT (block_hash, trace_index) DO NOTHING
+                ON CONFLICT (block_hash, block_number, trace_index) DO NOTHING
                 "#,
             )
-                .bind(block_hash)
-                .bind(block_parent_hash)
-                .bind(block_number as i64)
+                .bind(&hash)
+                .bind(&parent_hash)
+                .bind(number as i64)
                 .bind(runtime_version as i32)
                 .bind(is_finalized)
                 .bind(trace_index as i32)
@@ -173,14 +226,13 @@ impl PostgreSQLStorage {
                 .bind(&event.data_wrapper.data.ext_id)
                 .bind(event.data_wrapper.data.method.to_string())
                 .bind(&event.parent_id)
-                .execute(&mut *tx)
+                .execute(&mut **tx)
                 .await?;
         }
-        tx.commit().await?;
         Ok(())
     }
 
-    pub(crate) async fn get_block_traces_by_number(
+    async fn get_block_traces_by_number(
         &self,
         block_number: u64,
     ) -> anyhow::Result<Vec<BlockTraces>> {
@@ -198,9 +250,9 @@ impl PostgreSQLStorage {
         Ok(result)
     }
 
-    pub(crate) async fn get_block_traces_by_hash(
+    async fn get_block_traces_by_hash(
         &self,
-        block_hash: &Vec<u8>,
+        block_hash: &[u8],
     ) -> anyhow::Result<Option<BlockTraces>> {
         #[allow(clippy::type_complexity)]
         let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY trace_index ASC")
@@ -234,11 +286,26 @@ impl PostgreSQLStorage {
             Ok(None)
         }
     }
+
+    async fn block_trace_exists(&self, block_hash: &str) -> anyhow::Result<bool> {
+        let block_hash = hex::decode(block_hash)?;
+        let record_count: (i64,) = sqlx::query_as(
+            r#"
+            SELECT COUNT(DISTINCT trace_index)
+            FROM trace
+            WHERE block_hash = $1
+            "#,
+        )
+        .bind(block_hash)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(record_count.0 > 0)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::persistence::PostgreSQLStorage;
+    use crate::persistence::{CrystalPostgreSQLStorage, PostgreSQLStorage};
     use std::fs;
     use submerge_base::types::substrate::chainspec::Chainspec;
     use submerge_substrate_client::SubstrateClient;
@@ -278,13 +345,39 @@ mod tests {
         .await?;
         for number in 100..150 {
             let hash = substrate_client.get_block_hash(number).await?;
+            let header = substrate_client.get_block_header(&hash).await?;
+            let timestamp = substrate_client.get_block_timestamp(&hash).await?;
             let last_runtime_upgrade = substrate_client
                 .get_last_runtime_upgrade_info(&hash)
                 .await?;
+            let mut tx = postgres.connection_pool.begin().await?;
+            postgres
+                .ingest_block(
+                    number,
+                    &hash,
+                    &header,
+                    timestamp,
+                    true,
+                    last_runtime_upgrade.spec_version,
+                    0,
+                    0,
+                    &mut tx,
+                )
+                .await?;
             let trace = substrate_client.get_block_trace(&hash).await?;
             postgres
-                .ingest_block_trace(number, true, last_runtime_upgrade.spec_version, &trace)
+                .ingest_block_trace(
+                    number,
+                    &hash,
+                    &header,
+                    true,
+                    last_runtime_upgrade.spec_version,
+                    &trace,
+                    &mut tx,
+                )
                 .await?;
+            postgres.delete_trace_error(&hash, &mut tx).await?;
+            tx.commit().await?;
         }
         Ok(())
     }
@@ -301,7 +394,9 @@ mod tests {
         )
         .await?;
         let block_hash = substrate_client.get_block_hash(block_number).await?;
-        postgres.delete_trace_error(&block_hash).await?;
+        let mut tx = postgres.connection_pool.begin().await?;
+        postgres.delete_trace_error(&block_hash, &mut tx).await?;
+        tx.commit().await?;
         let pre_trace_error_count = postgres.get_trace_error_count().await?;
         postgres
             .save_trace_error(&block_hash, block_number, "error_description")
