@@ -1,3 +1,4 @@
+use sp_runtime::DigestItem;
 use sqlx::{Postgres, Transaction};
 use std::str::FromStr;
 use submerge_base::types::submerge::BlockTrace as SubmergeBlockTrace;
@@ -15,13 +16,13 @@ pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64>;
     async fn save_trace_error(
         &self,
-        block_hash: &str,
+        block_hash: &[u8],
         block_number: u64,
         description: &str,
     ) -> anyhow::Result<()>;
     async fn delete_trace_error(
         &self,
-        block_hash: &str,
+        block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     #[cfg(test)]
@@ -29,8 +30,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
     #[allow(clippy::too_many_arguments)]
     async fn ingest_block(
         &self,
-        number: u64,
-        hash: &str,
+        hash: &[u8],
         header: &BlockHeader,
         timestamp: u64,
         is_finalized: bool,
@@ -39,15 +39,20 @@ pub(crate) trait CrystalPostgreSQLStorage {
         event_count: u32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    #[allow(clippy::too_many_arguments)]
     async fn ingest_block_trace(
         &self,
-        number: u64,
-        hash: &str,
+        hash: &[u8],
         header: &BlockHeader,
         is_finalized: bool,
         runtime_version: u32,
         trace: &SubstrateBlockTrace,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
+    async fn ingest_block_logs(
+        &self,
+        hash: &[u8],
+        header: &BlockHeader,
+        is_finalized: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn get_block_traces_by_number(
@@ -58,7 +63,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         block_hash: &[u8],
     ) -> anyhow::Result<Option<BlockTraces>>;
-    async fn block_trace_exists(&self, block_hash: &str) -> anyhow::Result<bool>;
+    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool>;
 
     async fn ingest_genesis_item(
         tx: &mut Transaction<'_, Postgres>,
@@ -117,7 +122,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn save_trace_error(
         &self,
-        block_hash: &str,
+        block_hash: &[u8],
         block_number: u64,
         description: &str,
     ) -> anyhow::Result<()> {
@@ -129,7 +134,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             SET description = EXCLUDED.description, created_at = now()
         "#,
         )
-        .bind(hex::decode(block_hash)?)
+        .bind(block_hash)
         .bind(block_number as i64)
         .bind(description)
         .execute(&self.connection_pool)
@@ -139,11 +144,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn delete_trace_error(
         &self,
-        block_hash: &str,
+        block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         sqlx::query("DELETE FROM trace_error WHERE block_hash = $1")
-            .bind(hex::decode(block_hash)?)
+            .bind(block_hash)
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -159,8 +164,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn ingest_block(
         &self,
-        number: u64,
-        hash: &str,
+        hash: &[u8],
         header: &BlockHeader,
         timestamp: u64,
         is_finalized: bool,
@@ -169,7 +173,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         event_count: u32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let hash = hex::decode(hash)?;
         let parent_hash = hex::decode(&header.parent_hash)?;
         let state_root = hex::decode(&header.state_root)?;
         let extrinsic_root = hex::decode(&header.extrinsics_root)?;
@@ -180,11 +183,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 ON CONFLICT (hash) DO NOTHING
                 "#,
         )
-            .bind(&hash)
+            .bind(hash)
             .bind(&parent_hash)
             .bind(&state_root)
             .bind(&extrinsic_root)
-            .bind(number as i64)
+            .bind(header.get_number()? as i64)
             .bind(timestamp as i64)
             .bind(runtime_version as i32)
             .bind(is_finalized)
@@ -197,15 +200,13 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn ingest_block_trace(
         &self,
-        number: u64,
-        hash: &str,
+        hash: &[u8],
         header: &BlockHeader,
         is_finalized: bool,
         runtime_version: u32,
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let hash = hex::decode(hash)?;
         let parent_hash = hex::decode(&header.parent_hash)?;
         for (trace_index, event) in trace.events.iter().enumerate() {
             sqlx::query(
@@ -215,9 +216,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 ON CONFLICT (block_hash, block_number, trace_index) DO NOTHING
                 "#,
             )
-                .bind(&hash)
+                .bind(hash)
                 .bind(&parent_hash)
-                .bind(number as i64)
+                .bind(header.get_number()? as i64)
                 .bind(runtime_version as i32)
                 .bind(is_finalized)
                 .bind(trace_index as i32)
@@ -228,6 +229,50 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 .bind(&event.parent_id)
                 .execute(&mut **tx)
                 .await?;
+        }
+        Ok(())
+    }
+
+    async fn ingest_block_logs(
+        &self,
+        hash: &[u8],
+        header: &BlockHeader,
+        is_finalized: bool,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        for (index, log) in header.get_logs()?.iter().enumerate() {
+            let (ty, engine, data) = match log {
+                DigestItem::PreRuntime(engine, data) => {
+                    let engine = String::from_utf8(engine.to_vec())?;
+                    ("PreRuntime", Some(engine), Some(data))
+                }
+                DigestItem::Consensus(engine, data) => {
+                    let engine = String::from_utf8(engine.to_vec())?;
+                    ("Consensus", Some(engine), Some(data))
+                }
+                DigestItem::Seal(engine, data) => {
+                    let engine = String::from_utf8(engine.to_vec())?;
+                    ("Seal", Some(engine), Some(data))
+                }
+                DigestItem::Other(data) => ("Other", None, Some(data)),
+                DigestItem::RuntimeEnvironmentUpdated => ("RuntimeEnvironmentUpdated", None, None),
+            };
+            sqlx::query(
+                r#"
+                INSERT INTO log (block_hash, block_number, is_finalized, index, type, engine, data)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (block_hash, index) DO NOTHING
+                "#,
+            )
+            .bind(hash)
+            .bind(header.get_number()? as i64)
+            .bind(is_finalized)
+            .bind(index as i32)
+            .bind(ty)
+            .bind(engine)
+            .bind(data)
+            .execute(&mut **tx)
+            .await?;
         }
         Ok(())
     }
@@ -287,8 +332,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
     }
 
-    async fn block_trace_exists(&self, block_hash: &str) -> anyhow::Result<bool> {
-        let block_hash = hex::decode(block_hash)?;
+    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool> {
         let record_count: (i64,) = sqlx::query_as(
             r#"
             SELECT COUNT(DISTINCT trace_index)
@@ -350,10 +394,11 @@ mod tests {
             let last_runtime_upgrade = substrate_client
                 .get_last_runtime_upgrade_info(&hash)
                 .await?;
+            let trace = substrate_client.get_block_trace(&hash).await?;
+            let hash = hex::decode(hash)?;
             let mut tx = postgres.connection_pool.begin().await?;
             postgres
                 .ingest_block(
-                    number,
                     &hash,
                     &header,
                     timestamp,
@@ -364,10 +409,11 @@ mod tests {
                     &mut tx,
                 )
                 .await?;
-            let trace = substrate_client.get_block_trace(&hash).await?;
+            postgres
+                .ingest_block_logs(&hash, &header, true, &mut tx)
+                .await?;
             postgres
                 .ingest_block_trace(
-                    number,
                     &hash,
                     &header,
                     true,
@@ -394,6 +440,7 @@ mod tests {
         )
         .await?;
         let block_hash = substrate_client.get_block_hash(block_number).await?;
+        let block_hash = hex::decode(block_hash)?;
         let mut tx = postgres.connection_pool.begin().await?;
         postgres.delete_trace_error(&block_hash, &mut tx).await?;
         tx.commit().await?;

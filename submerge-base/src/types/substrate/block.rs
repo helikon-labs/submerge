@@ -1,4 +1,6 @@
+use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
+use sp_runtime::DigestItem;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventDigest {
@@ -20,5 +22,14 @@ impl BlockHeader {
     pub fn get_number(&self) -> anyhow::Result<u64> {
         let number = u64::from_str_radix(self.number.trim_start_matches("0x"), 16)?;
         Ok(number)
+    }
+
+    pub fn get_logs(&self) -> anyhow::Result<Vec<DigestItem>> {
+        let mut logs = vec![];
+        for log in self.digest.logs.iter() {
+            let mut log_bytes: &[u8] = &hex::decode(log.trim_start_matches("0x"))?;
+            logs.push(Decode::decode(&mut log_bytes)?);
+        }
+        Ok(logs)
     }
 }

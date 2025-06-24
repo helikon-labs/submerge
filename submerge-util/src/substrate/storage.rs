@@ -1,8 +1,8 @@
-use frame_metadata::v14::StorageHasher;
+use frame_metadata::v16::StorageHasher;
 use jsonrpsee_core::params::ArrayParams;
 use sp_core::Decode;
 
-pub(crate) fn hash(hasher: &StorageHasher, bytes: &[u8]) -> Vec<u8> {
+pub fn hash(hasher: &StorageHasher, bytes: &[u8]) -> Vec<u8> {
     match hasher {
         StorageHasher::Identity => bytes.to_vec(),
         StorageHasher::Blake2_128 => sp_core::blake2_128(bytes).to_vec(),
@@ -22,15 +22,14 @@ pub(crate) fn hash(hasher: &StorageHasher, bytes: &[u8]) -> Vec<u8> {
     }
 }
 
-pub(crate) fn get_storage_plain_key(module_name: &str, storage_name: &str) -> String {
+pub fn get_storage_plain_key(module_name: &str, storage_name: &str) -> String {
     let hasher = StorageHasher::Twox128;
     let mut storage_hash: Vec<u8> = Vec::new();
     let mut module_name_hash = hash(&hasher, module_name.as_bytes());
     storage_hash.append(&mut module_name_hash);
     let mut storage_name_hash = hash(&hasher, storage_name.as_bytes());
     storage_hash.append(&mut storage_name_hash);
-    let storage_key_hex: String = hex::encode(storage_hash);
-    format!("0x{storage_key_hex}")
+    hex::encode(storage_hash)
 }
 
 pub fn get_rpc_storage_plain_params<'a>(
