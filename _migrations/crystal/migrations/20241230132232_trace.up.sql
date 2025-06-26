@@ -6,14 +6,15 @@ CREATE TABLE IF NOT EXISTS trace
     block_number        BIGINT NOT NULL,
     runtime_version     INT NOT NULL,
     is_finalized        BOOLEAN NOT NULL,
-    trace_index         INT NOT NULL,
+    index               INT NOT NULL,
     key                 TEXT NOT NULL,
     value               TEXT NOT NULL,
     ext_id              TEXT NOT NULL,
     method              VARCHAR(64) NOT NULL,
     parent_id           TEXT,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    PRIMARY KEY (block_hash, block_number, trace_index)
+    CONSTRAINT trace_pk PRIMARY KEY (id, block_number),
+    CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX IF NOT EXISTS trace_idx_number ON trace (block_number);

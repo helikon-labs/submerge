@@ -886,9 +886,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.18.1"
+version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
 
 [[package]]
 name = "byte-slice-cast"
@@ -1173,9 +1173,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crunchy"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
+checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "crypto-bigint"
@@ -5356,12 +5356,15 @@ dependencies = [
  "async-trait",
  "clap",
  "frame-metadata 23.0.0",
+ "frame-system",
  "futures-util",
  "hex",
  "lazy_static",
  "log",
  "once_cell",
  "parity-scale-codec",
+ "rustc-hash",
+ "scale-info",
  "serde",
  "serde_json",
  "sp-runtime",
@@ -5442,9 +5445,12 @@ name = "submerge-substrate-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "frame-metadata 23.0.0",
+ "hex",
  "jsonrpsee",
  "jsonrpsee-core",
  "log",
+ "parity-scale-codec",
  "submerge-base",
  "submerge-util",
 ]

@@ -1,3 +1,4 @@
+use parity_scale_codec::Encode;
 use sp_runtime::DigestItem;
 use sqlx::{Postgres, Transaction};
 use std::str::FromStr;
@@ -8,6 +9,7 @@ use submerge_base::types::substrate::block_trace::{
     BlockTrace as SubstrateBlockTrace, StorageMethod,
 };
 use submerge_base::types::substrate::chainspec::Chainspec;
+use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 pub(crate) trait CrystalPostgreSQLStorage {
@@ -64,6 +66,43 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_hash: &[u8],
     ) -> anyhow::Result<Option<BlockTraces>>;
     async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool>;
+    #[allow(clippy::too_many_arguments)]
+    async fn ingest_extrinsic(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        runtime_version: u32,
+        is_finalized: bool,
+        trace_index: u32,
+        pallet_index: u8,
+        pallet_name: &str,
+        call_index: u8,
+        call_name: &str,
+        hash: &[u8],
+        index: u32,
+        version: u8,
+        signature: &Option<Signature>,
+        is_successful: bool,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
+    #[allow(clippy::too_many_arguments)]
+    async fn ingest_event(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        runtime_version: u32,
+        is_finalized: bool,
+        trace_index: u32,
+        pallet_index: u8,
+        pallet_name: &str,
+        event_index: u8,
+        event_name: &str,
+        extrinsic_index: Option<u32>,
+        index: u32,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
 
     async fn ingest_genesis_item(
         tx: &mut Transaction<'_, Postgres>,
@@ -211,9 +250,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for (trace_index, event) in trace.events.iter().enumerate() {
             sqlx::query(
                 r#"
-                INSERT INTO trace (block_hash, block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
+                INSERT INTO trace (block_hash, block_parent_hash, block_number, runtime_version, is_finalized, index, key, value, ext_id, method, parent_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                ON CONFLICT (block_hash, block_number, trace_index) DO NOTHING
+                ON CONFLICT (block_hash, block_number, index) DO NOTHING
                 "#,
             )
                 .bind(hash)
@@ -300,7 +339,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
     ) -> anyhow::Result<Option<BlockTraces>> {
         #[allow(clippy::type_complexity)]
-        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY trace_index ASC")
+        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, runtime_version, is_finalized, index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY index ASC")
             .bind(block_hash)
             .fetch_all(&self.connection_pool)
             .await?;
@@ -335,7 +374,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool> {
         let record_count: (i64,) = sqlx::query_as(
             r#"
-            SELECT COUNT(DISTINCT trace_index)
+            SELECT COUNT(DISTINCT index)
             FROM trace
             WHERE block_hash = $1
             "#,
@@ -344,6 +383,109 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         .fetch_one(&self.connection_pool)
         .await?;
         Ok(record_count.0 > 0)
+    }
+
+    async fn ingest_extrinsic(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        runtime_version: u32,
+        is_finalized: bool,
+        trace_index: u32,
+        pallet_index: u8,
+        pallet_name: &str,
+        call_index: u8,
+        call_name: &str,
+        hash: &[u8],
+        index: u32,
+        version: u8,
+        signature: &Option<Signature>,
+        is_successful: bool,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        let (signer, signature, era, nonce, tip, extra) = if let Some(signature) = signature {
+            (
+                Some(Encode::encode(&signature.signer)),
+                Some(Encode::encode(&signature.signature)),
+                Some(Encode::encode(&signature.era)),
+                Some(signature.nonce),
+                Some(signature.tip),
+                Some(signature.extra),
+            )
+        } else {
+            (None, None, None, None, None, None)
+        };
+        sqlx::query(
+            r#"
+            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, runtime_version, is_finalized, trace_index, pallet_index, pallet_name, call_index, call_name, hash, index, version, nonce, signer, signature, era, tip, extra, is_successful, params)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, null)
+            ON CONFLICT (block_hash, block_number, index) DO NOTHING
+            "#,
+        )
+            .bind(block_hash)
+            .bind(block_number as i64)
+            .bind(block_timestamp as i64)
+            .bind(runtime_version as i32)
+            .bind(is_finalized)
+            .bind(trace_index as i32)
+            .bind(pallet_index as i32)
+            .bind(pallet_name)
+            .bind(call_index as i32)
+            .bind(call_name)
+            .bind(hash)
+            .bind(index as i32)
+            .bind(version as i32)
+            .bind(nonce.map(|e| e as i32))
+            .bind(signer)
+            .bind(signature)
+            .bind(era)
+            .bind(tip.map(|t| t.to_string()))
+            .bind(extra.map(|e| e as i32))
+            .bind(is_successful)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
+    }
+
+    async fn ingest_event(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        runtime_version: u32,
+        is_finalized: bool,
+        trace_index: u32,
+        pallet_index: u8,
+        pallet_name: &str,
+        event_index: u8,
+        event_name: &str,
+        extrinsic_index: Option<u32>,
+        index: u32,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO event (block_hash, block_number, block_timestamp, runtime_version, is_finalized, trace_index, pallet_index, pallet_name, event_index, event_name, extrinsic_index, index, params)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, null)
+            ON CONFLICT (block_hash, block_number, index) DO NOTHING
+            "#,
+        )
+            .bind(block_hash)
+            .bind(block_number as i64)
+            .bind(block_timestamp as i64)
+            .bind(runtime_version as i32)
+            .bind(is_finalized)
+            .bind(trace_index as i32)
+            .bind(pallet_index as i32)
+            .bind(pallet_name)
+            .bind(event_index as i32)
+            .bind(event_name)
+            .bind(extrinsic_index.map(|e| e as i32))
+            .bind(index as i32)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
     }
 }
 
