@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS block
     extrinsic_root  BYTEA NOT NULL,
     number          BIGINT NOT NULL,
     timestamp       BIGINT NOT NULL,
-    runtime_version INTEGER NOT NULL,
+    spec_version    INTEGER NOT NULL,
     is_finalized    BOOLEAN NOT NULL,
     extrinsic_count INTEGER NOT NULL,
     event_count     INTEGER NOT NULL,

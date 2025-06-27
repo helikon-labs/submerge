@@ -309,7 +309,7 @@ pub struct BlockData {
     pub number: u64,
     pub timestamp: u64,
     pub parent_hash: String,
-    pub runtime_version: u32,
+    pub spec_version: u32,
     pub is_finalized: bool,
     pub traces: Option<Vec<TraceData>>,
     pub extrinsic_count: u32,
@@ -383,7 +383,7 @@ impl BlockData {
             number: traces.block_number,
             timestamp: 0, // Would need to be added to BlockTraces
             parent_hash: traces.block_parent_hash,
-            runtime_version: traces.runtime_version,
+            spec_version: traces.spec_version,
             is_finalized: traces.is_finalized,
             traces: Some(
                 traces.traces

@@ -22,6 +22,7 @@ once_cell = { workspace = true }
 parity-scale-codec = { workspace = true }
 rustc-hash = { workspace = true }
 serde_json = { workspace = true }
+sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sqlx = { workspace = true }
 submerge-base = { path = "../submerge-base" }

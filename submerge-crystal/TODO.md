@@ -68,7 +68,7 @@
   - Add connection pooling tuning
 
 - [ ] **Add database indexing strategy**
-  - Index frequently queried columns (`block_number`, `runtime_version`)
+  - Index frequently queried columns (`block_number`, `spec_version`)
   - Composite indexes for common query patterns
   - Analyze query performance and optimize
   - Add database performance monitoring

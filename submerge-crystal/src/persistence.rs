@@ -36,7 +36,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         is_finalized: bool,
-        runtime_version: u32,
+        spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
         tx: &mut Transaction<'_, Postgres>,
@@ -46,7 +46,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         hash: &[u8],
         header: &BlockHeader,
         is_finalized: bool,
-        runtime_version: u32,
+        spec_version: u32,
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
@@ -72,9 +72,9 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: u64,
-        runtime_version: u32,
+        spec_version: u32,
         is_finalized: bool,
-        trace_index: u32,
+        trace_index: Option<u32>,
         pallet_index: u8,
         pallet_name: &str,
         call_index: u8,
@@ -92,7 +92,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: u64,
-        runtime_version: u32,
+        spec_version: u32,
         is_finalized: bool,
         trace_index: u32,
         pallet_index: u8,
@@ -100,6 +100,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         event_index: u8,
         event_name: &str,
         extrinsic_index: Option<u32>,
+        phase: &str,
         index: u32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
@@ -207,7 +208,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         is_finalized: bool,
-        runtime_version: u32,
+        spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
         tx: &mut Transaction<'_, Postgres>,
@@ -217,7 +218,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         let extrinsic_root = hex::decode(&header.extrinsics_root)?;
         sqlx::query(
             r#"
-                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, runtime_version, is_finalized, extrinsic_count, event_count)
+                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, is_finalized, extrinsic_count, event_count)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 ON CONFLICT (hash) DO NOTHING
                 "#,
@@ -228,7 +229,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&extrinsic_root)
             .bind(header.get_number()? as i64)
             .bind(timestamp as i64)
-            .bind(runtime_version as i32)
+            .bind(spec_version as i32)
             .bind(is_finalized)
             .bind(extrinsic_count as i32)
             .bind(event_count as i32)
@@ -242,7 +243,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         hash: &[u8],
         header: &BlockHeader,
         is_finalized: bool,
-        runtime_version: u32,
+        spec_version: u32,
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
@@ -250,7 +251,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for (trace_index, event) in trace.events.iter().enumerate() {
             sqlx::query(
                 r#"
-                INSERT INTO trace (block_hash, block_parent_hash, block_number, runtime_version, is_finalized, index, key, value, ext_id, method, parent_id)
+                INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, is_finalized, index, key, value, ext_id, method, parent_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (block_hash, block_number, index) DO NOTHING
                 "#,
@@ -258,7 +259,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 .bind(hash)
                 .bind(&parent_hash)
                 .bind(header.get_number()? as i64)
-                .bind(runtime_version as i32)
+                .bind(spec_version as i32)
                 .bind(is_finalized)
                 .bind(trace_index as i32)
                 .bind(&event.data_wrapper.data.key)
@@ -339,7 +340,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
     ) -> anyhow::Result<Option<BlockTraces>> {
         #[allow(clippy::type_complexity)]
-        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, runtime_version, is_finalized, index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY index ASC")
+        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, spec_version, is_finalized, index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY index ASC")
             .bind(block_hash)
             .fetch_all(&self.connection_pool)
             .await?;
@@ -351,7 +352,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 block_hash: block_hash_hex,
                 block_parent_hash: block_parent_hash_hex,
                 block_number: first_row.1 as u64,
-                runtime_version: first_row.2 as u32,
+                spec_version: first_row.2 as u32,
                 is_finalized: first_row.3,
                 traces: vec![],
             };
@@ -390,9 +391,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: u64,
-        runtime_version: u32,
+        spec_version: u32,
         is_finalized: bool,
-        trace_index: u32,
+        trace_index: Option<u32>,
         pallet_index: u8,
         pallet_name: &str,
         call_index: u8,
@@ -418,7 +419,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         };
         sqlx::query(
             r#"
-            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, runtime_version, is_finalized, trace_index, pallet_index, pallet_name, call_index, call_name, hash, index, version, nonce, signer, signature, era, tip, extra, is_successful, params)
+            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, call_index, call_name, hash, index, version, nonce, signer, signature, era, tip, extra, is_successful, params)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, null)
             ON CONFLICT (block_hash, block_number, index) DO NOTHING
             "#,
@@ -426,9 +427,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_hash)
             .bind(block_number as i64)
             .bind(block_timestamp as i64)
-            .bind(runtime_version as i32)
+            .bind(spec_version as i32)
             .bind(is_finalized)
-            .bind(trace_index as i32)
+            .bind(trace_index.map(|i| i as i32))
             .bind(pallet_index as i32)
             .bind(pallet_name)
             .bind(call_index as i32)
@@ -453,7 +454,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: u64,
-        runtime_version: u32,
+        spec_version: u32,
         is_finalized: bool,
         trace_index: u32,
         pallet_index: u8,
@@ -461,20 +462,21 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         event_index: u8,
         event_name: &str,
         extrinsic_index: Option<u32>,
+        phase: &str,
         index: u32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
-            INSERT INTO event (block_hash, block_number, block_timestamp, runtime_version, is_finalized, trace_index, pallet_index, pallet_name, event_index, event_name, extrinsic_index, index, params)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, null)
+            INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, event_index, event_name, extrinsic_index, phase, index, params)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, null)
             ON CONFLICT (block_hash, block_number, index) DO NOTHING
             "#,
         )
             .bind(block_hash)
             .bind(block_number as i64)
             .bind(block_timestamp as i64)
-            .bind(runtime_version as i32)
+            .bind(spec_version as i32)
             .bind(is_finalized)
             .bind(trace_index as i32)
             .bind(pallet_index as i32)
@@ -482,6 +484,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(event_index as i32)
             .bind(event_name)
             .bind(extrinsic_index.map(|e| e as i32))
+            .bind(phase)
             .bind(index as i32)
             .execute(&mut **tx)
             .await?;

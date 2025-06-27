@@ -9,10 +9,13 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use parity_scale_codec::{Compact, Decode, Encode, Input};
 use rustc_hash::FxHashMap as HashMap;
+use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
+use sp_runtime::AccountId32;
 use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
+use submerge_base::types::substrate::block_trace::StorageMethod;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::{Balance, MultiAddress, Signature};
 use submerge_base::BaseService;
@@ -72,25 +75,26 @@ impl Crystal {
         hash_hex: &str,
         number: u64,
     ) -> anyhow::Result<()> {
-        let hash = hex::decode(hash_hex)?;
-        if postgres.block_trace_exists(&hash).await? {
+        let block_hash = hex::decode(hash_hex)?;
+        if postgres.block_trace_exists(&block_hash).await? {
             log::info!("🔁 Block {number} had already been ingested.");
             return Ok(());
         }
-        let header = substrate_client.get_block_header(hash_hex).await?;
-        let timestamp = substrate_client.get_block_timestamp(hash_hex).await?;
-        let last_runtime_upgrade = substrate_client
+        let block_header = substrate_client.get_block_header(hash_hex).await?;
+        let block_timestamp = substrate_client.get_block_timestamp(hash_hex).await?;
+        let spec_version = substrate_client
             .get_last_runtime_upgrade_info(hash_hex)
-            .await?;
+            .await?
+            .spec_version;
         let metadata = substrate_client.get_metadata_at_block(hash_hex).await?;
         let mut tx = postgres.connection_pool.begin().await?;
         let trace = substrate_client.get_block_trace(hash_hex).await?;
         postgres
             .ingest_block_trace(
-                &hash,
-                &header,
+                &block_hash,
+                &block_header,
                 true,
-                last_runtime_upgrade.spec_version,
+                spec_version,
                 &trace,
                 &mut tx,
             )
@@ -119,212 +123,263 @@ impl Crystal {
             }
         }
         log::info!("{extrinsic_count} exts, {event_count} events");
-        let mut processed_extrinsic_count = 0;
         let mut processed_event_count = 0;
-        let extrinsic_data_root_key = get_storage_plain_key("System", "ExtrinsicData");
         let events_key = get_storage_plain_key("System", "Events");
         // index events
+        let mut processed_events_hex = String::new();
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;
-            if trace_data.key == events_key {
-                log::info!("Event {processed_event_count} @ trace {trace_index}.");
-                if trace_data.value.to_lowercase() != "none" {
-                    let value = trace_data
-                        .value
-                        .trim_start_matches("Some(")
-                        .trim_end_matches(")");
-                    let mut bytes: &[u8] = &hex::decode(value)?;
-                    let phase = frame_system::Phase::decode(&mut bytes)?;
-                    let extrinsic_index = match phase {
-                        frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
-                            Some(extrinsic_index)
-                        }
-                        _ => None,
-                    };
-                    let pallet_index: u8 = Decode::decode(&mut bytes)?;
-                    let event_index: u8 = Decode::decode(&mut bytes)?;
-                    // TODO get module name, call name, parameters JSON
-                    let (pallet_name, event_name) = match &metadata {
-                        RuntimeMetadata::V8(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V9(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V10(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V11(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V12(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V13(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V14(metadata) => {
-                            let pallet = metadata
-                                .pallets
-                                .iter()
-                                .find(|metadata_pallet| metadata_pallet.index == pallet_index)
-                                .expect("Pallet not found in metadata.");
-                            let event_type = metadata
-                                .types
-                                .types
-                                .iter()
-                                .find(|ty| ty.id == pallet.event.clone().unwrap().ty.id)
-                                .expect("Event type not found in pallet.");
-                            let event_variant = match &event_type.ty.type_def {
-                                scale_info::TypeDef::Variant(variant) => variant
-                                    .variants
-                                    .iter()
-                                    .find(|variant| variant.index == event_index)
-                                    .unwrap(),
-                                _ => {
-                                    return Err(anyhow::Error::msg(format!(
-                                        "Unexpected non-variant event type: {:?}",
-                                        event_type.ty.type_def
-                                    )))
-                                }
-                            };
-                            (pallet.name.clone(), event_variant.name.clone())
-                        }
-                        RuntimeMetadata::V15(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V16(_) => ("".to_string(), "".to_string()),
-                        _ => unimplemented!("Unsupported runtime metadata."),
-                    };
+            if trace_data.key == events_key && trace_data.value.to_lowercase() != "none" {
+                let value = trace_data
+                    .value
+                    .trim_start_matches("Some(")
+                    .trim_end_matches(")");
+                let value = match trace_data.method {
+                    StorageMethod::Put => {
+                        let mut bytes: &[u8] = &hex::decode(value)?;
+                        // skip event count
+                        let _ = <Compact<u32>>::decode(&mut bytes)?.0;
+                        // skip processed events
+                        hex::encode(bytes)
+                            .trim_start_matches(&processed_events_hex)
+                            .to_string()
+                    }
+                    _ => value.to_string(),
+                };
+                let mut bytes: &[u8] = &hex::decode(&value)?;
+                let phase = frame_system::Phase::decode(&mut bytes)?;
+                let (phase, extrinsic_index) = match phase {
+                    frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
+                        ("ApplyExtrinsic", Some(extrinsic_index))
+                    }
+                    frame_system::Phase::Finalization => ("Finalization", None),
+                    frame_system::Phase::Initialization => ("Initialization", None),
+                };
+                let pallet_index: u8 = Decode::decode(&mut bytes)?;
+                let event_index: u8 = Decode::decode(&mut bytes)?;
+                log::info!("Pallet[{pallet_index}] Event[{event_index}]");
+                // TODO get module name, call name, parameters JSON
+                let (pallet_name, event_name) = match &metadata {
+                    RuntimeMetadata::V8(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V9(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V10(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V11(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V12(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V13(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V14(metadata) => {
+                        let pallet = metadata
+                            .pallets
+                            .iter()
+                            .find(|metadata_pallet| metadata_pallet.index == pallet_index)
+                            .expect("Pallet not found in metadata.");
 
-                    postgres
-                        .ingest_event(
-                            &hash,
-                            header.get_number()?,
-                            timestamp,
-                            last_runtime_upgrade.spec_version,
-                            true,
-                            trace_index as u32,
-                            pallet_index,
-                            &pallet_name,
-                            event_index,
-                            &event_name,
-                            extrinsic_index,
-                            processed_event_count,
-                            &mut tx,
-                        )
-                        .await?;
+                        let event_type = metadata
+                            .types
+                            .types
+                            .iter()
+                            .find(|ty| ty.id == pallet.event.clone().unwrap().ty.id)
+                            .expect("Event type not found in pallet.");
+                        let event_variant = match &event_type.ty.type_def {
+                            scale_info::TypeDef::Variant(variant) => variant
+                                .variants
+                                .iter()
+                                .find(|variant| variant.index == event_index)
+                                .unwrap(),
+                            _ => {
+                                return Err(anyhow::Error::msg(format!(
+                                    "Unexpected non-variant event type: {:?}",
+                                    event_type.ty.type_def
+                                )))
+                            }
+                        };
+                        (pallet.name.clone(), event_variant.name.clone())
+                    }
+                    RuntimeMetadata::V15(_) => ("".to_string(), "".to_string()),
+                    RuntimeMetadata::V16(_) => ("".to_string(), "".to_string()),
+                    _ => unimplemented!("Unsupported runtime metadata."),
+                };
+                log::info!("Event #{processed_event_count} {pallet_name}.{event_name}");
+
+                postgres
+                    .ingest_event(
+                        &block_hash,
+                        block_header.get_number()?,
+                        block_timestamp,
+                        spec_version,
+                        true,
+                        trace_index as u32,
+                        pallet_index,
+                        &pallet_name,
+                        event_index,
+                        &event_name,
+                        extrinsic_index,
+                        phase,
+                        processed_event_count,
+                        &mut tx,
+                    )
+                    .await?;
+                if let StorageMethod::Put = trace_data.method {
+                    processed_events_hex.push_str(value.as_str());
                 }
                 processed_event_count += 1;
             }
         }
-        // index extrinsics
+        let extrinsic_data_root_key = get_storage_plain_key("System", "ExtrinsicData");
+        let mut extrinsics = Vec::new();
+        let mut trace_extrinsic_index: u32 = 0;
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;
-            if trace_data.key.starts_with(&extrinsic_data_root_key) {
-                let key = trace_data.key.trim_start_matches(&extrinsic_data_root_key);
-                let expected_key = hex::encode(storage::hash(
-                    &StorageHasher::Twox64Concat,
-                    &processed_extrinsic_count.encode(),
-                ));
-                if key != expected_key {
-                    let error_message = format!("Extrinsic {processed_extrinsic_count} data index key does not match the expected value.");
-                    return Err(anyhow::Error::msg(error_message));
-                }
-                log::info!("Extrinsic {processed_extrinsic_count} data @ trace {trace_index}");
-                if trace_data.value.to_lowercase() != "none" {
-                    let value = trace_data
-                        .value
-                        .trim_start_matches("Some(")
-                        .trim_end_matches(")");
-                    let mut bytes: &[u8] = &hex::decode(value)?;
-                    let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
-                    let mut bytes: &[u8] = &bytes_vector;
-                    let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
-                    let mut bytes: &[u8] = &bytes_vector;
-                    let signed_version = bytes.read_byte()?;
-                    let sign_mask = 0b10000000;
-                    let version_mask = 0b00000100;
-                    let is_signed = (signed_version & sign_mask) == sign_mask;
-                    let version = signed_version & version_mask;
-                    let signature = if is_signed {
-                        let signer = MultiAddress::decode(&mut bytes)?;
-                        let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
-                        let era: sp_runtime::generic::Era = Decode::decode(&mut bytes)?;
-                        let nonce: Compact<u32> = Decode::decode(&mut bytes)?; // u32
-                        let tip: Compact<Balance> = Decode::decode(&mut bytes)?;
-                        let extra: u8 = Decode::decode(&mut bytes)?;
-                        let signature = Signature {
-                            signer,
-                            signature,
-                            era,
-                            nonce: nonce.0,
-                            tip: tip.0,
-                            extra,
-                        };
-                        Some(signature)
-                    } else {
-                        None
-                    };
-                    let pallet_index = u8::decode(&mut bytes)?;
-                    let call_index = u8::decode(&mut bytes)?;
-                    log::info!(
-                        "Extrinsic #{processed_extrinsic_count} ({pallet_index}.{pallet_index}) :: signed :: {}",
-                        signature.is_some(),
-                    );
-                    // TODO get module name, call name, parameters JSON
-                    let (pallet_name, call_name) = match &metadata {
-                        RuntimeMetadata::V8(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V9(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V10(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V11(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V12(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V13(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V14(metadata) => {
-                            let pallet = metadata
-                                .pallets
-                                .iter()
-                                .find(|metadata_pallet| metadata_pallet.index == pallet_index)
-                                .expect("Module not found in metadata.");
-                            let calls_type = metadata
-                                .types
-                                .types
-                                .iter()
-                                .find(|metadata_type| {
-                                    metadata_type.id == pallet.calls.clone().unwrap().ty.id
-                                })
-                                .expect("Calls type not found in pallet.");
-                            let call_variant = match &calls_type.ty.type_def {
-                                scale_info::TypeDef::Variant(variant) => variant
-                                    .variants
-                                    .iter()
-                                    .find(|variant| variant.index == call_index)
-                                    .unwrap(),
-                                _ => {
-                                    return Err(anyhow::Error::msg(format!(
-                                        "Unexpected non-variant call type: {:?}",
-                                        calls_type.ty.type_def
-                                    )))
-                                }
-                            };
-                            (pallet.name.clone(), call_variant.name.clone())
-                        }
-                        RuntimeMetadata::V15(_) => ("".to_string(), "".to_string()),
-                        RuntimeMetadata::V16(_) => ("".to_string(), "".to_string()),
-                        _ => unimplemented!("Unsupported runtime metadata."),
-                    };
+            if !trace_data.key.starts_with(&extrinsic_data_root_key)
+                || trace_data.value.to_lowercase() == "none"
+            {
+                continue;
+            }
+            let key = trace_data.key.trim_start_matches(&extrinsic_data_root_key);
+            let expected_key = hex::encode(storage::hash(
+                &StorageHasher::Twox64Concat,
+                &trace_extrinsic_index.encode(),
+            ));
+            if key != expected_key {
+                let error_message = format!("Extrinsic {trace_extrinsic_index} data index key does not match the expected value.");
+                return Err(anyhow::Error::msg(error_message));
+            }
+            log::info!("Extrinsic {trace_extrinsic_index} data @ trace {trace_index}");
+            let value = trace_data
+                .value
+                .trim_start_matches("Some(")
+                .trim_end_matches(")");
+            let mut bytes: &[u8] = &hex::decode(value)?;
+            let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
+            //let mut bytes: &[u8] = &bytes_vector;
+            //let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
+            let bytes: &[u8] = &bytes_vector;
+            extrinsics.push((Some(trace_index), hex::encode(bytes)));
+            trace_extrinsic_index += 1;
+        }
+        if extrinsics.is_empty() {
+            // fall back on RPC
+            let block = substrate_client.get_block(hash_hex).await?;
+            block
+                .extrinsics
+                .iter()
+                .for_each(|e| extrinsics.push((None, e.trim_start_matches("0x").to_string())));
+        }
 
-                    postgres
-                        .ingest_extrinsic(
-                            &hash,
-                            header.get_number()?,
-                            timestamp,
-                            last_runtime_upgrade.spec_version,
-                            true,
-                            trace_index as u32,
-                            pallet_index,
-                            &pallet_name,
-                            call_index,
-                            &call_name,
-                            &[],
-                            processed_extrinsic_count,
-                            version,
-                            &signature,
-                            true,
-                            &mut tx,
-                        )
-                        .await?;
+        // index extrinsics
+        let mut processed_extrinsic_count = 0;
+        for extrinsic in extrinsics.iter() {
+            let mut bytes: &[u8] = &hex::decode(&extrinsic.1)?;
+            let extrinsic_hash = sp_core::blake2_256(bytes);
+            log::info!(
+                "EXT {processed_extrinsic_count} HASH {}",
+                hex::encode(extrinsic_hash)
+            );
+            let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
+            let mut bytes: &[u8] = &bytes_vector;
+            let signed_version = bytes.read_byte()?;
+            let sign_mask = 0b10000000;
+            let version_mask = 0b00000100;
+            let is_signed = (signed_version & sign_mask) == sign_mask;
+            let version = signed_version & version_mask;
+            log::info!("TX VERSION {version}");
+            let signature = if is_signed {
+                let account_id = AccountId32::decode(&mut bytes)?;
+                log::info!(
+                    "SIGNER {}",
+                    account_id.to_ss58check_with_version(Ss58AddressFormat::custom(2))
+                );
+                let signer = MultiAddress::Id(account_id);
+                // let signer = MultiAddress::decode(&mut bytes)?;
+                let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
+                let era: sp_runtime::generic::Era = Decode::decode(&mut bytes)?;
+                let nonce: Compact<u32> = Decode::decode(&mut bytes)?; // u32
+                let tip: Compact<Balance> = Decode::decode(&mut bytes)?;
+                let extra: u8 = Decode::decode(&mut bytes)?;
+                let signature = Signature {
+                    signer,
+                    signature,
+                    era,
+                    nonce: nonce.0,
+                    tip: tip.0,
+                    extra,
+                };
+                log::info!("SIGNATURE {signature:?}");
+                Some(signature)
+            } else {
+                None
+            };
+            let pallet_index = u8::decode(&mut bytes)?;
+            let call_index = u8::decode(&mut bytes)?;
+            // TODO get module name, call name, parameters JSON
+            let (pallet_name, call_name) = match &metadata {
+                RuntimeMetadata::V8(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V9(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V10(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V11(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V12(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V13(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V14(metadata) => {
+                    let pallet = metadata
+                        .pallets
+                        .iter()
+                        .find(|metadata_pallet| metadata_pallet.index == pallet_index)
+                        .expect("Module not found in metadata.");
+                    let calls_type = metadata
+                        .types
+                        .types
+                        .iter()
+                        .find(|metadata_type| {
+                            metadata_type.id == pallet.calls.clone().unwrap().ty.id
+                        })
+                        .expect("Calls type not found in pallet.");
+                    let call_variant = match &calls_type.ty.type_def {
+                        scale_info::TypeDef::Variant(variant) => variant
+                            .variants
+                            .iter()
+                            .find(|variant| variant.index == call_index)
+                            .unwrap(),
+                        _ => {
+                            return Err(anyhow::Error::msg(format!(
+                                "Unexpected non-variant call type: {:?}",
+                                calls_type.ty.type_def
+                            )))
+                        }
+                    };
+                    (pallet.name.clone(), call_variant.name.clone())
                 }
-                processed_extrinsic_count += 1;
-                if processed_extrinsic_count == extrinsic_count {
-                    break;
-                }
+                RuntimeMetadata::V15(_) => ("".to_string(), "".to_string()),
+                RuntimeMetadata::V16(_) => ("".to_string(), "".to_string()),
+                _ => unimplemented!("Unsupported runtime metadata."),
+            };
+            log::info!(
+                "Extrinsic #{processed_extrinsic_count} {pallet_name}.{call_name} :: signed? {}",
+                signature.is_some(),
+            );
+
+            postgres
+                .ingest_extrinsic(
+                    &block_hash,
+                    block_header.get_number()?,
+                    block_timestamp,
+                    spec_version,
+                    true,
+                    extrinsic.0.map(|i| i as u32),
+                    pallet_index,
+                    &pallet_name,
+                    call_index,
+                    &call_name,
+                    &extrinsic_hash,
+                    processed_extrinsic_count,
+                    version,
+                    &signature,
+                    true,
+                    &mut tx,
+                )
+                .await?;
+
+            processed_extrinsic_count += 1;
+            if processed_extrinsic_count == extrinsic_count {
+                break;
             }
         }
         if processed_extrinsic_count < extrinsic_count {
@@ -333,20 +388,20 @@ impl Crystal {
         }
         postgres
             .ingest_block(
-                &hash,
-                &header,
-                timestamp,
+                &block_hash,
+                &block_header,
+                block_timestamp,
                 true,
-                last_runtime_upgrade.spec_version,
+                spec_version,
                 extrinsic_count,
                 event_count,
                 &mut tx,
             )
             .await?;
         postgres
-            .ingest_block_logs(&hash, &header, true, &mut tx)
+            .ingest_block_logs(&block_hash, &block_header, true, &mut tx)
             .await?;
-        postgres.delete_trace_error(&hash, &mut tx).await?;
+        postgres.delete_trace_error(&block_hash, &mut tx).await?;
         tx.commit().await?;
         Ok(())
     }

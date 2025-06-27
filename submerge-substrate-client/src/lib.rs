@@ -6,7 +6,7 @@ use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT}
 use jsonrpsee_core::rpc_params;
 use parity_scale_codec::Decode;
 use std::future::Future;
-use submerge_base::types::substrate::block::BlockHeader;
+use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
@@ -99,6 +99,14 @@ impl SubstrateClient {
             )
             .await?;
         Ok(trace_wrapper.block_trace)
+    }
+
+    pub async fn get_block(&self, block_hash: &str) -> anyhow::Result<Block> {
+        let block_wrapper: BlockWrapper = self
+            .ws_client
+            .request("chain_getBlock", rpc_params!(block_hash))
+            .await?;
+        Ok(block_wrapper.block)
     }
 
     async fn subscribe_to_blocks<F>(

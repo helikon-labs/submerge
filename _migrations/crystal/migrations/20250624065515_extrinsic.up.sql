@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS extrinsic
     block_hash      BYTEA NOT NULL,
     block_number    BIGINT NOT NULL,
     block_timestamp BIGINT NOT NULL,
-    runtime_version INTEGER NOT NULL,
+    spec_version    INTEGER NOT NULL,
     is_finalized    BOOLEAN NOT NULL,
-    trace_index     INTEGER NOT NULL,
+    trace_index     INTEGER,
     pallet_index    INTEGER NOT NULL,
     pallet_name     VARCHAR(128) NOT NULL,
     call_index      INTEGER NOT NULL,
@@ -36,7 +36,18 @@ CREATE INDEX extrinsic_idx_pallet_name ON extrinsic (pallet_name);
 CREATE INDEX extrinsic_idx_call_name ON extrinsic (call_name);
 CREATE INDEX extrinsic_idx_pallet_name_call_name ON extrinsic (pallet_name, call_name);
 
-CREATE INDEX extrinsic_idx_signer ON extrinsic (signer) WHERE signer IS NOT NULL;
+CREATE INDEX extrinsic_idx_signer ON extrinsic (signer);
+CREATE INDEX extrinsic_idx_signer_null ON extrinsic (signer) WHERE signer IS NULL;
+
+CREATE INDEX extrinsic_idx_filter_order
+ON extrinsic (
+    block_number DESC,
+    block_timestamp,
+    spec_version,
+    pallet_name,
+    call_name,
+    signer
+);
 
 CREATE TABLE extrinsic_0_1000000 PARTITION OF extrinsic FOR VALUES FROM (0) TO (1000000);
 CREATE TABLE extrinsic_1000000_2000000 PARTITION OF extrinsic FOR VALUES FROM (1000000) TO (2000000);

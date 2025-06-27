@@ -33,3 +33,14 @@ impl BlockHeader {
         Ok(logs)
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BlockWrapper {
+    pub block: Block,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Block {
+    pub header: BlockHeader,
+    pub extrinsics: Vec<String>,
+}

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS event
     block_hash      BYTEA NOT NULL,
     block_number    BIGINT NOT NULL,
     block_timestamp BIGINT NOT NULL,
-    runtime_version INTEGER NOT NULL,
+    spec_version    INTEGER NOT NULL,
     is_finalized    BOOLEAN NOT NULL,
     trace_index     INTEGER NOT NULL,
     pallet_index    INTEGER NOT NULL,
@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS event
     event_index     INTEGER NOT NULL,
     event_name      VARCHAR(128) NOT NULL,
     extrinsic_index INTEGER,
+    phase           VARCHAR(32) NOT NULL,
     index           INTEGER NOT NULL,
     params          JSONB,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
@@ -27,6 +28,9 @@ CREATE INDEX event_idx_timestamp ON event (block_timestamp);
 CREATE INDEX event_idx_pallet_name ON event (pallet_name);
 CREATE INDEX event_idx_event_name ON event (event_name);
 CREATE INDEX event_idx_pallet_name_event_name ON event (pallet_name, event_name);
+
+CREATE INDEX event_idx_filter_order
+ON event (block_number DESC, block_timestamp, spec_version, pallet_name, event_name);
 
 CREATE TABLE event_0_1000000 PARTITION OF event FOR VALUES FROM (0) TO (1000000);
 CREATE TABLE event_1000000_2000000 PARTITION OF event FOR VALUES FROM (1000000) TO (2000000);

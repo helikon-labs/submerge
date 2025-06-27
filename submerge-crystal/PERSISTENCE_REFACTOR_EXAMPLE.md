@@ -91,7 +91,7 @@ async fn ingest_block(
     header: &BlockHeader,
     timestamp: u64,
     is_finalized: bool,
-    runtime_version: u32,
+    spec_version: u32,
     extrinsic_count: u32,
     event_count: u32,
     tx: &mut Transaction<'_, Postgres>,
@@ -101,7 +101,7 @@ async fn ingest_block(
     let extrinsic_root = hex::decode(&header.extrinsics_root)?;
     sqlx::query(
         r#"
-            INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, runtime_version, is_finalized, extrinsic_count, event_count)
+            INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, is_finalized, extrinsic_count, event_count)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             ON CONFLICT (hash) DO NOTHING
             "#,
@@ -112,7 +112,7 @@ async fn ingest_block(
         .bind(&extrinsic_root)
         .bind(header.get_number()? as i64)
         .bind(timestamp as i64)
-        .bind(runtime_version as i32)
+        .bind(spec_version as i32)
         .bind(is_finalized)
         .bind(extrinsic_count as i32)
         .bind(event_count as i32)
@@ -130,7 +130,7 @@ async fn ingest_block(
     header: &BlockHeader,
     timestamp: u64,
     is_finalized: bool,
-    runtime_version: u32,
+    spec_version: u32,
     extrinsic_count: u32,
     event_count: u32,
     tx: &mut Transaction<'_, Postgres>,
@@ -143,7 +143,7 @@ async fn ingest_block(
         extrinsic_root: decoded_header.extrinsic_root,
         number: decoded_header.number as i64,
         timestamp: timestamp as i64,
-        runtime_version: runtime_version as i32,
+        spec_version: spec_version as i32,
         is_finalized,
         extrinsic_count: extrinsic_count as i32,
         event_count: event_count as i32,
@@ -160,7 +160,7 @@ async fn ingest_block(
 // Hand-written SQL in every method
 sqlx::query(
     r#"
-    INSERT INTO trace (block_hash, block_parent_hash, block_number, runtime_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
+    INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, is_finalized, trace_index, key, value, ext_id, method, parent_id)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     ON CONFLICT (block_hash, block_number, trace_index) DO NOTHING
     "#,
@@ -225,7 +225,7 @@ async fn ingest_block_trace_batch(
     hash: &[u8],
     header: &BlockHeader,
     is_finalized: bool,
-    runtime_version: u32,
+    spec_version: u32,
     trace: &SubstrateBlockTrace,
     tx: &mut Transaction<'_, Postgres>,
 ) -> anyhow::Result<()> {
@@ -238,7 +238,7 @@ async fn ingest_block_trace_batch(
             block_hash: hash.to_vec(),
             block_parent_hash: decoded_header.parent_hash.clone(),
             block_number: decoded_header.number as i64,
-            runtime_version: runtime_version as i32,
+            spec_version: spec_version as i32,
             is_finalized,
             trace_index: trace_index as i32,
             key: event.data_wrapper.data.key.clone(),
@@ -276,7 +276,7 @@ impl Repository<BlockRecord> for BlockRepository {
     async fn upsert(&self, tx: &mut Transaction<'_, Postgres>, block: &BlockRecord) -> anyhow::Result<()> {
         let query = SqlQueryBuilder::build_upsert_query(
             "block",
-            &["hash", "parent_hash", "state_root", "extrinsic_root", "number", "timestamp", "runtime_version", "is_finalized", "extrinsic_count", "event_count"],
+            &["hash", "parent_hash", "state_root", "extrinsic_root", "number", "timestamp", "spec_version", "is_finalized", "extrinsic_count", "event_count"],
             &["hash"],
             ConflictAction::DoNothing,
         );
@@ -288,7 +288,7 @@ impl Repository<BlockRecord> for BlockRepository {
             .bind(&block.extrinsic_root)
             .bind(block.number)
             .bind(block.timestamp)
-            .bind(block.runtime_version)
+            .bind(block.spec_version)
             .bind(block.is_finalized)
             .bind(block.extrinsic_count)
             .bind(block.event_count)
@@ -311,14 +311,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         is_finalized: bool,
-        runtime_version: u32,
+        spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let block_record = BlockRecord::from_components(
             hash, header, timestamp, is_finalized, 
-            runtime_version, extrinsic_count, event_count
+            spec_version, extrinsic_count, event_count
         )?;
         
         self.block_repository.upsert(tx, &block_record).await
@@ -329,12 +329,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         hash: &[u8],
         header: &BlockHeader,
         is_finalized: bool,
-        runtime_version: u32,
+        spec_version: u32,
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let trace_records = TraceRecord::from_block_trace(
-            hash, header, is_finalized, runtime_version, trace
+            hash, header, is_finalized, spec_version, trace
         )?;
         
         self.trace_repository.batch_insert(tx, &trace_records).await

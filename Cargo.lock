@@ -5367,6 +5367,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
+ "sp-core",
  "sp-runtime",
  "sqlx",
  "submerge-base",

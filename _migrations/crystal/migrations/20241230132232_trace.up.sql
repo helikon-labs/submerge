@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS trace
     block_hash          BYTEA NOT NULL,
     block_parent_hash   BYTEA NOT NULL,
     block_number        BIGINT NOT NULL,
-    runtime_version     INT NOT NULL,
+    spec_version        INT NOT NULL,
     is_finalized        BOOLEAN NOT NULL,
     index               INT NOT NULL,
     key                 TEXT NOT NULL,
