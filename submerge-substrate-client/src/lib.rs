@@ -207,12 +207,19 @@ impl SubstrateClient {
         Ok(upgrade_info)
     }
 
-    pub async fn get_metadata_at_block(&self, block_hash: &str) -> anyhow::Result<RuntimeMetadata> {
+    pub async fn get_metadata_hex_string_at_block(
+        &self,
+        block_hash: &str,
+    ) -> anyhow::Result<String> {
         let metadata_hex_string: String = self
             .ws_client
             .request("state_getMetadata", rpc_params!(block_hash))
             .await?;
-        let metadata_hex_string = metadata_hex_string.trim_start_matches("0x");
+        Ok(metadata_hex_string.trim_start_matches("0x").to_string())
+    }
+
+    pub async fn get_metadata_at_block(&self, block_hash: &str) -> anyhow::Result<RuntimeMetadata> {
+        let metadata_hex_string = self.get_metadata_hex_string_at_block(block_hash).await?;
         let mut metadata_hex_decoded: &[u8] = &hex::decode(metadata_hex_string)?;
         let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_hex_decoded)?;
         Ok(metadata_prefixed.1)
