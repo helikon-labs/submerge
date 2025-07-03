@@ -13,9 +13,18 @@ use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 pub(crate) trait CrystalPostgreSQLStorage {
+    async fn get_metadata(&self, spec_version: u32) -> anyhow::Result<Option<Vec<u8>>>;
+    async fn ingest_metadata(
+        &self,
+        spec_version: u32,
+        version: u32,
+        metadata_bytes: &[u8],
+    ) -> anyhow::Result<()>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
     async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64>;
+    #[cfg(test)]
+    async fn get_trace_error_count(&self) -> anyhow::Result<u32>;
     async fn save_trace_error(
         &self,
         block_hash: &[u8],
@@ -27,8 +36,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    #[cfg(test)]
-    async fn get_trace_error_count(&self) -> anyhow::Result<u32>;
     #[allow(clippy::too_many_arguments)]
     async fn ingest_block(
         &self,
@@ -41,6 +48,15 @@ pub(crate) trait CrystalPostgreSQLStorage {
         event_count: u32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    async fn get_block_traces_by_number(
+        &self,
+        block_number: u64,
+    ) -> anyhow::Result<Vec<BlockTraces>>;
+    async fn get_block_traces_by_hash(
+        &self,
+        block_hash: &[u8],
+    ) -> anyhow::Result<Option<BlockTraces>>;
+    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool>;
     async fn ingest_block_trace(
         &self,
         hash: &[u8],
@@ -57,15 +73,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         is_finalized: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    async fn get_block_traces_by_number(
-        &self,
-        block_number: u64,
-    ) -> anyhow::Result<Vec<BlockTraces>>;
-    async fn get_block_traces_by_hash(
-        &self,
-        block_hash: &[u8],
-    ) -> anyhow::Result<Option<BlockTraces>>;
-    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool>;
     #[allow(clippy::too_many_arguments)]
     async fn ingest_extrinsic(
         &self,
@@ -120,6 +127,48 @@ pub(crate) trait CrystalPostgreSQLStorage {
 }
 
 impl CrystalPostgreSQLStorage for PostgreSQLStorage {
+    async fn get_metadata(&self, spec_version: u32) -> anyhow::Result<Option<Vec<u8>>> {
+        let metadata: Option<(Vec<u8>,)> =
+            sqlx::query_as("SELECT metadata FROM metadata WHERE spec_version = $1")
+                .bind(spec_version as i32)
+                .fetch_optional(&self.connection_pool)
+                .await?;
+        Ok(metadata.map(|m| m.0))
+    }
+
+    async fn ingest_metadata(
+        &self,
+        spec_version: u32,
+        version: u32,
+        metadata_bytes: &[u8],
+    ) -> anyhow::Result<()> {
+        let record_count: (i64,) = sqlx::query_as(
+            r#"
+            SELECT COUNT(DISTINCT spec_version)
+            FROM metadata
+            WHERE spec_version = $1
+            "#,
+        )
+        .bind(spec_version as i32)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        if record_count.0 > 0 {
+            return Ok(());
+        }
+        sqlx::query(
+            r#"
+            INSERT INTO metadata (spec_version, version, metadata)
+            VALUES ($1, $2, $3)
+            "#,
+        )
+        .bind(spec_version as i32)
+        .bind(version as i32)
+        .bind(metadata_bytes)
+        .execute(&self.connection_pool)
+        .await?;
+        Ok(())
+    }
+
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {
         let record_count: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT key) FROM genesis")
             .fetch_one(&self.connection_pool)
@@ -160,6 +209,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         })
     }
 
+    #[cfg(test)]
+    async fn get_trace_error_count(&self) -> anyhow::Result<u32> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT block_number) FROM trace_error")
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(row.0 as u32)
+    }
+
     async fn save_trace_error(
         &self,
         block_hash: &[u8],
@@ -192,14 +249,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .execute(&mut **tx)
             .await?;
         Ok(())
-    }
-
-    #[cfg(test)]
-    async fn get_trace_error_count(&self) -> anyhow::Result<u32> {
-        let row: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT block_number) FROM trace_error")
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(row.0 as u32)
     }
 
     async fn ingest_block(
@@ -236,6 +285,75 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .execute(&mut **tx)
             .await?;
         Ok(())
+    }
+
+    async fn get_block_traces_by_number(
+        &self,
+        block_number: u64,
+    ) -> anyhow::Result<Vec<BlockTraces>> {
+        let block_hash_rows: Vec<(Vec<u8>,)> =
+            sqlx::query_as("SELECT DISTINCT block_hash FROM trace WHERE block_number = $1")
+                .bind(block_number as i64)
+                .fetch_all(&self.connection_pool)
+                .await?;
+        let mut result = vec![];
+        for block_hash_row in block_hash_rows.iter() {
+            if let Some(block_traces) = self.get_block_traces_by_hash(&block_hash_row.0).await? {
+                result.push(block_traces);
+            }
+        }
+        Ok(result)
+    }
+
+    async fn get_block_traces_by_hash(
+        &self,
+        block_hash: &[u8],
+    ) -> anyhow::Result<Option<BlockTraces>> {
+        #[allow(clippy::type_complexity)]
+        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, spec_version, is_finalized, index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY index ASC")
+            .bind(block_hash)
+            .fetch_all(&self.connection_pool)
+            .await?;
+
+        if let Some(first_row) = rows.first() {
+            let block_hash_hex = format!("0x{}", hex::encode(block_hash));
+            let block_parent_hash_hex = format!("0x{}", hex::encode(&first_row.0));
+            let mut block_traces = BlockTraces {
+                block_hash: block_hash_hex,
+                block_parent_hash: block_parent_hash_hex,
+                block_number: first_row.1 as u64,
+                spec_version: first_row.2 as u32,
+                is_finalized: first_row.3,
+                traces: vec![],
+            };
+            for row in rows.iter() {
+                block_traces.traces.push(SubmergeBlockTrace {
+                    index: row.4 as u32,
+                    key: row.5.clone(),
+                    value: row.6.clone(),
+                    ext_id: row.7.clone(),
+                    method: StorageMethod::from_str(&row.8)?,
+                    parent_id: row.9.clone(),
+                })
+            }
+            Ok(Some(block_traces))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool> {
+        let record_count: (i64,) = sqlx::query_as(
+            r#"
+            SELECT COUNT(DISTINCT index)
+            FROM trace
+            WHERE block_hash = $1
+            "#,
+        )
+        .bind(block_hash)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(record_count.0 > 0)
     }
 
     async fn ingest_block_trace(
@@ -315,75 +433,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .await?;
         }
         Ok(())
-    }
-
-    async fn get_block_traces_by_number(
-        &self,
-        block_number: u64,
-    ) -> anyhow::Result<Vec<BlockTraces>> {
-        let block_hash_rows: Vec<(Vec<u8>,)> =
-            sqlx::query_as("SELECT DISTINCT block_hash FROM trace WHERE block_number = $1")
-                .bind(block_number as i64)
-                .fetch_all(&self.connection_pool)
-                .await?;
-        let mut result = vec![];
-        for block_hash_row in block_hash_rows.iter() {
-            if let Some(block_traces) = self.get_block_traces_by_hash(&block_hash_row.0).await? {
-                result.push(block_traces);
-            }
-        }
-        Ok(result)
-    }
-
-    async fn get_block_traces_by_hash(
-        &self,
-        block_hash: &[u8],
-    ) -> anyhow::Result<Option<BlockTraces>> {
-        #[allow(clippy::type_complexity)]
-        let rows: Vec<(Vec<u8>, i64, i32, bool, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, spec_version, is_finalized, index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY index ASC")
-            .bind(block_hash)
-            .fetch_all(&self.connection_pool)
-            .await?;
-
-        if let Some(first_row) = rows.first() {
-            let block_hash_hex = format!("0x{}", hex::encode(block_hash));
-            let block_parent_hash_hex = format!("0x{}", hex::encode(&first_row.0));
-            let mut block_traces = BlockTraces {
-                block_hash: block_hash_hex,
-                block_parent_hash: block_parent_hash_hex,
-                block_number: first_row.1 as u64,
-                spec_version: first_row.2 as u32,
-                is_finalized: first_row.3,
-                traces: vec![],
-            };
-            for row in rows.iter() {
-                block_traces.traces.push(SubmergeBlockTrace {
-                    index: row.4 as u32,
-                    key: row.5.clone(),
-                    value: row.6.clone(),
-                    ext_id: row.7.clone(),
-                    method: StorageMethod::from_str(&row.8)?,
-                    parent_id: row.9.clone(),
-                })
-            }
-            Ok(Some(block_traces))
-        } else {
-            Ok(None)
-        }
-    }
-
-    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool> {
-        let record_count: (i64,) = sqlx::query_as(
-            r#"
-            SELECT COUNT(DISTINCT index)
-            FROM trace
-            WHERE block_hash = $1
-            "#,
-        )
-        .bind(block_hash)
-        .fetch_one(&self.connection_pool)
-        .await?;
-        Ok(record_count.0 > 0)
     }
 
     async fn ingest_extrinsic(

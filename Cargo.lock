@@ -5381,6 +5381,7 @@ dependencies = [
  "log",
  "once_cell",
  "parity-scale-codec",
+ "reqwest",
  "rustc-hash",
  "scale-bits",
  "scale-info",

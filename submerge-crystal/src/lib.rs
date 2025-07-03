@@ -1,11 +1,12 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
+use crate::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use async_trait::async_trait;
 use frame_metadata::v14::RuntimeMetadataV14;
 use frame_metadata::v16::StorageHasher;
-use frame_metadata::RuntimeMetadata;
+use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use parity_scale_codec::{Compact, Decode, Encode, Input};
@@ -27,6 +28,7 @@ use submerge_util::substrate::storage::{self, get_storage_plain_key};
 mod api;
 pub mod args;
 mod bits;
+mod legacy;
 mod metrics;
 mod persistence;
 
@@ -408,10 +410,7 @@ fn decode_value(
                     json_buffer,
                 )?;
             } else {
-                json_buffer.push(format!("{{\"type\": \"{}\", \"value\": ", variant.name));
-                if variant.fields.len() > 1 {
-                    json_buffer.push("[".to_string());
-                }
+                json_buffer.push(format!("{{\"type\": \"{}\", \"value\": [", variant.name));
                 for (i, field) in variant.fields.iter().enumerate() {
                     let field_type = get_metadata_type(metadata, field.ty.id);
                     decode_value(
@@ -426,10 +425,7 @@ fn decode_value(
                         json_buffer.push(", ".to_string());
                     }
                 }
-                if variant.fields.len() > 1 {
-                    json_buffer.push("]".to_string());
-                }
-                json_buffer.push("}".to_string());
+                json_buffer.push("]}".to_string());
             }
         }
         scale_info::TypeDef::Sequence(sequence_type_def) => {
@@ -482,6 +478,21 @@ fn decode_value(
     Ok(())
 }
 
+fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
+    match &metadata {
+        RuntimeMetadata::V8(_) => 8,
+        RuntimeMetadata::V9(_) => 9,
+        RuntimeMetadata::V10(_) => 10,
+        RuntimeMetadata::V11(_) => 11,
+        RuntimeMetadata::V12(_) => 12,
+        RuntimeMetadata::V13(_) => 13,
+        RuntimeMetadata::V14(_) => 14,
+        RuntimeMetadata::V15(_) => 15,
+        RuntimeMetadata::V16(_) => 16,
+        _ => unimplemented!("Unsupported metadata version."),
+    }
+}
+
 pub struct Crystal {
     args: Args,
     _metadata_cache: HashMap<u32, RuntimeMetadata>,
@@ -499,23 +510,44 @@ impl Crystal {
     async fn ingest_block(
         postgres: &PostgreSQLStorage,
         substrate_client: &SubstrateClient,
-        hash_hex: &str,
-        number: u64,
+        block_hash_hex: &str,
+        block_number: u64,
     ) -> anyhow::Result<()> {
-        let block_hash = hex::decode(hash_hex)?;
+        let legace_decode_api_client = LegacyDecodeAPIClient::new()?;
+        let block_hash = hex::decode(block_hash_hex)?;
         if postgres.block_trace_exists(&block_hash).await? {
-            log::info!("🔁 Block {number} had already been ingested.");
+            log::info!("🔁 Block {block_number} had already been ingested.");
             return Ok(());
         }
-        let block_header = substrate_client.get_block_header(hash_hex).await?;
-        let block_timestamp = substrate_client.get_block_timestamp(hash_hex).await?;
+        let block_header = substrate_client.get_block_header(block_hash_hex).await?;
+        let block_timestamp = substrate_client.get_block_timestamp(block_hash_hex).await?;
         let spec_version = substrate_client
-            .get_last_runtime_upgrade_info(hash_hex)
+            .get_last_runtime_upgrade_info(block_hash_hex)
             .await?
             .spec_version;
-        let metadata = substrate_client.get_metadata_at_block(hash_hex).await?;
+        let metadata = if let Some(db_metadata) = postgres.get_metadata(spec_version).await? {
+            let mut metadata_bytes: &[u8] = &db_metadata;
+            let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
+            metadata_prefixed.1
+        } else {
+            let metadata_hex_string = substrate_client
+                .get_metadata_hex_string_at_block(block_hash_hex)
+                .await?;
+            let mut metadata_bytes: &[u8] = &hex::decode(metadata_hex_string)?;
+            let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
+            postgres
+                .ingest_metadata(
+                    spec_version,
+                    get_metadata_version(&metadata_prefixed.1),
+                    &metadata_prefixed.encode(),
+                )
+                .await?;
+            metadata_prefixed.1
+        };
+        let metadata_version = get_metadata_version(&metadata);
+
+        let trace = substrate_client.get_block_trace(block_hash_hex).await?;
         let mut tx = postgres.connection_pool.begin().await?;
-        let trace = substrate_client.get_block_trace(hash_hex).await?;
         postgres
             .ingest_block_trace(
                 &block_hash,
@@ -574,6 +606,15 @@ impl Crystal {
                     _ => value.to_string(),
                 };
                 let mut bytes: &[u8] = &hex::decode(&value)?;
+                if metadata_version < 14 {
+                    log::info!("Legacy event.");
+                    let response = legace_decode_api_client
+                        .decode_event(&block_hash, spec_version, bytes)
+                        .await?;
+                    log::info!("Legacy event decoded: {response}");
+                    processed_event_count += 1;
+                    continue;
+                }
                 let phase = frame_system::Phase::decode(&mut bytes)?;
                 let (phase, extrinsic_index) = match phase {
                     frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
@@ -585,14 +626,7 @@ impl Crystal {
                 let pallet_index: u8 = Decode::decode(&mut bytes)?;
                 let event_index: u8 = Decode::decode(&mut bytes)?;
                 log::info!("Pallet[{pallet_index}] Event[{event_index}]");
-                // TODO get module name, call name, parameters JSON
                 let (pallet_name, event_name) = match &metadata {
-                    RuntimeMetadata::V8(_) => ("".to_string(), "".to_string()),
-                    RuntimeMetadata::V9(_) => ("".to_string(), "".to_string()),
-                    RuntimeMetadata::V10(_) => ("".to_string(), "".to_string()),
-                    RuntimeMetadata::V11(_) => ("".to_string(), "".to_string()),
-                    RuntimeMetadata::V12(_) => ("".to_string(), "".to_string()),
-                    RuntimeMetadata::V13(_) => ("".to_string(), "".to_string()),
                     RuntimeMetadata::V14(metadata) => {
                         let pallet = metadata
                             .pallets
@@ -654,8 +688,6 @@ impl Crystal {
 
                         (pallet.name.clone(), event_variant.name.clone())
                     }
-                    RuntimeMetadata::V15(_) => ("".to_string(), "".to_string()),
-                    RuntimeMetadata::V16(_) => ("".to_string(), "".to_string()),
                     _ => unimplemented!("Unsupported runtime metadata."),
                 };
                 log::info!("Event #{processed_event_count} {pallet_name}.{event_name}");
@@ -718,7 +750,7 @@ impl Crystal {
         }
         if extrinsics.is_empty() {
             // fall back on RPC
-            let block = substrate_client.get_block(hash_hex).await?;
+            let block = substrate_client.get_block(block_hash_hex).await?;
             block
                 .extrinsics
                 .iter()
@@ -728,12 +760,22 @@ impl Crystal {
         // index extrinsics
         let mut processed_extrinsic_count = 0;
         for extrinsic in extrinsics.iter() {
+            log::info!("EXT {processed_extrinsic_count} HEX :: {}", extrinsic.1);
             let mut bytes: &[u8] = &hex::decode(&extrinsic.1)?;
             let extrinsic_hash = sp_core::blake2_256(bytes);
             log::info!(
                 "EXT {processed_extrinsic_count} HASH {}",
                 hex::encode(extrinsic_hash)
             );
+            if metadata_version < 14 {
+                log::info!("Legacy extrinsic.");
+                let response = legace_decode_api_client
+                    .decode_extrinsic(&block_hash, spec_version, bytes)
+                    .await?;
+                log::info!("Legacy decoded: {response}");
+                processed_extrinsic_count += 1;
+                continue;
+            }
             let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
             let mut bytes: &[u8] = &bytes_vector;
             let signed_version = bytes.read_byte()?;
@@ -772,12 +814,6 @@ impl Crystal {
             let call_index = u8::decode(&mut bytes)?;
             // TODO get module name, call name, parameters JSON
             let (pallet_name, call_name) = match &metadata {
-                RuntimeMetadata::V8(_) => ("".to_string(), "".to_string()),
-                RuntimeMetadata::V9(_) => ("".to_string(), "".to_string()),
-                RuntimeMetadata::V10(_) => ("".to_string(), "".to_string()),
-                RuntimeMetadata::V11(_) => ("".to_string(), "".to_string()),
-                RuntimeMetadata::V12(_) => ("".to_string(), "".to_string()),
-                RuntimeMetadata::V13(_) => ("".to_string(), "".to_string()),
                 RuntimeMetadata::V14(metadata) => {
                     let pallet = metadata
                         .pallets
@@ -840,8 +876,6 @@ impl Crystal {
 
                     (pallet.name.clone(), call_variant.name.clone())
                 }
-                RuntimeMetadata::V15(_) => ("".to_string(), "".to_string()),
-                RuntimeMetadata::V16(_) => ("".to_string(), "".to_string()),
                 _ => unimplemented!("Unsupported runtime metadata."),
             };
             log::info!(
