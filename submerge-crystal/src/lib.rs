@@ -157,30 +157,36 @@ fn decode_compact_primitive(
         scale_info::TypeDefPrimitive::Char => {
             let value: Compact<u8> = Decode::decode(bytes)?;
             let character = value.0 as char;
-            json_buffer.push(character.to_string());
+            let json_string = serde_json::to_string(&character)?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U8 => {
             let value: Compact<u8> = Decode::decode(bytes)?;
-            json_buffer.push(value.0.to_string());
+            let json_string = serde_json::to_string(&value.0.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::Str => {
             return Err(anyhow::Error::msg("No compact for Str.".to_string()));
         }
         scale_info::TypeDefPrimitive::U16 => {
             let value: Compact<u16> = Decode::decode(bytes)?;
-            json_buffer.push(value.0.to_string());
+            let json_string = serde_json::to_string(&value.0.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U32 => {
             let value: Compact<u32> = Decode::decode(bytes)?;
-            json_buffer.push(value.0.to_string());
+            let json_string = serde_json::to_string(&value.0.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U64 => {
             let value: Compact<u64> = Decode::decode(bytes)?;
-            json_buffer.push(value.0.to_string());
+            let json_string = serde_json::to_string(&value.0.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U128 => {
             let value: Compact<u128> = Decode::decode(bytes)?;
-            json_buffer.push(value.0.to_string());
+            let json_string = serde_json::to_string(&value.0.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U256 => {
             return Err(anyhow::Error::msg("No compact for U256."));
@@ -215,65 +221,80 @@ fn decode_primitive(
     match type_def {
         scale_info::TypeDefPrimitive::Bool => {
             let value: bool = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value)?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::Str => {
             let value: String = Decode::decode(bytes)?;
-            json_buffer.push(value);
+            let json_string = serde_json::to_string(&value)?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::Char => {
             let value: u8 = Decode::decode(bytes)?;
             let character = value as char;
-            json_buffer.push(character.to_string());
+            let json_string = serde_json::to_string(&character)?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U8 => {
             let value: u8 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U16 => {
             let value: u16 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U32 => {
             let value: u32 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U64 => {
             let value: u64 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U128 => {
             let value: u128 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::U256 => {
             let value: sp_core::U256 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::I8 => {
             let value: i8 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::I16 => {
             let value: i16 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::I32 => {
             let value: i32 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::I64 => {
             let value: i64 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::I128 => {
             let value: i128 = Decode::decode(bytes)?;
-            json_buffer.push(value.to_string());
+            let json_string = serde_json::to_string(&value.to_string())?;
+            json_buffer.push(json_string);
         }
         scale_info::TypeDefPrimitive::I256 => {
             let value: [u8; 32] = Decode::decode(bytes)?;
             let hex = hex::encode(value);
-            json_buffer.push(format!("\"{hex}\""));
+            let json_string = serde_json::to_string(&hex)?;
+            json_buffer.push(json_string);
         }
     }
     Ok(())
