@@ -5,11 +5,12 @@ import { StatusCodes } from 'http-status-codes';
 import { GenericExtrinsic } from '@polkadot/types';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Registry } from '@polkadot/types/types';
+import { LRUCache } from 'lru-cache';
 
 class API {
     private readonly app: Application;
     private api!: ApiPromise;
-    private registryCache: Map<number, Registry>;
+    private registryCache: LRUCache<number, Registry>;
 
     constructor() {
         this.app = express();
@@ -18,7 +19,9 @@ class API {
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cors());
         this.app.use(helmet());
-        this.registryCache = new Map<number, Registry>();
+        this.registryCache = new LRUCache<number, Registry>({
+            max: 10,
+        });
     }
 
     async setup() {
@@ -45,7 +48,7 @@ class API {
     private async getRegistry(blockHash: string, specVersion: number): Promise<Registry> {
         if (!this.registryCache.has(specVersion)) {
             console.log(specVersion, 'create');
-            let api = await this.api.at(blockHash);
+            const api = await this.api.at(blockHash);
             this.registryCache.set(specVersion, api.registry);
         }
         return this.registryCache.get(specVersion)!;
@@ -75,7 +78,7 @@ class API {
             return response.status(StatusCodes.OK).json(event.toHuman());
         } catch (error) {
             return response.status(StatusCodes.BAD_REQUEST).json({
-                error: `${error}`
+                error: `${error}`,
             });
         }
     }
@@ -103,7 +106,7 @@ class API {
             return response.status(StatusCodes.OK).json(extrinsic.toHuman());
         } catch (error) {
             return response.status(StatusCodes.BAD_REQUEST).json({
-                error: `${error}`
+                error: `${error}`,
             });
         }
     }

@@ -11,11 +11,10 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use parity_scale_codec::{Compact, Decode, Encode, Input};
 use rustc_hash::FxHashMap as HashMap;
-use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
-use sp_runtime::AccountId32;
 use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block_trace::StorageMethod;
 use submerge_base::types::substrate::chainspec::Chainspec;
@@ -24,6 +23,7 @@ use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
 use submerge_util::substrate::storage::{self, get_storage_plain_key};
+use tokio::time::sleep;
 
 mod api;
 pub mod args;
@@ -513,18 +513,35 @@ impl Crystal {
         block_hash_hex: &str,
         block_number: u64,
     ) -> anyhow::Result<()> {
-        let legace_decode_api_client = LegacyDecodeAPIClient::new()?;
         let block_hash = hex::decode(block_hash_hex)?;
         if postgres.block_trace_exists(&block_hash).await? {
             log::info!("🔁 Block {block_number} had already been ingested.");
             return Ok(());
         }
         let block_header = substrate_client.get_block_header(block_hash_hex).await?;
-        let block_timestamp = substrate_client.get_block_timestamp(block_hash_hex).await?;
         let spec_version = substrate_client
             .get_last_runtime_upgrade_info(block_hash_hex)
             .await?
             .spec_version;
+        if block_number == 0 {
+            let mut tx = postgres.connection_pool.begin().await?;
+            postgres
+                .ingest_block(
+                    &block_hash,
+                    &block_header,
+                    0,
+                    true,
+                    spec_version,
+                    0,
+                    0,
+                    &mut tx,
+                )
+                .await?;
+            tx.commit().await?;
+            return Ok(());
+        }
+        let legace_decode_api_client = LegacyDecodeAPIClient::new()?;
+        let block_timestamp = substrate_client.get_block_timestamp(block_hash_hex).await?;
         let metadata = if let Some(db_metadata) = postgres.get_metadata(spec_version).await? {
             let mut metadata_bytes: &[u8] = &db_metadata;
             let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
@@ -760,7 +777,7 @@ impl Crystal {
         // index extrinsics
         let mut processed_extrinsic_count = 0;
         for extrinsic in extrinsics.iter() {
-            log::info!("EXT {processed_extrinsic_count} HEX :: {}", extrinsic.1);
+            // log::info!("EXT {processed_extrinsic_count} HEX :: {}", extrinsic.1);
             let mut bytes: &[u8] = &hex::decode(&extrinsic.1)?;
             let extrinsic_hash = sp_core::blake2_256(bytes);
             log::info!(
@@ -785,12 +802,8 @@ impl Crystal {
             let version = signed_version & version_mask;
             log::info!("TX VERSION {version}");
             let signature = if is_signed {
-                let account_id = AccountId32::decode(&mut bytes)?;
-                log::info!(
-                    "SIGNER {}",
-                    account_id.to_ss58check_with_version(Ss58AddressFormat::custom(2))
-                );
-                let signer = MultiAddress::Id(account_id);
+                let signer = MultiAddress::decode(&mut bytes)?;
+                log::info!("SIGNER {signer:?}");
                 // let signer = MultiAddress::decode(&mut bytes)?;
                 let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
                 let era: sp_runtime::generic::Era = Decode::decode(&mut bytes)?;
@@ -1015,7 +1028,7 @@ impl BaseService for Crystal {
                 let postgres = get_postgres(&self.args.postgres).await?;
                 postgres.ingest_genesis(&chainspec).await?;
                 let substrate_client = get_substrate(&self.args.rpc).await?;
-                let start_block = self.args.start_block.unwrap_or(1);
+                let start_block = self.args.start_block.unwrap_or(0);
                 let next_block = if self.args.scan {
                     start_block
                 } else {
@@ -1057,10 +1070,10 @@ impl BaseService for Crystal {
                                 IS_BUSY.store(true, Ordering::SeqCst);
 
                                 let start_block = if self.args.scan {
-                                    self.args.start_block.unwrap_or(1)
+                                    self.args.start_block.unwrap_or(0)
                                 } else {
                                     postgres
-                                        .get_next_block_number(self.args.start_block.unwrap_or(1), finalized_block_number)
+                                        .get_next_block_number(self.args.start_block.unwrap_or(0), finalized_block_number)
                                         .await?
                                 };
                                 if start_block <= finalized_block_number {
@@ -1090,7 +1103,7 @@ impl BaseService for Crystal {
                     .await;
                 let delay_seconds = self.args.service.recovery_sleep_seconds;
                 log::error!("New block subscription exited. Will refresh connection and subscription after {delay_seconds} seconds.");
-                tokio::time::sleep(std::time::Duration::from_secs(delay_seconds)).await;
+                sleep(Duration::from_secs(delay_seconds)).await;
             },
         }
     }

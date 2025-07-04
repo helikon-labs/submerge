@@ -1,7 +1,7 @@
 {
-    "name": "submerge-crystal-prev14",
+    "name": "submerge-crystal-legacy-decoder",
     "version": "0.1.0",
-    "description": "Submerge Crystal pre-Metadata-V14 decoder service.",
+    "description": "Submerge Crystal pre-metadata-V14 decoder service.",
     "main": "index.js",
     "scripts": {
         "format:check": "prettier . --check",
@@ -9,9 +9,9 @@
         "lint": "eslint ./",
         "build": "rimraf dist && tsc",
         "predev": "npm run build",
-        "dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
+        "dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon -q dist/app.js\"",
         "prestart": "npm run build",
-        "start": "cross-env NODE_ENV=production node dist/index.js",
+        "start": "cross-env NODE_ENV=production node dist/app.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
@@ -28,7 +28,7 @@
     "dependencies": {},
     "devDependencies": {
         "@polkadot/api": "^16.3.1",
-        "@polkadot/types": "^16.3.1",
+        "@polkadot/types": "./lib/polkadot-types-16.3.1.tgz",
         "@typescript-eslint/eslint-plugin": "^8.35.1",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.3",
@@ -39,6 +39,7 @@
         "express": "^5.1.0",
         "helmet": "^8.1.0",
         "http-status-codes": "^2.3.0",
+        "lru-cache": "^11.1",
         "nodemon": "3.1.4",
         "prettier": "^3.6.2",
         "rimraf": "^6.0.1",
