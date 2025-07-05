@@ -15,7 +15,7 @@ class API {
     constructor() {
         this.app = express();
         this.app.set('trust proxy', true);
-        this.app.use(express.json());
+        this.app.use(express.json({limit: '100mb'}));
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cors());
         this.app.use(helmet());

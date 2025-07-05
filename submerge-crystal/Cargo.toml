@@ -22,7 +22,8 @@ once_cell = { workspace = true }
 parity-scale-codec = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
-scale-bits = "0.7"
+scale-bits = { workspace = true }
+scale-decode = { workspace = true }
 serde_json = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }

@@ -141,7 +141,7 @@ fn decode_bit_sequence(
     };
     let hex = hex::encode(&bit_vector);
     //print!("\"{hex}\"");
-    json_buffer.push(format!("\"{hex}\""));
+    json_buffer.push(format!("\"0x{hex}\""));
     Ok(())
 }
 
@@ -300,6 +300,7 @@ fn decode_primitive(
     Ok(())
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn decode_value(
     metadata: &RuntimeMetadataV14,
     value_type: &scale_info::Type<scale_info::form::PortableForm>,
@@ -431,9 +432,11 @@ fn decode_value(
                     json_buffer,
                 )?;
             } else {
-                json_buffer.push(format!("{{\"type\": \"{}\", \"value\": [", variant.name));
-                for (i, field) in variant.fields.iter().enumerate() {
+                json_buffer.push(format!("{{\"type\": \"{}\"", variant.name));
+                if variant.fields.len() == 1 {
+                    let field = variant.fields.first().unwrap();
                     let field_type = get_metadata_type(metadata, field.ty.id);
+                    json_buffer.push(", \"value\": ".to_string());
                     decode_value(
                         metadata,
                         field_type,
@@ -442,11 +445,46 @@ fn decode_value(
                         sequence_length,
                         json_buffer,
                     )?;
-                    if i < (variant.fields.len() - 1) {
-                        json_buffer.push(", ".to_string());
+                } else {
+                    let is_struct = variant.fields.iter().all(|f| f.name.is_some());
+                    if is_struct {
+                        json_buffer.push(", \"value\": {".to_string());
+                        for (i, field) in variant.fields.iter().enumerate() {
+                            json_buffer.push(format!("\"{}\": ", field.name.clone().unwrap()));
+                            let field_type = get_metadata_type(metadata, field.ty.id);
+                            decode_value(
+                                metadata,
+                                field_type,
+                                bytes,
+                                is_compact,
+                                sequence_length,
+                                json_buffer,
+                            )?;
+                            if i < (variant.fields.len() - 1) {
+                                json_buffer.push(", ".to_string());
+                            }
+                        }
+                        json_buffer.push("}".to_string());
+                    } else {
+                        json_buffer.push(", \"value\": [".to_string());
+                        for (i, field) in variant.fields.iter().enumerate() {
+                            let field_type = get_metadata_type(metadata, field.ty.id);
+                            decode_value(
+                                metadata,
+                                field_type,
+                                bytes,
+                                is_compact,
+                                sequence_length,
+                                json_buffer,
+                            )?;
+                            if i < (variant.fields.len() - 1) {
+                                json_buffer.push(", ".to_string());
+                            }
+                        }
+                        json_buffer.push("]".to_string());
                     }
                 }
-                json_buffer.push("]}".to_string());
+                json_buffer.push("}".to_string());
             }
         }
         scale_info::TypeDef::Sequence(sequence_type_def) => {
