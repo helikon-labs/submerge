@@ -326,7 +326,7 @@ impl<R: scale_decode::TypeResolver> scale_decode::visitor::Visitor for JsonValue
             }
             bytes.push(byte);
         }
-        Ok(Value::String(format!("0x[BIT_SEQ]{}", hex::encode(&bytes))))
+        Ok(Value::String(format!("0x{}", hex::encode(&bytes))))
     }
 }
 
