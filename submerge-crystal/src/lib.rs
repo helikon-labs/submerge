@@ -4,14 +4,16 @@ use crate::args::Args;
 use crate::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use async_trait::async_trait;
-use frame_metadata::v14::RuntimeMetadataV14;
+use convert_case::{Case, Casing};
 use frame_metadata::v16::StorageHasher;
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use parity_scale_codec::{Compact, Decode, Encode, Input};
 use rustc_hash::FxHashMap as HashMap;
+use serde_json::Value;
 use std::fs;
+use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -27,13 +29,305 @@ use tokio::time::sleep;
 
 mod api;
 pub mod args;
-mod bits;
 mod legacy;
 mod metrics;
 mod persistence;
 
 lazy_static! {
     static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
+}
+
+struct JsonValueVisitor<R> {
+    _marker: PhantomData<R>,
+}
+
+impl<R> JsonValueVisitor<R> {
+    fn new() -> Self {
+        Self {
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<R: scale_decode::TypeResolver> scale_decode::visitor::Visitor for JsonValueVisitor<R> {
+    type Value<'scale, 'resolver> = Value;
+    type Error = scale_decode::visitor::DecodeError;
+    type TypeResolver = R;
+
+    fn visit_bool<'scale, 'resolver>(
+        self,
+        value: bool,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::Bool(value))
+    }
+
+    fn visit_char<'scale, 'resolver>(
+        self,
+        value: char,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_u8<'scale, 'resolver>(
+        self,
+        value: u8,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_u16<'scale, 'resolver>(
+        self,
+        value: u16,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_u32<'scale, 'resolver>(
+        self,
+        value: u32,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_u64<'scale, 'resolver>(
+        self,
+        value: u64,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_u128<'scale, 'resolver>(
+        self,
+        value: u128,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_u256<'resolver>(
+        self,
+        value: &[u8; 32],
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'_, 'resolver>, Self::Error> {
+        Ok(Value::String(format!("0x{}", hex::encode(value))))
+    }
+
+    fn visit_i8<'scale, 'resolver>(
+        self,
+        value: i8,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_i16<'scale, 'resolver>(
+        self,
+        value: i16,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_i32<'scale, 'resolver>(
+        self,
+        value: i32,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_i64<'scale, 'resolver>(
+        self,
+        value: i64,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_i128<'scale, 'resolver>(
+        self,
+        value: i128,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.to_string()))
+    }
+
+    fn visit_i256<'resolver>(
+        self,
+        value: &[u8; 32],
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'_, 'resolver>, Self::Error> {
+        Ok(Value::String(format!("0x{}", hex::encode(value))))
+    }
+
+    fn visit_sequence<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::Sequence<'scale, 'resolver, Self::TypeResolver>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        // Check if this is a sequence of u8 values
+        let mut vals = vec![];
+        let mut u8_bytes = vec![];
+        let mut is_u8_sequence = true;
+
+        while let Some(val) = value.decode_item(JsonValueVisitor::new()) {
+            let val = val?;
+            if let Value::String(s) = &val {
+                if let Ok(byte) = s.parse::<u8>() {
+                    u8_bytes.push(byte);
+                } else {
+                    is_u8_sequence = false;
+                }
+            } else {
+                is_u8_sequence = false;
+            }
+            vals.push(val);
+        }
+
+        if is_u8_sequence && !u8_bytes.is_empty() {
+            Ok(Value::String(format!("0x{}", hex::encode(&u8_bytes))))
+        } else {
+            Ok(Value::Array(vals))
+        }
+    }
+
+    fn visit_composite<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::Composite<'scale, 'resolver, Self::TypeResolver>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        let mut field_map = serde_json::Map::new();
+        for field in value.by_ref() {
+            let field = field?;
+            let field_value = field.decode_with_visitor(JsonValueVisitor::new())?;
+            let field_name = field.name().unwrap_or("").to_owned();
+            field_map.insert(field_name.to_case(Case::Camel), field_value);
+        }
+        if field_map.len() == 1 && field_map.keys().all(|field| field.is_empty()) {
+            Ok(field_map.get("").unwrap().clone())
+        } else {
+            Ok(Value::Object(field_map))
+        }
+    }
+
+    fn visit_tuple<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::Tuple<'scale, 'resolver, Self::TypeResolver>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        let mut vals = vec![];
+        while let Some(val) = value.decode_item(JsonValueVisitor::new()) {
+            let val = val?;
+            vals.push(val);
+        }
+        Ok(Value::Array(vals))
+    }
+
+    fn visit_str<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::Str<'scale>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        Ok(Value::String(value.as_str()?.to_owned()))
+    }
+
+    fn visit_variant<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::Variant<'scale, 'resolver, Self::TypeResolver>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        if value.name() == "None" {
+            return Ok(Value::Null);
+        }
+        let mut field_map = serde_json::Map::new();
+        let mut has_named_fields = false;
+
+        for field in value.fields().by_ref() {
+            let field = field?;
+            let field_value = field.decode_with_visitor(JsonValueVisitor::new())?;
+
+            if let Some(field_name) = field.name() {
+                field_map.insert(field_name.to_case(Case::Camel), field_value);
+                has_named_fields = true;
+            } else {
+                field_map.insert(format!("field_{}", field_map.len()), field_value);
+            }
+        }
+
+        if has_named_fields {
+            Ok(Value::Object(field_map))
+        } else {
+            let values: Vec<Value> = field_map.values().cloned().collect();
+            let mut result = serde_json::Map::new();
+            result.insert("type".to_string(), Value::String(value.name().to_string()));
+            result.insert(
+                "value".to_string(),
+                if values.len() == 1 {
+                    values.into_iter().next().unwrap()
+                } else {
+                    Value::Array(values)
+                },
+            );
+            Ok(Value::Object(result))
+        }
+    }
+
+    fn visit_array<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::Array<'scale, 'resolver, Self::TypeResolver>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        // Check if this is an array of u8 values
+        let mut vals = vec![];
+        let mut u8_bytes = vec![];
+        let mut is_u8_array = true;
+
+        while let Some(val) = value.decode_item(JsonValueVisitor::new()) {
+            let val = val?;
+            if let Value::String(s) = &val {
+                if let Ok(byte) = s.parse::<u8>() {
+                    u8_bytes.push(byte);
+                } else {
+                    is_u8_array = false;
+                }
+            } else {
+                is_u8_array = false;
+            }
+            vals.push(val);
+        }
+
+        if is_u8_array && !u8_bytes.is_empty() {
+            Ok(Value::String(format!("0x{}", hex::encode(&u8_bytes))))
+        } else {
+            Ok(Value::Array(vals))
+        }
+    }
+
+    fn visit_bitsequence<'scale, 'resolver>(
+        self,
+        value: &mut scale_decode::visitor::types::BitSequence<'scale>,
+        _type_id: scale_decode::visitor::TypeIdFor<Self>,
+    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
+        let bit_vec: Result<Vec<bool>, _> = value.decode()?.collect();
+        let bit_vec = bit_vec?;
+        let mut bytes = Vec::new();
+        for chunk in bit_vec.chunks(8) {
+            let mut byte = 0u8;
+            for (i, &bit) in chunk.iter().enumerate() {
+                if bit {
+                    byte |= 1 << i;
+                }
+            }
+            bytes.push(byte);
+        }
+        Ok(Value::String(format!("0x[BIT_SEQ]{}", hex::encode(&bytes))))
+    }
 }
 
 async fn get_postgres(args: &PostgreSQLArgs) -> anyhow::Result<PostgreSQLStorage> {
@@ -57,484 +351,6 @@ async fn get_substrate(args: &RPCArgs) -> anyhow::Result<SubstrateClient> {
         args.rpc_request_timeout_secs,
     )
     .await
-}
-
-pub(crate) fn get_metadata_type(
-    metadata: &RuntimeMetadataV14,
-    type_id: u32,
-) -> &scale_info::Type<scale_info::form::PortableForm> {
-    &metadata
-        .types
-        .types
-        .iter()
-        .find(|metadata_ty| metadata_ty.id == type_id)
-        .unwrap()
-        .ty
-}
-
-fn decode_bit_sequence(
-    bit_store_type: &scale_info::Type<scale_info::form::PortableForm>,
-    bit_order_type: &scale_info::Type<scale_info::form::PortableForm>,
-    bytes: &mut &[u8],
-    json_buffer: &mut Vec<String>,
-) -> anyhow::Result<()> {
-    let bit_order_type_path = bit_order_type.path.segments.join("::");
-    let bit_vector: Vec<u8> = match &bit_store_type.type_def {
-        scale_info::TypeDef::Primitive(ty) => match bit_order_type_path.as_str() {
-            "bitvec::order::Lsb0" => match ty {
-                scale_info::TypeDefPrimitive::U8 => {
-                    let bits: bits::DecodedBits<u8, bits::Lsb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                scale_info::TypeDefPrimitive::U16 => {
-                    let bits: bits::DecodedBits<u16, bits::Lsb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                scale_info::TypeDefPrimitive::U32 => {
-                    let bits: bits::DecodedBits<u32, bits::Lsb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                scale_info::TypeDefPrimitive::U64 => {
-                    let bits: bits::DecodedBits<u64, bits::Lsb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                _ => {
-                    return Err(anyhow::Error::msg(format!(
-                        "Unexpected bit sequence primitive: {ty:?}"
-                    )))
-                }
-            },
-            "bitvec::order::Msb0" => match ty {
-                scale_info::TypeDefPrimitive::U8 => {
-                    let bits: bits::DecodedBits<u8, bits::Msb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                scale_info::TypeDefPrimitive::U16 => {
-                    let bits: bits::DecodedBits<u16, bits::Msb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                scale_info::TypeDefPrimitive::U32 => {
-                    let bits: bits::DecodedBits<u32, bits::Msb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                scale_info::TypeDefPrimitive::U64 => {
-                    let bits: bits::DecodedBits<u64, bits::Msb0> = Decode::decode(bytes)?;
-                    bits.as_bits().encode()
-                }
-                _ => {
-                    return Err(anyhow::Error::msg(format!(
-                        "Unexpected bit sequence primitive: {ty:?}",
-                    )))
-                }
-            },
-            _ => {
-                return Err(anyhow::Error::msg(format!(
-                    "Unexpected bit sequence order: {bit_order_type_path}"
-                )))
-            }
-        },
-        _ => {
-            return Err(anyhow::Error::msg(
-                "Non-primitive type fed for bit sequence.".to_string(),
-            ))
-        }
-    };
-    let hex = hex::encode(&bit_vector);
-    //print!("\"{hex}\"");
-    json_buffer.push(format!("\"0x{hex}\""));
-    Ok(())
-}
-
-fn decode_compact_primitive(
-    type_def: &scale_info::TypeDefPrimitive,
-    bytes: &mut &[u8],
-    json_buffer: &mut Vec<String>,
-) -> anyhow::Result<()> {
-    match type_def {
-        scale_info::TypeDefPrimitive::Bool => {
-            return Err(anyhow::Error::msg("No compact for Bool.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::Char => {
-            let value: Compact<u8> = Decode::decode(bytes)?;
-            let character = value.0 as char;
-            let json_string = serde_json::to_string(&character)?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U8 => {
-            let value: Compact<u8> = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.0.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::Str => {
-            return Err(anyhow::Error::msg("No compact for Str.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::U16 => {
-            let value: Compact<u16> = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.0.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U32 => {
-            let value: Compact<u32> = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.0.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U64 => {
-            let value: Compact<u64> = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.0.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U128 => {
-            let value: Compact<u128> = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.0.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U256 => {
-            return Err(anyhow::Error::msg("No compact for U256."));
-        }
-        scale_info::TypeDefPrimitive::I8 => {
-            return Err(anyhow::Error::msg("No compact for I8.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::I16 => {
-            return Err(anyhow::Error::msg("No compact for I16.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::I32 => {
-            return Err(anyhow::Error::msg("No compact for I32.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::I64 => {
-            return Err(anyhow::Error::msg("No compact for I64.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::I128 => {
-            return Err(anyhow::Error::msg("No compact for I128.".to_string()));
-        }
-        scale_info::TypeDefPrimitive::I256 => {
-            return Err(anyhow::Error::msg("No compact for I256.".to_string()));
-        }
-    }
-    Ok(())
-}
-
-fn decode_primitive(
-    type_def: &scale_info::TypeDefPrimitive,
-    bytes: &mut &[u8],
-    json_buffer: &mut Vec<String>,
-) -> anyhow::Result<()> {
-    match type_def {
-        scale_info::TypeDefPrimitive::Bool => {
-            let value: bool = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value)?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::Str => {
-            let value: String = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value)?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::Char => {
-            let value: u8 = Decode::decode(bytes)?;
-            let character = value as char;
-            let json_string = serde_json::to_string(&character)?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U8 => {
-            let value: u8 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U16 => {
-            let value: u16 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U32 => {
-            let value: u32 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U64 => {
-            let value: u64 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U128 => {
-            let value: u128 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::U256 => {
-            let value: sp_core::U256 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::I8 => {
-            let value: i8 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::I16 => {
-            let value: i16 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::I32 => {
-            let value: i32 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::I64 => {
-            let value: i64 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::I128 => {
-            let value: i128 = Decode::decode(bytes)?;
-            let json_string = serde_json::to_string(&value.to_string())?;
-            json_buffer.push(json_string);
-        }
-        scale_info::TypeDefPrimitive::I256 => {
-            let value: [u8; 32] = Decode::decode(bytes)?;
-            let hex = hex::encode(value);
-            let json_string = serde_json::to_string(&hex)?;
-            json_buffer.push(json_string);
-        }
-    }
-    Ok(())
-}
-
-#[allow(clippy::cognitive_complexity)]
-fn decode_value(
-    metadata: &RuntimeMetadataV14,
-    value_type: &scale_info::Type<scale_info::form::PortableForm>,
-    bytes: &mut &[u8],
-    is_compact: bool,
-    sequence_length: Option<u32>,
-    json_buffer: &mut Vec<String>,
-) -> anyhow::Result<()> {
-    match &value_type.type_def {
-        scale_info::TypeDef::Primitive(primitive_type_def) => {
-            if is_compact {
-                decode_compact_primitive(primitive_type_def, bytes, json_buffer)?;
-            } else {
-                decode_primitive(primitive_type_def, bytes, json_buffer)?;
-            }
-        }
-        scale_info::TypeDef::Composite(composite_type_def) => {
-            if composite_type_def.fields.len() == 1
-                && composite_type_def.fields.first().unwrap().name.is_none()
-            {
-            } else {
-                json_buffer.push("{".to_string());
-            }
-            for (i, field) in composite_type_def.fields.iter().enumerate() {
-                if let Some(name) = field.name.as_ref() {
-                    json_buffer.push(format!("\"{name}\": "));
-                }
-                let field_type = get_metadata_type(metadata, field.ty.id);
-                decode_value(
-                    metadata,
-                    field_type,
-                    bytes,
-                    is_compact,
-                    sequence_length,
-                    json_buffer,
-                )?;
-                if i < (composite_type_def.fields.len() - 1) {
-                    json_buffer.push(", ".to_string());
-                }
-            }
-            if composite_type_def.fields.len() == 1
-                && composite_type_def.fields.first().unwrap().name.is_none()
-            {
-            } else {
-                json_buffer.push("}".to_string());
-            }
-        }
-        scale_info::TypeDef::Array(array_type_def) => {
-            let element_type = get_metadata_type(metadata, array_type_def.type_param.id);
-            if let scale_info::TypeDef::Primitive(scale_info::TypeDefPrimitive::U8) =
-                &element_type.type_def
-            {
-                let length = array_type_def.len as usize;
-                if bytes.len() < length {
-                    return Err(anyhow::anyhow!(
-                        "Not enough bytes to decode [u8; {}]",
-                        length
-                    ));
-                }
-                let (bytes_to_decode, remaining) = bytes.split_at(length);
-                *bytes = remaining;
-                let hex_string = hex::encode(bytes_to_decode);
-                json_buffer.push(format!("\"0x{hex_string}\""));
-            } else {
-                json_buffer.push("[".to_string());
-                for i in 0..array_type_def.len {
-                    decode_value(
-                        metadata,
-                        element_type,
-                        bytes,
-                        is_compact,
-                        sequence_length,
-                        json_buffer,
-                    )?;
-                    if i < (array_type_def.len - 1) {
-                        json_buffer.push(", ".to_string());
-                    }
-                }
-                json_buffer.push("]".to_string());
-            }
-        }
-        scale_info::TypeDef::Tuple(tuple_type_def) => {
-            json_buffer.push("[".to_string());
-            for (i, field_type_id) in tuple_type_def.fields.iter().enumerate() {
-                let field_type = get_metadata_type(metadata, field_type_id.id);
-                decode_value(
-                    metadata,
-                    field_type,
-                    bytes,
-                    is_compact,
-                    sequence_length,
-                    json_buffer,
-                )?;
-                if i < (tuple_type_def.fields.len() - 1) {
-                    json_buffer.push(", ".to_string());
-                }
-            }
-            json_buffer.push("]".to_string());
-        }
-        scale_info::TypeDef::Compact(compact_type_def) => {
-            let compact_type = get_metadata_type(metadata, compact_type_def.type_param.id);
-            decode_value(
-                metadata,
-                compact_type,
-                bytes,
-                true,
-                sequence_length,
-                json_buffer,
-            )?;
-        }
-        scale_info::TypeDef::Variant(variant_type_def) => {
-            let index: u8 = Decode::decode(bytes)?;
-            let variant = &variant_type_def
-                .variants
-                .iter()
-                .find(|v| v.index == index)
-                .unwrap();
-            if variant.name == "None" {
-                json_buffer.push("null".to_string());
-            } else if variant.name == "Some" {
-                let field = variant.fields.first().unwrap();
-                let field_type = get_metadata_type(metadata, field.ty.id);
-                decode_value(
-                    metadata,
-                    field_type,
-                    bytes,
-                    is_compact,
-                    sequence_length,
-                    json_buffer,
-                )?;
-            } else {
-                json_buffer.push(format!("{{\"type\": \"{}\"", variant.name));
-                if variant.fields.len() == 1 {
-                    let field = variant.fields.first().unwrap();
-                    let field_type = get_metadata_type(metadata, field.ty.id);
-                    json_buffer.push(", \"value\": ".to_string());
-                    decode_value(
-                        metadata,
-                        field_type,
-                        bytes,
-                        is_compact,
-                        sequence_length,
-                        json_buffer,
-                    )?;
-                } else {
-                    let is_struct = variant.fields.iter().all(|f| f.name.is_some());
-                    if is_struct {
-                        json_buffer.push(", \"value\": {".to_string());
-                        for (i, field) in variant.fields.iter().enumerate() {
-                            json_buffer.push(format!("\"{}\": ", field.name.clone().unwrap()));
-                            let field_type = get_metadata_type(metadata, field.ty.id);
-                            decode_value(
-                                metadata,
-                                field_type,
-                                bytes,
-                                is_compact,
-                                sequence_length,
-                                json_buffer,
-                            )?;
-                            if i < (variant.fields.len() - 1) {
-                                json_buffer.push(", ".to_string());
-                            }
-                        }
-                        json_buffer.push("}".to_string());
-                    } else {
-                        json_buffer.push(", \"value\": [".to_string());
-                        for (i, field) in variant.fields.iter().enumerate() {
-                            let field_type = get_metadata_type(metadata, field.ty.id);
-                            decode_value(
-                                metadata,
-                                field_type,
-                                bytes,
-                                is_compact,
-                                sequence_length,
-                                json_buffer,
-                            )?;
-                            if i < (variant.fields.len() - 1) {
-                                json_buffer.push(", ".to_string());
-                            }
-                        }
-                        json_buffer.push("]".to_string());
-                    }
-                }
-                json_buffer.push("}".to_string());
-            }
-        }
-        scale_info::TypeDef::Sequence(sequence_type_def) => {
-            let element_type = get_metadata_type(metadata, sequence_type_def.type_param.id);
-
-            // Check if this is Vec<u8>
-            if let scale_info::TypeDef::Primitive(scale_info::TypeDefPrimitive::U8) =
-                &element_type.type_def
-            {
-                let length = if let Some(length) = sequence_length {
-                    length as usize
-                } else {
-                    let compact_length: Compact<u32> = Decode::decode(bytes)?;
-                    compact_length.0 as usize
-                };
-                if bytes.len() < length {
-                    return Err(anyhow::anyhow!(
-                        "Not enough bytes to decode Vec<u8> of length {}",
-                        length
-                    ));
-                }
-                let (bytes_to_decode, remaining) = bytes.split_at(length);
-                *bytes = remaining;
-                let hex_string = hex::encode(bytes_to_decode);
-                json_buffer.push(format!("\"0x{hex_string}\""));
-            } else {
-                // Not Vec<u8>, decode recursively as normal
-                let length = if let Some(length) = sequence_length {
-                    length
-                } else {
-                    let compact_length: Compact<u32> = Decode::decode(bytes)?;
-                    compact_length.0
-                };
-                json_buffer.push("[".to_string());
-                for i in 0..length {
-                    decode_value(metadata, element_type, bytes, is_compact, None, json_buffer)?;
-                    if i < (length - 1) {
-                        json_buffer.push(", ".to_string());
-                    }
-                }
-                json_buffer.push("]".to_string());
-            }
-        }
-        scale_info::TypeDef::BitSequence(bit_sequence) => {
-            let bit_store_type = &metadata.types.types[bit_sequence.bit_store_type.id as usize].ty;
-            let bit_order_type = &metadata.types.types[bit_sequence.bit_order_type.id as usize].ty;
-            decode_bit_sequence(bit_store_type, bit_order_type, bytes, json_buffer)?;
-        }
-    }
-    Ok(())
 }
 
 fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
@@ -730,38 +546,31 @@ impl Crystal {
                             }
                         };
 
-                        let mut json_buffer = Vec::new();
-                        json_buffer.push("{".to_string());
-                        for (index, call_field) in event_variant.fields.iter().enumerate() {
+                        let mut map = serde_json::Map::new();
+                        for event_field in event_variant.fields.iter() {
                             let field_type = metadata
                                 .types
                                 .types
                                 .iter()
-                                .find(|metadata_type| metadata_type.id == call_field.ty.id)
+                                .find(|metadata_type| metadata_type.id == event_field.ty.id)
                                 .expect("Calls type not found in pallet.");
-                            if let Some(field_name) = &call_field.name {
-                                json_buffer.push(format!("\"{field_name}\": "));
-                            } else if let Some(type_name) = &call_field.type_name {
-                                json_buffer.push(format!("\"{type_name}\": "));
-                            } else {
-                                json_buffer.push("\"NA\": ".to_string());
-                            }
-                            decode_value(
-                                metadata,
-                                &field_type.ty,
+                            let visitor = JsonValueVisitor::new();
+                            let value: Value = scale_decode::visitor::decode_with_visitor(
                                 &mut bytes,
-                                false,
-                                None,
-                                &mut json_buffer,
+                                field_type.id,
+                                &metadata.types,
+                                visitor,
                             )?;
-                            if index < (event_variant.fields.len() - 1) {
-                                json_buffer.push(", ".to_string())
+                            if let Some(field_name) = &event_field.name {
+                                map.insert(field_name.clone(), value);
+                            } else if let Some(type_name) = &event_field.type_name {
+                                map.insert(type_name.clone(), value);
+                            } else {
+                                map.insert("unnamed".to_string(), value);
                             }
                         }
-                        json_buffer.push("}".to_string());
-                        let json = json_buffer.join("");
-                        log::info!("DECODED EVENT :: {json}");
-
+                        let event = Value::Object(map);
+                        log::info!("DECODED EVENT :: {}", serde_json::to_string(&event)?);
                         (pallet.name.clone(), event_variant.name.clone())
                     }
                     _ => unimplemented!("Unsupported runtime metadata."),
@@ -914,38 +723,29 @@ impl Crystal {
                         }
                     };
 
-                    let mut json_buffer = Vec::new();
-                    json_buffer.push("{".to_string());
-                    for (index, call_field) in call_variant.fields.iter().enumerate() {
-                        let field_type = metadata
-                            .types
-                            .types
-                            .iter()
-                            .find(|metadata_type| metadata_type.id == call_field.ty.id)
-                            .expect("Calls type not found in pallet.");
-                        if let Some(field_name) = &call_field.name {
-                            json_buffer.push(format!("\"{field_name}\": "));
-                        } else if let Some(type_name) = &call_field.type_name {
-                            json_buffer.push(format!("\"{type_name}\": "));
-                        } else {
-                            json_buffer.push("\"NA\": ".to_string());
-                        }
-                        decode_value(
-                            metadata,
-                            &field_type.ty,
+                    let mut map = serde_json::Map::new();
+                    for call_field in call_variant.fields.iter() {
+                        let visitor = JsonValueVisitor::new();
+                        let value: Value = scale_decode::visitor::decode_with_visitor(
                             &mut bytes,
-                            false,
-                            None,
-                            &mut json_buffer,
+                            call_field.ty.id,
+                            &metadata.types,
+                            visitor,
                         )?;
-                        if index < (call_variant.fields.len() - 1) {
-                            json_buffer.push(", ".to_string())
+
+                        if let Some(field_name) = &call_field.name {
+                            map.insert(field_name.clone(), value);
+                        } else if let Some(type_name) = &call_field.type_name {
+                            map.insert(type_name.clone(), value);
+                        } else {
+                            map.insert("noname".to_string(), value);
                         }
                     }
-                    json_buffer.push("}".to_string());
-                    let json = json_buffer.join("");
-                    log::info!("DECODED :: {json}");
-
+                    let extrinsic = Value::Object(map);
+                    log::info!(
+                        "DECODED EXTRINSIC :: {}",
+                        serde_json::to_string(&extrinsic)?
+                    );
                     (pallet.name.clone(), call_variant.name.clone())
                 }
                 _ => unimplemented!("Unsupported runtime metadata."),
