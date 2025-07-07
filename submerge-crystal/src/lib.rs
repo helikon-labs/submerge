@@ -57,6 +57,7 @@ impl Crystal {
         metadata_cache: &Arc<RwLock<LruCache<u32, RuntimeMetadata>>>,
         block_hash_hex: &str,
         block_number: u64,
+        is_finalized: bool,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
         if postgres.block_trace_exists(&block_hash).await? {
@@ -75,7 +76,7 @@ impl Crystal {
                     &block_hash,
                     &block_header,
                     0,
-                    true,
+                    is_finalized,
                     spec_version,
                     0,
                     0,
@@ -122,7 +123,7 @@ impl Crystal {
             .ingest_block_trace(
                 &block_hash,
                 &block_header,
-                true,
+                is_finalized,
                 spec_version,
                 &trace,
                 &mut tx,
@@ -177,11 +178,10 @@ impl Crystal {
                 };
                 let mut bytes: &[u8] = &hex::decode(&value)?;
                 if metadata_version < 14 {
-                    log::info!("Legacy event.");
-                    let response = legacy_decode_api_client
+                    let event = legacy_decode_api_client
                         .decode_event(&block_hash, spec_version, bytes)
                         .await?;
-                    log::info!("Legacy event decoded: {response}");
+                    log::info!("Legacy event: {}", serde_json::to_string(&event)?);
                     processed_event_count += 1;
                     continue;
                 }
@@ -261,7 +261,7 @@ impl Crystal {
                         block_header.get_number()?,
                         block_timestamp,
                         spec_version,
-                        true,
+                        is_finalized,
                         trace_index as u32,
                         pallet_index,
                         &pallet_name,
@@ -331,11 +331,10 @@ impl Crystal {
                 hex::encode(extrinsic_hash)
             );
             if metadata_version < 14 {
-                log::info!("Legacy extrinsic.");
-                let response = legacy_decode_api_client
+                let extrinsic = legacy_decode_api_client
                     .decode_extrinsic(&block_hash, spec_version, bytes)
                     .await?;
-                log::info!("Legacy decoded: {response}");
+                log::info!("Legacy extrinsic: {}", serde_json::to_string(&extrinsic)?);
                 processed_extrinsic_count += 1;
                 continue;
             }
@@ -439,7 +438,7 @@ impl Crystal {
                     block_header.get_number()?,
                     block_timestamp,
                     spec_version,
-                    true,
+                    is_finalized,
                     extrinsic.0.map(|i| i as u32),
                     pallet_index,
                     &pallet_name,
@@ -468,7 +467,7 @@ impl Crystal {
                 &block_hash,
                 &block_header,
                 block_timestamp,
-                true,
+                is_finalized,
                 spec_version,
                 extrinsic_count,
                 event_count,
@@ -503,6 +502,7 @@ impl Crystal {
                 metadata_cache,
                 &hash_hex,
                 number,
+                true,
             )
             .await
             {
