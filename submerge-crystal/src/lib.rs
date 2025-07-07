@@ -4,20 +4,19 @@ use crate::args::Args;
 use crate::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use async_trait::async_trait;
-use convert_case::{Case, Casing};
+use decode::JsonValueVisitor;
 use frame_metadata::v16::StorageHasher;
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use lazy_static::lazy_static;
+use lru::LruCache;
 use once_cell::sync::OnceCell;
 use parity_scale_codec::{Compact, Decode, Encode, Input};
-use rustc_hash::FxHashMap as HashMap;
 use serde_json::Value;
 use std::fs;
-use std::marker::PhantomData;
+use std::num::NonZero;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block_trace::StorageMethod;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::{Balance, MultiAddress, Signature};
@@ -25,366 +24,37 @@ use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
 use submerge_util::substrate::storage::{self, get_storage_plain_key};
+use tokio::sync::RwLock;
 use tokio::time::sleep;
 
 mod api;
 pub mod args;
+mod decode;
 mod legacy;
 mod metrics;
 mod persistence;
+
+const METADATA_CACHE_SIZE: usize = 50;
 
 lazy_static! {
     static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
 }
 
-struct JsonValueVisitor<R> {
-    _marker: PhantomData<R>,
-}
-
-impl<R> JsonValueVisitor<R> {
-    fn new() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<R: scale_decode::TypeResolver> scale_decode::visitor::Visitor for JsonValueVisitor<R> {
-    type Value<'scale, 'resolver> = Value;
-    type Error = scale_decode::visitor::DecodeError;
-    type TypeResolver = R;
-
-    fn visit_bool<'scale, 'resolver>(
-        self,
-        value: bool,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::Bool(value))
-    }
-
-    fn visit_char<'scale, 'resolver>(
-        self,
-        value: char,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_u8<'scale, 'resolver>(
-        self,
-        value: u8,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_u16<'scale, 'resolver>(
-        self,
-        value: u16,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_u32<'scale, 'resolver>(
-        self,
-        value: u32,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_u64<'scale, 'resolver>(
-        self,
-        value: u64,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_u128<'scale, 'resolver>(
-        self,
-        value: u128,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_u256<'resolver>(
-        self,
-        value: &[u8; 32],
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'_, 'resolver>, Self::Error> {
-        Ok(Value::String(format!("0x{}", hex::encode(value))))
-    }
-
-    fn visit_i8<'scale, 'resolver>(
-        self,
-        value: i8,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_i16<'scale, 'resolver>(
-        self,
-        value: i16,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_i32<'scale, 'resolver>(
-        self,
-        value: i32,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_i64<'scale, 'resolver>(
-        self,
-        value: i64,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_i128<'scale, 'resolver>(
-        self,
-        value: i128,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.to_string()))
-    }
-
-    fn visit_i256<'resolver>(
-        self,
-        value: &[u8; 32],
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'_, 'resolver>, Self::Error> {
-        Ok(Value::String(format!("0x{}", hex::encode(value))))
-    }
-
-    fn visit_sequence<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::Sequence<'scale, 'resolver, Self::TypeResolver>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        // Check if this is a sequence of u8 values
-        let mut vals = vec![];
-        let mut u8_bytes = vec![];
-        let mut is_u8_sequence = true;
-
-        while let Some(val) = value.decode_item(JsonValueVisitor::new()) {
-            let val = val?;
-            if let Value::String(s) = &val {
-                if let Ok(byte) = s.parse::<u8>() {
-                    u8_bytes.push(byte);
-                } else {
-                    is_u8_sequence = false;
-                }
-            } else {
-                is_u8_sequence = false;
-            }
-            vals.push(val);
-        }
-
-        if is_u8_sequence && !u8_bytes.is_empty() {
-            Ok(Value::String(format!("0x{}", hex::encode(&u8_bytes))))
-        } else {
-            Ok(Value::Array(vals))
-        }
-    }
-
-    fn visit_composite<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::Composite<'scale, 'resolver, Self::TypeResolver>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        let mut field_map = serde_json::Map::new();
-        for field in value.by_ref() {
-            let field = field?;
-            let field_value = field.decode_with_visitor(JsonValueVisitor::new())?;
-            let field_name = field.name().unwrap_or("").to_owned();
-            field_map.insert(field_name.to_case(Case::Camel), field_value);
-        }
-        if field_map.len() == 1 && field_map.keys().all(|field| field.is_empty()) {
-            Ok(field_map.get("").unwrap().clone())
-        } else {
-            Ok(Value::Object(field_map))
-        }
-    }
-
-    fn visit_tuple<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::Tuple<'scale, 'resolver, Self::TypeResolver>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        let mut vals = vec![];
-        while let Some(val) = value.decode_item(JsonValueVisitor::new()) {
-            let val = val?;
-            vals.push(val);
-        }
-        Ok(Value::Array(vals))
-    }
-
-    fn visit_str<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::Str<'scale>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        Ok(Value::String(value.as_str()?.to_owned()))
-    }
-
-    fn visit_variant<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::Variant<'scale, 'resolver, Self::TypeResolver>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        if value.name() == "None" {
-            return Ok(Value::Null);
-        }
-        let mut field_map = serde_json::Map::new();
-        let mut has_named_fields = false;
-
-        for field in value.fields().by_ref() {
-            let field = field?;
-            let field_value = field.decode_with_visitor(JsonValueVisitor::new())?;
-
-            if let Some(field_name) = field.name() {
-                field_map.insert(field_name.to_case(Case::Camel), field_value);
-                has_named_fields = true;
-            } else {
-                field_map.insert(format!("field_{}", field_map.len()), field_value);
-            }
-        }
-
-        if has_named_fields {
-            Ok(Value::Object(field_map))
-        } else {
-            let values: Vec<Value> = field_map.values().cloned().collect();
-            let mut result = serde_json::Map::new();
-            result.insert("type".to_string(), Value::String(value.name().to_string()));
-            result.insert(
-                "value".to_string(),
-                if values.len() == 1 {
-                    values.into_iter().next().unwrap()
-                } else {
-                    Value::Array(values)
-                },
-            );
-            Ok(Value::Object(result))
-        }
-    }
-
-    fn visit_array<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::Array<'scale, 'resolver, Self::TypeResolver>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        // Check if this is an array of u8 values
-        let mut vals = vec![];
-        let mut u8_bytes = vec![];
-        let mut is_u8_array = true;
-
-        while let Some(val) = value.decode_item(JsonValueVisitor::new()) {
-            let val = val?;
-            if let Value::String(s) = &val {
-                if let Ok(byte) = s.parse::<u8>() {
-                    u8_bytes.push(byte);
-                } else {
-                    is_u8_array = false;
-                }
-            } else {
-                is_u8_array = false;
-            }
-            vals.push(val);
-        }
-
-        if is_u8_array && !u8_bytes.is_empty() {
-            Ok(Value::String(format!("0x{}", hex::encode(&u8_bytes))))
-        } else {
-            Ok(Value::Array(vals))
-        }
-    }
-
-    fn visit_bitsequence<'scale, 'resolver>(
-        self,
-        value: &mut scale_decode::visitor::types::BitSequence<'scale>,
-        _type_id: scale_decode::visitor::TypeIdFor<Self>,
-    ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
-        let bit_vec: Result<Vec<bool>, _> = value.decode()?.collect();
-        let bit_vec = bit_vec?;
-        let mut bytes = Vec::new();
-        for chunk in bit_vec.chunks(8) {
-            let mut byte = 0u8;
-            for (i, &bit) in chunk.iter().enumerate() {
-                if bit {
-                    byte |= 1 << i;
-                }
-            }
-            bytes.push(byte);
-        }
-        Ok(Value::String(format!("0x{}", hex::encode(&bytes))))
-    }
-}
-
-async fn get_postgres(args: &PostgreSQLArgs) -> anyhow::Result<PostgreSQLStorage> {
-    PostgreSQLStorage::new(
-        &args.postgres_host,
-        args.postgres_port,
-        &args.postgres_username,
-        &args.postgres_password,
-        &args.postgres_db_name,
-        args.postgres_connection_timeout_secs,
-        args.postgres_pool_max_connections,
-    )
-    .await
-}
-
-async fn get_substrate(args: &RPCArgs) -> anyhow::Result<SubstrateClient> {
-    SubstrateClient::new(
-        &args.http_rpc_url,
-        &args.ws_rpc_url,
-        args.rpc_connection_timeout_secs,
-        args.rpc_request_timeout_secs,
-    )
-    .await
-}
-
-fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
-    match &metadata {
-        RuntimeMetadata::V8(_) => 8,
-        RuntimeMetadata::V9(_) => 9,
-        RuntimeMetadata::V10(_) => 10,
-        RuntimeMetadata::V11(_) => 11,
-        RuntimeMetadata::V12(_) => 12,
-        RuntimeMetadata::V13(_) => 13,
-        RuntimeMetadata::V14(_) => 14,
-        RuntimeMetadata::V15(_) => 15,
-        RuntimeMetadata::V16(_) => 16,
-        _ => unimplemented!("Unsupported metadata version."),
-    }
-}
-
 pub struct Crystal {
     args: Args,
-    _metadata_cache: HashMap<u32, RuntimeMetadata>,
 }
 
 impl Crystal {
     pub fn new(args: Args) -> Self {
-        Self {
-            args,
-            _metadata_cache: Default::default(),
-        }
+        Self { args }
     }
 
     #[allow(clippy::cognitive_complexity)]
     async fn ingest_block(
         postgres: &PostgreSQLStorage,
         substrate_client: &SubstrateClient,
+        legacy_decode_api_client: &LegacyDecodeAPIClient,
+        metadata_cache: &Arc<RwLock<LruCache<u32, RuntimeMetadata>>>,
         block_hash_hex: &str,
         block_number: u64,
     ) -> anyhow::Result<()> {
@@ -415,28 +85,36 @@ impl Crystal {
             tx.commit().await?;
             return Ok(());
         }
-        let legace_decode_api_client = LegacyDecodeAPIClient::new()?;
+        let mut metadata_cache = metadata_cache.write().await;
         let block_timestamp = substrate_client.get_block_timestamp(block_hash_hex).await?;
-        let metadata = if let Some(db_metadata) = postgres.get_metadata(spec_version).await? {
-            let mut metadata_bytes: &[u8] = &db_metadata;
-            let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
-            metadata_prefixed.1
-        } else {
-            let metadata_hex_string = substrate_client
-                .get_metadata_hex_string_at_block(block_hash_hex)
-                .await?;
-            let mut metadata_bytes: &[u8] = &hex::decode(metadata_hex_string)?;
-            let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
-            postgres
-                .ingest_metadata(
-                    spec_version,
-                    get_metadata_version(&metadata_prefixed.1),
-                    &metadata_prefixed.encode(),
-                )
-                .await?;
-            metadata_prefixed.1
+        let metadata = {
+            if !metadata_cache.contains(&spec_version) {
+                let metadata = if let Some(db_metadata_prefixed) =
+                    postgres.get_metadata_prefixed(spec_version).await?
+                {
+                    db_metadata_prefixed.1
+                } else {
+                    let metadata_hex_string = substrate_client
+                        .get_metadata_hex_string_at_block(block_hash_hex)
+                        .await?;
+                    let mut metadata_bytes: &[u8] = &hex::decode(metadata_hex_string)?;
+                    let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
+                    let metadata_json = serde_json::to_value(&metadata_prefixed)?;
+                    postgres
+                        .ingest_metadata_prefixed(
+                            spec_version,
+                            decode::get_metadata_version(&metadata_prefixed.1),
+                            &metadata_prefixed.encode(),
+                            &metadata_json,
+                        )
+                        .await?;
+                    metadata_prefixed.1
+                };
+                metadata_cache.put(spec_version, metadata);
+            }
+            metadata_cache.get(&spec_version).unwrap()
         };
-        let metadata_version = get_metadata_version(&metadata);
+        let metadata_version = decode::get_metadata_version(metadata);
 
         let trace = substrate_client.get_block_trace(block_hash_hex).await?;
         let mut tx = postgres.connection_pool.begin().await?;
@@ -500,7 +178,7 @@ impl Crystal {
                 let mut bytes: &[u8] = &hex::decode(&value)?;
                 if metadata_version < 14 {
                     log::info!("Legacy event.");
-                    let response = legace_decode_api_client
+                    let response = legacy_decode_api_client
                         .decode_event(&block_hash, spec_version, bytes)
                         .await?;
                     log::info!("Legacy event decoded: {response}");
@@ -654,7 +332,7 @@ impl Crystal {
             );
             if metadata_version < 14 {
                 log::info!("Legacy extrinsic.");
-                let response = legace_decode_api_client
+                let response = legacy_decode_api_client
                     .decode_extrinsic(&block_hash, spec_version, bytes)
                     .await?;
                 log::info!("Legacy decoded: {response}");
@@ -808,6 +486,8 @@ impl Crystal {
     async fn ingest_blocks(
         postgres: &PostgreSQLStorage,
         substrate_client: &SubstrateClient,
+        legacy_decode_api_client: &LegacyDecodeAPIClient,
+        metadata_cache: &Arc<RwLock<LruCache<u32, RuntimeMetadata>>>,
         start_block_number: u64,
         end_block_number: u64,
     ) -> anyhow::Result<()> {
@@ -816,7 +496,16 @@ impl Crystal {
             log::info!("🔧 Ingesting block {number}. Target {end_block_number}.");
             let hash_hex = substrate_client.get_block_hash(number).await?;
             let hash = hex::decode(&hash_hex)?;
-            match Self::ingest_block(postgres, substrate_client, &hash_hex, number).await {
+            match Self::ingest_block(
+                postgres,
+                substrate_client,
+                legacy_decode_api_client,
+                metadata_cache,
+                &hash_hex,
+                number,
+            )
+            .await
+            {
                 Ok(_) => {
                     log::info!("🔽 Ingested block {number}.");
                 }
@@ -884,9 +573,13 @@ impl BaseService for Crystal {
 
         match self.args.end_block {
             Some(end_block) => {
-                let postgres = get_postgres(&self.args.postgres).await?;
+                let postgres = PostgreSQLStorage::new(&self.args.postgres).await?;
                 postgres.ingest_genesis(&chainspec).await?;
-                let substrate_client = get_substrate(&self.args.rpc).await?;
+                let substrate_client = SubstrateClient::new(&self.args.rpc).await?;
+                let legacy_decode_api_client = LegacyDecodeAPIClient::new()?;
+                let metadata_cache = Arc::new(RwLock::new(LruCache::<u32, RuntimeMetadata>::new(
+                    NonZero::new(METADATA_CACHE_SIZE).unwrap(),
+                )));
                 let start_block = self.args.start_block.unwrap_or(0);
                 let next_block = if self.args.scan {
                     start_block
@@ -896,8 +589,15 @@ impl BaseService for Crystal {
                         .await?
                 };
                 if next_block < end_block {
-                    Self::ingest_blocks(&postgres, &substrate_client, next_block, end_block)
-                        .await?;
+                    Self::ingest_blocks(
+                        &postgres,
+                        &substrate_client,
+                        &legacy_decode_api_client,
+                        &metadata_cache,
+                        next_block,
+                        end_block,
+                    )
+                    .await?;
                 } else {
                     log::info!("All blocks in range {start_block}-{end_block} had been ingested.");
                 }
@@ -905,9 +605,13 @@ impl BaseService for Crystal {
             }
             None => loop {
                 let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
-                let postgres = Arc::new(get_postgres(&self.args.postgres).await?);
+                let postgres = Arc::new(PostgreSQLStorage::new(&self.args.postgres).await?);
                 postgres.ingest_genesis(&chainspec).await?;
-                let substrate_client = Arc::new(get_substrate(&self.args.rpc).await?);
+                let substrate_client = Arc::new(SubstrateClient::new(&self.args.rpc).await?);
+                let legacy_decode_api_client = Arc::new(LegacyDecodeAPIClient::new()?);
+                let metadata_cache = Arc::new(RwLock::new(LruCache::<u32, RuntimeMetadata>::new(
+                    NonZero::new(METADATA_CACHE_SIZE).unwrap(),
+                )));
                 substrate_client
                     .subscribe_to_finalized_blocks(
                         self.args.rpc.rpc_request_timeout_secs,
@@ -915,6 +619,8 @@ impl BaseService for Crystal {
                             let error_cell = error_cell.clone();
                             let postgres = postgres.clone();
                             let substrate_client = substrate_client.clone();
+                            let legacy_decode_api_client = legacy_decode_api_client.clone();
+                            let metadata_cache = metadata_cache.clone();
                             async move {
                                 if let Some(error) = error_cell.get() {
                                     return Err(anyhow::anyhow!("{:?}", error));
@@ -936,12 +642,12 @@ impl BaseService for Crystal {
                                         .await?
                                 };
                                 if start_block <= finalized_block_number {
-                                    let postgres = postgres.clone();
-                                    let substrate_client = substrate_client.clone();
                                     tokio::spawn(async move {
                                         if let Err(error) = Self::ingest_blocks(
                                             &postgres,
                                             &substrate_client,
+                                            &legacy_decode_api_client,
+                                            &metadata_cache,
                                             start_block,
                                             finalized_block_number,
                                         )

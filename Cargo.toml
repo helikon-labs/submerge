@@ -45,13 +45,14 @@ jsonrpsee = "0.25"
 jsonrpsee-core = "0.25"
 lazy_static = "1.5"
 log = "0.4"
+lru = "0.16"
 once_cell = "1"
 parity-scale-codec = { version = "3.7", default-features = false, features = ["derive", "full"] }
 prometheus = "0.14"
 reqwest = { version = "0.12", features = ["blocking", "json", "gzip", "brotli"] }
 rustc-hash = "2.1"
 scale-bits = "0.7"
-scale-decode = "0.16"
+scale-decode = { git = "https://github.com/helikon-labs/scale-decode.git", branch = "submerge-expose-bitvector-format" }
 scale-info = "2.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

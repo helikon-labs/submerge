@@ -1,5 +1,6 @@
 use sqlx::{Pool, Postgres};
 use std::time::Duration;
+use submerge_base::args::PostgreSQLArgs;
 
 pub async fn new_postgres_connection_pool(
     host: &str,
@@ -27,7 +28,20 @@ pub struct PostgreSQLStorage {
 }
 
 impl PostgreSQLStorage {
-    pub async fn new(
+    pub async fn new(args: &PostgreSQLArgs) -> anyhow::Result<Self> {
+        Self::new_inner(
+            &args.postgres_host,
+            args.postgres_port,
+            &args.postgres_username,
+            &args.postgres_password,
+            &args.postgres_db_name,
+            args.postgres_connection_timeout_secs,
+            args.postgres_pool_max_connections,
+        )
+        .await
+    }
+
+    async fn new_inner(
         host: &str,
         port: u16,
         username: &str,

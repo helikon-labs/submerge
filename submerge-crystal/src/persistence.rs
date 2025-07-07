@@ -1,4 +1,7 @@
+use frame_metadata::RuntimeMetadataPrefixed;
+use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
+use serde_json::Value as JsonValue;
 use sp_runtime::DigestItem;
 use sqlx::{Postgres, Transaction};
 use std::str::FromStr;
@@ -13,12 +16,16 @@ use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 pub(crate) trait CrystalPostgreSQLStorage {
-    async fn get_metadata(&self, spec_version: u32) -> anyhow::Result<Option<Vec<u8>>>;
-    async fn ingest_metadata(
+    async fn get_metadata_prefixed(
+        &self,
+        spec_version: u32,
+    ) -> anyhow::Result<Option<RuntimeMetadataPrefixed>>;
+    async fn ingest_metadata_prefixed(
         &self,
         spec_version: u32,
         version: u32,
         metadata_bytes: &[u8],
+        metadata_json: &JsonValue,
     ) -> anyhow::Result<()>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
@@ -127,20 +134,30 @@ pub(crate) trait CrystalPostgreSQLStorage {
 }
 
 impl CrystalPostgreSQLStorage for PostgreSQLStorage {
-    async fn get_metadata(&self, spec_version: u32) -> anyhow::Result<Option<Vec<u8>>> {
-        let metadata: Option<(Vec<u8>,)> =
-            sqlx::query_as("SELECT metadata FROM metadata WHERE spec_version = $1")
+    async fn get_metadata_prefixed(
+        &self,
+        spec_version: u32,
+    ) -> anyhow::Result<Option<RuntimeMetadataPrefixed>> {
+        let maybe_metadata_bytes: Option<(Vec<u8>,)> =
+            sqlx::query_as("SELECT metadata_prefixed_bytes FROM metadata WHERE spec_version = $1")
                 .bind(spec_version as i32)
                 .fetch_optional(&self.connection_pool)
                 .await?;
-        Ok(metadata.map(|m| m.0))
+        if let Some(metadata_bytes) = maybe_metadata_bytes {
+            let mut metadata_bytes: &[u8] = metadata_bytes.0.as_ref();
+            let metadata = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
+            Ok(Some(metadata))
+        } else {
+            Ok(None)
+        }
     }
 
-    async fn ingest_metadata(
+    async fn ingest_metadata_prefixed(
         &self,
         spec_version: u32,
         version: u32,
-        metadata_bytes: &[u8],
+        metadata_prefixed_bytes: &[u8],
+        metadata_prefixed_json: &JsonValue,
     ) -> anyhow::Result<()> {
         let record_count: (i64,) = sqlx::query_as(
             r#"
@@ -157,13 +174,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
         sqlx::query(
             r#"
-            INSERT INTO metadata (spec_version, version, metadata)
-            VALUES ($1, $2, $3)
+            INSERT INTO metadata (spec_version, version, metadata_prefixed_bytes, metadata_prefixed_json)
+            VALUES ($1, $2, $3, $4)
             "#,
         )
         .bind(spec_version as i32)
         .bind(version as i32)
-        .bind(metadata_bytes)
+        .bind(metadata_prefixed_bytes)
+        .bind(metadata_prefixed_json)
         .execute(&self.connection_pool)
         .await?;
         Ok(())
@@ -545,20 +563,23 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 mod tests {
     use crate::persistence::{CrystalPostgreSQLStorage, PostgreSQLStorage};
     use std::fs;
-    use submerge_base::types::substrate::chainspec::Chainspec;
+    use submerge_base::{
+        args::{PostgreSQLArgs, RPCArgs},
+        types::substrate::chainspec::Chainspec,
+    };
     use submerge_substrate_client::SubstrateClient;
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
-        PostgreSQLStorage::new(
-            "localhost",
-            5432,
-            "submerge",
-            "submerge",
-            "submerge_crystal_test",
-            5,
-            100,
-        )
-        .await
+        let args = PostgreSQLArgs {
+            postgres_host: "localhost".to_owned(),
+            postgres_port: 5432,
+            postgres_username: "submerge".to_owned(),
+            postgres_password: "submerge".to_owned(),
+            postgres_db_name: "submerge_crystal_test".to_owned(),
+            postgres_connection_timeout_secs: 10,
+            postgres_pool_max_connections: 100,
+        };
+        PostgreSQLStorage::new(&args).await
     }
 
     #[test_log::test(tokio::test)]
@@ -574,13 +595,13 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_ingest_blocks() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
-        let substrate_client = SubstrateClient::new(
-            "https://rpc.helikon.io/coretime-westend-dev",
-            "wss://rpc.helikon.io/coretime-westend-dev",
-            30,
-            30,
-        )
-        .await?;
+        let args = RPCArgs {
+            ws_rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
+            http_rpc_url: "https://rpc.helikon.io/coretime-westend-dev".to_owned(),
+            rpc_connection_timeout_secs: 30,
+            rpc_request_timeout_secs: 30,
+        };
+        let substrate_client = SubstrateClient::new(&args).await?;
         for number in 100..150 {
             let hash = substrate_client.get_block_hash(number).await?;
             let header = substrate_client.get_block_header(&hash).await?;
@@ -626,13 +647,13 @@ mod tests {
     async fn test_trace_error() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let block_number = 100;
-        let substrate_client = SubstrateClient::new(
-            "https://rpc.helikon.io/coretime-westend-dev",
-            "wss://rpc.helikon.io/coretime-westend-dev",
-            30,
-            30,
-        )
-        .await?;
+        let args = RPCArgs {
+            ws_rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
+            http_rpc_url: "https://rpc.helikon.io/coretime-westend-dev".to_owned(),
+            rpc_connection_timeout_secs: 30,
+            rpc_request_timeout_secs: 30,
+        };
+        let substrate_client = SubstrateClient::new(&args).await?;
         let block_hash = substrate_client.get_block_hash(block_number).await?;
         let block_hash = hex::decode(block_hash)?;
         let mut tx = postgres.connection_pool.begin().await?;

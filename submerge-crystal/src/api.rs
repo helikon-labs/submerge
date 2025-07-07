@@ -1,5 +1,5 @@
+use crate::metrics;
 use crate::persistence::CrystalPostgreSQLStorage;
-use crate::{get_postgres, metrics};
 use actix_web::dev::Service as _;
 use actix_web::{get, http::header::ContentType, web, HttpResponse};
 use actix_web::{App, HttpServer};
@@ -28,7 +28,7 @@ pub(crate) async fn run_api(
     host: &str,
     port: u16,
 ) -> anyhow::Result<()> {
-    let postgres = Arc::new(get_postgres(postgres_args).await?);
+    let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(ServiceState {

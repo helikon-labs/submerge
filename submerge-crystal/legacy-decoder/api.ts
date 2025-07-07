@@ -47,7 +47,7 @@ class API {
 
     private async getRegistry(blockHash: string, specVersion: number): Promise<Registry> {
         if (!this.registryCache.has(specVersion)) {
-            console.log(specVersion, 'create');
+            console.log(`Registry cached for spec version ${specVersion}.`);
             const api = await this.api.at(blockHash);
             this.registryCache.set(specVersion, api.registry);
         }

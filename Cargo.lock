@@ -3155,6 +3155,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
+name = "lru"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86ea4e65087ff52f3862caff188d489f1fab49a0cb09e01b2e3f1a617b10aaed"
+dependencies = [
+ "hashbrown 0.15.4",
+]
+
+[[package]]
 name = "macro_magic"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4247,8 +4256,7 @@ dependencies = [
 [[package]]
 name = "scale-decode"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d78196772d25b90a98046794ce0fe2588b39ebdfbdc1e45b4c6c85dd43bebad"
+source = "git+https://github.com/helikon-labs/scale-decode.git?branch=submerge-expose-bitvector-format#c96be908485317a35c96d159401619c4947fa4c1"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -4262,8 +4270,7 @@ dependencies = [
 [[package]]
 name = "scale-decode-derive"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f4b54a1211260718b92832b661025d1f1a4b6930fbadd6908e00edd265fa5f7"
+source = "git+https://github.com/helikon-labs/scale-decode.git?branch=submerge-expose-bitvector-format#c96be908485317a35c96d159401619c4947fa4c1"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -5461,6 +5468,7 @@ dependencies = [
  "hex",
  "lazy_static",
  "log",
+ "lru",
  "once_cell",
  "parity-scale-codec",
  "reqwest",
@@ -5535,6 +5543,7 @@ dependencies = [
  "anyhow",
  "log",
  "sqlx",
+ "submerge-base",
 ]
 
 [[package]]

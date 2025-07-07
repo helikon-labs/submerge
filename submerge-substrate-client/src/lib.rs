@@ -6,6 +6,7 @@ use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT}
 use jsonrpsee_core::rpc_params;
 use parity_scale_codec::Decode;
 use std::future::Future;
+use submerge_base::args::RPCArgs;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
@@ -17,7 +18,17 @@ pub struct SubstrateClient {
 }
 
 impl SubstrateClient {
-    pub async fn new(
+    pub async fn new(args: &RPCArgs) -> anyhow::Result<Self> {
+        Self::new_inner(
+            &args.http_rpc_url,
+            &args.ws_rpc_url,
+            args.rpc_connection_timeout_secs,
+            args.rpc_request_timeout_secs,
+        )
+        .await
+    }
+
+    async fn new_inner(
         http_rpc_url: &str,
         ws_rpc_url: &str,
         connection_timeout_secs: u64,
