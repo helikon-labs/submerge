@@ -182,6 +182,10 @@ impl Crystal {
                         .decode_event(&block_hash, spec_version, bytes)
                         .await?;
                     log::info!("Legacy event: {}", serde_json::to_string(&event)?);
+                    log::info!(
+                        "Legacy event phase: {}",
+                        serde_json::to_string(&event.get_phase()?)?
+                    );
                     processed_event_count += 1;
                     continue;
                 }

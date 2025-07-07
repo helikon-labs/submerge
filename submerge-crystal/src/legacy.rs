@@ -17,8 +17,24 @@ struct DecodeRequest {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LegacyEventWrapper {
-    pub phase: LegacyEventPhase,
+    phase: JsonValue,
     pub event: LegacyEvent,
+}
+
+impl LegacyEventWrapper {
+    pub fn get_phase(&self) -> anyhow::Result<LegacyEventPhase> {
+        match &self.phase {
+            JsonValue::String(ty) => Ok(LegacyEventPhase {
+                ty: ty.clone(),
+                value: JsonValue::Null,
+            }),
+            JsonValue::Object(_) => {
+                let json_str = serde_json::to_string(&self.phase)?;
+                Ok(serde_json::from_str(&json_str)?)
+            }
+            _ => unimplemented!("Unexpected event phase type."),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
