@@ -5621,6 +5621,7 @@ dependencies = [
  "jsonrpsee-core",
  "log",
  "parity-scale-codec",
+ "sp-runtime",
  "submerge-base",
  "submerge-util",
 ]

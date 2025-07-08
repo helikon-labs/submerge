@@ -20,6 +20,10 @@ pub struct Args {
     /// range checks by block number
     pub scan: bool,
 
+    #[arg(long, default_value = "false")]
+    /// Whether to ignore and skip trace records for blocks
+    pub skip_traces: bool,
+
     #[arg(long)]
     /// Do not start the Prometheus server
     pub no_metrics: bool,

@@ -15,5 +15,6 @@ jsonrpsee = { workspace = true, features = ["full"] }
 jsonrpsee-core = { workspace = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
+sp-runtime = { workspace = true }
 submerge-base = { path = "../submerge-base" }
 submerge-util = { path = "../submerge-util" }

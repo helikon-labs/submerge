@@ -5,6 +5,7 @@ use jsonrpsee::ws_client::WsClientBuilder;
 use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT};
 use jsonrpsee_core::rpc_params;
 use parity_scale_codec::Decode;
+use sp_runtime::AccountId32;
 use std::future::Future;
 use submerge_base::args::RPCArgs;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
@@ -234,5 +235,20 @@ impl SubstrateClient {
         let mut metadata_hex_decoded: &[u8] = &hex::decode(metadata_hex_string)?;
         let metadata = RuntimeMetadataPrefixed::decode(&mut metadata_hex_decoded)?;
         Ok(metadata.1)
+    }
+
+    pub async fn get_active_validator_account_ids(
+        &self,
+        block_hash: &str,
+    ) -> anyhow::Result<Vec<AccountId32>> {
+        let hex_string: String = self
+            .ws_client
+            .request(
+                "state_getStorage",
+                get_rpc_storage_plain_params("Session", "Validators", Some(block_hash)),
+            )
+            .await?;
+        let account_ids = decode_hex_string(hex_string.as_str())?;
+        Ok(account_ids)
     }
 }
