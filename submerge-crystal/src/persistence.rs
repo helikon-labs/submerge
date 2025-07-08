@@ -16,11 +16,11 @@ use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 pub(crate) trait CrystalPostgreSQLStorage {
-    async fn get_metadata_prefixed(
+    async fn get_metadata(
         &self,
         spec_version: u32,
     ) -> anyhow::Result<Option<RuntimeMetadataPrefixed>>;
-    async fn ingest_metadata_prefixed(
+    async fn ingest_metadata(
         &self,
         spec_version: u32,
         version: u32,
@@ -134,12 +134,12 @@ pub(crate) trait CrystalPostgreSQLStorage {
 }
 
 impl CrystalPostgreSQLStorage for PostgreSQLStorage {
-    async fn get_metadata_prefixed(
+    async fn get_metadata(
         &self,
         spec_version: u32,
     ) -> anyhow::Result<Option<RuntimeMetadataPrefixed>> {
         let maybe_metadata_bytes: Option<(Vec<u8>,)> =
-            sqlx::query_as("SELECT metadata_prefixed_bytes FROM metadata WHERE spec_version = $1")
+            sqlx::query_as("SELECT metadata_bytes FROM metadata WHERE spec_version = $1")
                 .bind(spec_version as i32)
                 .fetch_optional(&self.connection_pool)
                 .await?;
@@ -152,12 +152,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
     }
 
-    async fn ingest_metadata_prefixed(
+    async fn ingest_metadata(
         &self,
         spec_version: u32,
         version: u32,
-        metadata_prefixed_bytes: &[u8],
-        metadata_prefixed_json: &JsonValue,
+        metadata_bytes: &[u8],
+        metadata_json: &JsonValue,
     ) -> anyhow::Result<()> {
         let record_count: (i64,) = sqlx::query_as(
             r#"
@@ -174,14 +174,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
         sqlx::query(
             r#"
-            INSERT INTO metadata (spec_version, version, metadata_prefixed_bytes, metadata_prefixed_json)
+            INSERT INTO metadata (spec_version, version, metadata_bytes, metadata_json)
             VALUES ($1, $2, $3, $4)
             "#,
         )
         .bind(spec_version as i32)
         .bind(version as i32)
-        .bind(metadata_prefixed_bytes)
-        .bind(metadata_prefixed_json)
+        .bind(metadata_bytes)
+        .bind(metadata_json)
         .execute(&self.connection_pool)
         .await?;
         Ok(())

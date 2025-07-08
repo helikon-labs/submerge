@@ -7,10 +7,6 @@ CREATE TABLE IF NOT EXISTS extrinsic
     spec_version    INTEGER NOT NULL,
     is_finalized    BOOLEAN NOT NULL,
     trace_index     INTEGER,
-    pallet_index    INTEGER NOT NULL,
-    pallet_name     VARCHAR(128) NOT NULL,
-    call_index      INTEGER NOT NULL,
-    call_name       VARCHAR(128) NOT NULL,
     hash            BYTEA NOT NULL,
     index           INTEGER NOT NULL,
     version         INTEGER NOT NULL,
@@ -21,7 +17,6 @@ CREATE TABLE IF NOT EXISTS extrinsic
     tip             TEXT,
     extra           INTEGER,
     is_successful   BOOLEAN NOT NULL,
-    params          JSONB,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT extrinsic_pk PRIMARY KEY (id, block_number),
     CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
@@ -32,10 +27,6 @@ CREATE INDEX extrinsic_idx_block_hash ON extrinsic (block_hash);
 CREATE INDEX extrinsic_idx_block_number ON extrinsic (block_number);
 CREATE INDEX extrinsic_idx_timestamp ON extrinsic (block_timestamp);
 
-CREATE INDEX extrinsic_idx_pallet_name ON extrinsic (pallet_name);
-CREATE INDEX extrinsic_idx_call_name ON extrinsic (call_name);
-CREATE INDEX extrinsic_idx_pallet_name_call_name ON extrinsic (pallet_name, call_name);
-
 CREATE INDEX extrinsic_idx_signer ON extrinsic (signer);
 CREATE INDEX extrinsic_idx_signer_null ON extrinsic (signer) WHERE signer IS NULL;
 
@@ -44,8 +35,6 @@ ON extrinsic (
     block_number DESC,
     block_timestamp,
     spec_version,
-    pallet_name,
-    call_name,
     signer
 );
 

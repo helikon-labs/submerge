@@ -232,7 +232,7 @@ impl SubstrateClient {
     pub async fn get_metadata_at_block(&self, block_hash: &str) -> anyhow::Result<RuntimeMetadata> {
         let metadata_hex_string = self.get_metadata_hex_string_at_block(block_hash).await?;
         let mut metadata_hex_decoded: &[u8] = &hex::decode(metadata_hex_string)?;
-        let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_hex_decoded)?;
-        Ok(metadata_prefixed.1)
+        let metadata = RuntimeMetadataPrefixed::decode(&mut metadata_hex_decoded)?;
+        Ok(metadata.1)
     }
 }

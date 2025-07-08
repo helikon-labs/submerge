@@ -17,6 +17,7 @@ use std::num::NonZero;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block_trace::StorageMethod;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::{Balance, MultiAddress, Signature};
@@ -49,6 +50,66 @@ impl Crystal {
         Self { args }
     }
 
+    async fn ingest_block_0(
+        postgres: &PostgreSQLStorage,
+        block_hash: &[u8],
+        block_header: &BlockHeader,
+        spec_version: u32,
+        is_finalized: bool,
+    ) -> anyhow::Result<()> {
+        let mut tx = postgres.connection_pool.begin().await?;
+        postgres
+            .ingest_block(
+                block_hash,
+                block_header,
+                0,
+                is_finalized,
+                spec_version,
+                0,
+                0,
+                &mut tx,
+            )
+            .await?;
+        tx.commit().await?;
+        Ok(())
+    }
+
+    async fn get_metadata<'a>(
+        postgres: &PostgreSQLStorage,
+        substrate_client: &SubstrateClient,
+        metadata_cache: &'a mut LruCache<u32, RuntimeMetadata>,
+        block_hash_hex: &str,
+        spec_version: u32,
+    ) -> anyhow::Result<&'a RuntimeMetadata> {
+        let metadata = {
+            if !metadata_cache.contains(&spec_version) {
+                let metadata =
+                    if let Some(db_metadata) = postgres.get_metadata(spec_version).await? {
+                        db_metadata.1
+                    } else {
+                        let metadata_hex_string = substrate_client
+                            .get_metadata_hex_string_at_block(block_hash_hex)
+                            .await?;
+                        let mut metadata_bytes: &[u8] = &hex::decode(metadata_hex_string)?;
+                        let metadata = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
+                        let metadata_json = serde_json::to_value(&metadata)?;
+                        postgres
+                            .ingest_metadata(
+                                spec_version,
+                                decode::get_metadata_version(&metadata.1),
+                                &metadata.encode(),
+                                &metadata_json,
+                            )
+                            .await?;
+                        metadata.1
+                    };
+                metadata_cache.put(spec_version, metadata);
+            }
+            metadata_cache.get(&spec_version).unwrap()
+        };
+        Ok(metadata)
+    }
+
     #[allow(clippy::cognitive_complexity)]
     async fn ingest_block(
         postgres: &PostgreSQLStorage,
@@ -70,53 +131,27 @@ impl Crystal {
             .await?
             .spec_version;
         if block_number == 0 {
-            let mut tx = postgres.connection_pool.begin().await?;
-            postgres
-                .ingest_block(
-                    &block_hash,
-                    &block_header,
-                    0,
-                    is_finalized,
-                    spec_version,
-                    0,
-                    0,
-                    &mut tx,
-                )
-                .await?;
-            tx.commit().await?;
+            Self::ingest_block_0(
+                postgres,
+                &block_hash,
+                &block_header,
+                spec_version,
+                is_finalized,
+            )
+            .await?;
             return Ok(());
         }
         let mut metadata_cache = metadata_cache.write().await;
         let block_timestamp = substrate_client.get_block_timestamp(block_hash_hex).await?;
-        let metadata = {
-            if !metadata_cache.contains(&spec_version) {
-                let metadata = if let Some(db_metadata_prefixed) =
-                    postgres.get_metadata_prefixed(spec_version).await?
-                {
-                    db_metadata_prefixed.1
-                } else {
-                    let metadata_hex_string = substrate_client
-                        .get_metadata_hex_string_at_block(block_hash_hex)
-                        .await?;
-                    let mut metadata_bytes: &[u8] = &hex::decode(metadata_hex_string)?;
-                    let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut metadata_bytes)?;
-                    let metadata_json = serde_json::to_value(&metadata_prefixed)?;
-                    postgres
-                        .ingest_metadata_prefixed(
-                            spec_version,
-                            decode::get_metadata_version(&metadata_prefixed.1),
-                            &metadata_prefixed.encode(),
-                            &metadata_json,
-                        )
-                        .await?;
-                    metadata_prefixed.1
-                };
-                metadata_cache.put(spec_version, metadata);
-            }
-            metadata_cache.get(&spec_version).unwrap()
-        };
+        let metadata = Self::get_metadata(
+            postgres,
+            substrate_client,
+            &mut metadata_cache,
+            block_hash_hex,
+            spec_version,
+        )
+        .await?;
         let metadata_version = decode::get_metadata_version(metadata);
-
         let trace = substrate_client.get_block_trace(block_hash_hex).await?;
         let mut tx = postgres.connection_pool.begin().await?;
         postgres
@@ -129,6 +164,8 @@ impl Crystal {
                 &mut tx,
             )
             .await?;
+
+        /* begin :: get extrinsic and event count */
         let extrinsic_count_key = get_storage_plain_key("System", "ExtrinsicCount");
         let event_count_key = get_storage_plain_key("System", "EventCount");
         let mut extrinsic_count: u32 = 0;
@@ -153,6 +190,9 @@ impl Crystal {
             }
         }
         log::info!("{extrinsic_count} exts, {event_count} events");
+        /* end :: get extrinsic and event count */
+
+        /* begin :: process events */
         let mut processed_event_count = 0;
         let events_key = get_storage_plain_key("System", "Events");
         // index events
@@ -283,6 +323,9 @@ impl Crystal {
                 processed_event_count += 1;
             }
         }
+        /* end :: process events */
+
+        /* begin :: process extrinsics */
         let extrinsic_data_root_key = get_storage_plain_key("System", "ExtrinsicData");
         let mut extrinsics = Vec::new();
         let mut trace_extrinsic_index: u32 = 0;
@@ -466,6 +509,8 @@ impl Crystal {
             let error_message = format!("Processed extrinsic count {processed_extrinsic_count} is less than total extrinsic count {extrinsic_count}.");
             return Err(anyhow::Error::msg(error_message));
         }
+        /* begin :: process extrinsics */
+
         postgres
             .ingest_block(
                 &block_hash,
