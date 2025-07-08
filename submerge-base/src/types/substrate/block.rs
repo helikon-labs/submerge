@@ -66,7 +66,8 @@ impl BlockHeader {
         let mut validator_index: Option<u32> = None;
         for log_string in &self.digest.logs {
             let log_hex_string = log_string.trim_start_matches("0x");
-            let mut log_bytes: &[u8] = &hex::decode(log_hex_string)?;
+            let log_bytes_vec = hex::decode(log_hex_string)?;
+            let mut log_bytes: &[u8] = &log_bytes_vec;
             let digest_item: DigestItem = Decode::decode(&mut log_bytes)?;
             match digest_item {
                 DigestItem::PreRuntime(consensus_engine_id, bytes) => {
@@ -85,14 +86,8 @@ impl BlockHeader {
                         )?);
                     }
                 }
-                DigestItem::Seal(consensus_engine_id, bytes) => {
-                    if validator_index.is_none() {
-                        let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
-                        validator_index = Some(BlockHeader::authority_index_from_log_bytes(
-                            consensus_engine,
-                            &bytes,
-                        )?);
-                    }
+                DigestItem::Seal(_, _) => {
+                    // Skipped: Seal does not contain validator index.
                 }
                 DigestItem::RuntimeEnvironmentUpdated => {
                     log::warn!(

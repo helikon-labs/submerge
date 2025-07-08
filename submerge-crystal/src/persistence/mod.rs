@@ -2,6 +2,7 @@ use frame_metadata::RuntimeMetadataPrefixed;
 use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
 use serde_json::Value as JsonValue;
+use sp_runtime::AccountId32;
 use sp_runtime::DigestItem;
 use sqlx::{Postgres, Transaction};
 use std::str::FromStr;
@@ -55,6 +56,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
+        author_account_id: &AccountId32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn get_block_traces_by_number(
@@ -265,15 +267,17 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
+        author_account_id: &AccountId32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let parent_hash = hex::decode(&header.parent_hash)?;
         let state_root = hex::decode(&header.state_root)?;
         let extrinsic_root = hex::decode(&header.extrinsics_root)?;
+        let author_account_id: &[u8; 32] = author_account_id.as_ref();
         sqlx::query(
             r#"
-                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, is_finalized, extrinsic_count, event_count)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, is_finalized, extrinsic_count, event_count, author_account_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (hash) DO NOTHING
                 "#,
         )
@@ -287,6 +291,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(is_finalized)
             .bind(extrinsic_count as i32)
             .bind(event_count as i32)
+            .bind(author_account_id)
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -550,6 +555,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 #[cfg(test)]
 mod tests {
     use crate::persistence::{CrystalPostgreSQLStorage, PostgreSQLStorage};
+    use sp_runtime::AccountId32;
     use std::fs;
     use submerge_base::{
         args::{PostgreSQLArgs, RPCArgs},
@@ -608,6 +614,7 @@ mod tests {
                     last_runtime_upgrade.spec_version,
                     0,
                     0,
+                    &AccountId32::new(Default::default()),
                     &mut tx,
                 )
                 .await?;

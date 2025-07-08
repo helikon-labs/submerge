@@ -1,5 +1,7 @@
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
+use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
+use sp_runtime::AccountId32;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::chainspec::Chainspec;
@@ -99,6 +101,7 @@ impl BlockProcessor {
                 spec_version,
                 0,
                 0,
+                &AccountId32::new([0u8; 32]),
                 &mut tx,
             )
             .await?;
@@ -132,6 +135,22 @@ impl BlockProcessor {
                 .await?;
             return Ok(());
         }
+        let author_account_id = {
+            let validator_index = block_header.get_validator_index()?;
+            let validator_account_ids = self
+                .substrate_client
+                .get_active_validator_account_ids(block_hash_hex)
+                .await?;
+            let validator_index = validator_index % validator_account_ids.len() as u32;
+            if let Some(author_account_id) = validator_account_ids.get(validator_index as usize) {
+                author_account_id.clone()
+            } else {
+                anyhow::bail!("Author validator was not found at index {validator_index}.");
+            }
+        };
+        let validator_address =
+            author_account_id.to_ss58check_with_version(Ss58AddressFormat::custom(2));
+        log::info!("VALIDATOR :: {validator_address}");
         let block_timestamp = self
             .substrate_client
             .get_block_timestamp(block_hash_hex)
@@ -155,10 +174,15 @@ impl BlockProcessor {
         // get extrinsic and event counts
         let extrinsic_count = util::get_extrinsic_count(&trace)?;
         let event_count = util::get_event_count(&trace)?;
-        log::info!("Found {extrinsic_count} extrinsics and {event_count} events.");
         let events = self
             .get_events(&block_hash, spec_version, &metadata, &trace)
             .await?;
+        if event_count != events.len() as u32 {
+            anyhow::bail!(
+                "❌ Expected event count {event_count} is not equal to decoded event count {}.",
+                events.len()
+            );
+        }
         self.process_events(
             &block_hash,
             &block_header,
@@ -169,6 +193,7 @@ impl BlockProcessor {
             &mut tx,
         )
         .await?;
+        log::info!("Persisted {} events.", events.len());
         /*
         self.process_extrinsics(
             block_hash_hex,
@@ -193,6 +218,7 @@ impl BlockProcessor {
                 spec_version,
                 extrinsic_count,
                 event_count,
+                &author_account_id,
                 &mut tx,
             )
             .await?;
