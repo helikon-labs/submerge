@@ -1,5 +1,4 @@
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
-use jsonrpsee::http_client::{HttpClient, HttpClientBuilder};
 use jsonrpsee::tokio::time::timeout;
 use jsonrpsee::ws_client::WsClientBuilder;
 use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT};
@@ -15,14 +14,12 @@ use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain
 
 pub struct SubstrateClient {
     ws_client: Client,
-    http_client: HttpClient,
 }
 
 impl SubstrateClient {
     pub async fn new(args: &RPCArgs) -> anyhow::Result<Self> {
         Self::new_inner(
-            &args.http_rpc_url,
-            &args.ws_rpc_url,
+            &args.rpc_url,
             args.rpc_connection_timeout_secs,
             args.rpc_request_timeout_secs,
         )
@@ -30,8 +27,7 @@ impl SubstrateClient {
     }
 
     async fn new_inner(
-        http_rpc_url: &str,
-        ws_rpc_url: &str,
+        rpc_url: &str,
         connection_timeout_secs: u64,
         request_timeout_secs: u64,
     ) -> anyhow::Result<Self> {
@@ -40,17 +36,10 @@ impl SubstrateClient {
             .max_response_size(1024 * 1024 * 1024)
             .connection_timeout(std::time::Duration::from_secs(connection_timeout_secs))
             .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
-            .build(ws_rpc_url)
+            .build(rpc_url)
             .await?;
-        let http_client = HttpClientBuilder::default()
-            .max_response_size(1024 * 1024 * 1024)
-            .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
-            .build(http_rpc_url)?;
         log::info!("✅ Substrate client constructed.");
-        Ok(SubstrateClient {
-            ws_client,
-            http_client,
-        })
+        Ok(SubstrateClient { ws_client })
     }
 }
 
@@ -104,7 +93,7 @@ impl SubstrateClient {
     pub async fn get_block_trace(&self, block_hash: &str) -> anyhow::Result<BlockTrace> {
         let storage_method_names = StorageMethod::names().join(",");
         let trace_wrapper: BlockTraceWrapper = self
-            .http_client
+            .ws_client
             .request(
                 "state_traceBlock",
                 rpc_params!(&block_hash, "state", "", storage_method_names),

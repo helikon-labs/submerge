@@ -584,8 +584,7 @@ mod tests {
     async fn test_ingest_blocks() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let args = RPCArgs {
-            ws_rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
-            http_rpc_url: "https://rpc.helikon.io/coretime-westend-dev".to_owned(),
+            rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
             rpc_connection_timeout_secs: 30,
             rpc_request_timeout_secs: 30,
         };
@@ -636,8 +635,7 @@ mod tests {
         let postgres = get_test_postgres().await?;
         let block_number = 100;
         let args = RPCArgs {
-            ws_rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
-            http_rpc_url: "https://rpc.helikon.io/coretime-westend-dev".to_owned(),
+            rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
             rpc_connection_timeout_secs: 30,
             rpc_request_timeout_secs: 30,
         };

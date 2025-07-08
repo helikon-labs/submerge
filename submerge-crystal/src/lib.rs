@@ -54,16 +54,14 @@ impl BaseService for Crystal {
         println!(
             r#"┌──────────────────────────────────────────────────────────────────────────────────────────
 | Chain:            {}
-│ HTTP RPC URL:     {}
-│ WS RPC URL:       {}
+│ RPC URL:          {}
 │ Start Block:      {}
 │ End Block:        {}
 | API Enabled:      {}
 | Metrics Enabled:  {}
 └──────────────────────────────────────────────────────────────────────────────────────────"#,
             chainspec.name,
-            self.args.rpc.http_rpc_url,
-            self.args.rpc.ws_rpc_url,
+            self.args.rpc.rpc_url,
             self.args
                 .start_block
                 .map_or("N/A".to_string(), |v| v.to_string()),
