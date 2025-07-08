@@ -15,6 +15,8 @@ use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
+use crate::types::Event;
+
 pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_metadata(
         &self,
@@ -31,14 +33,14 @@ pub(crate) trait CrystalPostgreSQLStorage {
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
     async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64>;
     #[cfg(test)]
-    async fn get_trace_error_count(&self) -> anyhow::Result<u32>;
-    async fn save_trace_error(
+    async fn get_error_count(&self) -> anyhow::Result<u32>;
+    async fn save_error(
         &self,
         block_hash: &[u8],
         block_number: u64,
         description: &str,
     ) -> anyhow::Result<()>;
-    async fn delete_trace_error(
+    async fn delete_error(
         &self,
         block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
@@ -80,6 +82,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         is_finalized: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    #[allow(dead_code)]
     #[allow(clippy::too_many_arguments)]
     async fn ingest_extrinsic(
         &self,
@@ -108,14 +111,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_timestamp: u64,
         spec_version: u32,
         is_finalized: bool,
-        trace_index: u32,
-        pallet_index: u8,
-        pallet_name: &str,
-        event_index: u8,
-        event_name: &str,
-        extrinsic_index: Option<u32>,
-        phase: &str,
-        index: u32,
+        event: &Event,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
 
@@ -195,20 +191,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     }
 
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
-        log::info!("🔽 Processing genesis from chainspec file.");
-        if self.get_genesis_record_count().await? > 0 {
-            log::info!("🔁 Genesis had already been processed.");
-            return Ok(());
-        }
         let mut tx = self.connection_pool.begin().await?;
         for (key, value) in chainspec.genesis.raw.top.iter() {
             Self::ingest_genesis_item(&mut tx, key, value).await?;
         }
         tx.commit().await?;
-        log::info!(
-            "✅ Processed {} storage items from the chainspec file.",
-            chainspec.genesis.raw.top.len()
-        );
         Ok(())
     }
 
@@ -228,14 +215,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     }
 
     #[cfg(test)]
-    async fn get_trace_error_count(&self) -> anyhow::Result<u32> {
-        let row: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT block_number) FROM trace_error")
+    async fn get_error_count(&self) -> anyhow::Result<u32> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT block_number) FROM error")
             .fetch_one(&self.connection_pool)
             .await?;
         Ok(row.0 as u32)
     }
 
-    async fn save_trace_error(
+    async fn save_error(
         &self,
         block_hash: &[u8],
         block_number: u64,
@@ -243,7 +230,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
-            INSERT INTO trace_error (block_hash, block_number, description)
+            INSERT INTO error (block_hash, block_number, description)
             VALUES ($1, $2, $3)
             ON CONFLICT(block_hash) DO UPDATE
             SET description = EXCLUDED.description, created_at = now()
@@ -257,12 +244,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
-    async fn delete_trace_error(
+    async fn delete_error(
         &self,
         block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        sqlx::query("DELETE FROM trace_error WHERE block_hash = $1")
+        sqlx::query("DELETE FROM error WHERE block_hash = $1")
             .bind(block_hash)
             .execute(&mut **tx)
             .await?;
@@ -523,20 +510,20 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_timestamp: u64,
         spec_version: u32,
         is_finalized: bool,
-        trace_index: u32,
-        pallet_index: u8,
-        pallet_name: &str,
-        event_index: u8,
-        event_name: &str,
-        extrinsic_index: Option<u32>,
-        phase: &str,
-        index: u32,
+        event: &Event,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
+        let (phase, extrinsic_index) = match &event.phase {
+            frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
+                ("ApplyExtrinsic", Some(extrinsic_index))
+            }
+            frame_system::Phase::Finalization => ("Finalization", None),
+            frame_system::Phase::Initialization => ("Initialization", None),
+        };
         sqlx::query(
             r#"
-            INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, event_index, event_name, extrinsic_index, phase, index, params)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, null)
+            INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, phase, index, args_json)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             ON CONFLICT (block_hash, block_number, index) DO NOTHING
             "#,
         )
@@ -545,14 +532,15 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_timestamp as i64)
             .bind(spec_version as i32)
             .bind(is_finalized)
-            .bind(trace_index as i32)
-            .bind(pallet_index as i32)
-            .bind(pallet_name)
-            .bind(event_index as i32)
-            .bind(event_name)
-            .bind(extrinsic_index.map(|e| e as i32))
+            .bind(event.trace_index as i32)
+            .bind(event.pallet_index.map(|i| i as i32))
+            .bind(&event.pallet_name)
+            .bind(event.pallet_event_index.map(|i| i as i32))
+            .bind(&event.pallet_event_name)
+            .bind(extrinsic_index.map(|e| *e as i32))
             .bind(phase)
-            .bind(index as i32)
+            .bind(event.index as i32)
+            .bind(&event.args)
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -637,7 +625,7 @@ mod tests {
                     &mut tx,
                 )
                 .await?;
-            postgres.delete_trace_error(&hash, &mut tx).await?;
+            postgres.delete_error(&hash, &mut tx).await?;
             tx.commit().await?;
         }
         Ok(())
@@ -657,13 +645,13 @@ mod tests {
         let block_hash = substrate_client.get_block_hash(block_number).await?;
         let block_hash = hex::decode(block_hash)?;
         let mut tx = postgres.connection_pool.begin().await?;
-        postgres.delete_trace_error(&block_hash, &mut tx).await?;
+        postgres.delete_error(&block_hash, &mut tx).await?;
         tx.commit().await?;
-        let pre_trace_error_count = postgres.get_trace_error_count().await?;
+        let pre_trace_error_count = postgres.get_error_count().await?;
         postgres
-            .save_trace_error(&block_hash, block_number, "error_description")
+            .save_error(&block_hash, block_number, "error_description")
             .await?;
-        let post_trace_error_count = postgres.get_trace_error_count().await?;
+        let post_trace_error_count = postgres.get_error_count().await?;
         assert_eq!(post_trace_error_count, pre_trace_error_count + 1);
         Ok(())
     }

@@ -1,21 +1,21 @@
 CREATE TABLE IF NOT EXISTS event
 (
-    id              BIGSERIAL NOT NULL,
-    block_hash      BYTEA NOT NULL,
-    block_number    BIGINT NOT NULL,
-    block_timestamp BIGINT NOT NULL,
-    spec_version    INTEGER NOT NULL,
-    is_finalized    BOOLEAN NOT NULL,
-    trace_index     INTEGER NOT NULL,
-    pallet_index    INTEGER NOT NULL,
-    pallet_name     TEXT NOT NULL,
-    event_index     INTEGER NOT NULL,
-    event_name      VARCHAR(128) NOT NULL,
-    extrinsic_index INTEGER,
-    phase           VARCHAR(32) NOT NULL,
-    index           INTEGER NOT NULL,
-    args_json       JSONB,
-    created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    id                  BIGSERIAL NOT NULL,
+    block_hash          BYTEA NOT NULL,
+    block_number        BIGINT NOT NULL,
+    block_timestamp     BIGINT NOT NULL,
+    spec_version        INTEGER NOT NULL,
+    is_finalized        BOOLEAN NOT NULL,
+    trace_index         INTEGER NOT NULL,
+    pallet_index        INTEGER,
+    pallet_name         TEXT NOT NULL,
+    pallet_event_index  INTEGER,
+    pallet_event_name   VARCHAR(128) NOT NULL,
+    extrinsic_index     INTEGER,
+    phase               VARCHAR(32) NOT NULL,
+    index               INTEGER NOT NULL,
+    args_json           JSONB,
+    created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT event_pk PRIMARY KEY (id, block_number),
     CONSTRAINT event_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
 ) PARTITION BY RANGE (block_number);
@@ -26,11 +26,11 @@ CREATE INDEX event_idx_block_hash_extrinsic_index ON event (block_hash, extrinsi
 CREATE INDEX event_idx_timestamp ON event (block_timestamp);
 
 CREATE INDEX event_idx_pallet_name ON event (pallet_name);
-CREATE INDEX event_idx_event_name ON event (event_name);
-CREATE INDEX event_idx_pallet_name_event_name ON event (pallet_name, event_name);
+CREATE INDEX event_idx_pallet_event_name ON event (pallet_event_name);
+CREATE INDEX event_idx_pallet_name_pallet_event_name ON event (pallet_name, pallet_event_name);
 
 CREATE INDEX event_idx_filter_order
-ON event (block_number DESC, block_timestamp, spec_version, pallet_name, event_name);
+ON event (block_number DESC, block_timestamp, spec_version, pallet_name, pallet_event_name);
 
 CREATE TABLE event_0_1000000 PARTITION OF event FOR VALUES FROM (0) TO (1000000);
 CREATE TABLE event_1000000_2000000 PARTITION OF event FOR VALUES FROM (1000000) TO (2000000);

@@ -15,20 +15,24 @@ pub struct Args {
     /// Path of the chain specification file
     pub chainspec_path: String,
 
-    #[arg(long)]
+    #[arg(long, default_value = "false")]
     /// Check each block in the range to see if it was ingested before, rather than relying on
     /// range checks by block number
     pub scan: bool,
 
     #[arg(long, default_value = "false")]
+    /// Errors will always be persisted, and block processing will stop if this switch is on
+    pub stop_on_error: bool,
+
+    #[arg(long, default_value = "false")]
     /// Whether to ignore and skip trace records for blocks
     pub skip_traces: bool,
 
-    #[arg(long)]
+    #[arg(long, default_value = "false")]
     /// Do not start the Prometheus server
     pub no_metrics: bool,
 
-    #[arg(long)]
+    #[arg(long, default_value = "false")]
     /// Do not start the HTTP REST API
     pub no_api: bool,
 

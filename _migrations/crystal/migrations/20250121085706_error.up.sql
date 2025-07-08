@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS trace_error
+CREATE TABLE IF NOT EXISTS error
 (
     id              SERIAL PRIMARY KEY,
     block_hash      BYTEA NOT NULL,
@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS trace_error
     CONSTRAINT trace_error_u_hash UNIQUE (block_hash)
 );
 
-CREATE INDEX IF NOT EXISTS trace_error_idx_number
-    ON trace_error (block_number);
+CREATE INDEX IF NOT EXISTS error_idx_number
+    ON error (block_number);

@@ -1,22 +1,6 @@
 use convert_case::{Case, Casing};
-use frame_metadata::RuntimeMetadata;
 use serde_json::Value;
 use std::marker::PhantomData;
-
-pub(crate) fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
-    match &metadata {
-        RuntimeMetadata::V8(_) => 8,
-        RuntimeMetadata::V9(_) => 9,
-        RuntimeMetadata::V10(_) => 10,
-        RuntimeMetadata::V11(_) => 11,
-        RuntimeMetadata::V12(_) => 12,
-        RuntimeMetadata::V13(_) => 13,
-        RuntimeMetadata::V14(_) => 14,
-        RuntimeMetadata::V15(_) => 15,
-        RuntimeMetadata::V16(_) => 16,
-        _ => unimplemented!("Unsupported metadata version."),
-    }
-}
 
 pub(crate) struct JsonValueVisitor<R>(PhantomData<R>);
 

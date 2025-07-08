@@ -1,7 +1,6 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
-use crate::persistence::CrystalPostgreSQLStorage;
 use crate::process::BlockProcessor;
 use async_trait::async_trait;
 use lazy_static::lazy_static;
@@ -12,14 +11,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
-use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
 use tokio::time::sleep;
 
 mod api;
 pub mod args;
-mod decode;
-mod legacy;
 mod metrics;
 mod persistence;
 mod process;
@@ -70,10 +66,10 @@ impl BaseService for Crystal {
             self.args.rpc.ws_rpc_url,
             self.args
                 .start_block
-                .map_or("None".to_string(), |v| v.to_string()),
+                .map_or("N/A".to_string(), |v| v.to_string()),
             self.args
                 .end_block
-                .map_or("None".to_string(), |v| v.to_string()),
+                .map_or("N/A".to_string(), |v| v.to_string()),
             !self.args.no_api,
             !self.args.no_metrics,
         );
@@ -90,42 +86,30 @@ impl BaseService for Crystal {
             log::info!("⛔ API disabled.");
         }
 
+        let block_processor =
+            Arc::new(BlockProcessor::new(&self.args.postgres, &self.args.rpc).await?);
+        block_processor.process_genesis(&chainspec).await?;
         match self.args.end_block {
             Some(end_block) => {
-                let postgres = PostgreSQLStorage::new(&self.args.postgres).await?;
-                postgres.ingest_genesis(&chainspec).await?;
-                let block_processor =
-                    BlockProcessor::new(&self.args.postgres, &self.args.rpc).await?;
                 let start_block = self.args.start_block.unwrap_or(0);
-                let next_block = if self.args.scan {
-                    start_block
-                } else {
-                    postgres
-                        .get_next_block_number(start_block, end_block)
-                        .await?
-                };
-                if next_block < end_block {
-                    block_processor
-                        .process_blocks(next_block, end_block)
-                        .await?;
-                } else {
-                    log::info!("All blocks in range {start_block}-{end_block} had been ingested.");
-                }
+                block_processor
+                    .process_blocks(
+                        self.args.scan,
+                        self.args.stop_on_error,
+                        start_block,
+                        end_block,
+                    )
+                    .await?;
                 Ok(())
             }
             None => loop {
                 let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
-                let block_processor =
-                    Arc::new(BlockProcessor::new(&self.args.postgres, &self.args.rpc).await?);
-                let postgres = Arc::new(PostgreSQLStorage::new(&self.args.postgres).await?);
-                postgres.ingest_genesis(&chainspec).await?;
                 let substrate_client = Arc::new(SubstrateClient::new(&self.args.rpc).await?);
                 substrate_client
                     .subscribe_to_finalized_blocks(
                         self.args.rpc.rpc_request_timeout_secs,
                         |finalized_block_header| {
                             let error_cell = error_cell.clone();
-                            let postgres = postgres.clone();
                             let block_processor = block_processor.clone();
                             async move {
                                 if let Some(error) = error_cell.get() {
@@ -135,22 +119,20 @@ impl BaseService for Crystal {
                                 log::info!("📦 New finalized block {finalized_block_number}.");
 
                                 if IS_BUSY.load(Ordering::SeqCst) {
-                                    log::info!("⏳ Busy ingesting past blocks. Skip block #{finalized_block_number}.");
+                                    log::info!("⏳ Busy processing past blocks. Skip block #{finalized_block_number}.");
                                     return Ok(());
                                 }
                                 IS_BUSY.store(true, Ordering::SeqCst);
 
-                                let start_block = if self.args.scan {
-                                    self.args.start_block.unwrap_or(0)
-                                } else {
-                                    postgres
-                                        .get_next_block_number(self.args.start_block.unwrap_or(0), finalized_block_number)
-                                        .await?
-                                };
-                                if start_block <= finalized_block_number {
+                                let start_block_number = self.args.start_block.unwrap_or(0);
+                                let scan = self.args.scan;
+                                let stop_on_error = self.args.stop_on_error;
+                                if start_block_number <= finalized_block_number {
                                     tokio::spawn(async move {
                                         if let Err(error) = block_processor.process_blocks(
-                                            start_block,
+                                            scan,
+                                            stop_on_error,
+                                            start_block_number,
                                             finalized_block_number,
                                         )
                                         .await
@@ -160,7 +142,7 @@ impl BaseService for Crystal {
                                         IS_BUSY.store(false, Ordering::SeqCst);
                                     });
                                 } else {
-                                    log::info!("🔁 Block {finalized_block_number} had already been ingested.");
+                                    log::info!("🔁 Block {finalized_block_number} had already been processed.");
                                     IS_BUSY.store(false, Ordering::SeqCst);
                                 }
                                 Ok(())

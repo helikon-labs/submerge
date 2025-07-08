@@ -12,6 +12,7 @@ use submerge_base::types::submerge::BlockTraces;
 use submerge_base::types::substrate::BLOCK_HASH_HEX_LENGTH;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
+pub mod legacy;
 pub(crate) type ResultResponse = Result<HttpResponse, InternalServerError>;
 
 #[derive(Clone)]
