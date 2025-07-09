@@ -1,6 +1,6 @@
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
-use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
+use crate::util::{get_event_count, get_extrinsic_count};
 use sp_runtime::AccountId32;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block::BlockHeader;
@@ -12,7 +12,6 @@ mod decode;
 mod event;
 mod extrinsic;
 mod metadata;
-mod util;
 
 pub struct BlockProcessor {
     postgres: PostgreSQLStorage,
@@ -148,9 +147,6 @@ impl BlockProcessor {
                 anyhow::bail!("Author validator was not found at index {validator_index}.");
             }
         };
-        let validator_address =
-            author_account_id.to_ss58check_with_version(Ss58AddressFormat::custom(2));
-        log::info!("VALIDATOR :: {validator_address}");
         let block_timestamp = self
             .substrate_client
             .get_block_timestamp(block_hash_hex)
@@ -172,8 +168,8 @@ impl BlockProcessor {
             )
             .await?;
         // get extrinsic and event counts
-        let extrinsic_count = util::get_extrinsic_count(&trace)?;
-        let event_count = util::get_event_count(&trace)?;
+        let extrinsic_count = get_extrinsic_count(&trace)?;
+        let event_count = get_event_count(&trace)?;
         let events = self
             .get_events(&block_hash, spec_version, &metadata, &trace)
             .await?;
@@ -183,6 +179,23 @@ impl BlockProcessor {
                 events.len()
             );
         }
+
+        self.postgres
+            .ingest_block(
+                &block_hash,
+                &block_header,
+                block_timestamp,
+                is_finalized,
+                spec_version,
+                extrinsic_count,
+                event_count,
+                &author_account_id,
+                &mut tx,
+            )
+            .await?;
+        self.postgres
+            .ingest_block_logs(&block_hash, &block_header, true, &mut tx)
+            .await?;
         self.process_events(
             &block_hash,
             &block_header,
@@ -209,22 +222,6 @@ impl BlockProcessor {
         )
         .await?;
         */
-        self.postgres
-            .ingest_block(
-                &block_hash,
-                &block_header,
-                block_timestamp,
-                is_finalized,
-                spec_version,
-                extrinsic_count,
-                event_count,
-                &author_account_id,
-                &mut tx,
-            )
-            .await?;
-        self.postgres
-            .ingest_block_logs(&block_hash, &block_header, true, &mut tx)
-            .await?;
         self.postgres.delete_error(&block_hash, &mut tx).await?;
         tx.commit().await?;
         Ok(())

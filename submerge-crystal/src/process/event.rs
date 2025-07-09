@@ -12,13 +12,9 @@ use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{
-        decode::JsonValueVisitor,
-        metadata::get_metadata_version,
-        util::{get_event_variant, get_pallet_metadata},
-        BlockProcessor,
-    },
+    process::{decode::JsonValueVisitor, metadata::get_metadata_version, BlockProcessor},
     types::Event,
+    util::{get_event_variant, get_pallet_metadata},
 };
 
 impl BlockProcessor {
@@ -81,12 +77,26 @@ impl BlockProcessor {
                         legacy_phase.value
                     ),
                 };
+                let pallet_name = event.event.pallet.to_case(Case::UpperCamel);
+                let pallet_index = self
+                    .postgres
+                    .get_pallet_index_by_name(&pallet_name)
+                    .await?
+                    .ok_or(anyhow::Error::msg(format!(
+                        "Pallet index not found in the database for pallet {pallet_name}."
+                    )))?;
+                let pallet_event_name = event.event.name.to_case(Case::UpperCamel);
+                let pallet_event_index = self
+                    .postgres
+                    .get_pallet_event_index_by_name(pallet_index, &pallet_event_name)
+                    .await?
+                    .ok_or(anyhow::Error::msg(format!("Pallet event index not found in the database for event {pallet_name}.{pallet_event_name}.")))?;
                 events.push(Event {
                     trace_index: trace_index as u32,
-                    pallet_index: None,
-                    pallet_name: event.event.pallet.to_case(Case::UpperCamel),
-                    pallet_event_index: None,
-                    pallet_event_name: event.event.name.to_case(Case::UpperCamel),
+                    pallet_index,
+                    pallet_name,
+                    pallet_event_index,
+                    pallet_event_name,
                     index: events.len() as u32,
                     phase,
                     args: event.event.data,
@@ -95,13 +105,14 @@ impl BlockProcessor {
             }
             let phase = frame_system::Phase::decode(&mut bytes)?;
             let pallet_index: u8 = Decode::decode(&mut bytes)?;
-            let event_index: u8 = Decode::decode(&mut bytes)?;
+            let pallet_event_index: u8 = Decode::decode(&mut bytes)?;
             match &metadata {
                 RuntimeMetadata::V14(metadata) => {
                     let pallet_metadata = get_pallet_metadata(metadata, pallet_index)
                         .expect("Pallet not found in metadata.");
-                    let event_variant = get_event_variant(metadata, pallet_metadata, event_index)?
-                        .expect("Event not found in pallet.");
+                    let event_variant =
+                        get_event_variant(metadata, pallet_metadata, pallet_event_index)?
+                            .expect("Event not found in pallet.");
                     let mut map = serde_json::Map::new();
                     for event_field in event_variant.fields.iter() {
                         let field_type = metadata
@@ -128,9 +139,9 @@ impl BlockProcessor {
                     let args = JsonValue::Object(map);
                     events.push(Event {
                         trace_index: trace_index as u32,
-                        pallet_index: Some(pallet_index),
+                        pallet_index,
                         pallet_name: pallet_metadata.name.to_case(Case::UpperCamel),
-                        pallet_event_index: Some(event_index),
+                        pallet_event_index,
                         pallet_event_name: event_variant.name.to_case(Case::UpperCamel),
                         index: events.len() as u32,
                         phase,

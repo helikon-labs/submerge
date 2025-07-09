@@ -19,7 +19,12 @@ CREATE TABLE IF NOT EXISTS extrinsic
     is_successful   BOOLEAN NOT NULL,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT extrinsic_pk PRIMARY KEY (id, block_number),
-    CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
+    CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
+    CONSTRAINT extrinsic_fk_block
+        FOREIGN KEY (block_hash)
+            REFERENCES block (hash)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX extrinsic_idx_hash ON extrinsic (hash);

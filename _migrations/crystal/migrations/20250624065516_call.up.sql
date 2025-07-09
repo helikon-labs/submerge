@@ -15,7 +15,12 @@ CREATE TABLE IF NOT EXISTS call
     call_name       VARCHAR(128) NOT NULL,
     args_json       JSONB,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT call_pk PRIMARY KEY (id, block_number)
+    CONSTRAINT call_pk PRIMARY KEY (id, block_number),
+    CONSTRAINT call_fk_extrinsic
+        FOREIGN KEY (extrinsic_id, block_number)
+            REFERENCES extrinsic (id, block_number)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX call_idx_block_hash ON call (block_hash);

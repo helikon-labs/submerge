@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS metadata_pallet_event CASCADE;

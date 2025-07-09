@@ -15,7 +15,9 @@ use submerge_base::types::substrate::block_trace::{
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
+use submerge_util::substrate::storage::get_storage_plain_key;
 
+use crate::types::metadata::Metadata;
 use crate::types::Event;
 
 pub(crate) trait CrystalPostgreSQLStorage {
@@ -29,7 +31,14 @@ pub(crate) trait CrystalPostgreSQLStorage {
         version: u32,
         metadata_bytes: &[u8],
         metadata_json: &JsonValue,
+        metadata: &Metadata,
     ) -> anyhow::Result<()>;
+    async fn get_pallet_index_by_name(&self, name: &str) -> anyhow::Result<Option<u8>>;
+    async fn get_pallet_event_index_by_name(
+        &self,
+        pallet_index: u8,
+        name: &str,
+    ) -> anyhow::Result<Option<u8>>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
     async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64>;
@@ -153,9 +162,10 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn ingest_metadata(
         &self,
         spec_version: u32,
-        version: u32,
+        metadata_version: u32,
         metadata_bytes: &[u8],
         metadata_json: &JsonValue,
+        metadata: &Metadata,
     ) -> anyhow::Result<()> {
         let record_count: (i64,) = sqlx::query_as(
             r#"
@@ -172,17 +182,131 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
         sqlx::query(
             r#"
-            INSERT INTO metadata (spec_version, version, metadata_bytes, metadata_json)
+            INSERT INTO metadata (spec_version, metadata_version, metadata_bytes, metadata_json)
             VALUES ($1, $2, $3, $4)
             "#,
         )
         .bind(spec_version as i32)
-        .bind(version as i32)
+        .bind(metadata_version as i32)
         .bind(metadata_bytes)
         .bind(metadata_json)
         .execute(&self.connection_pool)
         .await?;
+        for pallet in metadata.pallets.iter() {
+            sqlx::query(
+                r#"
+                INSERT INTO metadata_pallet (spec_version, index, name)
+                VALUES ($1, $2, $3)
+                "#,
+            )
+            .bind(spec_version as i32)
+            .bind(pallet.index as i32)
+            .bind(&pallet.name)
+            .execute(&self.connection_pool)
+            .await?;
+            for event in pallet.events.iter() {
+                sqlx::query(
+                    r#"
+                    INSERT INTO metadata_pallet_event (spec_version, pallet_index, pallet_name, index, name)
+                    VALUES ($1, $2, $3, $4, $5)
+                    "#,
+                )
+                .bind(spec_version as i32)
+                .bind(pallet.index as i32)
+                .bind(&pallet.name)
+                .bind(event.index as i32)
+                .bind(&event.name)
+                .execute(&self.connection_pool)
+                .await?;
+            }
+            for constant in pallet.constants.iter() {
+                sqlx::query(
+                    r#"
+                    INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name)
+                    VALUES ($1, $2, $3, $4, $5)
+                    "#,
+                )
+                .bind(spec_version as i32)
+                .bind(pallet.index as i32)
+                .bind(&pallet.name)
+                .bind(constant.index as i32)
+                .bind(&constant.name)
+                .execute(&self.connection_pool)
+                .await?;
+            }
+            for call in pallet.calls.iter() {
+                sqlx::query(
+                    r#"
+                    INSERT INTO metadata_pallet_call (spec_version, pallet_index, pallet_name, index, name)
+                    VALUES ($1, $2, $3, $4, $5)
+                    "#,
+                )
+                .bind(spec_version as i32)
+                .bind(pallet.index as i32)
+                .bind(&pallet.name)
+                .bind(call.index as i32)
+                .bind(&call.name)
+                .execute(&self.connection_pool)
+                .await?;
+            }
+            for storage_item in pallet.storage_items.iter() {
+                let key = get_storage_plain_key(&pallet.name, &storage_item.name);
+                sqlx::query(
+                    r#"
+                    INSERT INTO metadata_pallet_storage_item (spec_version, pallet_index, pallet_name, index, name, key)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    "#,
+                )
+                .bind(spec_version as i32)
+                .bind(pallet.index as i32)
+                .bind(&pallet.name)
+                .bind(storage_item.index as i32)
+                .bind(&storage_item.name)
+                .bind(&key)
+                .execute(&self.connection_pool)
+                .await?;
+            }
+            for error in pallet.errors.iter() {
+                sqlx::query(
+                    r#"
+                    INSERT INTO metadata_pallet_error (spec_version, pallet_index, pallet_name, index, name)
+                    VALUES ($1, $2, $3, $4, $5)
+                    "#,
+                )
+                .bind(spec_version as i32)
+                .bind(pallet.index as i32)
+                .bind(&pallet.name)
+                .bind(error.index as i32)
+                .bind(&error.name)
+                .execute(&self.connection_pool)
+                .await?;
+            }
+        }
         Ok(())
+    }
+
+    async fn get_pallet_index_by_name(&self, name: &str) -> anyhow::Result<Option<u8>> {
+        let maybe_row: Option<(i32,)> =
+            sqlx::query_as("SELECT index FROM metadata_pallet WHERE name = $1")
+                .bind(name)
+                .fetch_optional(&self.connection_pool)
+                .await?;
+        Ok(maybe_row.map(|row| row.0 as u8))
+    }
+
+    async fn get_pallet_event_index_by_name(
+        &self,
+        pallet_index: u8,
+        name: &str,
+    ) -> anyhow::Result<Option<u8>> {
+        let maybe_row: Option<(i32,)> = sqlx::query_as(
+            "SELECT index FROM metadata_pallet_event WHERE pallet_index = $1 and name = $2",
+        )
+        .bind(pallet_index as i32)
+        .bind(name)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(maybe_row.map(|row| row.0 as u8))
     }
 
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {
@@ -538,9 +662,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(spec_version as i32)
             .bind(is_finalized)
             .bind(event.trace_index as i32)
-            .bind(event.pallet_index.map(|i| i as i32))
+            .bind(event.pallet_index as i32)
             .bind(&event.pallet_name)
-            .bind(event.pallet_event_index.map(|i| i as i32))
+            .bind(event.pallet_event_index as i32)
             .bind(&event.pallet_event_name)
             .bind(extrinsic_index.map(|e| *e as i32))
             .bind(phase)

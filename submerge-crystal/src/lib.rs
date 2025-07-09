@@ -20,6 +20,7 @@ mod metrics;
 mod persistence;
 mod process;
 mod types;
+mod util;
 
 lazy_static! {
     static ref IS_BUSY: AtomicBool = AtomicBool::new(false);

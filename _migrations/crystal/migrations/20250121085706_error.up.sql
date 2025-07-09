@@ -8,5 +8,7 @@ CREATE TABLE IF NOT EXISTS error
     CONSTRAINT trace_error_u_hash UNIQUE (block_hash)
 );
 
-CREATE INDEX IF NOT EXISTS error_idx_number
+CREATE INDEX IF NOT EXISTS error_idx_block_hash
+    ON error (block_hash);
+CREATE INDEX IF NOT EXISTS error_idx_block_number
     ON error (block_number);
