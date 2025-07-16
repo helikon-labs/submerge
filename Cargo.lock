@@ -4273,7 +4273,7 @@ dependencies = [
  "security-framework 3.2.0",
  "security-framework-sys",
  "webpki-root-certs 0.26.11",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5876,7 +5876,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-consensus-babe",
- "sp-runtime 41.1.0",
+ "sp-runtime 42.0.0",
  "strum",
  "strum_macros",
  "submerge-logging",
@@ -5933,7 +5933,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-core 36.1.0",
- "sp-runtime 41.1.0",
+ "sp-runtime 42.0.0",
  "sqlx",
  "submerge-base",
  "submerge-metrics",
@@ -6018,7 +6018,7 @@ dependencies = [
  "jsonrpsee-core",
  "log",
  "parity-scale-codec",
- "sp-runtime 41.1.0",
+ "sp-runtime 42.0.0",
  "submerge-base",
  "submerge-util",
 ]
@@ -6154,7 +6154,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6973,7 +6973,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
