@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use frame_metadata::{v16::StorageHasher, RuntimeMetadata};
 use parity_scale_codec::{Decode, Encode, Input};
 use serde_json::Value as JsonValue;
@@ -11,7 +12,9 @@ use crate::{
     persistence::CrystalPostgreSQLStorage,
     process::{decode::JsonValueVisitor, BlockProcessor},
     types::{
-        metadata::util::{get_call_type, get_extrinsic_extra_type, get_metadata_version},
+        metadata::util::{
+            get_call_type, get_extrinsic_extra_type, get_metadata_version, get_signed_extensions,
+        },
         Extrinsic,
     },
 };
@@ -54,8 +57,6 @@ impl BlockProcessor {
                 .trim_end_matches(")");
             let mut bytes: &[u8] = &hex::decode(value)?;
             let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
-            //let mut bytes: &[u8] = &bytes_vector;
-            //let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
             let bytes: &[u8] = &bytes_vector;
             raw_extrinsics.push((Some(trace_index), hex::encode(bytes)));
             trace_extrinsic_index += 1;
@@ -99,15 +100,37 @@ impl BlockProcessor {
                     match metadata {
                         RuntimeMetadata::V14(metadata_v14) => {
                             let visitor = JsonValueVisitor::new(call_type.id, false);
-                            extra = Some(scale_decode::visitor::decode_with_visitor(
+                            let extra_json_array = scale_decode::visitor::decode_with_visitor(
                                 &mut bytes,
                                 extra_type.id,
                                 &metadata_v14.types,
                                 visitor,
-                            )?);
-                            log::info!("EXTRA :: {}", serde_json::to_string(&extra)?);
+                            )?;
+                            let extensions = get_signed_extensions(metadata_v14);
+                            extra = match &extra_json_array {
+                                JsonValue::Array(values) => {
+                                    if values.len() != extensions.len() {
+                                        anyhow::bail!(format!(
+                                            "Signed extensions length ({}) doesn't match extrinsic extras length ({})",
+                                            extensions.len(),
+                                            values.len(),
+                                        ));
+                                    }
+                                    let mut map = serde_json::Map::<String, JsonValue>::new();
+                                    for (key, value) in extensions.iter().zip(values) {
+                                        map.insert(key.to_case(Case::Camel), value.clone());
+                                    }
+                                    Some(JsonValue::Object(map))
+                                }
+                                _ => anyhow::bail!(
+                                    "Unexpected non-array type for extrinsic type extras."
+                                ),
+                            }
                         }
-                        _ => return Err(anyhow::Error::msg("Unsupported metadata version.")),
+                        _ => anyhow::bail!(format!(
+                            "Unsupported metadata version: {}",
+                            get_metadata_version(metadata)
+                        )),
                     }
                 }
                 let signature = Signature {

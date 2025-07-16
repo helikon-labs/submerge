@@ -580,7 +580,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         };
         sqlx::query(
             r#"
-            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, hash, index, version, signer_multi_address, signature, extra, is_successful)
+            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, hash, index, version, signer, signature, extra, is_successful)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ON CONFLICT (block_hash, block_number, index) DO NOTHING
             "#,

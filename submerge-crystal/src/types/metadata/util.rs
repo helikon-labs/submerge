@@ -134,26 +134,11 @@ pub fn get_event_variant<'a>(
     }
 }
 
-pub fn _get_signed_extensions(metadata: &RuntimeMetadata) -> anyhow::Result<Vec<String>> {
-    match metadata {
-        RuntimeMetadata::V14(metadata_v14) => Ok(metadata_v14
-            .extrinsic
-            .signed_extensions
-            .iter()
-            .map(|e| e.identifier.to_string())
-            .collect()),
-        RuntimeMetadata::V15(metadata_v15) => Ok(metadata_v15
-            .extrinsic
-            .signed_extensions
-            .iter()
-            .map(|e| e.identifier.to_string())
-            .collect()),
-        RuntimeMetadata::V16(metadata_v16) => Ok(metadata_v16
-            .extrinsic
-            .transaction_extensions
-            .iter()
-            .map(|e| e.identifier.to_string())
-            .collect()),
-        _ => Err(anyhow::Error::msg("Unsupported metadata version.")),
-    }
+pub fn get_signed_extensions(metadata_v14: &RuntimeMetadataV14) -> Vec<String> {
+    metadata_v14
+        .extrinsic
+        .signed_extensions
+        .iter()
+        .map(|e| e.identifier.to_string())
+        .collect()
 }
