@@ -5932,7 +5932,7 @@ dependencies = [
  "scale-type-resolver",
  "serde",
  "serde_json",
- "sp-core 36.1.0",
+ "sp-core 37.0.0",
  "sp-runtime 41.1.0",
  "sqlx",
  "submerge-base",
@@ -6034,7 +6034,7 @@ dependencies = [
  "jsonrpsee-core",
  "serde",
  "serde_json",
- "sp-core 36.1.0",
+ "sp-core 37.0.0",
 ]
 
 [[package]]
