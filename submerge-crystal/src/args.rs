@@ -28,6 +28,9 @@ pub struct Args {
     /// Whether to ignore and skip trace records for blocks
     pub skip_traces: bool,
 
+    #[arg(long)]
+    pub legacy_decode_api_url: Option<String>,
+
     #[arg(long, default_value = "false")]
     /// Do not start the Prometheus server
     pub no_metrics: bool,

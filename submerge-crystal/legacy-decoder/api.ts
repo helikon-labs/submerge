@@ -24,8 +24,8 @@ class API {
         });
     }
 
-    async setup() {
-        const wsProvider = new WsProvider('wss://rpc.helikon.io/kusama');
+    async setup(rpcURL: string) {
+        const wsProvider = new WsProvider(rpcURL);
         this.api = await ApiPromise.create({ provider: wsProvider });
         await this.api.isReady;
         const router = express.Router();
@@ -38,8 +38,8 @@ class API {
         this.app.use('/decode', router);
     }
 
-    async start(port: number) {
-        await this.setup();
+    async start(port: number, rpcURL: string) {
+        await this.setup(rpcURL);
         this.app.listen(port, () => {
             console.log(`Faucet server is listening on port ${port}.`);
         });

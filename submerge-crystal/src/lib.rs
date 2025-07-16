@@ -20,7 +20,6 @@ mod metrics;
 mod persistence;
 mod process;
 mod types;
-mod util;
 
 lazy_static! {
     static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
@@ -85,8 +84,14 @@ impl BaseService for Crystal {
             log::info!("⛔ API disabled.");
         }
 
-        let block_processor =
-            Arc::new(BlockProcessor::new(&self.args.postgres, &self.args.rpc).await?);
+        let block_processor = Arc::new(
+            BlockProcessor::new(
+                &self.args.postgres,
+                &self.args.rpc,
+                &self.args.legacy_decode_api_url,
+            )
+            .await?,
+        );
         block_processor.process_genesis(&chainspec).await?;
         match self.args.end_block {
             Some(end_block) => {

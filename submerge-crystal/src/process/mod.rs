@@ -1,29 +1,45 @@
+use std::sync::LazyLock;
+
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
-use crate::util::{get_event_count, get_extrinsic_count};
 use sp_runtime::AccountId32;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
+use tokio::sync::RwLock;
+use util::{get_event_count, get_extrinsic_count};
 
 mod decode;
+// mod decode_2;
 mod event;
 mod extrinsic;
 mod metadata;
+mod util;
+
+static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId32>)>> =
+    LazyLock::new(|| RwLock::new((0, Vec::new())));
 
 pub struct BlockProcessor {
     postgres: PostgreSQLStorage,
     substrate_client: SubstrateClient,
-    legacy_decode_api_client: LegacyDecodeAPIClient,
+    legacy_decode_api_client: Option<LegacyDecodeAPIClient>,
 }
 
 impl BlockProcessor {
-    pub async fn new(postgres_args: &PostgreSQLArgs, rpc_args: &RPCArgs) -> anyhow::Result<Self> {
+    pub async fn new(
+        postgres_args: &PostgreSQLArgs,
+        rpc_args: &RPCArgs,
+        legacy_decode_api_url: &Option<String>,
+    ) -> anyhow::Result<Self> {
         let postgres = PostgreSQLStorage::new(postgres_args).await?;
         let substrate_client = SubstrateClient::new(rpc_args).await?;
-        let legacy_decode_api_client = LegacyDecodeAPIClient::new()?;
+        let legacy_decode_api_client = if let Some(url) = legacy_decode_api_url {
+            Some(LegacyDecodeAPIClient::new(url)?)
+        } else {
+            None
+        };
         Ok(Self {
             postgres,
             substrate_client,
@@ -136,10 +152,22 @@ impl BlockProcessor {
         }
         let author_account_id = {
             let validator_index = block_header.get_validator_index()?;
-            let validator_account_ids = self
+            let session_index = self
                 .substrate_client
-                .get_active_validator_account_ids(block_hash_hex)
+                .get_current_session_index(block_hash_hex)
                 .await?;
+            let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
+            let validator_account_ids = {
+                if session_validators_cache.0 != session_index {
+                    let validator_account_ids = self
+                        .substrate_client
+                        .get_active_validator_account_ids(block_hash_hex)
+                        .await?;
+                    session_validators_cache.0 = session_index;
+                    session_validators_cache.1 = validator_account_ids;
+                }
+                &session_validators_cache.1
+            };
             let validator_index = validator_index % validator_account_ids.len() as u32;
             if let Some(author_account_id) = validator_account_ids.get(validator_index as usize) {
                 author_account_id.clone()
@@ -167,8 +195,7 @@ impl BlockProcessor {
                 &mut tx,
             )
             .await?;
-        // get extrinsic and event counts
-        let extrinsic_count = get_extrinsic_count(&trace)?;
+        // get events
         let event_count = get_event_count(&trace)?;
         let events = self
             .get_events(&block_hash, spec_version, &metadata, &trace)
@@ -179,7 +206,18 @@ impl BlockProcessor {
                 events.len()
             );
         }
-
+        // get extrinsics
+        let extrinsic_count = get_extrinsic_count(&trace)?;
+        let extrinsics = self
+            .get_extrinsics(&block_hash, spec_version, &metadata, &trace)
+            .await?;
+        if extrinsic_count != extrinsics.len() as u32 {
+            anyhow::bail!(
+                "❌ Expected extrinsic count {extrinsic_count} is not equal to decoded event count {}.",
+                extrinsics.len()
+            );
+        }
+        // persist block, events, and extrinsics
         self.postgres
             .ingest_block(
                 &block_hash,
@@ -207,21 +245,17 @@ impl BlockProcessor {
         )
         .await?;
         log::info!("Persisted {} events.", events.len());
-        /*
         self.process_extrinsics(
-            block_hash_hex,
+            &block_hash,
             &block_header,
             block_timestamp,
             spec_version,
-            metadata_version,
-            &metadata,
-            &trace,
             is_finalized,
-            extrinsic_count,
+            &extrinsics,
             &mut tx,
         )
         .await?;
-        */
+        log::info!("Persisted {} extrinsics.", extrinsics.len());
         self.postgres.delete_error(&block_hash, &mut tx).await?;
         tx.commit().await?;
         Ok(())

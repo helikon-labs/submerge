@@ -10,8 +10,9 @@ use frame_metadata::v16::RuntimeMetadataV16;
 use frame_metadata::v8::RuntimeMetadataV8;
 use frame_metadata::v9::RuntimeMetadataV9;
 use frame_metadata::RuntimeMetadata;
+use util::get_decode_different_string;
 
-use crate::types::metadata::util::get_decode_different_string;
+pub mod util;
 
 #[derive(Clone, Debug, Default)]
 pub struct Metadata {
@@ -58,8 +59,6 @@ pub struct Error {
     pub index: u8,
     pub name: String,
 }
-
-mod util;
 
 macro_rules! from_metadata {
     ($a:ty) => {

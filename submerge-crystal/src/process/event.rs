@@ -12,9 +12,13 @@ use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{decode::JsonValueVisitor, metadata::get_metadata_version, BlockProcessor},
-    types::Event,
-    util::{get_event_variant, get_pallet_metadata},
+    process::{decode::JsonValueVisitor, BlockProcessor},
+    types::{
+        metadata::util::{
+            get_call_type, get_event_variant, get_metadata_version, get_pallet_metadata,
+        },
+        Event,
+    },
 };
 
 impl BlockProcessor {
@@ -29,6 +33,7 @@ impl BlockProcessor {
         let metadata_version = get_metadata_version(metadata);
         let events_key = get_storage_plain_key("System", "Events");
         let mut processed_events_hex = String::new();
+        let call_type = get_call_type(metadata)?;
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;
             if trace_data.key != events_key || trace_data.value.to_lowercase() == "none" {
@@ -52,8 +57,13 @@ impl BlockProcessor {
             };
             let mut bytes: &[u8] = &hex::decode(&value)?;
             if metadata_version < 14 {
-                let event = self
-                    .legacy_decode_api_client
+                let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client
+                {
+                    client
+                } else {
+                    anyhow::bail!("Legacy decode API client is not set. legacy_decode_api_url parameter not set.");
+                };
+                let event = legacy_decode_api_client
                     .decode_event(block_hash, spec_version, bytes)
                     .await?;
                 let legacy_phase = event.get_phase()?;
@@ -109,22 +119,17 @@ impl BlockProcessor {
             match &metadata {
                 RuntimeMetadata::V14(metadata) => {
                     let pallet_metadata = get_pallet_metadata(metadata, pallet_index)
-                        .expect("Pallet not found in metadata.");
+                        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
                     let event_variant =
                         get_event_variant(metadata, pallet_metadata, pallet_event_index)?
-                            .expect("Event not found in pallet.");
+                            .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
                     let mut map = serde_json::Map::new();
+
                     for event_field in event_variant.fields.iter() {
-                        let field_type = metadata
-                            .types
-                            .types
-                            .iter()
-                            .find(|metadata_type| metadata_type.id == event_field.ty.id)
-                            .expect("Calls type not found in pallet.");
-                        let visitor = JsonValueVisitor::new();
+                        let visitor = JsonValueVisitor::new(call_type.id, false);
                         let value: JsonValue = scale_decode::visitor::decode_with_visitor(
                             &mut bytes,
-                            field_type.id,
+                            event_field.ty.id,
                             &metadata.types,
                             visitor,
                         )?;

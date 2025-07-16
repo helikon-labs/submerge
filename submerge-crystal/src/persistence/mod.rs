@@ -13,12 +13,12 @@ use submerge_base::types::substrate::block_trace::{
     BlockTrace as SubstrateBlockTrace, StorageMethod,
 };
 use submerge_base::types::substrate::chainspec::Chainspec;
-use submerge_base::types::substrate::Signature;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::types::metadata::Metadata;
 use crate::types::Event;
+use crate::types::Extrinsic;
 
 pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_metadata(
@@ -93,7 +93,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         is_finalized: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    #[allow(dead_code)]
     #[allow(clippy::too_many_arguments)]
     async fn ingest_extrinsic(
         &self,
@@ -102,16 +101,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_timestamp: u64,
         spec_version: u32,
         is_finalized: bool,
-        trace_index: Option<u32>,
-        pallet_index: u8,
-        pallet_name: &str,
-        call_index: u8,
-        call_name: &str,
-        hash: &[u8],
-        index: u32,
-        version: u8,
-        signature: &Option<Signature>,
-        is_successful: bool,
+        extrinsic: &Extrinsic,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     #[allow(clippy::too_many_arguments)]
@@ -576,34 +566,22 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_timestamp: u64,
         spec_version: u32,
         is_finalized: bool,
-        trace_index: Option<u32>,
-        pallet_index: u8,
-        pallet_name: &str,
-        call_index: u8,
-        call_name: &str,
-        hash: &[u8],
-        index: u32,
-        version: u8,
-        signature: &Option<Signature>,
-        is_successful: bool,
+        extrinsic: &Extrinsic,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let (signer, signature, era, nonce, tip, extra) = if let Some(signature) = signature {
+        let (signer, signature, extra) = if let Some(signature) = &extrinsic.signature {
             (
                 Some(Encode::encode(&signature.signer)),
                 Some(Encode::encode(&signature.signature)),
-                Some(Encode::encode(&signature.era)),
-                Some(signature.nonce),
-                Some(signature.tip),
-                Some(signature.extra),
+                signature.extra.clone(),
             )
         } else {
-            (None, None, None, None, None, None)
+            (None, None, None)
         };
         sqlx::query(
             r#"
-            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, call_index, call_name, hash, index, version, nonce, signer, signature, era, tip, extra, is_successful, params)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, null)
+            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, hash, index, version, signer_multi_address, signature, extra, is_successful)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ON CONFLICT (block_hash, block_number, index) DO NOTHING
             "#,
         )
@@ -612,21 +590,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_timestamp as i64)
             .bind(spec_version as i32)
             .bind(is_finalized)
-            .bind(trace_index.map(|i| i as i32))
-            .bind(pallet_index as i32)
-            .bind(pallet_name)
-            .bind(call_index as i32)
-            .bind(call_name)
-            .bind(hash)
-            .bind(index as i32)
-            .bind(version as i32)
-            .bind(nonce.map(|e| e as i32))
+            .bind(extrinsic.trace_index.map(|i| i as i32))
+            .bind(extrinsic.hash)
+            .bind(extrinsic.index as i32)
+            .bind(extrinsic.version as i32)
             .bind(signer)
             .bind(signature)
-            .bind(era)
-            .bind(tip.map(|t| t.to_string()))
-            .bind(extra.map(|e| e as i32))
-            .bind(is_successful)
+            .bind(extra)
+            .bind(extrinsic.is_successful)
             .execute(&mut **tx)
             .await?;
         Ok(())

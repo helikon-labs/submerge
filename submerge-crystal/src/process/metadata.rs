@@ -1,5 +1,6 @@
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::process::BlockProcessor;
+use crate::types::metadata::util::get_metadata_version;
 use crate::types::metadata::Metadata;
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use lru::LruCache;
@@ -12,21 +13,6 @@ const METADATA_CACHE_SIZE: usize = 10;
 
 static METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<RuntimeMetadata>>>> =
     LazyLock::new(|| RwLock::new(LruCache::new(NonZero::new(METADATA_CACHE_SIZE).unwrap())));
-
-pub fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
-    match &metadata {
-        RuntimeMetadata::V8(_) => 8,
-        RuntimeMetadata::V9(_) => 9,
-        RuntimeMetadata::V10(_) => 10,
-        RuntimeMetadata::V11(_) => 11,
-        RuntimeMetadata::V12(_) => 12,
-        RuntimeMetadata::V13(_) => 13,
-        RuntimeMetadata::V14(_) => 14,
-        RuntimeMetadata::V15(_) => 15,
-        RuntimeMetadata::V16(_) => 16,
-        _ => unimplemented!("Unsupported metadata version."),
-    }
-}
 
 impl BlockProcessor {
     pub async fn get_metadata(

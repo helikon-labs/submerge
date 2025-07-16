@@ -37,7 +37,7 @@ chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 convert_case = "0.8"
 frame-metadata = { version = "23.0", default-features = true, features = ["legacy"] }
-frame-system = "40.1"
+frame-system = "41.0"
 futures-util = "0.3"
 env_logger = "0.11"
 hex = "0.4"
