@@ -134,7 +134,7 @@ impl BlockProcessor {
                             visitor,
                         )?;
                         if let Some(field_name) = &event_field.name {
-                            map.insert(field_name.clone(), value);
+                            map.insert(field_name.to_case(Case::Camel), value);
                         } else if let Some(type_name) = &event_field.type_name {
                             map.insert(type_name.clone(), value);
                         } else {

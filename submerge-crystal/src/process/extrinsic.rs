@@ -15,7 +15,7 @@ use crate::{
         metadata::util::{
             get_call_type, get_extrinsic_extra_type, get_metadata_version, get_signed_extensions,
         },
-        Extrinsic,
+        Event, Extrinsic,
     },
 };
 
@@ -26,6 +26,7 @@ impl BlockProcessor {
         spec_version: u32,
         metadata: &RuntimeMetadata,
         trace: &BlockTrace,
+        events: &[Event],
     ) -> anyhow::Result<Vec<Extrinsic>> {
         let mut extrinsics = Vec::new();
         let metadata_version = get_metadata_version(metadata);
@@ -69,8 +70,8 @@ impl BlockProcessor {
                 .iter()
                 .for_each(|e| raw_extrinsics.push((None, e.trim_start_matches("0x").to_string())));
         }
-        for raw_extrinsic in raw_extrinsics.iter() {
-            let mut bytes: &[u8] = &hex::decode(&raw_extrinsic.1)?;
+        for (maybe_trace_index, extrinsic_hex) in raw_extrinsics.iter() {
+            let mut bytes: &[u8] = &hex::decode(extrinsic_hex)?;
             let extrinsic_hash = sp_core::blake2_256(bytes);
             if metadata_version < 14 {
                 let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client
@@ -157,16 +158,24 @@ impl BlockProcessor {
                 }
                 _ => return Err(anyhow::Error::msg("Unsupported metadata version.")),
             }
+            let is_successful = events
+                .iter()
+                .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
+                .any(|e| {
+                    e.pallet_name.to_lowercase() == "system"
+                        && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
+                });
+
             let calls = Vec::new();
             // let call = extract_call(metadata, extrinsics.len() as u32, bytes)?;
             // calls.push(call);
             extrinsics.push(Extrinsic {
                 index: extrinsics.len() as u32,
-                trace_index: raw_extrinsic.0.map(|i| i as u32),
+                trace_index: maybe_trace_index.map(|i| i as u32),
                 hash: extrinsic_hash,
                 signature,
                 version,
-                is_successful: true,
+                is_successful,
                 calls,
             });
         }

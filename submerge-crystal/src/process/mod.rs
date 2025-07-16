@@ -209,7 +209,7 @@ impl BlockProcessor {
         // get extrinsics
         let extrinsic_count = get_extrinsic_count(&trace)?;
         let extrinsics = self
-            .get_extrinsics(&block_hash, spec_version, &metadata, &trace)
+            .get_extrinsics(&block_hash, spec_version, &metadata, &trace, &events)
             .await?;
         if extrinsic_count != extrinsics.len() as u32 {
             anyhow::bail!(
