@@ -12,7 +12,6 @@ use tokio::sync::RwLock;
 use util::{get_event_count, get_extrinsic_count};
 
 mod decode;
-// mod decode_2;
 mod event;
 mod extrinsic;
 mod metadata;

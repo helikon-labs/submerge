@@ -12,7 +12,10 @@ use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{decode::JsonValueVisitor, BlockProcessor},
+    process::{
+        decode::{Value, ValueVisitor},
+        BlockProcessor,
+    },
     types::{
         metadata::util::{
             get_call_type, get_event_variant, get_metadata_version, get_pallet_metadata,
@@ -126,19 +129,19 @@ impl BlockProcessor {
                     let mut map = serde_json::Map::new();
 
                     for event_field in event_variant.fields.iter() {
-                        let visitor = JsonValueVisitor::new(call_type.id, false);
-                        let value: JsonValue = scale_decode::visitor::decode_with_visitor(
+                        let visitor = ValueVisitor::new(call_type.id, None);
+                        let value: Value = scale_decode::visitor::decode_with_visitor(
                             &mut bytes,
                             event_field.ty.id,
                             &metadata.types,
                             visitor,
                         )?;
                         if let Some(field_name) = &event_field.name {
-                            map.insert(field_name.to_case(Case::Camel), value);
+                            map.insert(field_name.to_case(Case::Camel), value.into());
                         } else if let Some(type_name) = &event_field.type_name {
-                            map.insert(type_name.clone(), value);
+                            map.insert(type_name.clone(), value.into());
                         } else {
-                            map.insert("unnamed".to_string(), value);
+                            map.insert("unnamed".to_string(), value.into());
                         }
                     }
                     let args = JsonValue::Object(map);

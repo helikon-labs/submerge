@@ -10,7 +10,7 @@ use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{decode::JsonValueVisitor, BlockProcessor},
+    process::{decode::Value, decode::ValueVisitor, BlockProcessor},
     types::{
         metadata::util::{
             get_call_type, get_extrinsic_extra_type, get_metadata_version, get_signed_extensions,
@@ -83,6 +83,8 @@ impl BlockProcessor {
                 let extrinsic = legacy_decode_api_client
                     .decode_extrinsic(block_hash, spec_version, bytes)
                     .await?;
+
+                // get signature, extra
                 log::info!("Legacy extrinsic: {}", serde_json::to_string(&extrinsic)?);
                 continue;
             }
@@ -100,7 +102,7 @@ impl BlockProcessor {
                 if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
                     match metadata {
                         RuntimeMetadata::V14(metadata_v14) => {
-                            let visitor = JsonValueVisitor::new(call_type.id, false);
+                            let visitor = ValueVisitor::new(call_type.id, None);
                             let extra_json_array = scale_decode::visitor::decode_with_visitor(
                                 &mut bytes,
                                 extra_type.id,
@@ -109,7 +111,7 @@ impl BlockProcessor {
                             )?;
                             let extensions = get_signed_extensions(metadata_v14);
                             extra = match &extra_json_array {
-                                JsonValue::Array(values) => {
+                                Value::Array(values) => {
                                     if values.len() != extensions.len() {
                                         anyhow::bail!(format!(
                                             "Signed extensions length ({}) doesn't match extrinsic extras length ({})",
@@ -119,7 +121,7 @@ impl BlockProcessor {
                                     }
                                     let mut map = serde_json::Map::<String, JsonValue>::new();
                                     for (key, value) in extensions.iter().zip(values) {
-                                        map.insert(key.to_case(Case::Camel), value.clone());
+                                        map.insert(key.to_case(Case::Camel), value.clone().into());
                                     }
                                     Some(JsonValue::Object(map))
                                 }
@@ -145,16 +147,17 @@ impl BlockProcessor {
             };
 
             let call_type = get_call_type(metadata)?;
-            let visitor = JsonValueVisitor::new(call_type.id, false);
+            let visitor = ValueVisitor::new(call_type.id, None);
             match metadata {
                 RuntimeMetadata::V14(metadata_v14) => {
-                    let value: JsonValue = scale_decode::visitor::decode_with_visitor(
+                    let value: Value = scale_decode::visitor::decode_with_visitor(
                         &mut bytes,
                         call_type.id,
                         &metadata_v14.types,
                         visitor,
                     )?;
-                    log::info!("CALL :: {}", serde_json::to_string(&value)?);
+                    let json_value: JsonValue = value.into();
+                    log::info!("CALL :: {}", serde_json::to_string(&json_value)?);
                 }
                 _ => return Err(anyhow::Error::msg("Unsupported metadata version.")),
             }
@@ -167,8 +170,6 @@ impl BlockProcessor {
                 });
 
             let calls = Vec::new();
-            // let call = extract_call(metadata, extrinsics.len() as u32, bytes)?;
-            // calls.push(call);
             extrinsics.push(Extrinsic {
                 index: extrinsics.len() as u32,
                 trace_index: maybe_trace_index.map(|i| i as u32),
