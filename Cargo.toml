@@ -31,6 +31,7 @@ license = "GPL-3"
 
 [workspace.dependencies]
 actix-web = "4.11"
+async-recursion = "1.1.1"
 async-trait = "0.1"
 anyhow = "1"
 chrono = "0.4"

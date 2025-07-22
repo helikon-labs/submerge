@@ -11,7 +11,7 @@ use submerge_substrate_client::SubstrateClient;
 use tokio::sync::RwLock;
 use util::{get_event_count, get_extrinsic_count};
 
-mod decode;
+pub(crate) mod decode;
 mod event;
 mod extrinsic;
 mod metadata;

@@ -1,3 +1,4 @@
+use async_recursion::async_recursion;
 use convert_case::{Case, Casing};
 use frame_metadata::{v16::StorageHasher, RuntimeMetadata};
 use parity_scale_codec::{Decode, Encode, Input};
@@ -10,7 +11,10 @@ use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{decode::Value, decode::ValueVisitor, BlockProcessor},
+    process::{
+        decode::{Value, ValueVisitor},
+        BlockProcessor,
+    },
     types::{
         metadata::util::{
             get_call_type, get_extrinsic_extra_type, get_metadata_version, get_signed_extensions,
@@ -145,22 +149,6 @@ impl BlockProcessor {
             } else {
                 None
             };
-
-            let call_type = get_call_type(metadata)?;
-            let visitor = ValueVisitor::new(call_type.id, None);
-            match metadata {
-                RuntimeMetadata::V14(metadata_v14) => {
-                    let value: Value = scale_decode::visitor::decode_with_visitor(
-                        &mut bytes,
-                        call_type.id,
-                        &metadata_v14.types,
-                        visitor,
-                    )?;
-                    let json_value: JsonValue = value.into();
-                    log::info!("CALL :: {}", serde_json::to_string(&json_value)?);
-                }
-                _ => return Err(anyhow::Error::msg("Unsupported metadata version.")),
-            }
             let is_successful = events
                 .iter()
                 .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
@@ -169,7 +157,23 @@ impl BlockProcessor {
                         && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
                 });
 
-            let calls = Vec::new();
+            let call_type = get_call_type(metadata)?;
+            let visitor = ValueVisitor::new(call_type.id, None);
+            let call = match metadata {
+                RuntimeMetadata::V14(metadata_v14) => {
+                    let value: Value = scale_decode::visitor::decode_with_visitor(
+                        &mut bytes,
+                        call_type.id,
+                        &metadata_v14.types,
+                        visitor,
+                    )?;
+                    match &value {
+                        Value::Call(call) => (**call).clone(),
+                        _ => anyhow::bail!("Non-call value for extrinsic call."),
+                    }
+                }
+                _ => return Err(anyhow::Error::msg("Unsupported metadata version.")),
+            };
             extrinsics.push(Extrinsic {
                 index: extrinsics.len() as u32,
                 trace_index: maybe_trace_index.map(|i| i as u32),
@@ -177,7 +181,7 @@ impl BlockProcessor {
                 signature,
                 version,
                 is_successful,
-                calls,
+                call,
             });
         }
         Ok(extrinsics)
@@ -195,10 +199,12 @@ impl BlockProcessor {
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         for extrinsic in extrinsics.iter() {
-            self.postgres
+            let block_number = block_header.get_number()?;
+            let extrinsic_id = self
+                .postgres
                 .ingest_extrinsic(
                     block_hash,
-                    block_header.get_number()?,
+                    block_number,
                     block_timestamp,
                     spec_version,
                     is_finalized,
@@ -206,7 +212,122 @@ impl BlockProcessor {
                     tx,
                 )
                 .await?;
+            self.process_extrinsic_arg(
+                block_hash,
+                block_number,
+                block_timestamp,
+                spec_version,
+                is_finalized,
+                extrinsic_id,
+                extrinsic,
+                None,
+                &Value::Call(Box::new(extrinsic.call.clone())),
+                tx,
+            )
+            .await?;
         }
+        Ok(())
+    }
+
+    #[async_recursion]
+    #[allow(clippy::too_many_arguments)]
+    pub async fn process_extrinsic_arg(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        spec_version: u32,
+        is_finalized: bool,
+        extrinsic_id: i64,
+        extrinsic: &Extrinsic,
+        nesting_index: Option<&str>,
+        arg: &Value,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        match arg {
+            Value::Call(call) => {
+                self.postgres
+                    .ingest_call(
+                        block_hash,
+                        block_number,
+                        block_timestamp,
+                        spec_version,
+                        is_finalized,
+                        extrinsic_id,
+                        extrinsic.index,
+                        &extrinsic.hash,
+                        None,
+                        nesting_index,
+                        call.pallet_index,
+                        &call.pallet_name,
+                        call.pallet_call_index,
+                        &call.pallet_call_name,
+                        true,
+                        &call.args.clone().into(),
+                        tx,
+                    )
+                    .await?;
+                self.process_extrinsic_arg(
+                    block_hash,
+                    block_number,
+                    block_timestamp,
+                    spec_version,
+                    is_finalized,
+                    extrinsic_id,
+                    extrinsic,
+                    nesting_index,
+                    &call.args,
+                    tx,
+                )
+                .await?;
+            }
+            Value::Array(values) => {
+                for (i, value) in values.iter().enumerate() {
+                    let nesting_index = if let Some(nesting_index) = nesting_index {
+                        format!("{nesting_index}::{i}")
+                    } else {
+                        i.to_string()
+                    };
+                    self.process_extrinsic_arg(
+                        block_hash,
+                        block_number,
+                        block_timestamp,
+                        spec_version,
+                        is_finalized,
+                        extrinsic_id,
+                        extrinsic,
+                        Some(&nesting_index),
+                        value,
+                        tx,
+                    )
+                    .await?;
+                }
+            }
+            Value::Object(hash_map) => {
+                for (key, value) in hash_map.iter() {
+                    let nesting_index = if let Some(nesting_index) = nesting_index {
+                        format!("{nesting_index}::{key}")
+                    } else {
+                        key.to_owned()
+                    };
+                    self.process_extrinsic_arg(
+                        block_hash,
+                        block_number,
+                        block_timestamp,
+                        spec_version,
+                        is_finalized,
+                        extrinsic_id,
+                        extrinsic,
+                        Some(&nesting_index),
+                        value,
+                        tx,
+                    )
+                    .await?;
+                }
+            }
+            _ => (),
+        }
+
         Ok(())
     }
 }

@@ -3,6 +3,8 @@ use serde::Serialize;
 use serde_json::Value as JsonValue;
 use submerge_base::types::substrate::Signature;
 
+use crate::process::decode::Call;
+
 pub mod legacy;
 pub mod metadata;
 
@@ -14,18 +16,7 @@ pub struct Extrinsic {
     pub signature: Option<Signature>,
     pub version: u8,
     pub is_successful: bool,
-    pub calls: Vec<Call>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct Call {
-    pub pallet_index: u8,
-    pub pallet_name: String,
-    pub pallet_call_index: u8,
-    pub pallet_call_name: String,
-    pub extrinsic_index: u32,
-    pub args: Option<JsonValue>,
-    pub sub_calls: Vec<Call>,
+    pub call: Call,
 }
 
 #[derive(Clone, Debug, Serialize)]

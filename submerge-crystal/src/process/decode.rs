@@ -1,10 +1,11 @@
 use convert_case::{Case, Casing};
 use rustc_hash::FxHashMap as HashMap;
 use scale_info::PortableRegistry;
+use serde::Serialize;
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Call {
     pub pallet_index: u8,
     pub pallet_name: String,
@@ -13,7 +14,7 @@ pub struct Call {
     pub args: Value,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Value {
     Null,
     Call(Box<Call>),

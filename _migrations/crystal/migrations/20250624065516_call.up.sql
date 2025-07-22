@@ -1,21 +1,25 @@
 CREATE TABLE IF NOT EXISTS call
 (
-    id              BIGSERIAL NOT NULL,
-    block_hash      BYTEA NOT NULL,
-    block_number    BIGINT NOT NULL,
-    block_timestamp BIGINT NOT NULL,
-    spec_version    INTEGER NOT NULL,
-    is_finalized    BOOLEAN NOT NULL,
-    extrinsic_id    BIGINT NOT NULL,
-    extrinsic_hash  BYTEA NOT NULL,
-    parent_call_id  BIGINT,
-    pallet_index    INTEGER NOT NULL,
-    pallet_name     VARCHAR(128) NOT NULL,
-    call_index      INTEGER NOT NULL,
-    call_name       VARCHAR(128) NOT NULL,
-    args_json       JSONB,
-    created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    id                  BIGSERIAL NOT NULL,
+    block_hash          BYTEA NOT NULL,
+    block_number        BIGINT NOT NULL,
+    block_timestamp     BIGINT NOT NULL,
+    spec_version        INTEGER NOT NULL,
+    is_finalized        BOOLEAN NOT NULL,
+    extrinsic_id        BIGINT NOT NULL,
+    extrinsic_index     INTEGER NOT NULL,
+    extrinsic_hash      BYTEA NOT NULL,
+    parent_call_id      BIGINT,
+    nesting_index       VARCHAR(128),
+    pallet_index        INTEGER NOT NULL,
+    pallet_name         VARCHAR(128) NOT NULL,
+    pallet_call_index   INTEGER NOT NULL,
+    pallet_call_name    VARCHAR(128) NOT NULL,
+    is_successful       BOOLEAN NOT NULL,
+    args_json           JSONB,
+    created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (id, block_number),
+    CONSTRAINT call_u_block_hash_block_number_index UNIQUE (block_hash, block_number, extrinsic_index, nesting_index),
     CONSTRAINT call_fk_extrinsic
         FOREIGN KEY (extrinsic_id, block_number)
             REFERENCES extrinsic (id, block_number)
@@ -31,8 +35,8 @@ CREATE INDEX call_idx_extrinsic_id ON call (extrinsic_id);
 CREATE INDEX call_idx_extrinsic_hash ON call (extrinsic_hash);
 
 CREATE INDEX call_idx_pallet_name ON call (pallet_name);
-CREATE INDEX call_idx_call_name ON call (call_name);
-CREATE INDEX call_idx_pallet_name_call_name ON call (pallet_name, call_name);
+CREATE INDEX call_idx_call_name ON call (pallet_call_name);
+CREATE INDEX call_idx_pallet_name_call_name ON call (pallet_name, pallet_call_name);
 
 CREATE INDEX call_idx_filter_order
 ON call (
@@ -40,7 +44,7 @@ ON call (
     block_timestamp,
     spec_version,
     pallet_name,
-    call_name
+    pallet_call_name
 );
 
 CREATE TABLE call_0_1000000 PARTITION OF call FOR VALUES FROM (0) TO (1000000);

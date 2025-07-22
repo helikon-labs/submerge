@@ -103,7 +103,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         is_finalized: bool,
         extrinsic: &Extrinsic,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()>;
+    ) -> anyhow::Result<i64>;
     #[allow(clippy::too_many_arguments)]
     async fn ingest_event(
         &self,
@@ -114,7 +114,28 @@ pub(crate) trait CrystalPostgreSQLStorage {
         is_finalized: bool,
         event: &Event,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()>;
+    ) -> anyhow::Result<i64>;
+    #[allow(clippy::too_many_arguments)]
+    async fn ingest_call(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        spec_version: u32,
+        is_finalized: bool,
+        extrinsic_id: i64,
+        extrinsic_index: u32,
+        extrinsic_hash: &[u8],
+        parent_call_id: Option<i64>,
+        nesting_index: Option<&str>,
+        pallet_index: u8,
+        pallet_name: &str,
+        pallet_call_index: u8,
+        pallet_call_name: &str,
+        is_successful: bool,
+        args: &JsonValue,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<i64>;
 
     async fn ingest_genesis_item(
         tx: &mut Transaction<'_, Postgres>,
@@ -568,7 +589,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         is_finalized: bool,
         extrinsic: &Extrinsic,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<i64> {
         let (signer, signature, extra) = if let Some(signature) = &extrinsic.signature {
             (
                 Some(Encode::encode(&signature.signer)),
@@ -578,11 +599,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         } else {
             (None, None, None)
         };
-        sqlx::query(
+        let row: (i64,) = sqlx::query_as(
             r#"
             INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, hash, index, version, signer, signature, extra, is_successful)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            ON CONFLICT (block_hash, block_number, index) DO NOTHING
+            RETURNING id
             "#,
         )
             .bind(block_hash)
@@ -598,9 +619,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(signature)
             .bind(extra)
             .bind(extrinsic.is_successful)
-            .execute(&mut **tx)
+            .fetch_one(&mut **tx)
             .await?;
-        Ok(())
+        Ok(row.0)
     }
 
     async fn ingest_event(
@@ -612,7 +633,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         is_finalized: bool,
         event: &Event,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<i64> {
         let (phase, extrinsic_index) = match &event.phase {
             frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
                 ("ApplyExtrinsic", Some(extrinsic_index))
@@ -620,11 +641,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             frame_system::Phase::Finalization => ("Finalization", None),
             frame_system::Phase::Initialization => ("Initialization", None),
         };
-        sqlx::query(
+        let row: (i64,) = sqlx::query_as(
             r#"
             INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, phase, index, args_json)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-            ON CONFLICT (block_hash, block_number, index) DO NOTHING
+            RETURNING id
             "#,
         )
             .bind(block_hash)
@@ -641,9 +662,57 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(phase)
             .bind(event.index as i32)
             .bind(&event.args)
-            .execute(&mut **tx)
+            .fetch_one(&mut **tx)
             .await?;
-        Ok(())
+        Ok(row.0)
+    }
+
+    async fn ingest_call(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        block_timestamp: u64,
+        spec_version: u32,
+        is_finalized: bool,
+        extrinsic_id: i64,
+        extrinsic_index: u32,
+        extrinsic_hash: &[u8],
+        parent_call_id: Option<i64>,
+        nesting_index: Option<&str>,
+        pallet_index: u8,
+        pallet_name: &str,
+        pallet_call_index: u8,
+        pallet_call_name: &str,
+        is_successful: bool,
+        args: &JsonValue,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<i64> {
+        let row: (i64,) = sqlx::query_as(
+            r#"
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, is_finalized, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, pallet_index, pallet_name, pallet_call_index, pallet_call_name, is_successful, args_json)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            RETURNING id
+            "#,
+        )
+            .bind(block_hash)
+            .bind(block_number as i64)
+            .bind(block_timestamp as i64)
+            .bind(spec_version as i32)
+            .bind(is_finalized)
+            .bind(extrinsic_id)
+            .bind(extrinsic_index as i32)
+            .bind(extrinsic_hash)
+            .bind(parent_call_id)
+            .bind(nesting_index)
+            .bind(pallet_index as i32)
+            .bind(pallet_name)
+            .bind(pallet_call_index as i32)
+            .bind(pallet_call_name)
+            .bind(is_successful)
+            .bind(args)
+            .fetch_one(&mut **tx)
+            .await?;
+        Ok(row.0)
     }
 }
 

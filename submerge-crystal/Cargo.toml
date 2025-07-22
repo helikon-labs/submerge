@@ -10,6 +10,7 @@ license.workspace = true
 [dependencies]
 actix-web = { workspace = true }
 anyhow = { workspace = true }
+async-recursion = { workspace = true }
 async-trait = { workspace = true }
 clap = { workspace = true }
 convert_case = { workspace = true }
