@@ -221,6 +221,7 @@ impl BlockProcessor {
                 extrinsic_id,
                 extrinsic,
                 None,
+                None,
                 &Value::Call(Box::new(extrinsic.call.clone())),
                 tx,
             )
@@ -240,13 +241,15 @@ impl BlockProcessor {
         is_finalized: bool,
         extrinsic_id: i64,
         extrinsic: &Extrinsic,
+        parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
         arg: &Value,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         match arg {
             Value::Call(call) => {
-                self.postgres
+                let call_id = self
+                    .postgres
                     .ingest_call(
                         block_hash,
                         block_number,
@@ -256,7 +259,7 @@ impl BlockProcessor {
                         extrinsic_id,
                         extrinsic.index,
                         &extrinsic.hash,
-                        None,
+                        parent_call_id,
                         nesting_index,
                         call.pallet_index,
                         &call.pallet_name,
@@ -275,6 +278,7 @@ impl BlockProcessor {
                     is_finalized,
                     extrinsic_id,
                     extrinsic,
+                    Some(call_id),
                     nesting_index,
                     &call.args,
                     tx,
@@ -296,6 +300,7 @@ impl BlockProcessor {
                         is_finalized,
                         extrinsic_id,
                         extrinsic,
+                        parent_call_id,
                         Some(&nesting_index),
                         value,
                         tx,
@@ -318,6 +323,7 @@ impl BlockProcessor {
                         is_finalized,
                         extrinsic_id,
                         extrinsic,
+                        parent_call_id,
                         Some(&nesting_index),
                         value,
                         tx,

@@ -31,7 +31,6 @@ CREATE INDEX call_idx_block_hash ON call (block_hash);
 CREATE INDEX call_idx_block_number ON call (block_number);
 CREATE INDEX call_idx_timestamp ON call (block_timestamp);
 
-CREATE INDEX call_idx_extrinsic_id ON call (extrinsic_id);
 CREATE INDEX call_idx_extrinsic_hash ON call (extrinsic_hash);
 
 CREATE INDEX call_idx_pallet_name ON call (pallet_name);
