@@ -210,10 +210,24 @@ impl BlockProcessor {
                     (Some(signer), Some(signature)) => {
                         let mut signature_bytes: &[u8] =
                             &hex::decode(format!("01{}", signature.trim_start_matches("0x")))?;
+                        let mut extra_map = serde_json::Map::new();
+                        if let Some(nonce) = &extrinsic.nonce {
+                            extra_map
+                                .insert("checkNonce".to_string(), JsonValue::String(nonce.clone()));
+                        }
+                        if let Some(tip) = &extrinsic.tip {
+                            extra_map.insert(
+                                "chargeTransactionPayment".to_string(),
+                                JsonValue::String(tip.clone()),
+                            );
+                        }
+                        if let Some(era) = &extrinsic.era {
+                            extra_map.insert("checkMortality".to_string(), era.clone());
+                        }
                         Some(Signature {
                             signer: signer.try_into()?,
                             signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?,
-                            extra: None,
+                            extra: Some(JsonValue::Object(extra_map)),
                         })
                     }
                     _ => None,

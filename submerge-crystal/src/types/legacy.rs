@@ -53,9 +53,10 @@ pub(crate) struct LegacyExtrinsicWrapper {
     pub is_signed: bool,
     #[serde(rename = "method")]
     pub call: LegacyCall,
-    pub nonce: Option<String>,
     pub signature: Option<String>,
     pub signer: Option<LegacyMultiaddress>,
+    pub era: Option<JsonValue>,
+    pub nonce: Option<String>,
     pub tip: Option<String>,
 }
 
