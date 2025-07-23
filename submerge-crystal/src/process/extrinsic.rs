@@ -2,6 +2,7 @@ use async_recursion::async_recursion;
 use convert_case::{Case, Casing};
 use frame_metadata::{v16::StorageHasher, RuntimeMetadata};
 use parity_scale_codec::{Decode, Encode, Input};
+use rustc_hash::FxHashMap as HashMap;
 use serde_json::Value as JsonValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
@@ -12,10 +13,11 @@ use submerge_util::substrate::storage::{self, get_storage_plain_key};
 use crate::{
     persistence::CrystalPostgreSQLStorage,
     process::{
-        decode::{Value, ValueVisitor},
+        decode::{Call, Value, ValueVisitor},
         BlockProcessor,
     },
     types::{
+        legacy::LegacyCall,
         metadata::util::{
             get_call_type, get_extrinsic_extra_type, get_metadata_version, get_signed_extensions,
         },
@@ -24,6 +26,112 @@ use crate::{
 };
 
 impl BlockProcessor {
+    #[async_recursion]
+    async fn legacy_json_value_to_value(&self, json_value: &JsonValue) -> anyhow::Result<Value> {
+        let value = match json_value {
+            JsonValue::Null => Value::Null,
+            JsonValue::Bool(value) => Value::Bool(*value),
+            JsonValue::Number(value) => Value::String(value.to_string()),
+            JsonValue::String(value) => Value::String(value.to_string()),
+            JsonValue::Array(values) => {
+                let mut result = Vec::new();
+                for value in values.iter() {
+                    result.push(self.legacy_json_value_to_value(value).await?);
+                }
+                Value::Array(result)
+            }
+            JsonValue::Object(json_map) => {
+                match (
+                    json_map.get("section"),
+                    json_map.get("method"),
+                    json_map.get("args"),
+                ) {
+                    (
+                        Some(JsonValue::String(section)),
+                        Some(JsonValue::String(method)),
+                        Some(args),
+                    ) => {
+                        let pallet_name = section.to_case(Case::UpperCamel);
+                        let pallet_index = if let Some(pallet_index) =
+                            self.postgres.get_pallet_index_by_name(&pallet_name).await?
+                        {
+                            pallet_index
+                        } else {
+                            anyhow::bail!(format!(
+                                "Index for pallet {pallet_name} not found in metadata database."
+                            ));
+                        };
+                        let pallet_call_name = method.to_case(Case::UpperCamel);
+                        let pallet_call_index = if let Some(pallet_call_index) = self
+                            .postgres
+                            .get_pallet_call_index_by_name(pallet_index, &pallet_call_name)
+                            .await?
+                        {
+                            pallet_call_index
+                        } else {
+                            anyhow::bail!(format!(
+                                "Index for call {pallet_name}.{pallet_call_name} not found in metadata database."
+                            ))
+                        };
+                        Value::Call(Box::new(Call {
+                            pallet_index,
+                            pallet_name,
+                            pallet_call_index,
+                            pallet_call_name,
+                            args: self.legacy_json_value_to_value(args).await?,
+                        }))
+                    }
+                    _ => {
+                        let mut map = HashMap::default();
+                        for (key, json_value) in json_map.iter() {
+                            map.insert(
+                                key.clone(),
+                                Box::new(self.legacy_json_value_to_value(json_value).await?),
+                            );
+                        }
+                        Value::Object(map)
+                    }
+                }
+            }
+        };
+        Ok(value)
+    }
+
+    pub async fn convert_legacy_call(&self, call: &LegacyCall) -> anyhow::Result<Call> {
+        let pallet_name = call.pallet_name.to_case(Case::UpperCamel);
+        let pallet_index = if let Some(pallet_index) =
+            self.postgres.get_pallet_index_by_name(&pallet_name).await?
+        {
+            pallet_index
+        } else {
+            anyhow::bail!(format!(
+                "Index for pallet {pallet_name} not found in metadata database."
+            ));
+        };
+        let pallet_call_name = call.pallet_call_name.to_case(Case::UpperCamel);
+        let pallet_call_index = if let Some(pallet_call_index) = self
+            .postgres
+            .get_pallet_call_index_by_name(pallet_index, &pallet_call_name)
+            .await?
+        {
+            pallet_call_index
+        } else {
+            anyhow::bail!(format!(
+                "Index for call {pallet_name}.{pallet_call_name} not found in metadata database."
+            ))
+        };
+
+        Ok(Call {
+            pallet_index,
+            pallet_name,
+            pallet_call_index,
+            pallet_call_name,
+            args: self
+                .legacy_json_value_to_value(&JsonValue::Object(call.args.clone()))
+                .await?,
+        })
+    }
+
     pub async fn get_extrinsics(
         &self,
         block_hash: &[u8],
@@ -34,11 +142,15 @@ impl BlockProcessor {
     ) -> anyhow::Result<Vec<Extrinsic>> {
         let mut extrinsics = Vec::new();
         let metadata_version = get_metadata_version(metadata);
+        let call_type = if metadata_version >= 14 {
+            Some(get_call_type(metadata)?)
+        } else {
+            None
+        };
         let block_hash_hex = hex::encode(block_hash);
         let extrinsic_data_root_key = get_storage_plain_key("System", "ExtrinsicData");
         let mut raw_extrinsics = Vec::new();
         let mut trace_extrinsic_index: u32 = 0;
-        let call_type = get_call_type(metadata)?;
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;
             if !trace_data.key.starts_with(&extrinsic_data_root_key)
@@ -77,6 +189,13 @@ impl BlockProcessor {
         for (maybe_trace_index, extrinsic_hex) in raw_extrinsics.iter() {
             let mut bytes: &[u8] = &hex::decode(extrinsic_hex)?;
             let extrinsic_hash = sp_core::blake2_256(bytes);
+            let is_successful = events
+                .iter()
+                .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
+                .any(|e| {
+                    e.pallet_name.to_lowercase() == "system"
+                        && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
+                });
             if metadata_version < 14 {
                 let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client
                 {
@@ -87,9 +206,28 @@ impl BlockProcessor {
                 let extrinsic = legacy_decode_api_client
                     .decode_extrinsic(block_hash, spec_version, bytes)
                     .await?;
+                let signature = match (&extrinsic.signer, &extrinsic.signature) {
+                    (Some(signer), Some(signature)) => {
+                        let mut signature_bytes: &[u8] =
+                            &hex::decode(format!("01{}", signature.trim_start_matches("0x")))?;
+                        Some(Signature {
+                            signer: signer.try_into()?,
+                            signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?,
+                            extra: None,
+                        })
+                    }
+                    _ => None,
+                };
 
-                // get signature, extra
-                log::info!("Legacy extrinsic: {}", serde_json::to_string(&extrinsic)?);
+                extrinsics.push(Extrinsic {
+                    index: extrinsics.len() as u32,
+                    trace_index: maybe_trace_index.map(|i| i as u32),
+                    hash: extrinsic_hash,
+                    signature,
+                    version: 0,
+                    is_successful,
+                    call: self.convert_legacy_call(&extrinsic.call).await?,
+                });
                 continue;
             }
             let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
@@ -106,7 +244,7 @@ impl BlockProcessor {
                 if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
                     match metadata {
                         RuntimeMetadata::V14(metadata_v14) => {
-                            let visitor = ValueVisitor::new(call_type.id, None);
+                            let visitor = ValueVisitor::new(call_type.unwrap().id, None);
                             let extra_json_array = scale_decode::visitor::decode_with_visitor(
                                 &mut bytes,
                                 extra_type.id,
@@ -149,13 +287,6 @@ impl BlockProcessor {
             } else {
                 None
             };
-            let is_successful = events
-                .iter()
-                .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
-                .any(|e| {
-                    e.pallet_name.to_lowercase() == "system"
-                        && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
-                });
 
             let call_type = get_call_type(metadata)?;
             let visitor = ValueVisitor::new(call_type.id, None);

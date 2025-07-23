@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
+use sp_runtime::AccountId32;
+use submerge_base::types::substrate::MultiAddress;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -51,25 +53,45 @@ pub(crate) struct LegacyExtrinsicWrapper {
     pub is_signed: bool,
     #[serde(rename = "method")]
     pub call: LegacyCall,
-    #[serde(flatten)]
-    pub signature: Option<LegacySignature>,
+    pub nonce: Option<String>,
+    pub signature: Option<String>,
+    pub signer: Option<LegacyMultiaddress>,
+    pub tip: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LegacyCall {
     #[serde(rename = "method")]
-    pub name: String,
+    pub pallet_call_name: String,
     #[serde(rename = "section")]
-    pub pallet: String,
+    pub pallet_name: String,
     pub args: JsonMap<String, JsonValue>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub(crate) enum MultiaddressType {
+    Id,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacySignature {
-    pub nonce: String,
-    pub signature: String,
-    pub signer: String,
-    pub tip: String,
+pub(crate) struct LegacyMultiaddress {
+    #[serde(rename = "type")]
+    pub ty: MultiaddressType,
+    pub value: String,
+}
+
+impl TryFrom<&LegacyMultiaddress> for MultiAddress {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &LegacyMultiaddress) -> Result<Self, Self::Error> {
+        match value.ty {
+            MultiaddressType::Id => {
+                let bytes = hex::decode(value.value.trim_start_matches("0x"))?;
+                let bytes: [u8; 32] = bytes.try_into().expect("Cannot convert account id.");
+                Ok(MultiAddress::Id(AccountId32::new(bytes)))
+            }
+        }
+    }
 }

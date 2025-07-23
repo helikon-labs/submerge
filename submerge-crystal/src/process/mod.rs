@@ -149,6 +149,7 @@ impl BlockProcessor {
                 .await?;
             return Ok(());
         }
+        let metadata = self.get_metadata(block_hash_hex, spec_version).await?;
         let author_account_id = {
             let validator_index = block_header.get_validator_index()?;
             let session_index = self
@@ -157,7 +158,9 @@ impl BlockProcessor {
                 .await?;
             let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
             let validator_account_ids = {
-                if session_validators_cache.0 != session_index {
+                if session_validators_cache.0 != session_index
+                    || session_validators_cache.1.is_empty()
+                {
                     let validator_account_ids = self
                         .substrate_client
                         .get_active_validator_account_ids(block_hash_hex)
@@ -178,7 +181,6 @@ impl BlockProcessor {
             .substrate_client
             .get_block_timestamp(block_hash_hex)
             .await?;
-        let metadata = self.get_metadata(block_hash_hex, spec_version).await?;
         let trace = self
             .substrate_client
             .get_block_trace(block_hash_hex)
@@ -205,6 +207,7 @@ impl BlockProcessor {
                 events.len()
             );
         }
+        log::info!("Decoded {event_count} events.");
         // get extrinsics
         let extrinsic_count = get_extrinsic_count(&trace)?;
         let extrinsics = self
@@ -216,6 +219,7 @@ impl BlockProcessor {
                 extrinsics.len()
             );
         }
+        log::info!("Decoded {extrinsic_count} extrinsics.");
         // persist block, events, and extrinsics
         self.postgres
             .ingest_block(
@@ -233,6 +237,7 @@ impl BlockProcessor {
         self.postgres
             .ingest_block_logs(&block_hash, &block_header, true, &mut tx)
             .await?;
+        log::info!("Persisted block and logs.");
         self.process_events(
             &block_hash,
             &block_header,

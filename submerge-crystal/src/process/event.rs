@@ -36,7 +36,6 @@ impl BlockProcessor {
         let metadata_version = get_metadata_version(metadata);
         let events_key = get_storage_plain_key("System", "Events");
         let mut processed_events_hex = String::new();
-        let call_type = get_call_type(metadata)?;
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;
             if trace_data.key != events_key || trace_data.value.to_lowercase() == "none" {
@@ -116,6 +115,7 @@ impl BlockProcessor {
                 });
                 continue;
             }
+            let call_type = get_call_type(metadata)?;
             let phase = frame_system::Phase::decode(&mut bytes)?;
             let pallet_index: u8 = Decode::decode(&mut bytes)?;
             let pallet_event_index: u8 = Decode::decode(&mut bytes)?;

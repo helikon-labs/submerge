@@ -237,18 +237,22 @@ impl SubstrateClient {
                 get_rpc_storage_plain_params("Session", "Validators", Some(block_hash)),
             )
             .await?;
-        let account_ids = decode_hex_string(hex_string.as_str())?;
+        let account_ids: Vec<AccountId32> = decode_hex_string(hex_string.as_str())?;
         Ok(account_ids)
     }
 
     pub async fn get_current_session_index(&self, block_hash: &str) -> anyhow::Result<u32> {
-        let hex_string: String = self
+        let maybe_hex_string: Option<String> = self
             .ws_client
             .request(
                 "state_getStorage",
                 get_rpc_storage_plain_params("Session", "CurrentIndex", Some(block_hash)),
             )
             .await?;
-        decode_hex_string(hex_string.as_str())
+        if let Some(hex_string) = maybe_hex_string {
+            decode_hex_string(hex_string.as_str())
+        } else {
+            Ok(0)
+        }
     }
 }
