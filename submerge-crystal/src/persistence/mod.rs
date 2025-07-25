@@ -9,6 +9,7 @@ use std::str::FromStr;
 use submerge_base::types::submerge::BlockTrace as SubmergeBlockTrace;
 use submerge_base::types::submerge::BlockTraces;
 use submerge_base::types::substrate::block::BlockHeader;
+use submerge_base::types::substrate::block::DecodedBlockHeader;
 use submerge_base::types::substrate::block_trace::{
     BlockTrace as SubstrateBlockTrace, StorageMethod,
 };
@@ -447,9 +448,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         author_account_id: &AccountId32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let parent_hash = hex::decode(&header.parent_hash)?;
-        let state_root = hex::decode(&header.state_root)?;
-        let extrinsic_root = hex::decode(&header.extrinsics_root)?;
+        let header = DecodedBlockHeader::try_from(header)?;
         let author_account_id: &[u8; 32] = author_account_id.as_ref();
         sqlx::query(
             r#"
@@ -459,10 +458,10 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 "#,
         )
             .bind(hash)
-            .bind(&parent_hash)
-            .bind(&state_root)
-            .bind(&extrinsic_root)
-            .bind(header.get_number()? as i64)
+            .bind(&header.parent_hash)
+            .bind(&header.state_root)
+            .bind(&header.extrinsic_root)
+            .bind(header.number as i64)
             .bind(timestamp as i64)
             .bind(spec_version as i32)
             .bind(is_finalized)
@@ -552,7 +551,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let parent_hash = hex::decode(&header.parent_hash)?;
+        let header = DecodedBlockHeader::try_from(header)?;
         for (trace_index, event) in trace.events.iter().enumerate() {
             sqlx::query(
                 r#"
@@ -562,8 +561,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 "#,
             )
                 .bind(hash)
-                .bind(&parent_hash)
-                .bind(header.get_number()? as i64)
+                .bind(&header.parent_hash)
+                .bind(header.number as i64)
                 .bind(spec_version as i32)
                 .bind(is_finalized)
                 .bind(trace_index as i32)

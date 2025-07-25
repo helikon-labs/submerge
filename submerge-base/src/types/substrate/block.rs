@@ -116,3 +116,24 @@ pub struct Block {
     pub header: BlockHeader,
     pub extrinsics: Vec<String>,
 }
+
+#[derive(Clone, Debug)]
+pub struct DecodedBlockHeader {
+    pub parent_hash: Vec<u8>,
+    pub state_root: Vec<u8>,
+    pub extrinsic_root: Vec<u8>,
+    pub number: u64,
+}
+
+impl TryFrom<&BlockHeader> for DecodedBlockHeader {
+    type Error = anyhow::Error;
+
+    fn try_from(header: &BlockHeader) -> Result<Self, anyhow::Error> {
+        Ok(Self {
+            parent_hash: hex::decode(&header.parent_hash)?,
+            state_root: hex::decode(&header.state_root)?,
+            extrinsic_root: hex::decode(&header.extrinsics_root)?,
+            number: header.get_number()?,
+        })
+    }
+}
