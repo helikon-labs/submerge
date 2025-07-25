@@ -124,6 +124,8 @@ pub(crate) trait CrystalPostgreSQLStorage {
         spec_version: u32,
         is_finalized: bool,
         event: &Event,
+        phase: &str,
+        maybe_extrinsic: Option<&Extrinsic>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
     #[allow(clippy::too_many_arguments)]
@@ -672,19 +674,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         is_finalized: bool,
         event: &Event,
+        phase: &str,
+        maybe_extrinsic: Option<&Extrinsic>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64> {
-        let (phase, extrinsic_index) = match &event.phase {
-            frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
-                ("ApplyExtrinsic", Some(extrinsic_index))
-            }
-            frame_system::Phase::Finalization => ("Finalization", None),
-            frame_system::Phase::Initialization => ("Initialization", None),
-        };
         let row: (i64,) = sqlx::query_as(
             r#"
-            INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, phase, index, args_json)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, is_finalized, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, extrinsic_hash, phase, index, args_json)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING id
             "#,
         )
@@ -698,7 +695,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&event.pallet_name)
             .bind(event.pallet_event_index as i32)
             .bind(&event.pallet_event_name)
-            .bind(extrinsic_index.map(|e| *e as i32))
+            .bind(maybe_extrinsic.map(|e| e.index as i32))
+            .bind(maybe_extrinsic.map(|e| e.hash))
             .bind(phase)
             .bind(event.index as i32)
             .bind(&event.args)

@@ -20,7 +20,7 @@ use crate::{
         metadata::util::{
             get_call_type, get_event_variant, get_metadata_version, get_pallet_metadata,
         },
-        Event,
+        Event, Extrinsic,
     },
 };
 
@@ -174,9 +174,18 @@ impl BlockProcessor {
         spec_version: u32,
         is_finalized: bool,
         events: &[Event],
+        extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         for event in events.iter() {
+            let (phase, maybe_extrinsic) = match &event.phase {
+                frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
+                    ("ApplyExtrinsic", extrinsics.get(*extrinsic_index as usize))
+                }
+                frame_system::Phase::Finalization => ("Finalization", None),
+                frame_system::Phase::Initialization => ("Initialization", None),
+            };
+
             self.postgres
                 .ingest_event(
                     block_hash,
@@ -185,6 +194,8 @@ impl BlockProcessor {
                     spec_version,
                     is_finalized,
                     event,
+                    phase,
+                    maybe_extrinsic,
                     tx,
                 )
                 .await?;

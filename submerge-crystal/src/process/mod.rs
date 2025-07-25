@@ -181,11 +181,11 @@ impl BlockProcessor {
             .substrate_client
             .get_block_timestamp(block_hash_hex)
             .await?;
+        let mut tx = self.postgres.connection_pool.begin().await?;
         let trace = self
             .substrate_client
             .get_block_trace(block_hash_hex)
             .await?;
-        let mut tx = self.postgres.connection_pool.begin().await?;
         self.postgres
             .ingest_block_trace(
                 &block_hash,
@@ -196,7 +196,7 @@ impl BlockProcessor {
                 &mut tx,
             )
             .await?;
-        // get events
+        // decode events
         let event_count = get_event_count(&trace)?;
         let events = self
             .get_events(&block_hash, spec_version, &metadata, &trace)
@@ -208,7 +208,7 @@ impl BlockProcessor {
             );
         }
         log::info!("Decoded {event_count} events.");
-        // get extrinsics
+        // decode extrinsics
         let extrinsic_count = get_extrinsic_count(&trace)?;
         let extrinsics = self
             .get_extrinsics(&block_hash, spec_version, &metadata, &trace, &events)
@@ -220,6 +220,7 @@ impl BlockProcessor {
             );
         }
         log::info!("Decoded {extrinsic_count} extrinsics.");
+
         // persist block, events, and extrinsics
         self.postgres
             .ingest_block(
@@ -245,6 +246,7 @@ impl BlockProcessor {
             spec_version,
             is_finalized,
             &events,
+            &extrinsics,
             &mut tx,
         )
         .await?;

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS event
     pallet_event_index  INTEGER NOT NULL,
     pallet_event_name   VARCHAR(128) NOT NULL,
     extrinsic_index     INTEGER,
+    extrinsic_hash      BYTEA,
     phase               VARCHAR(32) NOT NULL,
     index               INTEGER NOT NULL,
     args_json           JSONB,
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS event
 CREATE INDEX event_idx_block_hash ON event (block_hash);
 CREATE INDEX event_idx_block_number ON event (block_number);
 CREATE INDEX event_idx_block_hash_extrinsic_index ON event (block_hash, extrinsic_index) WHERE extrinsic_index IS NOT NULL;
+CREATE INDEX event_idx_extrinsic_hash ON event (extrinsic_hash) WHERE extrinsic_hash IS NOT NULL;
 CREATE INDEX event_idx_timestamp ON event (block_timestamp);
 
 CREATE INDEX event_idx_pallet_name ON event (pallet_name);
