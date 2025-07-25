@@ -9,7 +9,6 @@ members = [
     "submerge-crystal",
     "submerge-fractal",
     "submerge-logging",
-    "submerge-merkle-science-client",
     "submerge-metrics",
     "submerge-mycelium",
     "submerge-persistence",

@@ -1,14 +1,13 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
-use crate::types::{
+use reqwest::header::{ACCEPT, CONTENT_TYPE};
+use types::{
     AddressScreening, AddressScreeningRequest, AggregateServiceStatusResponse, Blockchain,
     BlockchainListResponse, BlockchainServiceStatus, SupportedDigitalAsset,
     SupportedDigitalAssetListResponse, TransactionScreening, TransactionScreeningRequest,
 };
-use reqwest::header::{ACCEPT, CONTENT_TYPE};
 
-pub mod args;
 pub mod types;
 
 pub struct MerkleScienceClient {
@@ -220,9 +219,9 @@ impl MerkleScienceClient {
 
 #[cfg(test)]
 mod tests {
+    use super::types::RiskLevel;
+    use super::MerkleScienceClient;
     use crate::args::Args;
-    use crate::types::RiskLevel;
-    use crate::MerkleScienceClient;
     use clap::Parser;
 
     #[test_log::test(tokio::test)]

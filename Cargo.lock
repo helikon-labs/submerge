@@ -5978,23 +5978,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "submerge-merkle-science-client"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "log",
- "reqwest",
- "serde",
- "serde_json",
- "serde_repr",
- "submerge-util",
- "test-log",
- "tokio",
-]
-
-[[package]]
 name = "submerge-metrics"
 version = "0.1.0"
 dependencies = [
@@ -6027,6 +6010,19 @@ version = "0.1.0"
 [[package]]
 name = "submerge-sentinel"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "submerge-util",
+ "test-log",
+ "tokio",
+]
 
 [[package]]
 name = "submerge-substrate-client"

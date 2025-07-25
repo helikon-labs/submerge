@@ -8,3 +8,18 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+anyhow = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true, features = ["env"] }
+log = { workspace = true }
+reqwest = { workspace = true}
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_repr = { workspace = true }
+submerge-util = { path = "../submerge-util" }
+
+[dev-dependencies]
+log = { workspace = true }
+serde_json = { workspace = true }
+test-log = { workspace = true }
+tokio = { workspace = true }
