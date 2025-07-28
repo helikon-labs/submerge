@@ -15,7 +15,7 @@ class API {
     constructor() {
         this.app = express();
         this.app.set('trust proxy', true);
-        this.app.use(express.json({limit: '100mb'}));
+        this.app.use(express.json({ limit: '100mb' }));
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(cors());
         this.app.use(helmet());
@@ -31,6 +31,9 @@ class API {
         const router = express.Router();
         router.post('/event', async (request, response) => {
             await this.decodeEvent(request, response);
+        });
+        router.post('/events', async (request, response) => {
+            await this.decodeEvents(request, response);
         });
         router.post('/extrinsic', async (request, response) => {
             await this.decodeExtrinsic(request, response);
@@ -76,6 +79,34 @@ class API {
             const registry = await this.getRegistry(blockHash, specVersion);
             const event = registry.createType('EventRecord', hex);
             return response.status(StatusCodes.OK).json(event.toHuman());
+        } catch (error) {
+            return response.status(StatusCodes.BAD_REQUEST).json({
+                error: `${error}`,
+            });
+        }
+    }
+
+    private async decodeEvents(request: Request, response: Response) {
+        try {
+            const { blockHash, specVersion, hex } = request.body;
+            if (!blockHash) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Block hash not found in the request body.' });
+            }
+            if (!specVersion) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Spec version not found in the request body.' });
+            }
+            if (!hex) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+            }
+            const registry = await this.getRegistry(blockHash, specVersion);
+            const events = registry.createType('Vec<EventRecord>', hex);
+            return response.status(200).json(events.toHuman());
         } catch (error) {
             return response.status(StatusCodes.BAD_REQUEST).json({
                 error: `${error}`,

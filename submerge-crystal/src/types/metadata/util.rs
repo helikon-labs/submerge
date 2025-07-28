@@ -27,12 +27,15 @@ pub fn get_decode_different_string(value: &DecodeDifferentStr) -> String {
     }
 }
 
-fn get_metadata_type(metadata_v14: &RuntimeMetadataV14, type_id: u32) -> Option<&PortableType> {
+fn get_metadata_type_by_id(
+    metadata_v14: &RuntimeMetadataV14,
+    type_id: u32,
+) -> Option<&PortableType> {
     metadata_v14.types.types.iter().find(|ty| ty.id == type_id)
 }
 
 fn get_extrinsic_type(metadata_v14: &RuntimeMetadataV14) -> anyhow::Result<&PortableType> {
-    let extrinsic_type = get_metadata_type(metadata_v14, metadata_v14.extrinsic.ty.id)
+    let extrinsic_type = get_metadata_type_by_id(metadata_v14, metadata_v14.extrinsic.ty.id)
         .ok_or(anyhow::Error::msg("Extrinsic type not found in metadata."))?;
     Ok(extrinsic_type)
 }
@@ -50,7 +53,7 @@ pub fn get_extrinsic_extra_type(
                 .find(|p| p.name.to_lowercase() == "extra")
             {
                 if let Some(ty) = ty.ty {
-                    Ok(get_metadata_type(metadata_v14, ty.id))
+                    Ok(get_metadata_type_by_id(metadata_v14, ty.id))
                 } else {
                     Ok(None)
                 }
@@ -65,7 +68,7 @@ pub fn get_extrinsic_extra_type(
     }
 }
 
-pub fn get_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType> {
+pub fn get_runtime_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType> {
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => {
             let extrinsic_type = get_extrinsic_type(metadata_v14)?;
@@ -78,7 +81,7 @@ pub fn get_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType
                 .ty
                 .ok_or(anyhow::Error::msg("Call type not found in metadata."))?
                 .id;
-            get_metadata_type(metadata_v14, call_type_id)
+            get_metadata_type_by_id(metadata_v14, call_type_id)
                 .ok_or(anyhow::Error::msg("Call type not found in metadata."))
         }
         _ => anyhow::bail!(format!(
@@ -98,13 +101,13 @@ pub fn get_pallet_metadata(
         .find(|metadata_pallet| metadata_pallet.index == pallet_index)
 }
 
-fn get_events_type<'a>(
+fn get_pallet_events_type<'a>(
     metadata: &'a RuntimeMetadataV14,
     pallet_metadata: &PalletMetadata<PortableForm>,
 ) -> Option<&'a PortableType> {
     if let Some(pallet_event_type) = &pallet_metadata.event {
         let type_id = pallet_event_type.ty.id;
-        get_metadata_type(metadata, type_id)
+        get_metadata_type_by_id(metadata, type_id)
     } else {
         None
     }
@@ -115,7 +118,7 @@ pub fn get_event_variant<'a>(
     pallet_metadata: &PalletMetadata<PortableForm>,
     event_index: u8,
 ) -> anyhow::Result<Option<&'a Variant<PortableForm>>> {
-    if let Some(events_type) = get_events_type(metadata, pallet_metadata) {
+    if let Some(events_type) = get_pallet_events_type(metadata, pallet_metadata) {
         let event_variant = match &events_type.ty.type_def {
             scale_info::TypeDef::Variant(variant) => variant
                 .variants

@@ -9,13 +9,11 @@ use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
 use tokio::sync::RwLock;
-use util::{get_event_count, get_extrinsic_count};
 
 pub(crate) mod decode;
 mod event;
 mod extrinsic;
 mod metadata;
-mod util;
 
 static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId32>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
@@ -64,6 +62,7 @@ impl BlockProcessor {
         &self,
         scan: bool,
         stop_on_error: bool,
+        skip_traces: bool,
         start_block_number: u64,
         end_block_number: u64,
     ) -> anyhow::Result<()> {
@@ -79,7 +78,10 @@ impl BlockProcessor {
             log::info!("🔧 Processing block {number}. Target {end_block_number}.");
             let hash_hex = self.substrate_client.get_block_hash(number).await?;
             let hash = hex::decode(&hash_hex)?;
-            match self.process_block(&hash_hex, number, true).await {
+            match self
+                .process_block(skip_traces, &hash_hex, number, true)
+                .await
+            {
                 Ok(_) => {
                     log::info!("✅ Processed block {number}.");
                 }
@@ -126,6 +128,7 @@ impl BlockProcessor {
     #[allow(clippy::cognitive_complexity)]
     async fn process_block(
         &self,
+        skip_traces: bool,
         block_hash_hex: &str,
         block_number: u64,
         is_finalized: bool,
@@ -182,44 +185,58 @@ impl BlockProcessor {
             .get_block_timestamp(block_hash_hex)
             .await?;
         let mut tx = self.postgres.connection_pool.begin().await?;
-        let trace = self
-            .substrate_client
-            .get_block_trace(block_hash_hex)
-            .await?;
-        self.postgres
-            .ingest_block_trace(
-                &block_hash,
-                &block_header,
-                is_finalized,
-                spec_version,
-                &trace,
-                &mut tx,
-            )
-            .await?;
-        // decode events
-        let event_count = get_event_count(&trace)?;
-        let events = self
-            .get_events(&block_hash, spec_version, &metadata, &trace)
-            .await?;
-        if event_count != events.len() as u32 {
-            anyhow::bail!(
-                "❌ Expected event count {event_count} is not equal to decoded event count {}.",
-                events.len()
-            );
-        }
-        log::info!("Decoded {event_count} events.");
-        // decode extrinsics
-        let extrinsic_count = get_extrinsic_count(&trace)?;
-        let extrinsics = self
-            .get_extrinsics(&block_hash, spec_version, &metadata, &trace, &events)
-            .await?;
-        if extrinsic_count != extrinsics.len() as u32 {
-            anyhow::bail!(
-                "❌ Expected extrinsic count {extrinsic_count} is not equal to decoded event count {}.",
-                extrinsics.len()
-            );
-        }
-        log::info!("Decoded {extrinsic_count} extrinsics.");
+        let (events, extrinsics) = if skip_traces {
+            let event_bytes = self
+                .substrate_client
+                .get_block_event_bytes(block_hash_hex)
+                .await?;
+            let events = self
+                .get_events_from_event_bytes(&block_hash, spec_version, &metadata, event_bytes)
+                .await?;
+            let extrinsics = self
+                .get_extrinsics(&block_hash, spec_version, &metadata, &events)
+                .await?;
+            (events, extrinsics)
+        } else {
+            let trace = self
+                .substrate_client
+                .get_block_trace(block_hash_hex)
+                .await?;
+            self.postgres
+                .ingest_block_trace(
+                    &block_hash,
+                    &block_header,
+                    is_finalized,
+                    spec_version,
+                    &trace,
+                    &mut tx,
+                )
+                .await?;
+            let event_count = trace.get_event_count()?;
+            let events = self
+                .get_events_from_traces(&block_hash, spec_version, &metadata, &trace)
+                .await?;
+            if event_count != events.len() as u32 {
+                anyhow::bail!(
+                    "❌ Expected event count {event_count} is not equal to decoded event count {}.",
+                    events.len()
+                );
+            }
+
+            let extrinsic_count = trace.get_extrinsic_count()?;
+            let extrinsics = self
+                .get_extrinsics_from_trace(&block_hash, spec_version, &metadata, &trace, &events)
+                .await?;
+            if extrinsic_count != extrinsics.len() as u32 {
+                anyhow::bail!(
+                    "❌ Expected extrinsic count {extrinsic_count} is not equal to decoded event count {}.",
+                    extrinsics.len()
+                );
+            }
+            (events, extrinsics)
+        };
+        log::info!("Decoded {} events.", events.len());
+        log::info!("Decoded {} extrinsics.", extrinsics.len());
 
         // persist block, events, and extrinsics
         self.postgres
@@ -229,8 +246,8 @@ impl BlockProcessor {
                 block_timestamp,
                 is_finalized,
                 spec_version,
-                extrinsic_count,
-                event_count,
+                extrinsics.len() as u32,
+                events.len() as u32,
                 &author_account_id,
                 &mut tx,
             )

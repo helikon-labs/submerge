@@ -100,6 +100,7 @@ impl BaseService for Crystal {
                     .process_blocks(
                         self.args.scan,
                         self.args.stop_on_error,
+                        self.args.skip_traces,
                         start_block,
                         end_block,
                     )
@@ -131,11 +132,13 @@ impl BaseService for Crystal {
                                 let start_block_number = self.args.start_block.unwrap_or(0);
                                 let scan = self.args.scan;
                                 let stop_on_error = self.args.stop_on_error;
+                                let skip_traces = self.args.skip_traces;
                                 if start_block_number <= finalized_block_number {
                                     tokio::spawn(async move {
                                         if let Err(error) = block_processor.process_blocks(
                                             scan,
                                             stop_on_error,
+                                            skip_traces,
                                             start_block_number,
                                             finalized_block_number,
                                         )

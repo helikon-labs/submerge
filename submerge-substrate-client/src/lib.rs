@@ -255,4 +255,15 @@ impl SubstrateClient {
             Ok(0)
         }
     }
+
+    pub async fn get_block_event_bytes(&self, block_hash: &str) -> anyhow::Result<Vec<u8>> {
+        let events_hex_string: String = self
+            .ws_client
+            .request(
+                "state_getStorage",
+                get_rpc_storage_plain_params("System", "Events", Some(block_hash)),
+            )
+            .await?;
+        Ok(hex::decode(events_hex_string.trim_start_matches("0x"))?)
+    }
 }

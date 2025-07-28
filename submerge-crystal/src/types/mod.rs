@@ -21,7 +21,7 @@ pub struct Extrinsic {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Event {
-    pub trace_index: u32,
+    pub trace_index: Option<u32>,
     pub pallet_index: u8,
     pub pallet_name: String,
     pub pallet_event_index: u8,

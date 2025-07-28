@@ -1,8 +1,10 @@
+use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use strum::VariantNames;
 use strum_macros::VariantNames;
+use submerge_util::substrate::storage::get_storage_plain_key;
 
 #[derive(Debug)]
 pub struct ParseStorageMethodError(String);
@@ -103,6 +105,42 @@ pub struct BlockTrace {
     pub storage_keys: String,
     pub methods: String,
     pub events: Vec<BlockTraceEvent>,
+}
+
+impl BlockTrace {
+    pub fn get_event_count(&self) -> anyhow::Result<u32> {
+        let event_count_key = get_storage_plain_key("System", "EventCount");
+        let mut event_count: u32 = 0;
+        for trace in self.events.iter() {
+            let trace_data = &trace.data_wrapper.data;
+            if trace_data.key == event_count_key && trace_data.value.to_lowercase() != "none" {
+                let value = trace_data
+                    .value
+                    .trim_start_matches("Some(")
+                    .trim_end_matches(")");
+                let mut bytes: &[u8] = &hex::decode(value)?;
+                event_count = Decode::decode(&mut bytes)?;
+            }
+        }
+        Ok(event_count)
+    }
+
+    pub fn get_extrinsic_count(&self) -> anyhow::Result<u32> {
+        let extrinsic_count_key = get_storage_plain_key("System", "ExtrinsicCount");
+        let mut extrinsic_count: u32 = 0;
+        for trace in self.events.iter() {
+            let trace_data = &trace.data_wrapper.data;
+            if trace_data.key == extrinsic_count_key && trace_data.value.to_lowercase() != "none" {
+                let value = trace_data
+                    .value
+                    .trim_start_matches("Some(")
+                    .trim_end_matches(")");
+                let mut bytes: &[u8] = &hex::decode(value)?;
+                extrinsic_count = Decode::decode(&mut bytes)?;
+            }
+        }
+        Ok(extrinsic_count)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

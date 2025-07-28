@@ -16,46 +16,46 @@ pub mod util;
 
 #[derive(Clone, Debug, Default)]
 pub struct Metadata {
-    pub pallets: Vec<Pallet>,
+    pub pallets: Vec<MetadataPallet>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Pallet {
+pub struct MetadataPallet {
     pub index: u8,
     pub name: String,
-    pub events: Vec<Event>,
-    pub constants: Vec<Constant>,
-    pub calls: Vec<Call>,
-    pub storage_items: Vec<StorageItem>,
-    pub errors: Vec<Error>,
+    pub events: Vec<MetadataPalletEvent>,
+    pub constants: Vec<MetadataPalletConstant>,
+    pub calls: Vec<MetadataPalletCall>,
+    pub storage_items: Vec<MetadataPalletStorageItem>,
+    pub errors: Vec<MetadataPalletError>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Event {
-    pub index: u8,
-    pub name: String,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct Constant {
+pub struct MetadataPalletEvent {
     pub index: u8,
     pub name: String,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Call {
+pub struct MetadataPalletConstant {
     pub index: u8,
     pub name: String,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct StorageItem {
+pub struct MetadataPalletCall {
     pub index: u8,
     pub name: String,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Error {
+pub struct MetadataPalletStorageItem {
+    pub index: u8,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct MetadataPalletError {
     pub index: u8,
     pub name: String,
 }
@@ -68,7 +68,7 @@ macro_rules! from_metadata {
             fn try_from(value: &$a) -> Result<Self, anyhow::Error> {
                 let mut metadata = Metadata::default();
                 for pallet_metadata in value.pallets.iter() {
-                    let mut pallet = Pallet {
+                    let mut pallet = MetadataPallet {
                         index: pallet_metadata.index,
                         name: pallet_metadata.name.to_case(Case::UpperCamel),
                         events: Vec::new(),
@@ -91,7 +91,7 @@ macro_rules! from_metadata {
                         match &events_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for event_variant in type_def_variant.variants.iter() {
-                                    pallet.events.push(Event {
+                                    pallet.events.push(MetadataPalletEvent {
                                         index: event_variant.index,
                                         name: event_variant.name.to_case(Case::UpperCamel),
                                     });
@@ -102,7 +102,7 @@ macro_rules! from_metadata {
                     }
                     // constants
                     for (index, constant) in pallet_metadata.constants.iter().enumerate() {
-                        pallet.constants.push(Constant {
+                        pallet.constants.push(MetadataPalletConstant {
                             index: index as u8,
                             name: constant.name.to_case(Case::UpperCamel),
                         });
@@ -121,7 +121,7 @@ macro_rules! from_metadata {
                         match &calls_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for call_variant in type_def_variant.variants.iter() {
-                                    pallet.calls.push(Call {
+                                    pallet.calls.push(MetadataPalletCall {
                                         index: call_variant.index,
                                         name: call_variant.name.to_case(Case::UpperCamel),
                                     });
@@ -133,7 +133,7 @@ macro_rules! from_metadata {
                     // storage items
                     if let Some(storage) = &pallet_metadata.storage {
                         for (index, entry) in storage.entries.iter().enumerate() {
-                            pallet.storage_items.push(StorageItem {
+                            pallet.storage_items.push(MetadataPalletStorageItem {
                                 index: index as u8,
                                 name: entry.name.to_case(Case::UpperCamel),
                             });
@@ -153,7 +153,7 @@ macro_rules! from_metadata {
                         match &errors_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for error_variant in type_def_variant.variants.iter() {
-                                    pallet.errors.push(Error {
+                                    pallet.errors.push(MetadataPalletError {
                                         index: error_variant.index,
                                         name: error_variant.name.to_case(Case::UpperCamel),
                                     });
@@ -184,7 +184,7 @@ macro_rules! from_legacy_metadata {
                                 DecodeDifferent::Decoded(name) => name.clone(),
                             }
                             .to_case(Case::UpperCamel);
-                            let mut pallet = Pallet {
+                            let mut pallet = MetadataPallet {
                                 index: index as u8,
                                 name,
                                 events: Vec::new(),
@@ -202,7 +202,7 @@ macro_rules! from_legacy_metadata {
                                             let name =
                                                 get_decode_different_string(&module_event.name)
                                                     .to_case(Case::UpperCamel);
-                                            pallet.events.push(Event {
+                                            pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -215,7 +215,7 @@ macro_rules! from_legacy_metadata {
                                             let name =
                                                 get_decode_different_string(&module_event.name)
                                                     .to_case(Case::UpperCamel);
-                                            pallet.events.push(Event {
+                                            pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -231,7 +231,7 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
-                                        pallet.constants.push(Constant {
+                                        pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
                                         });
@@ -244,7 +244,7 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
-                                        pallet.constants.push(Constant {
+                                        pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
                                         });
@@ -257,7 +257,7 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.0().iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            pallet.calls.push(Call {
+                                            pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -267,7 +267,7 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            pallet.calls.push(Call {
+                                            pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -284,10 +284,12 @@ macro_rules! from_legacy_metadata {
                                                     let name =
                                                         get_decode_different_string(&entry.name)
                                                             .to_case(Case::UpperCamel);
-                                                    pallet.storage_items.push(StorageItem {
-                                                        index: index as u8,
-                                                        name,
-                                                    });
+                                                    pallet.storage_items.push(
+                                                        MetadataPalletStorageItem {
+                                                            index: index as u8,
+                                                            name,
+                                                        },
+                                                    );
                                                 }
                                             }
                                             DecodeDifferent::Decoded(entries) => {
@@ -295,10 +297,12 @@ macro_rules! from_legacy_metadata {
                                                     let name =
                                                         get_decode_different_string(&entry.name)
                                                             .to_case(Case::UpperCamel);
-                                                    pallet.storage_items.push(StorageItem {
-                                                        index: index as u8,
-                                                        name,
-                                                    });
+                                                    pallet.storage_items.push(
+                                                        MetadataPalletStorageItem {
+                                                            index: index as u8,
+                                                            name,
+                                                        },
+                                                    );
                                                 }
                                             }
                                         }
@@ -308,20 +312,24 @@ macro_rules! from_legacy_metadata {
                                             for (index, entry) in entries.iter().enumerate() {
                                                 let name = get_decode_different_string(&entry.name)
                                                     .to_case(Case::UpperCamel);
-                                                pallet.storage_items.push(StorageItem {
-                                                    index: index as u8,
-                                                    name,
-                                                });
+                                                pallet.storage_items.push(
+                                                    MetadataPalletStorageItem {
+                                                        index: index as u8,
+                                                        name,
+                                                    },
+                                                );
                                             }
                                         }
                                         DecodeDifferent::Decoded(entries) => {
                                             for (index, entry) in entries.iter().enumerate() {
                                                 let name = get_decode_different_string(&entry.name)
                                                     .to_case(Case::UpperCamel);
-                                                pallet.storage_items.push(StorageItem {
-                                                    index: index as u8,
-                                                    name,
-                                                });
+                                                pallet.storage_items.push(
+                                                    MetadataPalletStorageItem {
+                                                        index: index as u8,
+                                                        name,
+                                                    },
+                                                );
                                             }
                                         }
                                     },
@@ -332,7 +340,7 @@ macro_rules! from_legacy_metadata {
                                     for (index, error) in errors.0().iter().enumerate() {
                                         let name = get_decode_different_string(&error.name)
                                             .to_case(Case::UpperCamel);
-                                        pallet.errors.push(Error {
+                                        pallet.errors.push(MetadataPalletError {
                                             index: index as u8,
                                             name,
                                         });
@@ -342,7 +350,7 @@ macro_rules! from_legacy_metadata {
                                     for (index, error) in errors.iter().enumerate() {
                                         let name = get_decode_different_string(&error.name)
                                             .to_case(Case::UpperCamel);
-                                        pallet.errors.push(Error {
+                                        pallet.errors.push(MetadataPalletError {
                                             index: index as u8,
                                             name,
                                         });
@@ -359,7 +367,7 @@ macro_rules! from_legacy_metadata {
                                 DecodeDifferent::Decoded(name) => name.clone(),
                             }
                             .to_case(Case::UpperCamel);
-                            let mut pallet = Pallet {
+                            let mut pallet = MetadataPallet {
                                 index: index as u8,
                                 name,
                                 events: Vec::new(),
@@ -379,7 +387,7 @@ macro_rules! from_legacy_metadata {
                                                 DecodeDifferent::Decoded(name) => name.clone(),
                                             }
                                             .to_case(Case::UpperCamel);
-                                            pallet.events.push(Event {
+                                            pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -394,7 +402,7 @@ macro_rules! from_legacy_metadata {
                                                 DecodeDifferent::Decoded(name) => name.clone(),
                                             }
                                             .to_case(Case::UpperCamel);
-                                            pallet.events.push(Event {
+                                            pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -410,7 +418,7 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
-                                        pallet.constants.push(Constant {
+                                        pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
                                         });
@@ -423,7 +431,7 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
-                                        pallet.constants.push(Constant {
+                                        pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
                                         });
@@ -436,7 +444,7 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.0().iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            pallet.calls.push(Call {
+                                            pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
                                             });
@@ -446,7 +454,7 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            pallet.calls.push(Call {
+                                            pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
                                             });

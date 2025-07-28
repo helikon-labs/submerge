@@ -18,7 +18,7 @@ use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::types::metadata::Metadata;
-use crate::types::metadata::Pallet;
+use crate::types::metadata::MetadataPallet;
 use crate::types::Event;
 use crate::types::Extrinsic;
 
@@ -38,7 +38,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
     async fn ingest_metadata_pallet(
         &self,
         spec_version: u32,
-        pallet: &Pallet,
+        pallet: &MetadataPallet,
     ) -> anyhow::Result<()>;
     async fn get_pallet_index_by_name(&self, name: &str) -> anyhow::Result<Option<u8>>;
     async fn get_pallet_call_index_by_name(
@@ -226,7 +226,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn ingest_metadata_pallet(
         &self,
         spec_version: u32,
-        pallet: &Pallet,
+        pallet: &MetadataPallet,
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
@@ -689,7 +689,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_timestamp as i64)
             .bind(spec_version as i32)
             .bind(is_finalized)
-            .bind(event.trace_index as i32)
+            .bind(event.trace_index.map(|i| i as i32))
             .bind(event.pallet_index as i32)
             .bind(&event.pallet_name)
             .bind(event.pallet_event_index as i32)

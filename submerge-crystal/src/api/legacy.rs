@@ -80,4 +80,32 @@ impl LegacyDecodeAPIClient {
         let event_wrapper = response.json::<LegacyEventWrapper>().await?;
         Ok(event_wrapper)
     }
+
+    pub async fn decode_events(
+        &self,
+        block_hash: &[u8],
+        spec_version: u32,
+        bytes: &[u8],
+    ) -> anyhow::Result<Vec<LegacyEventWrapper>> {
+        let url = format!("{}/decode/events", self.url);
+        let request = DecodeRequest {
+            block_hash: format!("0x{}", hex::encode(block_hash)),
+            spec_version,
+            hex: format!("0x{}", hex::encode(bytes)),
+        };
+        let response_result = self.http_client.post(url).json(&request).send().await;
+        let response = match response_result {
+            Ok(response) => response,
+            Err(error) => {
+                return Err(error.into());
+            }
+        };
+        let status_code = response.status();
+        if !status_code.is_success() {
+            let response_text = response.text().await?;
+            return Err(anyhow::Error::msg(response_text));
+        }
+        let event_wrappers = response.json::<Vec<LegacyEventWrapper>>().await?;
+        Ok(event_wrappers)
+    }
 }

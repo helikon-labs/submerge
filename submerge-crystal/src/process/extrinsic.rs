@@ -19,7 +19,8 @@ use crate::{
     types::{
         legacy::LegacyCall,
         metadata::util::{
-            get_call_type, get_extrinsic_extra_type, get_metadata_version, get_signed_extensions,
+            get_extrinsic_extra_type, get_metadata_version, get_runtime_call_type,
+            get_signed_extensions,
         },
         Event, Extrinsic,
     },
@@ -137,13 +138,176 @@ impl BlockProcessor {
         block_hash: &[u8],
         spec_version: u32,
         metadata: &RuntimeMetadata,
+        events: &[Event],
+    ) -> anyhow::Result<Vec<Extrinsic>> {
+        let mut extrinsics = Vec::new();
+        let metadata_version = get_metadata_version(metadata);
+        let block_hash_hex = hex::encode(block_hash);
+        let mut raw_extrinsics = Vec::new();
+        let block = self.substrate_client.get_block(&block_hash_hex).await?;
+        block
+            .extrinsics
+            .iter()
+            .for_each(|e| raw_extrinsics.push(e.trim_start_matches("0x").to_string()));
+        for extrinsic_hex in raw_extrinsics.iter() {
+            let mut bytes: &[u8] = &hex::decode(extrinsic_hex)?;
+            let extrinsic_hash = sp_core::blake2_256(bytes);
+            let is_successful = events
+                .iter()
+                .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
+                .any(|e| {
+                    e.pallet_name.to_lowercase() == "system"
+                        && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
+                });
+            if metadata_version < 14 {
+                let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client
+                {
+                    client
+                } else {
+                    anyhow::bail!("Legacy decode API client is not set. legacy_decode_api_url parameter not set.");
+                };
+                let extrinsic = legacy_decode_api_client
+                    .decode_extrinsic(block_hash, spec_version, bytes)
+                    .await?;
+                let signature = match (&extrinsic.signer, &extrinsic.signature) {
+                    (Some(signer), Some(signature)) => {
+                        let mut signature_bytes: &[u8] =
+                            &hex::decode(format!("01{}", signature.trim_start_matches("0x")))?;
+                        let mut extra_map = serde_json::Map::new();
+                        if let Some(nonce) = &extrinsic.nonce {
+                            extra_map
+                                .insert("checkNonce".to_string(), JsonValue::String(nonce.clone()));
+                        }
+                        if let Some(tip) = &extrinsic.tip {
+                            extra_map.insert(
+                                "chargeTransactionPayment".to_string(),
+                                JsonValue::String(tip.clone()),
+                            );
+                        }
+                        if let Some(era) = &extrinsic.era {
+                            extra_map.insert("checkMortality".to_string(), era.clone());
+                        }
+                        Some(Signature {
+                            signer: signer.try_into()?,
+                            signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?,
+                            extra: Some(JsonValue::Object(extra_map)),
+                        })
+                    }
+                    _ => None,
+                };
+
+                extrinsics.push(Extrinsic {
+                    index: extrinsics.len() as u32,
+                    trace_index: None,
+                    hash: extrinsic_hash,
+                    signature,
+                    version: 0,
+                    is_successful,
+                    call: self.convert_legacy_call(&extrinsic.call).await?,
+                });
+                continue;
+            }
+            let call_type = get_runtime_call_type(metadata)?;
+            let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
+            let mut bytes: &[u8] = &bytes_vector;
+            let signed_version = bytes.read_byte()?;
+            let sign_mask = 0b10000000;
+            let version_mask = 0b00000100;
+            let is_signed = (signed_version & sign_mask) == sign_mask;
+            let version = signed_version & version_mask;
+            let signature = if is_signed {
+                let signer = MultiAddress::decode(&mut bytes)?;
+                let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
+                let mut extra = None;
+                if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
+                    match metadata {
+                        RuntimeMetadata::V14(metadata_v14) => {
+                            let visitor = ValueVisitor::new(call_type.id, None);
+                            let extra_json_array = scale_decode::visitor::decode_with_visitor(
+                                &mut bytes,
+                                extra_type.id,
+                                &metadata_v14.types,
+                                visitor,
+                            )?;
+                            let extensions = get_signed_extensions(metadata_v14);
+                            extra = match &extra_json_array {
+                                Value::Array(values) => {
+                                    if values.len() != extensions.len() {
+                                        anyhow::bail!(format!(
+                                            "Signed extensions length ({}) doesn't match extrinsic extras length ({})",
+                                            extensions.len(),
+                                            values.len(),
+                                        ));
+                                    }
+                                    let mut map = serde_json::Map::<String, JsonValue>::new();
+                                    for (key, value) in extensions.iter().zip(values) {
+                                        map.insert(key.to_case(Case::Camel), value.clone().into());
+                                    }
+                                    Some(JsonValue::Object(map))
+                                }
+                                _ => anyhow::bail!(
+                                    "Unexpected non-array type for extrinsic type extras."
+                                ),
+                            }
+                        }
+                        _ => anyhow::bail!(format!(
+                            "Unsupported metadata version: {}",
+                            get_metadata_version(metadata)
+                        )),
+                    }
+                }
+                let signature = Signature {
+                    signer,
+                    signature,
+                    extra,
+                };
+                Some(signature)
+            } else {
+                None
+            };
+
+            let call_type = get_runtime_call_type(metadata)?;
+            let visitor = ValueVisitor::new(call_type.id, None);
+            let call = match metadata {
+                RuntimeMetadata::V14(metadata_v14) => {
+                    let value: Value = scale_decode::visitor::decode_with_visitor(
+                        &mut bytes,
+                        call_type.id,
+                        &metadata_v14.types,
+                        visitor,
+                    )?;
+                    match &value {
+                        Value::Call(call) => (**call).clone(),
+                        _ => anyhow::bail!("Non-call value for extrinsic call."),
+                    }
+                }
+                _ => return Err(anyhow::Error::msg("Unsupported metadata version.")),
+            };
+            extrinsics.push(Extrinsic {
+                index: extrinsics.len() as u32,
+                trace_index: None,
+                hash: extrinsic_hash,
+                signature,
+                version,
+                is_successful,
+                call,
+            });
+        }
+        Ok(extrinsics)
+    }
+
+    pub async fn get_extrinsics_from_trace(
+        &self,
+        block_hash: &[u8],
+        spec_version: u32,
+        metadata: &RuntimeMetadata,
         trace: &BlockTrace,
         events: &[Event],
     ) -> anyhow::Result<Vec<Extrinsic>> {
         let mut extrinsics = Vec::new();
         let metadata_version = get_metadata_version(metadata);
         let call_type = if metadata_version >= 14 {
-            Some(get_call_type(metadata)?)
+            Some(get_runtime_call_type(metadata)?)
         } else {
             None
         };
@@ -302,7 +466,7 @@ impl BlockProcessor {
                 None
             };
 
-            let call_type = get_call_type(metadata)?;
+            let call_type = get_runtime_call_type(metadata)?;
             let visitor = ValueVisitor::new(call_type.id, None);
             let call = match metadata {
                 RuntimeMetadata::V14(metadata_v14) => {
