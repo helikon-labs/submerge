@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS log
 (
     block_hash      BYTEA NOT NULL,
     block_number    BIGINT NOT NULL,
-    is_finalized    BOOLEAN NOT NULL,
+    block_status    BLOCK_STATUS NOT NULL,
     index           INTEGER NOT NULL,
     type            TEXT NOT NULL,
     engine          TEXT,

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS block
     number              BIGINT NOT NULL,
     timestamp           BIGINT NOT NULL,
     spec_version        INTEGER NOT NULL,
-    is_finalized        BOOLEAN NOT NULL,
+    status              BLOCK_STATUS NOT NULL,
     extrinsic_count     INTEGER NOT NULL,
     event_count         INTEGER NOT NULL,
     author_account_id   BYTEA NOT NULL,

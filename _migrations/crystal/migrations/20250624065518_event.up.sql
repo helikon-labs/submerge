@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS event
     block_number        BIGINT NOT NULL,
     block_timestamp     BIGINT NOT NULL,
     spec_version        INTEGER NOT NULL,
-    is_finalized        BOOLEAN NOT NULL,
+    block_status        BLOCK_STATUS NOT NULL,
     trace_index         INTEGER,
     pallet_index        INTEGER NOT NULL,
     pallet_name         TEXT NOT NULL,

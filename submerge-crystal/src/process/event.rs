@@ -20,7 +20,7 @@ use crate::{
         metadata::util::{
             get_event_variant, get_metadata_version, get_pallet_metadata, get_runtime_call_type,
         },
-        Event, Extrinsic,
+        BlockStatus, Event, Extrinsic,
     },
 };
 
@@ -316,7 +316,7 @@ impl BlockProcessor {
         block_header: &BlockHeader,
         block_timestamp: u64,
         spec_version: u32,
-        is_finalized: bool,
+        block_status: BlockStatus,
         events: &[Event],
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
@@ -335,7 +335,7 @@ impl BlockProcessor {
                     block_header.get_number()?,
                     block_timestamp,
                     spec_version,
-                    is_finalized,
+                    block_status,
                     event,
                     phase,
                     maybe_extrinsic,

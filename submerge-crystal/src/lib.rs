@@ -3,10 +3,7 @@
 use crate::args::Args;
 use crate::process::BlockProcessor;
 use async_trait::async_trait;
-use lazy_static::lazy_static;
-use once_cell::sync::OnceCell;
 use std::fs;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use submerge_base::types::substrate::chainspec::Chainspec;
@@ -20,10 +17,6 @@ mod metrics;
 mod persistence;
 mod process;
 mod types;
-
-lazy_static! {
-    static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
-}
 
 pub struct Crystal {
     args: Args,
@@ -97,7 +90,7 @@ impl BaseService for Crystal {
             Some(end_block) => {
                 let start_block = self.args.start_block.unwrap_or(0);
                 block_processor
-                    .process_blocks(
+                    .process_finalized_blocks_in_range(
                         self.args.scan,
                         self.args.stop_on_error,
                         self.args.skip_traces,
@@ -108,57 +101,102 @@ impl BaseService for Crystal {
                 Ok(())
             }
             None => loop {
-                let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
-                let substrate_client = Arc::new(SubstrateClient::new(&self.args.rpc).await?);
-                substrate_client
-                    .subscribe_to_finalized_blocks(
-                        self.args.rpc.rpc_request_timeout_secs,
-                        |finalized_block_header| {
-                            let error_cell = error_cell.clone();
-                            let block_processor = block_processor.clone();
-                            async move {
-                                if let Some(error) = error_cell.get() {
-                                    return Err(anyhow::anyhow!("{:?}", error));
-                                }
-                                let finalized_block_number = finalized_block_header.get_number()?;
-                                log::info!("📦 New finalized block {finalized_block_number}.");
-
-                                if IS_BUSY.load(Ordering::SeqCst) {
-                                    log::info!("⏳ Busy processing past blocks. Skip block #{finalized_block_number}.");
-                                    return Ok(());
-                                }
-                                IS_BUSY.store(true, Ordering::SeqCst);
-
-                                let start_block_number = self.args.start_block.unwrap_or(0);
-                                let scan = self.args.scan;
-                                let stop_on_error = self.args.stop_on_error;
-                                let skip_traces = self.args.skip_traces;
-                                if start_block_number <= finalized_block_number {
-                                    tokio::spawn(async move {
-                                        if let Err(error) = block_processor.process_blocks(
-                                            scan,
-                                            stop_on_error,
+                let delay_seconds = self.args.service.recovery_sleep_seconds;
+                let rpc_args = self.args.rpc.clone();
+                let new_block_processor = block_processor.clone();
+                let skip_traces = self.args.skip_traces;
+                let new_block_subscription = tokio::spawn(async move {
+                    loop {
+                        let substrate_client = match SubstrateClient::new(&rpc_args).await {
+                            Ok(substrate_client) => substrate_client,
+                            Err(error) => {
+                                log::error!("Error while contructing the Substrate client for new block subscription: {error:?}");
+                                log::error!("Will retry after {delay_seconds} seconds.");
+                                sleep(Duration::from_secs(delay_seconds)).await;
+                                continue;
+                            }
+                        };
+                        substrate_client
+                            .subscribe_to_new_blocks(rpc_args.rpc_request_timeout_secs, |header| {
+                                let block_processor = new_block_processor.clone();
+                                async move {
+                                    let hash_bytes = header.get_hash_bytes().unwrap();
+                                    let hash_hex = hex::encode(hash_bytes);
+                                    let number = header.get_number().unwrap();
+                                    log::info!("New block: {number} :: 0x{hash_hex}");
+                                    block_processor
+                                        .process_block(
                                             skip_traces,
-                                            start_block_number,
-                                            finalized_block_number,
+                                            &hash_hex,
+                                            number,
+                                            types::BlockStatus::Proposed,
                                         )
                                         .await
-                                        {
-                                            let _ = error_cell.set(error);
-                                        }
-                                        IS_BUSY.store(false, Ordering::SeqCst);
-                                    });
-                                } else {
-                                    log::info!("🔁 Block {finalized_block_number} had already been processed.");
-                                    IS_BUSY.store(false, Ordering::SeqCst);
+                                        .unwrap();
+                                    Ok(())
                                 }
-                                Ok(())
+                            })
+                            .await;
+                        log::error!("New block subscription exited. Will refresh connection and subscription after {delay_seconds} seconds.");
+                        sleep(Duration::from_secs(delay_seconds)).await;
+                    }
+                });
+
+                let rpc_args = self.args.rpc.clone();
+                let skip_traces = self.args.skip_traces;
+                let finalized_block_processor = block_processor.clone();
+                let finalized_block_subscription = tokio::spawn(async move {
+                    loop {
+                        let substrate_client = match SubstrateClient::new(&rpc_args).await {
+                            Ok(substrate_client) => substrate_client,
+                            Err(error) => {
+                                log::error!("Error while contructing the Substrate client for finalized block subscription: {error:?}");
+                                log::error!("Will retry after {delay_seconds} seconds.");
+                                sleep(Duration::from_secs(delay_seconds)).await;
+                                continue;
                             }
-                        },
-                    )
-                    .await;
-                let delay_seconds = self.args.service.recovery_sleep_seconds;
-                log::error!("New block subscription exited. Will refresh connection and subscription after {delay_seconds} seconds.");
+                        };
+                        substrate_client
+                            .subscribe_to_finalized_blocks(
+                                rpc_args.rpc_request_timeout_secs,
+                                |header| {
+                                    let block_processor = finalized_block_processor.clone();
+                                    async move {
+                                        let mut number = header.get_number().unwrap();
+                                        let hash_bytes = header.get_hash_bytes().unwrap();
+                                        let mut hash_hex = hex::encode(hash_bytes);
+                                        for _ in 0..10 {
+                                            log::info!("Finalized block: {number} 0x{hash_hex}");
+                                            // if nexists :: process
+                                            block_processor
+                                                .process_block(
+                                                    skip_traces,
+                                                    &hash_hex,
+                                                    number,
+                                                    types::BlockStatus::Finalized,
+                                                )
+                                                .await
+                                                .unwrap();
+                                            // if exists & not finalized :: finalize
+                                            let parent_header = block_processor
+                                                .get_parent_header(&hash_hex)
+                                                .await
+                                                .unwrap();
+                                            hash_hex = parent_header.parent_hash.clone();
+                                            number = parent_header.get_number().unwrap();
+                                        }
+                                        Ok(())
+                                    }
+                                },
+                            )
+                            .await;
+                        log::error!("Finalized block subscription exited. Will re-subscribe after {delay_seconds} seconds.");
+                        sleep(Duration::from_secs(delay_seconds)).await;
+                    }
+                });
+
+                let _ = tokio::join!(new_block_subscription, finalized_block_subscription);
+                log::error!("Subscriptions exited. Will refresh connections and subscriptions after {delay_seconds} seconds.");
                 sleep(Duration::from_secs(delay_seconds)).await;
             },
         }

@@ -1,5 +1,7 @@
+use std::fmt::{Display, Formatter};
+
 use frame_system::Phase;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use submerge_base::types::substrate::Signature;
 
@@ -29,4 +31,27 @@ pub struct Event {
     pub index: u32,
     pub phase: Phase,
     pub args: JsonValue,
+}
+
+#[derive(Clone, Copy, Debug, sqlx::Type, Serialize, Deserialize, Eq, PartialEq)]
+#[sqlx(type_name = "BLOCK_STATUS", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum BlockStatus {
+    Proposed,
+    Pruned,
+    Finalized,
+}
+
+impl Display for BlockStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                BlockStatus::Proposed => "proposed",
+                BlockStatus::Pruned => "pruned",
+                BlockStatus::Finalized => "finalized",
+            }
+        )
+    }
 }

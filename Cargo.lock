@@ -5896,6 +5896,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-consensus-babe",
+ "sp-core 37.0.0",
  "sp-runtime 42.0.0",
  "strum",
  "strum_macros",

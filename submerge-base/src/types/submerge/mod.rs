@@ -17,6 +17,5 @@ pub struct BlockTraces {
     pub block_parent_hash: String,
     pub block_number: u64,
     pub spec_version: u32,
-    pub is_finalized: bool,
     pub traces: Vec<BlockTrace>,
 }

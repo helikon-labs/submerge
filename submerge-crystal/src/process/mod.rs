@@ -1,7 +1,9 @@
+use std::cmp::min;
 use std::sync::LazyLock;
 
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
+use crate::types::BlockStatus;
 use sp_runtime::AccountId32;
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block::BlockHeader;
@@ -58,7 +60,7 @@ impl BlockProcessor {
         Ok(())
     }
 
-    pub async fn process_blocks(
+    pub async fn process_finalized_blocks_in_range(
         &self,
         scan: bool,
         stop_on_error: bool,
@@ -73,13 +75,20 @@ impl BlockProcessor {
                 .get_next_block_number(start_block_number, end_block_number)
                 .await?
         };
+        let finalized_block_hash = self.substrate_client.get_finalized_block_hash().await?;
+        let finalized_block_number = self
+            .substrate_client
+            .get_block_header(&finalized_block_hash)
+            .await?
+            .get_number()?;
+        let end_block_number = min(end_block_number, finalized_block_number);
         log::info!("⚙️ Process blocks {start_block_number}-{end_block_number}.");
         for number in start_block_number..=end_block_number {
             log::info!("🔧 Processing block {number}. Target {end_block_number}.");
             let hash_hex = self.substrate_client.get_block_hash(number).await?;
             let hash = hex::decode(&hash_hex)?;
             match self
-                .process_block(skip_traces, &hash_hex, number, true)
+                .process_block(skip_traces, &hash_hex, number, BlockStatus::Finalized)
                 .await
             {
                 Ok(_) => {
@@ -105,7 +114,7 @@ impl BlockProcessor {
         block_hash: &[u8],
         block_header: &BlockHeader,
         spec_version: u32,
-        is_finalized: bool,
+        status: BlockStatus,
     ) -> anyhow::Result<()> {
         let mut tx = self.postgres.connection_pool.begin().await?;
         self.postgres
@@ -113,7 +122,7 @@ impl BlockProcessor {
                 block_hash,
                 block_header,
                 0,
-                is_finalized,
+                status,
                 spec_version,
                 0,
                 0,
@@ -125,13 +134,17 @@ impl BlockProcessor {
         Ok(())
     }
 
+    pub async fn get_parent_header(&self, block_hash_hex: &str) -> anyhow::Result<BlockHeader> {
+        self.substrate_client.get_block_header(block_hash_hex).await
+    }
+
     #[allow(clippy::cognitive_complexity)]
-    async fn process_block(
+    pub async fn process_block(
         &self,
         skip_traces: bool,
         block_hash_hex: &str,
         block_number: u64,
-        is_finalized: bool,
+        status: BlockStatus,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
         if self.postgres.block_trace_exists(&block_hash).await? {
@@ -148,7 +161,7 @@ impl BlockProcessor {
             .await?
             .spec_version;
         if block_number == 0 {
-            self.process_block_0(&block_hash, &block_header, spec_version, is_finalized)
+            self.process_block_0(&block_hash, &block_header, spec_version, status)
                 .await?;
             return Ok(());
         }
@@ -206,7 +219,7 @@ impl BlockProcessor {
                 .ingest_block_trace(
                     &block_hash,
                     &block_header,
-                    is_finalized,
+                    status,
                     spec_version,
                     &trace,
                     &mut tx,
@@ -244,7 +257,7 @@ impl BlockProcessor {
                 &block_hash,
                 &block_header,
                 block_timestamp,
-                is_finalized,
+                status,
                 spec_version,
                 extrinsics.len() as u32,
                 events.len() as u32,
@@ -253,7 +266,7 @@ impl BlockProcessor {
             )
             .await?;
         self.postgres
-            .ingest_block_logs(&block_hash, &block_header, true, &mut tx)
+            .ingest_block_logs(&block_hash, &block_header, status, &mut tx)
             .await?;
         log::info!("Persisted block and logs.");
         self.process_events(
@@ -261,7 +274,7 @@ impl BlockProcessor {
             &block_header,
             block_timestamp,
             spec_version,
-            is_finalized,
+            status,
             &events,
             &extrinsics,
             &mut tx,
@@ -273,13 +286,14 @@ impl BlockProcessor {
             &block_header,
             block_timestamp,
             spec_version,
-            is_finalized,
+            status,
             &extrinsics,
             &mut tx,
         )
         .await?;
         log::info!("Persisted {} extrinsics.", extrinsics.len());
         self.postgres.delete_error(&block_hash, &mut tx).await?;
+        // TODO if finalized, check pruned blocks :: set pruned where hash != my_hash && number == my_number
         tx.commit().await?;
         Ok(())
     }

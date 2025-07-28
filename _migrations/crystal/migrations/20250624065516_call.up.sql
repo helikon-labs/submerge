@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS call
     block_number        BIGINT NOT NULL,
     block_timestamp     BIGINT NOT NULL,
     spec_version        INTEGER NOT NULL,
-    is_finalized        BOOLEAN NOT NULL,
+    block_status        BLOCK_STATUS NOT NULL,
     extrinsic_id        BIGINT NOT NULL,
     extrinsic_index     INTEGER NOT NULL,
     extrinsic_hash      BYTEA NOT NULL,

@@ -1,14 +1,14 @@
-use parity_scale_codec::Decode;
+use parity_scale_codec::{Compact, Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_consensus_babe::digests::PreDigest;
 use sp_runtime::DigestItem;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Encode)]
 pub struct EventDigest {
     pub logs: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Encode)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockHeader {
     pub digest: EventDigest,
@@ -18,7 +18,34 @@ pub struct BlockHeader {
     pub state_root: String,
 }
 
+fn decode_hex_32(s: &str) -> [u8; 32] {
+    let bytes = hex::decode(s.trim_start_matches("0x")).unwrap();
+    bytes.try_into().unwrap()
+}
+
+fn decode_hex_vec(s: &str) -> Vec<u8> {
+    hex::decode(s.trim_start_matches("0x")).unwrap()
+}
+
 impl BlockHeader {
+    pub fn get_hash_bytes(&self) -> anyhow::Result<[u8; 32]> {
+        let mut logs = Vec::new();
+        for log in self.digest.logs.iter() {
+            let mut bytes: &[u8] = &decode_hex_vec(log);
+            let digest_item = DigestItem::decode(&mut bytes)?;
+            logs.push(digest_item);
+        }
+        let raw_header = (
+            decode_hex_32(&self.parent_hash),
+            Compact(self.get_number()?),
+            decode_hex_32(&self.state_root),
+            decode_hex_32(&self.extrinsics_root),
+            logs,
+        );
+        let bytes = raw_header.encode();
+        Ok(sp_core::blake2_256(&bytes))
+    }
+
     /// Number from the hex string.
     pub fn get_number(&self) -> anyhow::Result<u64> {
         let number = u64::from_str_radix(self.number.trim_start_matches("0x"), 16)?;
