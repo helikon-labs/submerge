@@ -3,7 +3,10 @@
 use crate::args::Args;
 use crate::process::BlockProcessor;
 use async_trait::async_trait;
+use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use std::fs;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use submerge_base::types::substrate::chainspec::Chainspec;
@@ -17,6 +20,10 @@ mod metrics;
 mod persistence;
 mod process;
 mod types;
+
+lazy_static! {
+    static ref IS_BUSY: AtomicBool = AtomicBool::new(false);
+}
 
 pub struct Crystal {
     args: Args,
@@ -101,6 +108,7 @@ impl BaseService for Crystal {
                 Ok(())
             }
             None => loop {
+                let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
                 let delay_seconds = self.args.service.recovery_sleep_seconds;
                 let rpc_args = self.args.rpc.clone();
                 let new_block_processor = block_processor.clone();
@@ -120,9 +128,9 @@ impl BaseService for Crystal {
                             .subscribe_to_new_blocks(rpc_args.rpc_request_timeout_secs, |header| {
                                 let block_processor = new_block_processor.clone();
                                 async move {
-                                    let hash_bytes = header.get_hash_bytes().unwrap();
+                                    let hash_bytes = header.get_hash_bytes()?;
                                     let hash_hex = hex::encode(hash_bytes);
-                                    let number = header.get_number().unwrap();
+                                    let number = header.get_number()?;
                                     log::info!("New block: {number} :: 0x{hash_hex}");
                                     block_processor
                                         .process_block(
@@ -131,8 +139,7 @@ impl BaseService for Crystal {
                                             number,
                                             types::BlockStatus::Proposed,
                                         )
-                                        .await
-                                        .unwrap();
+                                        .await?;
                                     Ok(())
                                 }
                             })
@@ -143,7 +150,10 @@ impl BaseService for Crystal {
                 });
 
                 let rpc_args = self.args.rpc.clone();
+                let start_block = self.args.start_block.unwrap_or(0);
+                let scan = self.args.scan;
                 let skip_traces = self.args.skip_traces;
+                let stop_on_error = self.args.stop_on_error;
                 let finalized_block_processor = block_processor.clone();
                 let finalized_block_subscription = tokio::spawn(async move {
                     loop {
@@ -160,31 +170,34 @@ impl BaseService for Crystal {
                             .subscribe_to_finalized_blocks(
                                 rpc_args.rpc_request_timeout_secs,
                                 |header| {
+                                    let error_cell = error_cell.clone();
                                     let block_processor = finalized_block_processor.clone();
                                     async move {
-                                        let mut number = header.get_number().unwrap();
-                                        let hash_bytes = header.get_hash_bytes().unwrap();
-                                        let mut hash_hex = hex::encode(hash_bytes);
-                                        for _ in 0..10 {
-                                            log::info!("Finalized block: {number} 0x{hash_hex}");
-                                            // if nexists :: process
-                                            block_processor
-                                                .process_block(
-                                                    skip_traces,
-                                                    &hash_hex,
-                                                    number,
-                                                    types::BlockStatus::Finalized,
-                                                )
-                                                .await
-                                                .unwrap();
-                                            // if exists & not finalized :: finalize
-                                            let parent_header = block_processor
-                                                .get_parent_header(&hash_hex)
-                                                .await
-                                                .unwrap();
-                                            hash_hex = parent_header.parent_hash.clone();
-                                            number = parent_header.get_number().unwrap();
+                                        if let Some(error) = error_cell.get() {
+                                            return Err(anyhow::anyhow!("{:?}", error));
                                         }
+                                        let start_block = start_block;
+                                        let finalized_block_number = header.get_number()?;
+                                        log::info!("📦 New finalized block {finalized_block_number}.");
+                                        if IS_BUSY.load(Ordering::SeqCst) {
+                                            log::info!("⏳ Busy processing past blocks. Skip finalized block #{finalized_block_number}.");
+                                            return Ok(());
+                                        }
+                                        IS_BUSY.store(true, Ordering::SeqCst);
+                                        tokio::spawn(async move {
+                                            if let Err(error) = block_processor
+                                                .process_finalized_blocks_in_range(
+                                                    scan,
+                                                    stop_on_error,
+                                                    skip_traces,
+                                                    start_block,
+                                                    finalized_block_number,
+                                                )
+                                                .await {
+                                                let _ = error_cell.set(error);
+                                            }
+                                            IS_BUSY.store(false, Ordering::SeqCst);
+                                        });
                                         Ok(())
                                     }
                                 },

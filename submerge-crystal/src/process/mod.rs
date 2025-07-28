@@ -72,7 +72,7 @@ impl BlockProcessor {
             start_block_number
         } else {
             self.postgres
-                .get_next_block_number(start_block_number, end_block_number)
+                .get_next_block_number(start_block_number, end_block_number, BlockStatus::Finalized)
                 .await?
         };
         let finalized_block_hash = self.substrate_client.get_finalized_block_hash().await?;
@@ -132,10 +132,6 @@ impl BlockProcessor {
             .await?;
         tx.commit().await?;
         Ok(())
-    }
-
-    pub async fn get_parent_header(&self, block_hash_hex: &str) -> anyhow::Result<BlockHeader> {
-        self.substrate_client.get_block_header(block_hash_hex).await
     }
 
     #[allow(clippy::cognitive_complexity)]

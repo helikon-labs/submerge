@@ -54,7 +54,12 @@ pub(crate) trait CrystalPostgreSQLStorage {
     ) -> anyhow::Result<Option<u8>>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
-    async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64>;
+    async fn get_next_block_number(
+        &self,
+        min: u64,
+        max: u64,
+        status: BlockStatus,
+    ) -> anyhow::Result<u64>;
     #[cfg(test)]
     async fn get_error_count(&self) -> anyhow::Result<u32>;
     async fn save_error(
@@ -380,12 +385,18 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
-    async fn get_next_block_number(&self, min: u64, max: u64) -> anyhow::Result<u64> {
+    async fn get_next_block_number(
+        &self,
+        min: u64,
+        max: u64,
+        status: BlockStatus,
+    ) -> anyhow::Result<u64> {
         let row: (Option<i64>,) = sqlx::query_as(
-            "SELECT MAX(block_number) FROM trace WHERE block_number >= $1 AND block_number <= $2",
+            "SELECT MAX(number) FROM block WHERE number >= $1 AND number <= $2 AND status = $3",
         )
         .bind(min as i64)
         .bind(max as i64)
+        .bind(status)
         .fetch_one(&self.connection_pool)
         .await?;
         Ok(if let Some(min_in_range) = row.0 {

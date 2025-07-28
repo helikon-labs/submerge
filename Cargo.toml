@@ -66,5 +66,5 @@ strum = "0.27"
 strum_macros = "0.27"
 test-log = "0.2"
 thiserror = "2.0"
-tokio = { version = "1.45", features = ["full"] }
+tokio = { version = "1.47", features = ["full"] }
 warp = { version = "0.3", default-features = false }
