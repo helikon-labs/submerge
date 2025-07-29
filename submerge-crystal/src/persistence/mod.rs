@@ -22,6 +22,9 @@ use crate::types::metadata::MetadataPallet;
 use crate::types::BlockStatus;
 use crate::types::Event;
 use crate::types::Extrinsic;
+use types::BlockRow;
+
+mod types;
 
 pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_metadata(
@@ -88,6 +91,12 @@ pub(crate) trait CrystalPostgreSQLStorage {
         author_account_id: &AccountId32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    async fn update_block_status(
+        &self,
+        block_hash: &[u8],
+        status: BlockStatus,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
     async fn get_block_traces_by_number(
         &self,
         block_number: u64,
@@ -96,7 +105,12 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         block_hash: &[u8],
     ) -> anyhow::Result<Option<BlockTraces>>;
-    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool>;
+    async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>>;
+    async fn get_blocks_by_number(
+        &self,
+        number: u64,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<Vec<BlockRow>>;
     async fn ingest_block_trace(
         &self,
         hash: &[u8],
@@ -494,6 +508,45 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
+    async fn update_block_status(
+        &self,
+        block_hash: &[u8],
+        status: BlockStatus,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        sqlx::query("UPDATE block SET status = $1 WHERE hash = $2")
+            .bind(status)
+            .bind(block_hash)
+            .execute(&mut **tx)
+            .await?;
+        sqlx::query("UPDATE trace SET block_status = $1 WHERE block_hash = $2")
+            .bind(status)
+            .bind(block_hash)
+            .execute(&mut **tx)
+            .await?;
+        sqlx::query("UPDATE log SET block_status = $1 WHERE block_hash = $2")
+            .bind(status)
+            .bind(block_hash)
+            .execute(&mut **tx)
+            .await?;
+        sqlx::query("UPDATE extrinsic SET block_status = $1 WHERE block_hash = $2")
+            .bind(status)
+            .bind(block_hash)
+            .execute(&mut **tx)
+            .await?;
+        sqlx::query("UPDATE call SET block_status = $1 WHERE block_hash = $2")
+            .bind(status)
+            .bind(block_hash)
+            .execute(&mut **tx)
+            .await?;
+        sqlx::query("UPDATE event SET block_status = $1 WHERE block_hash = $2")
+            .bind(status)
+            .bind(block_hash)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
+    }
+
     async fn get_block_traces_by_number(
         &self,
         block_number: u64,
@@ -548,18 +601,36 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
     }
 
-    async fn block_trace_exists(&self, block_hash: &[u8]) -> anyhow::Result<bool> {
-        let record_count: (i64,) = sqlx::query_as(
+    async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>> {
+        let maybe_row: Option<BlockRow> = sqlx::query_as(
             r#"
-            SELECT COUNT(DISTINCT index)
-            FROM trace
-            WHERE block_hash = $1
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, extrinsic_count, event_count, author_account_id
+            FROM block
+            WHERE hash = $1
             "#,
         )
-        .bind(block_hash)
-        .fetch_one(&self.connection_pool)
+        .bind(hash)
+        .fetch_optional(&self.connection_pool)
         .await?;
-        Ok(record_count.0 > 0)
+        Ok(maybe_row)
+    }
+
+    async fn get_blocks_by_number(
+        &self,
+        number: u64,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<Vec<BlockRow>> {
+        let rows: Vec<BlockRow> = sqlx::query_as(
+            r#"
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, extrinsic_count, event_count, author_account_id
+            FROM block
+            WHERE number = $1
+            "#,
+        )
+        .bind(number as i64)
+        .fetch_all(&mut **tx)
+        .await?;
+        Ok(rows)
     }
 
     async fn ingest_block_trace(

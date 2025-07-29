@@ -5,6 +5,7 @@ use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::BlockStatus;
 use sp_runtime::AccountId32;
+use sqlx::{Postgres, Transaction};
 use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::chainspec::Chainspec;
@@ -148,6 +149,27 @@ impl BlockProcessor {
         Ok(())
     }
 
+    async fn prune_other_blocks(
+        &self,
+        block_number: u64,
+        block_hash: &[u8],
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        let blocks = self.postgres.get_blocks_by_number(block_number, tx).await?;
+        for block in blocks.iter() {
+            if block.hash != block_hash {
+                log::info!(
+                    "✂️ Prune block {block_number}: 0x{}",
+                    hex::encode(&block.hash)
+                );
+                self.postgres
+                    .update_block_status(&block.hash, BlockStatus::Pruned, tx)
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
     #[allow(clippy::cognitive_complexity)]
     pub async fn process_block(
         &self,
@@ -157,8 +179,21 @@ impl BlockProcessor {
         status: BlockStatus,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
-        if self.postgres.block_trace_exists(&block_hash).await? {
-            log::info!("🔁 Block {block_number} had already been ingested.");
+        if let Some(row) = self.postgres.get_block_by_hash(&block_hash).await? {
+            log::info!("👍 Block {block_number} had already been processed.");
+            if row.status != status && status == BlockStatus::Finalized {
+                log::info!(
+                    "🔁 Update block status: {} ➡️ {status}: 0x{block_hash_hex}",
+                    row.status
+                );
+                let mut tx = self.postgres.connection_pool.begin().await?;
+                self.postgres
+                    .update_block_status(&block_hash, status, &mut tx)
+                    .await?;
+                self.prune_other_blocks(block_number, &block_hash, &mut tx)
+                    .await?;
+                tx.commit().await?;
+            }
             return Ok(());
         }
         let block_header = self
@@ -262,6 +297,10 @@ impl BlockProcessor {
         log::info!("Decoded {} extrinsics.", extrinsics.len());
 
         // persist block, events, and extrinsics
+        if status == BlockStatus::Finalized {
+            self.prune_other_blocks(block_number, &block_hash, &mut tx)
+                .await?;
+        }
         self.postgres
             .ingest_block(
                 &block_hash,
@@ -303,7 +342,6 @@ impl BlockProcessor {
         .await?;
         log::info!("Persisted {} extrinsics.", extrinsics.len());
         self.postgres.delete_error(&block_hash, &mut tx).await?;
-        // TODO if finalized, check pruned blocks :: set pruned where hash != my_hash && number == my_number
         tx.commit().await?;
         let log_emoji = match status {
             BlockStatus::Proposed => "🟦",
