@@ -104,7 +104,7 @@ impl BlockProcessor {
                 .process_block(skip_traces, &hash_hex, number, BlockStatus::Finalized)
                 .await
             {
-                Ok(_) => (),
+                Ok(_) => crate::metrics::processed_finalized_block_number().set(number as i64),
                 Err(error) => {
                     log::error!("❌ Error while processing block {number}: {error:?}");
                     self.save_block_error(
@@ -182,6 +182,7 @@ impl BlockProcessor {
         if let Some(row) = self.postgres.get_block_by_hash(&block_hash).await? {
             log::info!("👍 Block {block_number} had already been processed.");
             if row.status != status && status == BlockStatus::Finalized {
+                let start_time = std::time::Instant::now();
                 log::info!(
                     "🔁 Update block status: {} ➡️ {status}: 0x{block_hash_hex}",
                     row.status
@@ -193,9 +194,12 @@ impl BlockProcessor {
                 self.prune_other_blocks(block_number, &block_hash, &mut tx)
                     .await?;
                 tx.commit().await?;
+                let elapsed_time_ms = start_time.elapsed().as_millis();
+                crate::metrics::block_status_update_time_ms().observe(elapsed_time_ms as f64);
             }
             return Ok(());
         }
+        let start_time = std::time::Instant::now();
         let block_header = self
             .substrate_client
             .get_block_header(block_hash_hex)
@@ -272,7 +276,7 @@ impl BlockProcessor {
                 .await?;
             let event_count = trace.get_event_count()?;
             let events = self
-                .get_events_from_traces(&block_hash, spec_version, &metadata, &trace)
+                .get_events_from_trace(&block_hash, spec_version, &metadata, &trace)
                 .await?;
             if event_count != events.len() as u32 {
                 anyhow::bail!(
@@ -348,7 +352,9 @@ impl BlockProcessor {
             BlockStatus::Pruned => "⬜",
             BlockStatus::Finalized => "🟩",
         };
-        log::info!("{log_emoji} Processed {status} block {block_number}.");
+        let elapsed_time_ms = start_time.elapsed().as_millis();
+        crate::metrics::block_processing_time_ms().observe(elapsed_time_ms as f64);
+        log::info!("{log_emoji} Processed {status} block {block_number} in {elapsed_time_ms} ms.");
         Ok(())
     }
 }

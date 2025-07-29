@@ -12,6 +12,7 @@ use std::time::Duration;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
 use submerge_substrate_client::SubstrateClient;
+use tokio::sync::RwLock;
 use tokio::time::sleep;
 
 mod api;
@@ -108,7 +109,6 @@ impl BaseService for Crystal {
                 Ok(())
             }
             None => loop {
-                let error_cell: Arc<OnceCell<anyhow::Error>> = Arc::new(OnceCell::new());
                 let delay_seconds = self.args.service.recovery_sleep_seconds;
                 let rpc_args = self.args.rpc.clone();
                 let new_block_processor = block_processor.clone();
@@ -131,6 +131,7 @@ impl BaseService for Crystal {
                                     let hash_bytes = header.get_hash_bytes()?;
                                     let hash_hex = hex::encode(hash_bytes);
                                     let number = header.get_number()?;
+                                    crate::metrics::target_best_block_number().set(number as i64);
                                     log::info!("🟦  New proposed block {number}.");
                                     match block_processor
                                         .process_block(
@@ -141,7 +142,8 @@ impl BaseService for Crystal {
                                         )
                                         .await
                                     {
-                                        Ok(_) => {}
+                                        Ok(_) => crate::metrics::processed_best_block_number()
+                                            .set(number as i64),
                                         Err(error) => {
                                             block_processor
                                                 .save_block_error(
@@ -164,6 +166,7 @@ impl BaseService for Crystal {
                     }
                 });
 
+                let error_cell = Arc::new(RwLock::new(OnceCell::new()));
                 let rpc_args = self.args.rpc.clone();
                 let start_block = self.args.start_block.unwrap_or(0);
                 let scan = self.args.scan;
@@ -188,14 +191,18 @@ impl BaseService for Crystal {
                                     let error_cell = error_cell.clone();
                                     let block_processor = finalized_block_processor.clone();
                                     async move {
-                                        if let Some(error) = error_cell.get() {
-                                            return Err(anyhow::anyhow!("{:?}", error));
+                                        {
+                                            let mut error_cell = error_cell.write().await;
+                                            if let Some(error) = error_cell.take() {
+                                                return Err(anyhow::anyhow!("{:?}", error));
+                                            }
                                         }
                                         let start_block = start_block;
-                                        let finalized_block_number = header.get_number()?;
-                                        log::info!("🟩 New finalized block {finalized_block_number}.");
+                                        let number = header.get_number()?;
+                                        crate::metrics::target_finalized_block_number().set(number as i64);
+                                        log::info!("🟩 New finalized block {number}.");
                                         if IS_BUSY.load(Ordering::SeqCst) {
-                                            log::info!("⏳ Busy processing past finalized blocks. Skip finalized block {finalized_block_number}.");
+                                            log::info!("⏳ Busy processing past finalized blocks. Skip finalized block {number}.");
                                             return Ok(());
                                         }
                                         IS_BUSY.store(true, Ordering::SeqCst);
@@ -206,9 +213,10 @@ impl BaseService for Crystal {
                                                     stop_on_error,
                                                     skip_traces,
                                                     start_block,
-                                                    finalized_block_number,
+                                                    number,
                                                 )
                                                 .await {
+                                                let error_cell = error_cell.write().await;
                                                 let _ = error_cell.set(error);
                                             }
                                             IS_BUSY.store(false, Ordering::SeqCst);

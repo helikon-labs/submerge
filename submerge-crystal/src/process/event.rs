@@ -169,7 +169,7 @@ impl BlockProcessor {
         Ok(events)
     }
 
-    pub async fn get_events_from_traces(
+    pub async fn get_events_from_trace(
         &self,
         block_hash: &[u8],
         spec_version: u32,
