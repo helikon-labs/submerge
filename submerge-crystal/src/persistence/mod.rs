@@ -40,6 +40,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         spec_version: u32,
         pallet: &MetadataPallet,
+        tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn get_pallet_index_by_name(&self, name: &str) -> anyhow::Result<Option<u8>>;
     async fn get_pallet_call_index_by_name(
@@ -211,6 +212,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         if record_count.0 > 0 {
             return Ok(());
         }
+
+        let mut tx = self.connection_pool.begin().await?;
         sqlx::query(
             r#"
             INSERT INTO metadata (spec_version, metadata_version, metadata_bytes, metadata_json)
@@ -221,11 +224,13 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         .bind(metadata_version as i32)
         .bind(metadata_bytes)
         .bind(metadata_json)
-        .execute(&self.connection_pool)
+        .execute(&mut *tx)
         .await?;
         for pallet in metadata.pallets.iter() {
-            self.ingest_metadata_pallet(spec_version, pallet).await?;
+            self.ingest_metadata_pallet(spec_version, pallet, &mut tx)
+                .await?;
         }
+        tx.commit().await?;
         Ok(())
     }
 
@@ -233,6 +238,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         spec_version: u32,
         pallet: &MetadataPallet,
+        tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
@@ -243,7 +249,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         .bind(spec_version as i32)
         .bind(pallet.index as i32)
         .bind(&pallet.name)
-        .execute(&self.connection_pool)
+        .execute(&mut **tx)
         .await?;
         for event in pallet.events.iter() {
             sqlx::query(
@@ -257,7 +263,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(event.index as i32)
             .bind(&event.name)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         }
         for constant in pallet.constants.iter() {
@@ -272,7 +278,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(constant.index as i32)
             .bind(&constant.name)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         }
         for call in pallet.calls.iter() {
@@ -287,7 +293,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(call.index as i32)
             .bind(&call.name)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         }
         for storage_item in pallet.storage_items.iter() {
@@ -304,7 +310,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(storage_item.index as i32)
             .bind(&storage_item.name)
             .bind(&key)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         }
         for error in pallet.errors.iter() {
@@ -319,7 +325,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(error.index as i32)
             .bind(&error.name)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         }
         Ok(())

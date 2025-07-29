@@ -22,6 +22,8 @@ CREATE INDEX IF NOT EXISTS block_idx_timestamp
     ON block (timestamp);
 CREATE INDEX IF NOT EXISTS block_idx_spec_version
     ON block (spec_version);
+CREATE INDEX IF NOT EXISTS block_idx_number_status
+    ON block (number, status);
 
 CREATE TABLE block_0 PARTITION OF block FOR VALUES WITH (modulus 100, remainder 0);
 CREATE TABLE block_1 PARTITION OF block FOR VALUES WITH (modulus 100, remainder 1);
