@@ -67,6 +67,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         block_hash: &[u8],
         block_number: u64,
+        status: BlockStatus,
         description: &str,
     ) -> anyhow::Result<()>;
     async fn delete_error(
@@ -424,18 +425,20 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_hash: &[u8],
         block_number: u64,
+        status: BlockStatus,
         description: &str,
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
-            INSERT INTO error (block_hash, block_number, description)
-            VALUES ($1, $2, $3)
+            INSERT INTO error (block_hash, block_number, block_status, description)
+            VALUES ($1, $2, $3, $4)
             ON CONFLICT(block_hash) DO UPDATE
-            SET description = EXCLUDED.description, created_at = now()
+            SET block_status = EXCLUDED.block_status, description = EXCLUDED.description, created_at = now()
         "#,
         )
         .bind(block_hash)
         .bind(block_number as i64)
+        .bind(status)
         .bind(description)
         .execute(&self.connection_pool)
         .await?;
@@ -875,7 +878,12 @@ mod tests {
         tx.commit().await?;
         let pre_trace_error_count = postgres.get_error_count().await?;
         postgres
-            .save_error(&block_hash, block_number, "error_description")
+            .save_error(
+                &block_hash,
+                block_number,
+                BlockStatus::Finalized,
+                "error_description",
+            )
             .await?;
         let post_trace_error_count = postgres.get_error_count().await?;
         assert_eq!(post_trace_error_count, pre_trace_error_count + 1);

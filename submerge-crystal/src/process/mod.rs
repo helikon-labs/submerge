@@ -46,6 +46,18 @@ impl BlockProcessor {
         })
     }
 
+    pub async fn save_block_error(
+        &self,
+        block_hash: &[u8],
+        block_number: u64,
+        status: BlockStatus,
+        description: &str,
+    ) -> anyhow::Result<()> {
+        self.postgres
+            .save_error(block_hash, block_number, status, description)
+            .await
+    }
+
     pub async fn process_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
         log::info!("🔽 Processing genesis from chainspec file.");
         if self.postgres.get_genesis_record_count().await? > 0 {
@@ -94,9 +106,13 @@ impl BlockProcessor {
                 Ok(_) => (),
                 Err(error) => {
                     log::error!("❌ Error while processing block {number}: {error:?}");
-                    self.postgres
-                        .save_error(&hash, number, &error.to_string())
-                        .await?;
+                    self.save_block_error(
+                        &hash,
+                        number,
+                        BlockStatus::Finalized,
+                        &error.to_string(),
+                    )
+                    .await?;
                     if stop_on_error {
                         return Err(error);
                     }

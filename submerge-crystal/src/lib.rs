@@ -132,14 +132,28 @@ impl BaseService for Crystal {
                                     let hash_hex = hex::encode(hash_bytes);
                                     let number = header.get_number()?;
                                     log::info!("🟦  New proposed block {number}.");
-                                    block_processor
+                                    match block_processor
                                         .process_block(
                                             skip_traces,
                                             &hash_hex,
                                             number,
                                             types::BlockStatus::Proposed,
                                         )
-                                        .await?;
+                                        .await
+                                    {
+                                        Ok(_) => {}
+                                        Err(error) => {
+                                            block_processor
+                                                .save_block_error(
+                                                    &hash_bytes,
+                                                    number,
+                                                    types::BlockStatus::Proposed,
+                                                    &error.to_string(),
+                                                )
+                                                .await?;
+                                            return Err(error);
+                                        }
+                                    }
                                     Ok(())
                                 }
                             })
