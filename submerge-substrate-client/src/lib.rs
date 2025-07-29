@@ -130,7 +130,7 @@ impl SubstrateClient {
         {
             Ok(subscription) => subscription,
             Err(error) => {
-                log::error!("Error while subscribing to blocks: {error:?}");
+                log::error!("⚠️ Error while subscribing to blocks: {error:?}");
                 return;
             }
         };
@@ -145,18 +145,18 @@ impl SubstrateClient {
                 Some(block_header_result) => match block_header_result {
                     Ok(block_header) => {
                         if let Err(error) = callback(block_header).await {
-                            log::error!("Error in callback: {error:?}");
+                            log::error!("⚠️ Error in callback: {error:?}");
                             break;
                         }
                     }
                     Err(error) => {
-                        log::error!("Error while getting block header: {error:?}");
+                        log::error!("⚠️ Error while getting block header: {error:?}");
                         log::error!("Will exit new block subscription.");
                         break;
                     }
                 },
                 None => {
-                    log::error!("Empty block header. Will exit new block subscription.");
+                    log::error!("⚠️ Empty block header. Will exit new block subscription.");
                     break;
                 }
             }

@@ -81,7 +81,7 @@ impl BaseService for Crystal {
                 let _ = api::run_api(&postgres_args, host.as_str(), port).await;
             });
         } else {
-            log::info!("⛔ API disabled.");
+            log::info!("ℹ️ API disabled.");
         }
 
         let block_processor = Arc::new(
@@ -118,8 +118,8 @@ impl BaseService for Crystal {
                         let substrate_client = match SubstrateClient::new(&rpc_args).await {
                             Ok(substrate_client) => substrate_client,
                             Err(error) => {
-                                log::error!("Error while contructing the Substrate client for new block subscription: {error:?}");
-                                log::error!("Will retry after {delay_seconds} seconds.");
+                                log::error!("🔴 Error while contructing the Substrate client for new block subscription: {error:?}");
+                                log::error!("🔄 Will retry after {delay_seconds} seconds.");
                                 sleep(Duration::from_secs(delay_seconds)).await;
                                 continue;
                             }
@@ -131,7 +131,7 @@ impl BaseService for Crystal {
                                     let hash_bytes = header.get_hash_bytes()?;
                                     let hash_hex = hex::encode(hash_bytes);
                                     let number = header.get_number()?;
-                                    log::info!("New block: {number} :: 0x{hash_hex}");
+                                    log::info!("🟦  New proposed block {number}.");
                                     block_processor
                                         .process_block(
                                             skip_traces,
@@ -144,7 +144,8 @@ impl BaseService for Crystal {
                                 }
                             })
                             .await;
-                        log::error!("New block subscription exited. Will refresh connection and subscription after {delay_seconds} seconds.");
+                        log::error!("🔴 New block subscription exited.");
+                        log::error!("🔄 Will resubscribe after {delay_seconds} seconds.");
                         sleep(Duration::from_secs(delay_seconds)).await;
                     }
                 });
@@ -160,8 +161,8 @@ impl BaseService for Crystal {
                         let substrate_client = match SubstrateClient::new(&rpc_args).await {
                             Ok(substrate_client) => substrate_client,
                             Err(error) => {
-                                log::error!("Error while contructing the Substrate client for finalized block subscription: {error:?}");
-                                log::error!("Will retry after {delay_seconds} seconds.");
+                                log::error!("🔴 Error while contructing the Substrate client for finalized block subscription: {error:?}");
+                                log::error!("🔄 Will retry after {delay_seconds} seconds.");
                                 sleep(Duration::from_secs(delay_seconds)).await;
                                 continue;
                             }
@@ -178,9 +179,9 @@ impl BaseService for Crystal {
                                         }
                                         let start_block = start_block;
                                         let finalized_block_number = header.get_number()?;
-                                        log::info!("📦 New finalized block {finalized_block_number}.");
+                                        log::info!("🟩 New finalized block {finalized_block_number}.");
                                         if IS_BUSY.load(Ordering::SeqCst) {
-                                            log::info!("⏳ Busy processing past blocks. Skip finalized block #{finalized_block_number}.");
+                                            log::info!("⏳ Busy processing past finalized blocks. Skip finalized block {finalized_block_number}.");
                                             return Ok(());
                                         }
                                         IS_BUSY.store(true, Ordering::SeqCst);
@@ -203,13 +204,17 @@ impl BaseService for Crystal {
                                 },
                             )
                             .await;
-                        log::error!("Finalized block subscription exited. Will re-subscribe after {delay_seconds} seconds.");
+                        log::error!("🔴 Finalized block subscription exited.");
+                        log::error!("🔄 Will resubscribe after {delay_seconds} seconds.");
                         sleep(Duration::from_secs(delay_seconds)).await;
                     }
                 });
 
                 let _ = tokio::join!(new_block_subscription, finalized_block_subscription);
-                log::error!("Subscriptions exited. Will refresh connections and subscriptions after {delay_seconds} seconds.");
+                log::error!("🔴 All subscriptions exited.");
+                log::error!(
+                    "🔄 Will refresh connections and subscriptions after {delay_seconds} seconds."
+                );
                 sleep(Duration::from_secs(delay_seconds)).await;
             },
         }

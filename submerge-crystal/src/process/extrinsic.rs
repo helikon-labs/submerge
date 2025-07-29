@@ -331,7 +331,7 @@ impl BlockProcessor {
                 let error_message = format!("Extrinsic {trace_extrinsic_index} data index key does not match the expected value.");
                 return Err(anyhow::Error::msg(error_message));
             }
-            log::info!("Extrinsic {trace_extrinsic_index} data @ trace {trace_index}");
+            log::trace!("Extrinsic {trace_extrinsic_index} data @ trace {trace_index}");
             let value = trace_data
                 .value
                 .trim_start_matches("Some(")

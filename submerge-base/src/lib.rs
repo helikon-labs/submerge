@@ -55,7 +55,7 @@ impl<S: BaseService> Supervisor<S> {
                 submerge_metrics::server::start((host, port)).await;
             });
         } else {
-            log::info!("⛔ Metrics disabled.");
+            log::info!("ℹ️ Metrics disabled.");
         }
         println!(
             r#"
@@ -75,7 +75,7 @@ Supervisor started for {} v{} • © Helikon 2025"#,
         let shutdown_signal = async {
             select! {
                 _ = signal::ctrl_c() => {
-                    log::warn!("Received Ctrl+C.");
+                    log::warn!("⛔ Received Ctrl+C.");
                 },
                 _ = async {
                     if let Some(n) = &shutdown_notify {
@@ -84,7 +84,7 @@ Supervisor started for {} v{} • © Helikon 2025"#,
                         std::future::pending::<()>().await;
                     }
                 } => {
-                    log::warn!("Received internal shutdown notification.");
+                    log::warn!("⛔ Received internal shutdown notification.");
                 }
             }
         };
@@ -110,7 +110,7 @@ Supervisor started for {} v{} • © Helikon 2025"#,
                 result
             }
             _ = shutdown_signal => {
-                log::info!("Shutting down service `{}`...", service.get_name());
+                log::info!("⛔ Shutting down service `{}`...", service.get_name());
                 service.shutdown().await?;
                 Ok(())
             }
