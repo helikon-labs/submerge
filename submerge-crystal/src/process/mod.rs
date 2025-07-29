@@ -91,9 +91,7 @@ impl BlockProcessor {
                 .process_block(skip_traces, &hash_hex, number, BlockStatus::Finalized)
                 .await
             {
-                Ok(_) => {
-                    log::info!("✅ Processed block {number}.");
-                }
+                Ok(_) => (),
                 Err(error) => {
                     log::error!("❌ Error while processing block {number}: {error:?}");
                     self.postgres
@@ -291,6 +289,12 @@ impl BlockProcessor {
         self.postgres.delete_error(&block_hash, &mut tx).await?;
         // TODO if finalized, check pruned blocks :: set pruned where hash != my_hash && number == my_number
         tx.commit().await?;
+        let log_emoji = match status {
+            BlockStatus::Proposed => "🟦",
+            BlockStatus::Pruned => "⬜",
+            BlockStatus::Finalized => "🟩",
+        };
+        log::info!("{log_emoji} Processed {status} block {block_number}.");
         Ok(())
     }
 }
