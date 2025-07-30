@@ -62,7 +62,7 @@ pub(crate) struct LegacyExtrinsicWrapper {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacyCall {
+pub struct LegacyCall {
     #[serde(rename = "method")]
     pub pallet_call_name: String,
     #[serde(rename = "section")]
@@ -71,13 +71,13 @@ pub(crate) struct LegacyCall {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) enum MultiaddressType {
+pub enum MultiaddressType {
     Id,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacyMultiaddress {
+pub struct LegacyMultiaddress {
     #[serde(rename = "type")]
     pub ty: MultiaddressType,
     pub value: String,

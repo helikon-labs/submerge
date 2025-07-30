@@ -36,23 +36,29 @@ pub(crate) async fn run_api(
                 postgres: postgres.clone(),
             }))
             .wrap_fn(|request, service| {
-                metrics::request_counter().inc();
-                metrics::open_connection_count().inc();
+                metrics::api_requests_total().inc();
+                metrics::api_active_connections().inc();
                 let start = std::time::Instant::now();
                 service.call(request).map(move |result| {
                     match &result {
                         Ok(response) => {
                             let status_code = response.response().status();
-                            metrics::response_time_ms().observe(start.elapsed().as_millis() as f64);
-                            metrics::response_status_code_counter(status_code.as_str()).inc();
+                            metrics::api_response_time_ms()
+                                .observe(start.elapsed().as_millis() as f64);
+                            metrics::api_response_status_code_counter()
+                                .with_label_values(&[status_code.as_str()])
+                                .inc();
                         }
                         Err(error) => {
                             let status_code = error.as_response_error().status_code();
-                            metrics::response_time_ms().observe(start.elapsed().as_millis() as f64);
-                            metrics::response_status_code_counter(status_code.as_str()).inc();
+                            metrics::api_response_time_ms()
+                                .observe(start.elapsed().as_millis() as f64);
+                            metrics::api_response_status_code_counter()
+                                .with_label_values(&[status_code.as_str()])
+                                .inc();
                         }
                     }
-                    metrics::open_connection_count().dec();
+                    metrics::api_active_connections().dec();
                     result
                 })
             })

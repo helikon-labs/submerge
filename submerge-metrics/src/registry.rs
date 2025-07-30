@@ -38,7 +38,7 @@ pub fn register_gauge_vec(
     help: &str,
     label_names: &[&str],
 ) -> prometheus::Result<GaugeVec> {
-    let gauge = GaugeVec::new(opts!(format!("{prefix}::{name}"), help), label_names)?;
+    let gauge = GaugeVec::new(opts!(format!("{prefix}_{name}"), help), label_names)?;
     register_safe(gauge.clone())?;
     Ok(gauge)
 }
@@ -50,9 +50,27 @@ pub fn register_int_gauge_vec(
     help: &str,
     label_names: &[&str],
 ) -> prometheus::Result<IntGaugeVec> {
-    let gauge = IntGaugeVec::new(opts!(format!("{prefix}::{name}"), help), label_names)?;
+    let gauge = IntGaugeVec::new(opts!(format!("{prefix}_{name}"), help), label_names)?;
     register_safe(gauge.clone())?;
     Ok(gauge)
+}
+
+pub fn register_counter(prefix: &str, name: &str, help: &str) -> prometheus::Result<Counter> {
+    let counter = Counter::new(format!("{prefix}_{name}"), help)?;
+    register_safe(counter.clone())?;
+    Ok(counter)
+}
+
+#[allow(clippy::disallowed_types)]
+pub fn register_counter_vec(
+    prefix: &str,
+    name: &str,
+    help: &str,
+    label_names: &[&str],
+) -> prometheus::Result<CounterVec> {
+    let counter = CounterVec::new(opts!(format!("{prefix}_{name}"), help), label_names)?;
+    register_safe(counter.clone())?;
+    Ok(counter)
 }
 
 pub fn register_int_counter(
@@ -60,7 +78,7 @@ pub fn register_int_counter(
     name: &str,
     help: &str,
 ) -> prometheus::Result<IntCounter> {
-    let gauge = IntCounter::new(format!("{prefix}::{name}"), help)?;
+    let gauge = IntCounter::new(format!("{prefix}_{name}"), help)?;
     register_safe(gauge.clone())?;
     Ok(gauge)
 }
@@ -72,13 +90,13 @@ pub fn register_int_counter_vec(
     help: &str,
     label_names: &[&str],
 ) -> prometheus::Result<IntCounterVec> {
-    let gauge = IntCounterVec::new(opts!(format!("{prefix}::{name}"), help), label_names)?;
+    let gauge = IntCounterVec::new(opts!(format!("{prefix}_{name}"), help), label_names)?;
     register_safe(gauge.clone())?;
     Ok(gauge)
 }
 
 pub fn register_int_gauge(prefix: &str, name: &str, help: &str) -> prometheus::Result<IntGauge> {
-    let gauge = IntGauge::new(format!("{prefix}::{name}"), help)?;
+    let gauge = IntGauge::new(format!("{prefix}_{name}"), help)?;
     register_safe(gauge.clone())?;
     Ok(gauge)
 }
@@ -90,7 +108,7 @@ pub fn register_histogram(
     buckets: Vec<f64>,
 ) -> prometheus::Result<Histogram> {
     let histogram = Histogram::with_opts(
-        HistogramOpts::new(format!("{prefix}::{name}"), help).buckets(buckets),
+        HistogramOpts::new(format!("{prefix}_{name}"), help).buckets(buckets),
     )?;
     register_safe(histogram.clone())?;
     Ok(histogram)
@@ -104,7 +122,7 @@ pub fn register_histogram_vec(
     buckets: Vec<f64>,
 ) -> prometheus::Result<HistogramVec> {
     let gauge = HistogramVec::new(
-        HistogramOpts::new(format!("{prefix}::{name}"), help).buckets(buckets),
+        HistogramOpts::new(format!("{prefix}_{name}"), help).buckets(buckets),
         label_names,
     )?;
     register_safe(gauge.clone())?;
