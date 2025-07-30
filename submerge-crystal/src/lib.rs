@@ -28,7 +28,7 @@ impl Crystal {
 
     fn print_summary(&self, chainspec: &Chainspec) {
         log::info!(
-r#"
+            r#"
 ┌─────────────────────────────────────────────────────────────────────
 │ Chain:            {}
 │ RPC URL:          {}
