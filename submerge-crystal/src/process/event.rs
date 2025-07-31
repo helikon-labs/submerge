@@ -67,7 +67,7 @@ impl BlockProcessor {
             let pallet_name = event.event.pallet.to_case(Case::UpperCamel);
             let pallet_index = self
                 .postgres
-                .get_pallet_index_by_name(&pallet_name)
+                .get_pallet_index_by_name(spec_version, &pallet_name)
                 .await?
                 .ok_or(anyhow::Error::msg(format!(
                     "Pallet index not found in the database for pallet {pallet_name}."
@@ -75,7 +75,7 @@ impl BlockProcessor {
             let pallet_event_name = event.event.name.to_case(Case::UpperCamel);
             let pallet_event_index = self
                 .postgres
-                .get_pallet_event_index_by_name(pallet_index, &pallet_event_name)
+                .get_pallet_event_index_by_name(spec_version, pallet_index, &pallet_event_name)
                 .await?
                 .ok_or(anyhow::Error::msg(format!("Pallet event index not found in the database for event {pallet_name}.{pallet_event_name}.")))?;
             events.push(Event {
@@ -236,7 +236,7 @@ impl BlockProcessor {
                 let pallet_name = event.event.pallet.to_case(Case::UpperCamel);
                 let pallet_index = self
                     .postgres
-                    .get_pallet_index_by_name(&pallet_name)
+                    .get_pallet_index_by_name(spec_version, &pallet_name)
                     .await?
                     .ok_or(anyhow::Error::msg(format!(
                         "Pallet index not found in the database for pallet {pallet_name}."
@@ -244,7 +244,7 @@ impl BlockProcessor {
                 let pallet_event_name = event.event.name.to_case(Case::UpperCamel);
                 let pallet_event_index = self
                     .postgres
-                    .get_pallet_event_index_by_name(pallet_index, &pallet_event_name)
+                    .get_pallet_event_index_by_name(spec_version, pallet_index, &pallet_event_name)
                     .await?
                     .ok_or(anyhow::Error::msg(format!("Pallet event index not found in the database for event {pallet_name}.{pallet_event_name}.")))?;
                 events.push(Event {

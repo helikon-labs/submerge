@@ -145,3 +145,35 @@ pub fn get_signed_extensions(metadata_v14: &RuntimeMetadataV14) -> Vec<String> {
         .map(|e| e.identifier.to_string())
         .collect()
 }
+
+pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Option<&PortableType>> {
+    match metadata {
+        RuntimeMetadata::V14(metadata_v14) => {
+            if let Some(pallet) = metadata_v14
+                .pallets
+                .iter()
+                .find(|p| p.name.to_lowercase() == "system")
+            {
+                if let Some(storage) = &pallet.storage {
+                    if let Some(entry) = storage
+                        .entries
+                        .iter()
+                        .find(|s| s.name.to_lowercase() == "blockweight")
+                    {
+                        match &entry.ty {
+                            frame_metadata::v16::StorageEntryType::Plain(ty) => {
+                                return Ok(get_metadata_type_by_id(metadata_v14, ty.id))
+                            }
+                            frame_metadata::v16::StorageEntryType::Map { .. } => (),
+                        }
+                    }
+                }
+            }
+        }
+        _ => anyhow::bail!(format!(
+            "Unsupported metadata version: {}",
+            get_metadata_version(metadata)
+        )),
+    }
+    Ok(None)
+}

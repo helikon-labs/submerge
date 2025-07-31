@@ -28,7 +28,11 @@ use crate::{
 
 impl BlockProcessor {
     #[async_recursion]
-    async fn legacy_json_value_to_value(&self, json_value: &JsonValue) -> anyhow::Result<Value> {
+    async fn legacy_json_value_to_value(
+        &self,
+        spec_version: u32,
+        json_value: &JsonValue,
+    ) -> anyhow::Result<Value> {
         let value = match json_value {
             JsonValue::Null => Value::Null,
             JsonValue::Bool(value) => Value::Bool(*value),
@@ -37,7 +41,7 @@ impl BlockProcessor {
             JsonValue::Array(values) => {
                 let mut result = Vec::new();
                 for value in values.iter() {
-                    result.push(self.legacy_json_value_to_value(value).await?);
+                    result.push(self.legacy_json_value_to_value(spec_version, value).await?);
                 }
                 Value::Array(result)
             }
@@ -53,8 +57,10 @@ impl BlockProcessor {
                         Some(args),
                     ) => {
                         let pallet_name = section.to_case(Case::UpperCamel);
-                        let pallet_index = if let Some(pallet_index) =
-                            self.postgres.get_pallet_index_by_name(&pallet_name).await?
+                        let pallet_index = if let Some(pallet_index) = self
+                            .postgres
+                            .get_pallet_index_by_name(spec_version, &pallet_name)
+                            .await?
                         {
                             pallet_index
                         } else {
@@ -65,7 +71,11 @@ impl BlockProcessor {
                         let pallet_call_name = method.to_case(Case::UpperCamel);
                         let pallet_call_index = if let Some(pallet_call_index) = self
                             .postgres
-                            .get_pallet_call_index_by_name(pallet_index, &pallet_call_name)
+                            .get_pallet_call_index_by_name(
+                                spec_version,
+                                pallet_index,
+                                &pallet_call_name,
+                            )
                             .await?
                         {
                             pallet_call_index
@@ -79,7 +89,7 @@ impl BlockProcessor {
                             pallet_name,
                             pallet_call_index,
                             pallet_call_name,
-                            args: self.legacy_json_value_to_value(args).await?,
+                            args: self.legacy_json_value_to_value(spec_version, args).await?,
                         }))
                     }
                     _ => {
@@ -87,7 +97,10 @@ impl BlockProcessor {
                         for (key, json_value) in json_map.iter() {
                             map.insert(
                                 key.clone(),
-                                Box::new(self.legacy_json_value_to_value(json_value).await?),
+                                Box::new(
+                                    self.legacy_json_value_to_value(spec_version, json_value)
+                                        .await?,
+                                ),
                             );
                         }
                         Value::Object(map)
@@ -98,10 +111,16 @@ impl BlockProcessor {
         Ok(value)
     }
 
-    pub async fn convert_legacy_call(&self, call: &LegacyCall) -> anyhow::Result<Call> {
+    pub async fn convert_legacy_call(
+        &self,
+        spec_version: u32,
+        call: &LegacyCall,
+    ) -> anyhow::Result<Call> {
         let pallet_name = call.pallet_name.to_case(Case::UpperCamel);
-        let pallet_index = if let Some(pallet_index) =
-            self.postgres.get_pallet_index_by_name(&pallet_name).await?
+        let pallet_index = if let Some(pallet_index) = self
+            .postgres
+            .get_pallet_index_by_name(spec_version, &pallet_name)
+            .await?
         {
             pallet_index
         } else {
@@ -112,7 +131,7 @@ impl BlockProcessor {
         let pallet_call_name = call.pallet_call_name.to_case(Case::UpperCamel);
         let pallet_call_index = if let Some(pallet_call_index) = self
             .postgres
-            .get_pallet_call_index_by_name(pallet_index, &pallet_call_name)
+            .get_pallet_call_index_by_name(spec_version, pallet_index, &pallet_call_name)
             .await?
         {
             pallet_call_index
@@ -128,7 +147,7 @@ impl BlockProcessor {
             pallet_call_index,
             pallet_call_name,
             args: self
-                .legacy_json_value_to_value(&JsonValue::Object(call.args.clone()))
+                .legacy_json_value_to_value(spec_version, &JsonValue::Object(call.args.clone()))
                 .await?,
         })
     }
@@ -203,7 +222,9 @@ impl BlockProcessor {
                     signature,
                     version: 0,
                     is_successful,
-                    call: self.convert_legacy_call(&extrinsic.call).await?,
+                    call: self
+                        .convert_legacy_call(spec_version, &extrinsic.call)
+                        .await?,
                 });
                 continue;
             }
@@ -404,7 +425,9 @@ impl BlockProcessor {
                     signature,
                     version: 0,
                     is_successful,
-                    call: self.convert_legacy_call(&extrinsic.call).await?,
+                    call: self
+                        .convert_legacy_call(spec_version, &extrinsic.call)
+                        .await?,
                 });
                 continue;
             }

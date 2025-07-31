@@ -40,6 +40,7 @@ pub struct MetadataPalletEvent {
 pub struct MetadataPalletConstant {
     pub index: u8,
     pub name: String,
+    pub type_id: Option<u32>,
     pub value: Vec<u8>,
 }
 
@@ -106,6 +107,7 @@ macro_rules! from_metadata {
                         pallet.constants.push(MetadataPalletConstant {
                             index: index as u8,
                             name: constant.name.to_case(Case::UpperCamel),
+                            type_id: Some(constant.ty.id),
                             value: constant.value.clone(),
                         });
                     }
@@ -240,6 +242,7 @@ macro_rules! from_legacy_metadata {
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            type_id: None,
                                             value,
                                         });
                                     }
@@ -258,6 +261,7 @@ macro_rules! from_legacy_metadata {
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            type_id: None,
                                             value,
                                         });
                                     }
@@ -437,6 +441,7 @@ macro_rules! from_legacy_metadata {
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            type_id: None,
                                             value,
                                         });
                                     }
@@ -455,6 +460,7 @@ macro_rules! from_legacy_metadata {
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            type_id: None,
                                             value,
                                         });
                                     }

@@ -18,6 +18,7 @@ pub(crate) mod decode;
 mod event;
 mod extrinsic;
 mod metadata;
+mod weight;
 
 static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId32>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
@@ -144,7 +145,7 @@ impl BlockProcessor {
                 block_header,
                 0,
                 status,
-                None,
+                &None,
                 spec_version,
                 0,
                 0,
@@ -220,16 +221,16 @@ impl BlockProcessor {
             .get_last_runtime_upgrade_info(block_hash_hex)
             .await?
             .spec_version;
-        let weight = self
-            .substrate_client
-            .get_block_weight_bytes(block_hash_hex)
-            .await?;
         if block_number == 0 {
             self.process_block_0(&block_hash, &block_header, spec_version, status)
                 .await?;
             return Ok(());
         }
         let metadata = self.get_metadata(block_hash_hex, spec_version).await?;
+        let weight = self
+            .get_block_weight_json_value(block_hash_hex, &metadata)
+            .await?;
+
         let author_account_id = {
             let validator_index = block_header.get_validator_index()?;
             let session_index = self
@@ -326,7 +327,7 @@ impl BlockProcessor {
                 &block_header,
                 block_timestamp,
                 status,
-                weight.as_deref(),
+                &weight,
                 spec_version,
                 extrinsics.len() as u32,
                 events.len() as u32,

@@ -5938,6 +5938,7 @@ dependencies = [
  "clap",
  "convert_case",
  "frame-metadata 23.0.0",
+ "frame-support",
  "frame-system",
  "futures-util",
  "hex",

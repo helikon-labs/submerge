@@ -1,10 +1,28 @@
+use crate::types::legacy::LegacyCall;
 use crate::types::legacy::LegacyEventWrapper;
 use crate::types::legacy::LegacyExtrinsicWrapper;
+use crate::types::legacy::LegacyMultiaddress;
+use crate::types::legacy::MultiaddressType;
+use serde::Deserialize;
 use serde::Serialize;
+use serde_json::Value as JsonValue;
 
 pub struct LegacyDecodeAPIClient {
     url: String,
     http_client: reqwest::Client,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyExtrinsicWrapperIntermediate {
+    pub is_signed: bool,
+    #[serde(rename = "method")]
+    pub call: LegacyCall,
+    pub signature: Option<String>,
+    pub signer: Option<JsonValue>,
+    pub era: Option<JsonValue>,
+    pub nonce: Option<String>,
+    pub tip: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -49,8 +67,31 @@ impl LegacyDecodeAPIClient {
             let response_text = response.text().await?;
             return Err(anyhow::Error::msg(response_text));
         }
-        let extrinsic_wrapper = response.json::<LegacyExtrinsicWrapper>().await?;
-        Ok(extrinsic_wrapper)
+        let intermediate: LegacyExtrinsicWrapperIntermediate = response.json().await?;
+        let mut wrapper = LegacyExtrinsicWrapper {
+            is_signed: intermediate.is_signed,
+            call: intermediate.call,
+            signature: intermediate.signature,
+            signer: None,
+            era: intermediate.era,
+            nonce: intermediate.nonce,
+            tip: intermediate.tip,
+        };
+        if let Some(signer) = &intermediate.signer {
+            let signer = match signer {
+                JsonValue::String(account_id_hex) => LegacyMultiaddress {
+                    ty: MultiaddressType::Id,
+                    value: account_id_hex.clone(),
+                },
+                JsonValue::Object(_) => {
+                    let signer_json = serde_json::to_string(signer)?;
+                    serde_json::from_str::<LegacyMultiaddress>(&signer_json)?
+                }
+                _ => anyhow::bail!("Unexpected type for signer field in legacy extrinsic."),
+            };
+            wrapper.signer = Some(signer);
+        }
+        Ok(wrapper)
     }
 
     pub async fn decode_event(

@@ -1,8 +1,21 @@
+use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JsonValue;
 use sp_runtime::AccountId32;
 use submerge_base::types::substrate::MultiAddress;
+
+#[derive(Clone, Debug, Decode, Serialize)]
+pub struct LegacyWeight(pub u64);
+
+#[derive(Clone, Eq, PartialEq, Default, Debug, Decode, Serialize)]
+pub struct LegacyPerDispatchClass<T>
+where
+    T: Serialize,
+{
+    normal: T,
+    operational: T,
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

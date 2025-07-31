@@ -45,14 +45,20 @@ pub(crate) trait CrystalPostgreSQLStorage {
         pallet: &MetadataPallet,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    async fn get_pallet_index_by_name(&self, name: &str) -> anyhow::Result<Option<u8>>;
+    async fn get_pallet_index_by_name(
+        &self,
+        spec_version: u32,
+        name: &str,
+    ) -> anyhow::Result<Option<u8>>;
     async fn get_pallet_call_index_by_name(
         &self,
+        spec_version: u32,
         pallet_index: u8,
         name: &str,
     ) -> anyhow::Result<Option<u8>>;
     async fn get_pallet_event_index_by_name(
         &self,
+        spec_version: u32,
         pallet_index: u8,
         name: &str,
     ) -> anyhow::Result<Option<u8>>;
@@ -85,7 +91,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         status: BlockStatus,
-        weight: Option<&[u8]>,
+        weight: &Option<JsonValue>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
@@ -285,8 +291,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for constant in pallet.constants.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name, value)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name, type_id, value)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 "#,
             )
             .bind(spec_version as i32)
@@ -294,6 +300,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(constant.index as i32)
             .bind(&constant.name)
+            .bind(constant.type_id.map(|i| i as i32))
             .bind(&constant.value)
             .execute(&mut **tx)
             .await?;
@@ -348,23 +355,31 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
-    async fn get_pallet_index_by_name(&self, name: &str) -> anyhow::Result<Option<u8>> {
-        let maybe_row: Option<(i32,)> =
-            sqlx::query_as("SELECT index FROM metadata_pallet WHERE name = $1")
-                .bind(name)
-                .fetch_optional(&self.connection_pool)
-                .await?;
+    async fn get_pallet_index_by_name(
+        &self,
+        spec_version: u32,
+        name: &str,
+    ) -> anyhow::Result<Option<u8>> {
+        let maybe_row: Option<(i32,)> = sqlx::query_as(
+            "SELECT index FROM metadata_pallet WHERE spec_version = $1 AND name = $2",
+        )
+        .bind(spec_version as i32)
+        .bind(name)
+        .fetch_optional(&self.connection_pool)
+        .await?;
         Ok(maybe_row.map(|row| row.0 as u8))
     }
 
     async fn get_pallet_call_index_by_name(
         &self,
+        spec_version: u32,
         pallet_index: u8,
         name: &str,
     ) -> anyhow::Result<Option<u8>> {
         let maybe_row: Option<(i32,)> = sqlx::query_as(
-            "SELECT index FROM metadata_pallet_call WHERE pallet_index = $1 and name = $2",
+            "SELECT index FROM metadata_pallet_call WHERE spec_version = $1 AND pallet_index = $2 AND name = $3",
         )
+        .bind(spec_version as i32)
         .bind(pallet_index as i32)
         .bind(name)
         .fetch_optional(&self.connection_pool)
@@ -374,12 +389,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_pallet_event_index_by_name(
         &self,
+        spec_version: u32,
         pallet_index: u8,
         name: &str,
     ) -> anyhow::Result<Option<u8>> {
         let maybe_row: Option<(i32,)> = sqlx::query_as(
-            "SELECT index FROM metadata_pallet_event WHERE pallet_index = $1 and name = $2",
+            "SELECT index FROM metadata_pallet_event WHERE spec_version = $1 AND pallet_index = $2 AND name = $3",
         )
+        .bind(spec_version as i32)
         .bind(pallet_index as i32)
         .bind(name)
         .fetch_optional(&self.connection_pool)
@@ -479,7 +496,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         status: BlockStatus,
-        weight: Option<&[u8]>,
+        weight: &Option<JsonValue>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
@@ -898,7 +915,6 @@ mod tests {
             let hash = substrate_client.get_block_hash(number).await?;
             let header = substrate_client.get_block_header(&hash).await?;
             let timestamp = substrate_client.get_block_timestamp(&hash).await?;
-            let weight = substrate_client.get_block_weight_bytes(&hash).await?;
             let last_runtime_upgrade = substrate_client
                 .get_last_runtime_upgrade_info(&hash)
                 .await?;
@@ -911,7 +927,7 @@ mod tests {
                     &header,
                     timestamp,
                     BlockStatus::Proposed,
-                    weight.as_deref(),
+                    &None,
                     last_runtime_upgrade.spec_version,
                     0,
                     0,
