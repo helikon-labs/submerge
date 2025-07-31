@@ -2,6 +2,7 @@
 
 use crate::args::Args;
 use reqwest::header::{ACCEPT, CONTENT_TYPE};
+use submerge_util::string::truncate_address;
 use types::{
     AddressScreening, AddressScreeningRequest, AggregateServiceStatusResponse, Blockchain,
     BlockchainListResponse, BlockchainServiceStatus, SupportedDigitalAsset,
@@ -139,7 +140,11 @@ impl MerkleScienceClient {
             show_alerts: None,
             custom_tags: None,
         };
-        log::info!("Screening {} address: {address}", blockchain.name);
+        log::info!(
+            "Screening {} on {}.",
+            truncate_address(address),
+            blockchain.name
+        );
         let response_result = self
             .http_client
             .post("https://api.merklescience.com/api/v4.2/addresses/")
@@ -165,7 +170,8 @@ impl MerkleScienceClient {
         }
         let response: AddressScreening = serde_json::from_str(&response_text)?;
         log::info!(
-            "Screening completed for address {address} on {}.",
+            "Screening completed for {} on {}.",
+            truncate_address(address),
             blockchain.name,
         );
         Ok(response)

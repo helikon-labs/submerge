@@ -110,6 +110,24 @@ impl SubstrateClient {
         Ok(block_wrapper.block)
     }
 
+    pub async fn get_block_weight_bytes(
+        &self,
+        block_hash: &str,
+    ) -> anyhow::Result<Option<Vec<u8>>> {
+        let maybe_hex_string: Option<String> = self
+            .ws_client
+            .request(
+                "state_getStorage",
+                get_rpc_storage_plain_params("System", "BlockWeight", Some(block_hash)),
+            )
+            .await?;
+        if let Some(hex_string) = maybe_hex_string {
+            Ok(Some(hex::decode(hex_string.trim_start_matches("0x"))?))
+        } else {
+            Ok(None)
+        }
+    }
+
     async fn subscribe_to_blocks<F>(
         &self,
         subscribe_method_name: &str,

@@ -80,9 +80,7 @@ impl BaseService for Crystal {
             .context("Failed to read chainspec file")?;
         let chainspec: Chainspec =
             serde_json::from_str(&chainspec_json).context("Failed to parse chainspec JSON")?;
-
         self.print_summary(&chainspec);
-
         // launch the API
         if !self.args.no_api {
             self.launch_api().await;

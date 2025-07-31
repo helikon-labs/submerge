@@ -40,6 +40,7 @@ pub struct MetadataPalletEvent {
 pub struct MetadataPalletConstant {
     pub index: u8,
     pub name: String,
+    pub value: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -105,6 +106,7 @@ macro_rules! from_metadata {
                         pallet.constants.push(MetadataPalletConstant {
                             index: index as u8,
                             name: constant.name.to_case(Case::UpperCamel),
+                            value: constant.value.clone(),
                         });
                     }
                     // calls
@@ -231,9 +233,14 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
+                                        let value = match &module_constant.value {
+                                            DecodeDifferent::Encode(enc) => enc.0.default_byte(),
+                                            DecodeDifferent::Decoded(dec) => dec.clone(),
+                                        };
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            value,
                                         });
                                     }
                                 }
@@ -244,9 +251,14 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
+                                        let value = match &module_constant.value {
+                                            DecodeDifferent::Encode(enc) => enc.0.default_byte(),
+                                            DecodeDifferent::Decoded(dec) => dec.clone(),
+                                        };
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            value,
                                         });
                                     }
                                 }
@@ -418,9 +430,14 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
+                                        let value = match &module_constant.value {
+                                            DecodeDifferent::Encode(enc) => enc.0.default_byte(),
+                                            DecodeDifferent::Decoded(dec) => dec.clone(),
+                                        };
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            value,
                                         });
                                     }
                                 }
@@ -431,9 +448,14 @@ macro_rules! from_legacy_metadata {
                                         let name =
                                             get_decode_different_string(&module_constant.name)
                                                 .to_case(Case::UpperCamel);
+                                        let value = match &module_constant.value {
+                                            DecodeDifferent::Encode(enc) => enc.0.default_byte(),
+                                            DecodeDifferent::Decoded(dec) => dec.clone(),
+                                        };
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
+                                            value,
                                         });
                                     }
                                 }

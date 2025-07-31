@@ -85,6 +85,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         status: BlockStatus,
+        weight: Option<&[u8]>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
@@ -284,8 +285,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for constant in pallet.constants.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name, value)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 "#,
             )
             .bind(spec_version as i32)
@@ -293,6 +294,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(constant.index as i32)
             .bind(&constant.name)
+            .bind(&constant.value)
             .execute(&mut **tx)
             .await?;
         }
@@ -477,6 +479,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         status: BlockStatus,
+        weight: Option<&[u8]>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
@@ -487,8 +490,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         let author_account_id: &[u8; 32] = author_account_id.as_ref();
         sqlx::query(
             r#"
-                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, extrinsic_count, event_count, author_account_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT (hash) DO NOTHING
                 "#,
         )
@@ -500,6 +503,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(timestamp as i64)
             .bind(spec_version as i32)
             .bind(status)
+            .bind(weight)
             .bind(extrinsic_count as i32)
             .bind(event_count as i32)
             .bind(author_account_id)
@@ -894,6 +898,7 @@ mod tests {
             let hash = substrate_client.get_block_hash(number).await?;
             let header = substrate_client.get_block_header(&hash).await?;
             let timestamp = substrate_client.get_block_timestamp(&hash).await?;
+            let weight = substrate_client.get_block_weight_bytes(&hash).await?;
             let last_runtime_upgrade = substrate_client
                 .get_last_runtime_upgrade_info(&hash)
                 .await?;
@@ -906,6 +911,7 @@ mod tests {
                     &header,
                     timestamp,
                     BlockStatus::Proposed,
+                    weight.as_deref(),
                     last_runtime_upgrade.spec_version,
                     0,
                     0,

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS metadata_pallet_constant
     pallet_name     VARCHAR(128) NOT NULL,
     index           INTEGER NOT NULL,
     name            VARCHAR(128) NOT NULL,
+    value           BYTEA NOT NULL,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT metadata_pallet_constant_pk PRIMARY KEY(spec_version, pallet_index, index),
     CONSTRAINT metadata_pallet_constant_fk_metadata_pallet

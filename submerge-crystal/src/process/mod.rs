@@ -11,6 +11,7 @@ use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
+use submerge_util::string::truncate_hash;
 use tokio::sync::RwLock;
 
 pub(crate) mod decode;
@@ -95,18 +96,21 @@ impl BlockProcessor {
             .await?
             .get_number()?;
         let end_block_number = min(end_block_number, finalized_block_number);
-        log::info!("⚙️ Process blocks {start_block_number}-{end_block_number}.");
+        log::info!("⚙️ Process finalized blocks {start_block_number}-{end_block_number}.");
         for number in start_block_number..=end_block_number {
-            log::info!("🔧 Processing block {number}. Target {end_block_number}.");
             let hash_hex = self.substrate_client.get_block_hash(number).await?;
             let hash = hex::decode(&hash_hex)?;
+            log::info!(
+                "🔧 Processing finalized block [{number}][0x{}]. Target {end_block_number}.",
+                truncate_hash(&hash_hex),
+            );
             match self
                 .process_block(skip_traces, &hash_hex, number, BlockStatus::Finalized)
                 .await
             {
                 Ok(_) => crate::metrics::processed_finalized_block_number().set(number as i64),
                 Err(error) => {
-                    log::error!("❌ Error while processing block {number}: {error:?}");
+                    log::error!("❌ Error while processing finalized block {number}: {error:?}");
                     self.save_block_error(
                         &hash,
                         number,
@@ -120,7 +124,9 @@ impl BlockProcessor {
                 }
             }
         }
-        log::info!("✅ Completed processing blocks {start_block_number}-{end_block_number}.");
+        log::info!(
+            "✅ Completed processing finalized blocks {start_block_number}-{end_block_number}."
+        );
         Ok(())
     }
 
@@ -138,6 +144,7 @@ impl BlockProcessor {
                 block_header,
                 0,
                 status,
+                None,
                 spec_version,
                 0,
                 0,
@@ -159,8 +166,8 @@ impl BlockProcessor {
         for block in blocks.iter() {
             if block.hash != block_hash {
                 log::info!(
-                    "✂️ Prune block {block_number}: 0x{}",
-                    hex::encode(&block.hash)
+                    "✂️ Prune block [{block_number}][0x{}].",
+                    truncate_hash(&hex::encode(&block.hash)),
                 );
                 self.postgres
                     .update_block_status(&block.hash, BlockStatus::Pruned, tx)
@@ -180,12 +187,16 @@ impl BlockProcessor {
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
         if let Some(row) = self.postgres.get_block_by_hash(&block_hash).await? {
-            log::info!("👍 Block {block_number} had already been processed.");
+            log::info!(
+                "👍 Block [{block_number}][{}] had already been processed.",
+                truncate_hash(block_hash_hex)
+            );
             if row.status != status && status == BlockStatus::Finalized {
                 let start_time = std::time::Instant::now();
                 log::info!(
-                    "🔁 Update block status: {} ➡️ {status}: 0x{block_hash_hex}",
-                    row.status
+                    "🔁 Update block [{block_number}][0x{}] status: {} ➡️ {status}",
+                    truncate_hash(block_hash_hex),
+                    row.status,
                 );
                 let mut tx = self.postgres.connection_pool.begin().await?;
                 self.postgres
@@ -209,6 +220,10 @@ impl BlockProcessor {
             .get_last_runtime_upgrade_info(block_hash_hex)
             .await?
             .spec_version;
+        let weight = self
+            .substrate_client
+            .get_block_weight_bytes(block_hash_hex)
+            .await?;
         if block_number == 0 {
             self.process_block_0(&block_hash, &block_header, spec_version, status)
                 .await?;
@@ -311,6 +326,7 @@ impl BlockProcessor {
                 &block_header,
                 block_timestamp,
                 status,
+                weight.as_deref(),
                 spec_version,
                 extrinsics.len() as u32,
                 events.len() as u32,
@@ -354,7 +370,10 @@ impl BlockProcessor {
         };
         let elapsed_time_ms = start_time.elapsed().as_millis();
         crate::metrics::block_processing_time_ms().observe(elapsed_time_ms as f64);
-        log::info!("{log_emoji} Processed {status} block {block_number} in {elapsed_time_ms} ms.");
+        log::info!(
+            "{log_emoji} Processed {status} block [{block_number}][0x{}] in {elapsed_time_ms} ms.",
+            truncate_hash(block_hash_hex),
+        );
         Ok(())
     }
 }

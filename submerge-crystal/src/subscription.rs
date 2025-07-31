@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use submerge_base::args::RPCArgs;
 use submerge_substrate_client::SubstrateClient;
+use submerge_util::string::truncate_hash;
 use tokio::sync::RwLock;
 use tokio::time::sleep;
 
@@ -37,7 +38,10 @@ impl Crystal {
                         let hash_hex = hex::encode(hash_bytes);
                         let number = header.get_number()?;
                         crate::metrics::target_best_block_number().set(number as i64);
-                        log::info!("🟦 New proposed block {number}");
+                        log::info!(
+                            "🟦 New proposed block [{number}][0x{}].",
+                            truncate_hash(&hash_hex)
+                        );
 
                         match processor
                             .process_block(skip_traces, &hash_hex, number, BlockStatus::Proposed)
@@ -101,6 +105,7 @@ impl Crystal {
                         }
 
                         let number = header.get_number()?;
+                        let block_hash = hex::encode(header.get_hash_bytes()?);
                         crate::metrics::target_finalized_block_number().set(number as i64);
 
                         if IS_BUSY
@@ -108,7 +113,8 @@ impl Crystal {
                             .is_err()
                         {
                             log::info!(
-                                "⏳ Busy processing older finalized blocks. Skipping {number}."
+                                "⏳ Busy processing older finalized blocks. Skipping [{number}][0x{}].",
+                                truncate_hash(&block_hash),
                             );
                             return Ok(());
                         }
