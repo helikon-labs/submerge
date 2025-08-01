@@ -227,10 +227,6 @@ impl BlockProcessor {
             return Ok(());
         }
         let metadata = self.get_metadata(block_hash_hex, spec_version).await?;
-        let weight = self
-            .get_block_weight_json_value(block_hash_hex, &metadata)
-            .await?;
-
         let author_account_id = {
             let validator_index = block_header.get_validator_index()?;
             let session_index = self
@@ -263,7 +259,7 @@ impl BlockProcessor {
             .get_block_timestamp(block_hash_hex)
             .await?;
         let mut tx = self.postgres.connection_pool.begin().await?;
-        let (events, extrinsics) = if skip_traces {
+        let (events, extrinsics, weight) = if skip_traces {
             let event_bytes = self
                 .substrate_client
                 .get_block_event_bytes(block_hash_hex)
@@ -274,7 +270,10 @@ impl BlockProcessor {
             let extrinsics = self
                 .get_extrinsics(&block_hash, spec_version, &metadata, &events)
                 .await?;
-            (events, extrinsics)
+            let weight = self
+                .get_block_weight_from_rpc(&block_hash, spec_version, &metadata)
+                .await?;
+            (events, extrinsics, weight)
         } else {
             let trace = self
                 .substrate_client
@@ -311,10 +310,14 @@ impl BlockProcessor {
                     extrinsics.len()
                 );
             }
-            (events, extrinsics)
+            let weight = self
+                .get_block_weight_from_trace(&block_hash, spec_version, &metadata, &trace)
+                .await?;
+            (events, extrinsics, weight)
         };
         log::info!("Decoded {} events.", events.len());
         log::info!("Decoded {} extrinsics.", extrinsics.len());
+        log::info!("Decoded weight {weight:?}.");
 
         // persist block, events, and extrinsics
         if status == BlockStatus::Finalized {

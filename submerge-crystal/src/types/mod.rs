@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 
 use frame_system::Phase;
-use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use submerge_base::types::substrate::Signature;
@@ -55,14 +54,4 @@ impl Display for BlockStatus {
             }
         )
     }
-}
-
-#[derive(Clone, Eq, PartialEq, Default, Debug, Decode, Serialize)]
-pub struct PerDispatchClass<T>
-where
-    T: Serialize,
-{
-    normal: T,
-    operational: T,
-    mandatory: T,
 }

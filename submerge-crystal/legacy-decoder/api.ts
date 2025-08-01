@@ -38,6 +38,9 @@ class API {
         router.post('/extrinsic', async (request, response) => {
             await this.decodeExtrinsic(request, response);
         });
+        router.post('/block-weight', async (request, response) => {
+            await this.decodeBlockWeight(request, response);
+        });
         this.app.use('/decode', router);
     }
 
@@ -80,7 +83,7 @@ class API {
             const event = registry.createType('EventRecord', hex);
             return response.status(StatusCodes.OK).json(event.toHuman());
         } catch (error) {
-            return response.status(StatusCodes.BAD_REQUEST).json({
+            return response.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 error: `${error}`,
             });
         }
@@ -108,7 +111,7 @@ class API {
             const events = registry.createType('Vec<EventRecord>', hex);
             return response.status(200).json(events.toHuman());
         } catch (error) {
-            return response.status(StatusCodes.BAD_REQUEST).json({
+            return response.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 error: `${error}`,
             });
         }
@@ -136,7 +139,36 @@ class API {
             const extrinsic = new GenericExtrinsic(registry, hex);
             return response.status(StatusCodes.OK).json(extrinsic.toHuman());
         } catch (error) {
-            return response.status(StatusCodes.BAD_REQUEST).json({
+            return response.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                error: `${error}`,
+            });
+        }
+    }
+
+    private async decodeBlockWeight(request: Request, response: Response) {
+        try {
+            const { blockHash, specVersion, hex } = request.body;
+            if (!blockHash) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Block hash not found in the request body.' });
+            }
+            if (!specVersion) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Spec version not found in the request body.' });
+            }
+            if (!hex) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+            }
+
+            const registry = await this.getRegistry(blockHash, specVersion);
+            const weight = registry.createType('PerDispatchClassWeight', hex);
+            return response.status(StatusCodes.OK).json(weight.toHuman());
+        } catch (error) {
+            return response.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 error: `${error}`,
             });
         }
