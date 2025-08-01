@@ -3,7 +3,7 @@ use crate::{
     types::metadata::util::get_block_weight_type,
 };
 use frame_metadata::RuntimeMetadata;
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::block_trace::BlockTrace;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
@@ -14,7 +14,7 @@ impl BlockProcessor {
         spec_version: u32,
         metadata: &RuntimeMetadata,
         bytes: &mut &[u8],
-    ) -> anyhow::Result<JsonValue> {
+    ) -> anyhow::Result<JSONValue> {
         if let frame_metadata::RuntimeMetadata::V14(metadata_v14) = metadata {
             let Some(ty) = get_block_weight_type(metadata_v14)? else {
                 anyhow::bail!("System.BlockWeight type not found in metadata.");
@@ -47,7 +47,7 @@ impl BlockProcessor {
         block_hash: &[u8],
         spec_version: u32,
         metadata: &RuntimeMetadata,
-    ) -> anyhow::Result<Option<JsonValue>> {
+    ) -> anyhow::Result<Option<JSONValue>> {
         if let Some(bytes) = self
             .substrate_client
             .get_block_weight_bytes(&hex::encode(block_hash))
@@ -69,7 +69,7 @@ impl BlockProcessor {
         spec_version: u32,
         metadata: &RuntimeMetadata,
         trace: &BlockTrace,
-    ) -> anyhow::Result<Option<JsonValue>> {
+    ) -> anyhow::Result<Option<JSONValue>> {
         let block_weight_key = get_storage_plain_key("System", "BlockWeight");
         let mut maybe_trace_index_value: Option<(usize, String)> = None;
         for (trace_index, trace) in trace.events.iter().enumerate() {

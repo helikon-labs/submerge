@@ -6,7 +6,7 @@ use crate::types::legacy::MultiaddressType;
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde::Serialize;
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use std::time::Duration;
 
 #[derive(Debug)]
@@ -36,8 +36,8 @@ struct LegacyExtrinsicWrapperIntermediate {
     #[serde(rename = "method")]
     pub call: LegacyCall,
     pub signature: Option<String>,
-    pub signer: Option<JsonValue>,
-    pub era: Option<JsonValue>,
+    pub signer: Option<JSONValue>,
+    pub era: Option<JSONValue>,
     pub nonce: Option<String>,
     pub tip: Option<String>,
 }
@@ -47,6 +47,8 @@ struct LegacyExtrinsicWrapperIntermediate {
 struct DecodeRequest {
     block_hash: String,
     spec_version: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    type_name: Option<String>,
     hex: String,
 }
 
@@ -96,21 +98,27 @@ impl LegacyDecodeAPIClient {
             .context("Failed to deserialize response JSON")
     }
 
-    fn create_decode_request(block_hash: &[u8], spec_version: u32, bytes: &[u8]) -> DecodeRequest {
+    fn create_decode_request(
+        block_hash: &[u8],
+        spec_version: u32,
+        type_name: Option<String>,
+        bytes: &[u8],
+    ) -> DecodeRequest {
         DecodeRequest {
             block_hash: format!("0x{}", hex::encode(block_hash)),
             spec_version,
+            type_name,
             hex: format!("0x{}", hex::encode(bytes)),
         }
     }
 
-    fn process_signer(signer_value: &JsonValue) -> Result<LegacyMultiaddress> {
+    fn process_signer(signer_value: &JSONValue) -> Result<LegacyMultiaddress> {
         match signer_value {
-            JsonValue::String(account_id_hex) => Ok(LegacyMultiaddress {
+            JSONValue::String(account_id_hex) => Ok(LegacyMultiaddress {
                 ty: MultiaddressType::Id,
                 value: account_id_hex.clone(),
             }),
-            JsonValue::Object(_) => serde_json::from_value(signer_value.clone())
+            JSONValue::Object(_) => serde_json::from_value(signer_value.clone())
                 .context("Failed to deserialize signer object"),
             _ => anyhow::bail!(
                 "Signer must be either a string or object, got: {:?}",
@@ -125,7 +133,7 @@ impl LegacyDecodeAPIClient {
         spec_version: u32,
         bytes: &[u8],
     ) -> Result<LegacyExtrinsicWrapper> {
-        let request = Self::create_decode_request(block_hash, spec_version, bytes);
+        let request = Self::create_decode_request(block_hash, spec_version, None, bytes);
         let intermediate: LegacyExtrinsicWrapperIntermediate = self
             .make_decode_request("decode/extrinsic", &request)
             .await
@@ -153,7 +161,7 @@ impl LegacyDecodeAPIClient {
         spec_version: u32,
         bytes: &[u8],
     ) -> Result<LegacyEventWrapper> {
-        let request = Self::create_decode_request(block_hash, spec_version, bytes);
+        let request = Self::create_decode_request(block_hash, spec_version, None, bytes);
         self.make_decode_request("decode/event", &request)
             .await
             .context("Failed to decode event")
@@ -165,7 +173,7 @@ impl LegacyDecodeAPIClient {
         spec_version: u32,
         bytes: &[u8],
     ) -> Result<Vec<LegacyEventWrapper>> {
-        let request = Self::create_decode_request(block_hash, spec_version, bytes);
+        let request = Self::create_decode_request(block_hash, spec_version, None, bytes);
         self.make_decode_request("decode/events", &request)
             .await
             .context("Failed to decode events")
@@ -176,9 +184,27 @@ impl LegacyDecodeAPIClient {
         block_hash: &[u8],
         spec_version: u32,
         bytes: &[u8],
-    ) -> Result<JsonValue> {
-        let request = Self::create_decode_request(block_hash, spec_version, bytes);
+    ) -> Result<JSONValue> {
+        let request = Self::create_decode_request(block_hash, spec_version, None, bytes);
         self.make_decode_request("decode/block-weight", &request)
+            .await
+            .context("Failed to decode event")
+    }
+
+    pub async fn decode_type(
+        &self,
+        block_hash: &[u8],
+        spec_version: u32,
+        type_name: &str,
+        bytes: &[u8],
+    ) -> Result<JSONValue> {
+        let request = Self::create_decode_request(
+            block_hash,
+            spec_version,
+            Some(type_name.to_owned()),
+            bytes,
+        );
+        self.make_decode_request("decode/type", &request)
             .await
             .context("Failed to decode event")
     }

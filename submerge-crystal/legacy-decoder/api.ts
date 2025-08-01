@@ -41,6 +41,9 @@ class API {
         router.post('/block-weight', async (request, response) => {
             await this.decodeBlockWeight(request, response);
         });
+        router.post('/type', async (request, response) => {
+            await this.decodeType(request, response);
+        });
         this.app.use('/decode', router);
     }
 
@@ -166,6 +169,40 @@ class API {
 
             const registry = await this.getRegistry(blockHash, specVersion);
             const weight = registry.createType('PerDispatchClassWeight', hex);
+            return response.status(StatusCodes.OK).json(weight.toHuman());
+        } catch (error) {
+            return response.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                error: `${error}`,
+            });
+        }
+    }
+
+    private async decodeType(request: Request, response: Response) {
+        try {
+            const { blockHash, specVersion, typeName, hex } = request.body;
+            if (!blockHash) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Block hash not found in the request body.' });
+            }
+            if (!specVersion) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Spec version not found in the request body.' });
+            }
+            if (!typeName) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Type name not found in the request body.' });
+            }
+            if (!hex) {
+                return response
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+            }
+
+            const registry = await this.getRegistry(blockHash, specVersion);
+            const weight = registry.createType(typeName, hex);
             return response.status(StatusCodes.OK).json(weight.toHuman());
         } catch (error) {
             return response.status(StatusCodes.INTERNAL_SERVER_ERROR).json({

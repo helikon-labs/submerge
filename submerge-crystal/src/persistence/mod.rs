@@ -1,7 +1,7 @@
 use frame_metadata::RuntimeMetadataPrefixed;
 use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use sp_runtime::AccountId32;
 use sp_runtime::DigestItem;
 use sqlx::{Postgres, Transaction};
@@ -36,7 +36,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         spec_version: u32,
         version: u32,
         metadata_bytes: &[u8],
-        metadata_json: &JsonValue,
+        metadata_json: &JSONValue,
         metadata: &Metadata,
     ) -> anyhow::Result<()>;
     async fn ingest_metadata_pallet(
@@ -91,7 +91,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         status: BlockStatus,
-        weight: &Option<JsonValue>,
+        weight: &Option<JSONValue>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
@@ -176,7 +176,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         pallet_call_index: u8,
         pallet_call_name: &str,
         is_successful: bool,
-        args: &JsonValue,
+        args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
 
@@ -218,7 +218,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         metadata_version: u32,
         metadata_bytes: &[u8],
-        metadata_json: &JsonValue,
+        metadata_json: &JSONValue,
         metadata: &Metadata,
     ) -> anyhow::Result<()> {
         let record_count: (i64,) = sqlx::query_as(
@@ -276,8 +276,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for event in pallet.events.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_event (spec_version, pallet_index, pallet_name, index, name)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO metadata_pallet_event (spec_version, pallet_index, pallet_name, index, name, docs)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 "#,
             )
             .bind(spec_version as i32)
@@ -285,14 +285,15 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(event.index as i32)
             .bind(&event.name)
+            .bind(&event.docs)
             .execute(&mut **tx)
             .await?;
         }
         for constant in pallet.constants.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name, type_id, value)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name, type_id, type_name, value, value_json, docs)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 "#,
             )
             .bind(spec_version as i32)
@@ -301,15 +302,18 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(constant.index as i32)
             .bind(&constant.name)
             .bind(constant.type_id.map(|i| i as i32))
+            .bind(&constant.type_name)
             .bind(&constant.value)
+            .bind(&constant.value_json)
+            .bind(&constant.docs)
             .execute(&mut **tx)
             .await?;
         }
         for call in pallet.calls.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_call (spec_version, pallet_index, pallet_name, index, name)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO metadata_pallet_call (spec_version, pallet_index, pallet_name, index, name, docs)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 "#,
             )
             .bind(spec_version as i32)
@@ -317,6 +321,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(call.index as i32)
             .bind(&call.name)
+            .bind(&call.docs)
             .execute(&mut **tx)
             .await?;
         }
@@ -324,8 +329,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             let key = get_storage_plain_key(&pallet.name, &storage_item.name);
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_storage_item (spec_version, pallet_index, pallet_name, index, name, key)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO metadata_pallet_storage_item (spec_version, pallet_index, pallet_name, index, name, key, docs)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 "#,
             )
             .bind(spec_version as i32)
@@ -334,14 +339,15 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(storage_item.index as i32)
             .bind(&storage_item.name)
             .bind(&key)
+            .bind(&storage_item.docs)
             .execute(&mut **tx)
             .await?;
         }
         for error in pallet.errors.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_error (spec_version, pallet_index, pallet_name, index, name)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO metadata_pallet_error (spec_version, pallet_index, pallet_name, index, name, docs)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 "#,
             )
             .bind(spec_version as i32)
@@ -349,6 +355,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&pallet.name)
             .bind(error.index as i32)
             .bind(&error.name)
+            .bind(&error.docs)
             .execute(&mut **tx)
             .await?;
         }
@@ -496,7 +503,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         header: &BlockHeader,
         timestamp: u64,
         status: BlockStatus,
-        weight: &Option<JsonValue>,
+        weight: &Option<JSONValue>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
@@ -833,7 +840,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_index: u8,
         pallet_call_name: &str,
         is_successful: bool,
-        args: &JsonValue,
+        args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64> {
         let row: (i64,) = sqlx::query_as(

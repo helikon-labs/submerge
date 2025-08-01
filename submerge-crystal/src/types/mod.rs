@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use frame_system::Phase;
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::Signature;
 
 use crate::process::decode::Call;
@@ -30,7 +30,7 @@ pub struct Event {
     pub pallet_event_name: String,
     pub index: u32,
     pub phase: Phase,
-    pub args: JsonValue,
+    pub args: JSONValue,
 }
 
 #[derive(Clone, Copy, Debug, sqlx::Type, Serialize, Deserialize, Eq, PartialEq)]

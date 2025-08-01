@@ -1,7 +1,7 @@
 use chrono::{DateTime, NaiveDateTime};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer};
-use serde_json::Value;
+use serde_json::Value as JSONValue;
 
 pub fn float_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
@@ -41,12 +41,26 @@ where
     D: Deserializer<'de>,
     T: DeserializeOwned, // Use DeserializeOwned instead of Deserialize<'de>
 {
-    let value: Value = Deserialize::deserialize(deserializer)?;
+    let value: JSONValue = Deserialize::deserialize(deserializer)?;
     if value.is_object() && value.as_object().unwrap().is_empty() {
         Ok(None) // Convert empty `{}` to None
     } else {
         serde_json::from_value(value)
             .map(Some)
             .map_err(serde::de::Error::custom)
+    }
+}
+
+pub fn strip_nuls(value: &mut JSONValue) {
+    match value {
+        JSONValue::String(str) => {
+            if str.contains('\0') {
+                // often these are right-padded; trim_end_matches is safest
+                *str = str.replace('\0', "");
+            }
+        }
+        JSONValue::Array(array) => array.iter_mut().for_each(strip_nuls),
+        JSONValue::Object(map) => map.values_mut().for_each(strip_nuls),
+        _ => {}
     }
 }

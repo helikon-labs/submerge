@@ -2,7 +2,7 @@ use convert_case::{Case, Casing};
 use frame_metadata::RuntimeMetadata;
 use frame_system::Phase;
 use parity_scale_codec::{Compact, Decode};
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
     block::BlockHeader,
@@ -48,7 +48,7 @@ impl BlockProcessor {
                 "initialization" => Phase::Initialization,
                 "finalization" => Phase::Finalization,
                 "applyextrinsic" => {
-                    if let JsonValue::String(extrinsic_index) = legacy_phase.value {
+                    if let JSONValue::String(extrinsic_index) = legacy_phase.value {
                         let extrinsic_index: u32 = extrinsic_index.parse()?;
                         Phase::ApplyExtrinsic(extrinsic_index)
                     } else {
@@ -131,7 +131,7 @@ impl BlockProcessor {
                             map.insert("unnamed".to_string(), value.into());
                         }
                     }
-                    let args = JsonValue::Object(map);
+                    let args = JSONValue::Object(map);
                     let event = Event {
                         trace_index: None,
                         pallet_index,
@@ -217,7 +217,7 @@ impl BlockProcessor {
                     "initialization" => Phase::Initialization,
                     "finalization" => Phase::Finalization,
                     "applyextrinsic" => {
-                        if let JsonValue::String(extrinsic_index) = legacy_phase.value {
+                        if let JSONValue::String(extrinsic_index) = legacy_phase.value {
                             let extrinsic_index: u32 = extrinsic_index.parse()?;
                             Phase::ApplyExtrinsic(extrinsic_index)
                         } else {
@@ -288,7 +288,7 @@ impl BlockProcessor {
                             map.insert("unnamed".to_string(), value.into());
                         }
                     }
-                    let args = JsonValue::Object(map);
+                    let args = JSONValue::Object(map);
                     events.push(Event {
                         trace_index: Some(trace_index as u32),
                         pallet_index,

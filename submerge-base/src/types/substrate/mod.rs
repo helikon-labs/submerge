@@ -1,6 +1,6 @@
 use parity_scale_codec::{Decode, Encode};
 use serde::Serialize;
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use sp_runtime::AccountId32;
 
 pub mod block;
@@ -24,5 +24,5 @@ pub enum MultiAddress {
 pub struct Signature {
     pub signer: MultiAddress,
     pub signature: sp_runtime::MultiSignature,
-    pub extra: Option<JsonValue>,
+    pub extra: Option<JSONValue>,
 }

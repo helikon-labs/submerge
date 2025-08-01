@@ -3,7 +3,7 @@ use convert_case::{Case, Casing};
 use frame_metadata::{v16::StorageHasher, RuntimeMetadata};
 use parity_scale_codec::{Decode, Encode, Input};
 use rustc_hash::FxHashMap as HashMap;
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
     block::BlockHeader, block_trace::BlockTrace, MultiAddress, Signature,
@@ -31,29 +31,29 @@ impl BlockProcessor {
     async fn legacy_json_value_to_value(
         &self,
         spec_version: u32,
-        json_value: &JsonValue,
+        json_value: &JSONValue,
     ) -> anyhow::Result<Value> {
         let value = match json_value {
-            JsonValue::Null => Value::Null,
-            JsonValue::Bool(value) => Value::Bool(*value),
-            JsonValue::Number(value) => Value::String(value.to_string()),
-            JsonValue::String(value) => Value::String(value.to_string()),
-            JsonValue::Array(values) => {
+            JSONValue::Null => Value::Null,
+            JSONValue::Bool(value) => Value::Bool(*value),
+            JSONValue::Number(value) => Value::String(value.to_string()),
+            JSONValue::String(value) => Value::String(value.to_string()),
+            JSONValue::Array(values) => {
                 let mut result = Vec::new();
                 for value in values.iter() {
                     result.push(self.legacy_json_value_to_value(spec_version, value).await?);
                 }
                 Value::Array(result)
             }
-            JsonValue::Object(json_map) => {
+            JSONValue::Object(json_map) => {
                 match (
                     json_map.get("section"),
                     json_map.get("method"),
                     json_map.get("args"),
                 ) {
                     (
-                        Some(JsonValue::String(section)),
-                        Some(JsonValue::String(method)),
+                        Some(JSONValue::String(section)),
+                        Some(JSONValue::String(method)),
                         Some(args),
                     ) => {
                         let pallet_name = section.to_case(Case::UpperCamel);
@@ -147,7 +147,7 @@ impl BlockProcessor {
             pallet_call_index,
             pallet_call_name,
             args: self
-                .legacy_json_value_to_value(spec_version, &JsonValue::Object(call.args.clone()))
+                .legacy_json_value_to_value(spec_version, &JSONValue::Object(call.args.clone()))
                 .await?,
         })
     }
@@ -195,12 +195,12 @@ impl BlockProcessor {
                         let mut extra_map = serde_json::Map::new();
                         if let Some(nonce) = &extrinsic.nonce {
                             extra_map
-                                .insert("checkNonce".to_string(), JsonValue::String(nonce.clone()));
+                                .insert("checkNonce".to_string(), JSONValue::String(nonce.clone()));
                         }
                         if let Some(tip) = &extrinsic.tip {
                             extra_map.insert(
                                 "chargeTransactionPayment".to_string(),
-                                JsonValue::String(tip.clone()),
+                                JSONValue::String(tip.clone()),
                             );
                         }
                         if let Some(era) = &extrinsic.era {
@@ -209,7 +209,7 @@ impl BlockProcessor {
                         Some(Signature {
                             signer: signer.try_into()?,
                             signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?,
-                            extra: Some(JsonValue::Object(extra_map)),
+                            extra: Some(JSONValue::Object(extra_map)),
                         })
                     }
                     _ => None,
@@ -260,11 +260,11 @@ impl BlockProcessor {
                                             values.len(),
                                         ));
                                     }
-                                    let mut map = serde_json::Map::<String, JsonValue>::new();
+                                    let mut map = serde_json::Map::<String, JSONValue>::new();
                                     for (key, value) in extensions.iter().zip(values) {
                                         map.insert(key.to_case(Case::Camel), value.clone().into());
                                     }
-                                    Some(JsonValue::Object(map))
+                                    Some(JSONValue::Object(map))
                                 }
                                 _ => anyhow::bail!(
                                     "Unexpected non-array type for extrinsic type extras."
@@ -398,12 +398,12 @@ impl BlockProcessor {
                         let mut extra_map = serde_json::Map::new();
                         if let Some(nonce) = &extrinsic.nonce {
                             extra_map
-                                .insert("checkNonce".to_string(), JsonValue::String(nonce.clone()));
+                                .insert("checkNonce".to_string(), JSONValue::String(nonce.clone()));
                         }
                         if let Some(tip) = &extrinsic.tip {
                             extra_map.insert(
                                 "chargeTransactionPayment".to_string(),
-                                JsonValue::String(tip.clone()),
+                                JSONValue::String(tip.clone()),
                             );
                         }
                         if let Some(era) = &extrinsic.era {
@@ -412,7 +412,7 @@ impl BlockProcessor {
                         Some(Signature {
                             signer: signer.try_into()?,
                             signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?,
-                            extra: Some(JsonValue::Object(extra_map)),
+                            extra: Some(JSONValue::Object(extra_map)),
                         })
                     }
                     _ => None,
@@ -462,11 +462,11 @@ impl BlockProcessor {
                                             values.len(),
                                         ));
                                     }
-                                    let mut map = serde_json::Map::<String, JsonValue>::new();
+                                    let mut map = serde_json::Map::<String, JSONValue>::new();
                                     for (key, value) in extensions.iter().zip(values) {
                                         map.insert(key.to_case(Case::Camel), value.clone().into());
                                     }
-                                    Some(JsonValue::Object(map))
+                                    Some(JSONValue::Object(map))
                                 }
                                 _ => anyhow::bail!(
                                     "Unexpected non-array type for extrinsic type extras."

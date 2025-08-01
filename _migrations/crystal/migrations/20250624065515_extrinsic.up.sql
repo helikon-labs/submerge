@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS extrinsic
     hash            BYTEA NOT NULL,
     index           INTEGER NOT NULL,
     version         INTEGER NOT NULL,
-    signer          BYTEA,
+    signer          BYTEA, -- SCALE-encoded MultiAddress
     signature       BYTEA,
     extra           JSONB,
     is_successful   BOOLEAN NOT NULL,

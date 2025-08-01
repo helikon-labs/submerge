@@ -3,7 +3,7 @@ use rustc_hash::FxHashMap as HashMap;
 use scale_info::PortableRegistry;
 use serde::Serialize;
 use serde_json::Map as JsonMap;
-use serde_json::Value as JsonValue;
+use serde_json::Value as JSONValue;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Call {
@@ -24,43 +24,43 @@ pub enum Value {
     Object(HashMap<String, Box<Value>>),
 }
 
-impl From<Value> for JsonValue {
+impl From<Value> for JSONValue {
     fn from(value: Value) -> Self {
         match value {
-            Value::Null => JsonValue::Null,
+            Value::Null => JSONValue::Null,
             Value::Call(call) => {
-                let mut json_map: JsonMap<String, JsonValue> = JsonMap::new();
+                let mut json_map: JsonMap<String, JSONValue> = JsonMap::new();
                 json_map.insert(
                     "palletIndex".to_string(),
-                    JsonValue::String(call.pallet_index.to_string()),
+                    JSONValue::String(call.pallet_index.to_string()),
                 );
                 json_map.insert(
                     "palletName".to_string(),
-                    JsonValue::String(call.pallet_name.clone()),
+                    JSONValue::String(call.pallet_name.clone()),
                 );
                 json_map.insert(
                     "callIndex".to_string(),
-                    JsonValue::String(call.pallet_call_index.to_string()),
+                    JSONValue::String(call.pallet_call_index.to_string()),
                 );
                 json_map.insert(
                     "callName".to_string(),
-                    JsonValue::String(call.pallet_call_name.clone()),
+                    JSONValue::String(call.pallet_call_name.clone()),
                 );
                 json_map.insert("args".to_string(), call.args.into());
-                JsonValue::Object(json_map)
+                JSONValue::Object(json_map)
             }
-            Value::Bool(value) => JsonValue::Bool(value),
-            Value::String(value) => JsonValue::String(value),
+            Value::Bool(value) => JSONValue::Bool(value),
+            Value::String(value) => JSONValue::String(value),
             Value::Array(values) => {
-                JsonValue::Array(values.iter().cloned().map(|v| v.into()).collect())
+                JSONValue::Array(values.iter().cloned().map(|v| v.into()).collect())
             }
             Value::Object(map) => {
-                let mut json_map: JsonMap<String, JsonValue> = JsonMap::new();
+                let mut json_map: JsonMap<String, JSONValue> = JsonMap::new();
                 for (key, value) in map.iter() {
                     let value = &**value;
                     json_map.insert(key.clone(), value.clone().into());
                 }
-                JsonValue::Object(json_map)
+                JSONValue::Object(json_map)
             }
         }
     }

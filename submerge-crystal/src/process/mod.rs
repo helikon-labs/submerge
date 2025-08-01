@@ -226,7 +226,7 @@ impl BlockProcessor {
                 .await?;
             return Ok(());
         }
-        let metadata = self.get_metadata(block_hash_hex, spec_version).await?;
+        let metadata = self.get_metadata(&block_hash, spec_version).await?;
         let author_account_id = {
             let validator_index = block_header.get_validator_index()?;
             let session_index = self
@@ -317,7 +317,6 @@ impl BlockProcessor {
         };
         log::info!("Decoded {} events.", events.len());
         log::info!("Decoded {} extrinsics.", extrinsics.len());
-        log::info!("Decoded weight {weight:?}.");
 
         // persist block, events, and extrinsics
         if status == BlockStatus::Finalized {

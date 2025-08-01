@@ -27,7 +27,7 @@ pub fn get_decode_different_string(value: &DecodeDifferentStr) -> String {
     }
 }
 
-fn get_metadata_type_by_id(
+pub fn get_metadata_type_by_id(
     metadata_v14: &RuntimeMetadataV14,
     type_id: u32,
 ) -> Option<&PortableType> {
