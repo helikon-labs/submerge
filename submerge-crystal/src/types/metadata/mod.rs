@@ -70,6 +70,15 @@ pub struct MetadataPalletError {
     pub docs: Vec<String>,
 }
 
+fn extract_docs(
+    documentation: &DecodeDifferent<&'static [&'static str], Vec<String>>,
+) -> Vec<String> {
+    match documentation {
+        DecodeDifferent::Encode(enc) => enc.iter().map(|s| s.to_string()).collect(),
+        DecodeDifferent::Decoded(dec) => dec.clone(),
+    }
+}
+
 macro_rules! from_metadata {
     ($a:ty) => {
         impl TryFrom<&$a> for Metadata {
@@ -218,12 +227,7 @@ macro_rules! from_legacy_metadata {
                                                 get_decode_different_string(&module_event.name)
                                                     .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
-                                                match &module_event.documentation {
-                                                    DecodeDifferent::Encode(enc) => {
-                                                        enc.iter().map(|s| s.to_string()).collect()
-                                                    }
-                                                    DecodeDifferent::Decoded(dec) => dec.clone(),
-                                                };
+                                                extract_docs(&module_event.documentation);
                                             pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
@@ -239,12 +243,7 @@ macro_rules! from_legacy_metadata {
                                                 get_decode_different_string(&module_event.name)
                                                     .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
-                                                match &module_event.documentation {
-                                                    DecodeDifferent::Encode(enc) => {
-                                                        enc.iter().map(|s| s.to_string()).collect()
-                                                    }
-                                                    DecodeDifferent::Decoded(dec) => dec.clone(),
-                                                };
+                                                extract_docs(&module_event.documentation);
                                             pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
@@ -270,13 +269,8 @@ macro_rules! from_legacy_metadata {
                                             DecodeDifferent::Encode(enc) => enc.to_string(),
                                             DecodeDifferent::Decoded(dec) => dec.clone(),
                                         };
-                                        let docs: Vec<String> = match &module_constant.documentation
-                                        {
-                                            DecodeDifferent::Encode(enc) => {
-                                                enc.iter().map(|s| s.to_string()).collect()
-                                            }
-                                            DecodeDifferent::Decoded(dec) => dec.clone(),
-                                        };
+                                        let docs: Vec<String> =
+                                            extract_docs(&module_constant.documentation);
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
@@ -303,13 +297,8 @@ macro_rules! from_legacy_metadata {
                                             DecodeDifferent::Encode(enc) => enc.to_string(),
                                             DecodeDifferent::Decoded(dec) => dec.clone(),
                                         };
-                                        let docs: Vec<String> = match &module_constant.documentation
-                                        {
-                                            DecodeDifferent::Encode(enc) => {
-                                                enc.iter().map(|s| s.to_string()).collect()
-                                            }
-                                            DecodeDifferent::Decoded(dec) => dec.clone(),
-                                        };
+                                        let docs: Vec<String> =
+                                            extract_docs(&module_constant.documentation);
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
@@ -328,12 +317,8 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.0().iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            let docs: Vec<String> = match &call.documentation {
-                                                DecodeDifferent::Encode(enc) => {
-                                                    enc.iter().map(|s| s.to_string()).collect()
-                                                }
-                                                DecodeDifferent::Decoded(dec) => dec.clone(),
-                                            };
+                                            let docs: Vec<String> =
+                                                extract_docs(&call.documentation);
                                             pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
@@ -345,12 +330,8 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            let docs: Vec<String> = match &call.documentation {
-                                                DecodeDifferent::Encode(enc) => {
-                                                    enc.iter().map(|s| s.to_string()).collect()
-                                                }
-                                                DecodeDifferent::Decoded(dec) => dec.clone(),
-                                            };
+                                            let docs: Vec<String> =
+                                                extract_docs(&call.documentation);
                                             pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
@@ -370,15 +351,7 @@ macro_rules! from_legacy_metadata {
                                                         get_decode_different_string(&entry.name)
                                                             .to_case(Case::UpperCamel);
                                                     let docs: Vec<String> =
-                                                        match &entry.documentation {
-                                                            DecodeDifferent::Encode(enc) => enc
-                                                                .iter()
-                                                                .map(|s| s.to_string())
-                                                                .collect(),
-                                                            DecodeDifferent::Decoded(dec) => {
-                                                                dec.clone()
-                                                            }
-                                                        };
+                                                        extract_docs(&entry.documentation);
                                                     pallet.storage_items.push(
                                                         MetadataPalletStorageItem {
                                                             index: index as u8,
@@ -394,15 +367,7 @@ macro_rules! from_legacy_metadata {
                                                         get_decode_different_string(&entry.name)
                                                             .to_case(Case::UpperCamel);
                                                     let docs: Vec<String> =
-                                                        match &entry.documentation {
-                                                            DecodeDifferent::Encode(enc) => enc
-                                                                .iter()
-                                                                .map(|s| s.to_string())
-                                                                .collect(),
-                                                            DecodeDifferent::Decoded(dec) => {
-                                                                dec.clone()
-                                                            }
-                                                        };
+                                                        extract_docs(&entry.documentation);
                                                     pallet.storage_items.push(
                                                         MetadataPalletStorageItem {
                                                             index: index as u8,
@@ -419,12 +384,8 @@ macro_rules! from_legacy_metadata {
                                             for (index, entry) in entries.iter().enumerate() {
                                                 let name = get_decode_different_string(&entry.name)
                                                     .to_case(Case::UpperCamel);
-                                                let docs: Vec<String> = match &entry.documentation {
-                                                    DecodeDifferent::Encode(enc) => {
-                                                        enc.iter().map(|s| s.to_string()).collect()
-                                                    }
-                                                    DecodeDifferent::Decoded(dec) => dec.clone(),
-                                                };
+                                                let docs: Vec<String> =
+                                                    extract_docs(&entry.documentation);
                                                 pallet.storage_items.push(
                                                     MetadataPalletStorageItem {
                                                         index: index as u8,
@@ -438,12 +399,8 @@ macro_rules! from_legacy_metadata {
                                             for (index, entry) in entries.iter().enumerate() {
                                                 let name = get_decode_different_string(&entry.name)
                                                     .to_case(Case::UpperCamel);
-                                                let docs: Vec<String> = match &entry.documentation {
-                                                    DecodeDifferent::Encode(enc) => {
-                                                        enc.iter().map(|s| s.to_string()).collect()
-                                                    }
-                                                    DecodeDifferent::Decoded(dec) => dec.clone(),
-                                                };
+                                                let docs: Vec<String> =
+                                                    extract_docs(&entry.documentation);
                                                 pallet.storage_items.push(
                                                     MetadataPalletStorageItem {
                                                         index: index as u8,
@@ -461,12 +418,7 @@ macro_rules! from_legacy_metadata {
                                     for (index, error) in errors.0().iter().enumerate() {
                                         let name = get_decode_different_string(&error.name)
                                             .to_case(Case::UpperCamel);
-                                        let docs: Vec<String> = match &error.documentation {
-                                            DecodeDifferent::Encode(enc) => {
-                                                enc.iter().map(|s| s.to_string()).collect()
-                                            }
-                                            DecodeDifferent::Decoded(dec) => dec.clone(),
-                                        };
+                                        let docs: Vec<String> = extract_docs(&error.documentation);
                                         pallet.errors.push(MetadataPalletError {
                                             index: index as u8,
                                             name,
@@ -478,12 +430,7 @@ macro_rules! from_legacy_metadata {
                                     for (index, error) in errors.iter().enumerate() {
                                         let name = get_decode_different_string(&error.name)
                                             .to_case(Case::UpperCamel);
-                                        let docs: Vec<String> = match &error.documentation {
-                                            DecodeDifferent::Encode(enc) => {
-                                                enc.iter().map(|s| s.to_string()).collect()
-                                            }
-                                            DecodeDifferent::Decoded(dec) => dec.clone(),
-                                        };
+                                        let docs: Vec<String> = extract_docs(&error.documentation);
                                         pallet.errors.push(MetadataPalletError {
                                             index: index as u8,
                                             name,
@@ -523,12 +470,7 @@ macro_rules! from_legacy_metadata {
                                             }
                                             .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
-                                                match &module_event.documentation {
-                                                    DecodeDifferent::Encode(enc) => {
-                                                        enc.iter().map(|s| s.to_string()).collect()
-                                                    }
-                                                    DecodeDifferent::Decoded(dec) => dec.clone(),
-                                                };
+                                                extract_docs(&module_event.documentation);
                                             pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
@@ -546,12 +488,7 @@ macro_rules! from_legacy_metadata {
                                             }
                                             .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
-                                                match &module_event.documentation {
-                                                    DecodeDifferent::Encode(enc) => {
-                                                        enc.iter().map(|s| s.to_string()).collect()
-                                                    }
-                                                    DecodeDifferent::Decoded(dec) => dec.clone(),
-                                                };
+                                                extract_docs(&module_event.documentation);
                                             pallet.events.push(MetadataPalletEvent {
                                                 index: index as u8,
                                                 name,
@@ -577,13 +514,8 @@ macro_rules! from_legacy_metadata {
                                             DecodeDifferent::Encode(enc) => enc.to_string(),
                                             DecodeDifferent::Decoded(dec) => dec.clone(),
                                         };
-                                        let docs: Vec<String> = match &module_constant.documentation
-                                        {
-                                            DecodeDifferent::Encode(enc) => {
-                                                enc.iter().map(|s| s.to_string()).collect()
-                                            }
-                                            DecodeDifferent::Decoded(dec) => dec.clone(),
-                                        };
+                                        let docs: Vec<String> =
+                                            extract_docs(&module_constant.documentation);
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
@@ -610,13 +542,8 @@ macro_rules! from_legacy_metadata {
                                             DecodeDifferent::Encode(enc) => enc.to_string(),
                                             DecodeDifferent::Decoded(dec) => dec.clone(),
                                         };
-                                        let docs: Vec<String> = match &module_constant.documentation
-                                        {
-                                            DecodeDifferent::Encode(enc) => {
-                                                enc.iter().map(|s| s.to_string()).collect()
-                                            }
-                                            DecodeDifferent::Decoded(dec) => dec.clone(),
-                                        };
+                                        let docs: Vec<String> =
+                                            extract_docs(&module_constant.documentation);
                                         pallet.constants.push(MetadataPalletConstant {
                                             index: index as u8,
                                             name,
@@ -635,12 +562,8 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.0().iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            let docs: Vec<String> = match &call.documentation {
-                                                DecodeDifferent::Encode(enc) => {
-                                                    enc.iter().map(|s| s.to_string()).collect()
-                                                }
-                                                DecodeDifferent::Decoded(dec) => dec.clone(),
-                                            };
+                                            let docs: Vec<String> =
+                                                extract_docs(&call.documentation);
                                             pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
@@ -652,12 +575,8 @@ macro_rules! from_legacy_metadata {
                                         for (index, call) in calls.iter().enumerate() {
                                             let name = get_decode_different_string(&call.name)
                                                 .to_case(Case::UpperCamel);
-                                            let docs: Vec<String> = match &call.documentation {
-                                                DecodeDifferent::Encode(enc) => {
-                                                    enc.iter().map(|s| s.to_string()).collect()
-                                                }
-                                                DecodeDifferent::Decoded(dec) => dec.clone(),
-                                            };
+                                            let docs: Vec<String> =
+                                                extract_docs(&call.documentation);
                                             pallet.calls.push(MetadataPalletCall {
                                                 index: index as u8,
                                                 name,
