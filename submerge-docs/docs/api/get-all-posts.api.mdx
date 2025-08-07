@@ -1,0 +1,101 @@
+---
+id: get-all-posts
+title: 'Get all posts'
+description: 'Returns all posts from the database'
+sidebar_label: 'Get all posts'
+hide_title: true
+hide_table_of_contents: true
+api: eJzVVktv40YM/issz1o76aEH3Yzd7cIF2gab5FDYOdAj2prNPOQZjhPD8H8vKNmJEydoCvRSwJBHBPnNx7d22HA2yXZiY8Aav7OUFDKQc9DFLBmWKXqQlqEhoQVlxgpjx4nUYtpgjSuWiXNXqo0VCq0y1jMc3u8q7CiRZ+Gk4h0G8ow1lsxp2mCFVq9dF05brF6R+dU64XTgsdiC2sD0C1aYeF1s4gbrJbnMFWbTsiesdyjbTvFtEF5xwgr5kXznGOvL/f5OTXMXQ+asyj9fXOjfy2sn4GwWiMvhZqzQxCAcRFWp65w1vfPjH1n1d+eXU0qk7lhhn0/kcfGDjWCFXdIQih1YHGLxFvmXzKZflJUmow/FQxvBJCbhphcq3ZcOV2g/gnsb7Low2IaD2KXlBMuY3oUUK3p8Qs2SbFidgd6o2pHvaxzMJQhQEViS4cSQuGPnSKBLcdMTgWgMsYYa+NFwJyVZiIquyolbDg0nK7ivcBGb7T8z+jyk8V1O62IJWCCXbGxnZR6OJ0hsSqbQEIPR6lmXEqQk4MeOGyu9mSl+Hl5QAx8dZ7HEUER/60IZJAr5eQgxSyoeEuuTcx8O9tBHJrEH3nCwLEDJtFbYSMT9/rT2ZyddpI8hMYdo3D0lqm/F3vTJ1dlz0V0ONXL5rP4fpuaYmf9DaO/2e42RZ2njYaxpp5K0WOP4OAoyp81xlJXksMZWpMv1uJ8GnSPDbXQNp5FsO2tiwyMT/Vkp/nb95x9Xz8owuZrCdQ+NOqRsWMa+ng8peUP9DHICy8QMMTgbGL5/vb7pUaUlgW0sYCjo2ICHlgNvOPXCwNxAjp5hSffDjB/Nw+vrTPSc4cFKCwSZ+w76RaU+BkicY0mGcz0Pn6Af+3r4HL3nIBlA3yZuUXwvv2qjxP50E5vhcJs55XmYh5vWZrAZCJbFuS0sSzDqHbnelU/9WuLQdNEqMiUGZzcMFBp4iOnehtVP8/DXwVnRxEvLHqz33FgSdlsggY9kbB6wQs30ENzL0cXo4rAJyPSb4LDIXsUKq39TFvsKnTUcMp8g/j69OUOJHYchzKOYVuODUR6rrlatlqencILyTcv7uMVfF8vueaV9cOUfJqvwo4w7RzYo957j7tAjM+yOK7/VgVPPcLdT69vk9nsVD1teO6exmRbuZH+/y+79b4A3Gd3z9vTjYkOuqFLfVBtKVm/Fena3r7Bl0nwpncFqYnSUnVid7XpFeZoP375q6P8GZOBBxw==
+sidebar_class_name: 'get api-method'
+info_path: docs/api/jsonplaceholder-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from '@theme/ApiExplorer/MethodEndpoint';
+import ParamsDetails from '@theme/ParamsDetails';
+import RequestSchema from '@theme/RequestSchema';
+import StatusCodes from '@theme/StatusCodes';
+import OperationTabs from '@theme/OperationTabs';
+import TabItem from '@theme/TabItem';
+import Heading from '@theme/Heading';
+
+<Heading as={'h1'} className={'openapi__heading'} children={'Get all posts'}></Heading>
+
+<MethodEndpoint method={'get'} path={'/posts'} context={'endpoint'}></MethodEndpoint>
+
+Returns all posts from the database
+
+<Heading
+    id={'request'}
+    as={'h2'}
+    className={'openapi-tabs__heading'}
+    children={'Request'}
+></Heading>
+
+<ParamsDetails
+    parameters={[
+        {
+            name: 'userId',
+            in: 'query',
+            description: 'Filter posts by user ID',
+            required: false,
+            schema: { type: 'integer', example: 1 },
+        },
+    ]}
+></ParamsDetails>
+
+<RequestSchema title={'Body'} body={undefined}></RequestSchema>
+
+<StatusCodes
+    id={undefined}
+    label={undefined}
+    responses={{
+        '200': {
+            description: 'A list of posts',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                userId: {
+                                    type: 'integer',
+                                    description: 'ID of the user who created the post',
+                                    example: 1,
+                                },
+                                id: {
+                                    type: 'integer',
+                                    description: 'Unique identifier for the post',
+                                    example: 1,
+                                },
+                                title: {
+                                    type: 'string',
+                                    description: 'Title of the post',
+                                    example:
+                                        'sunt aut facere repellat provident occaecati excepturi optio reprehenderit',
+                                },
+                                body: {
+                                    type: 'string',
+                                    description: 'Content of the post',
+                                    example:
+                                        'quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto',
+                                },
+                            },
+                            required: ['userId', 'id', 'title', 'body'],
+                            title: 'Post',
+                        },
+                    },
+                    example: [
+                        {
+                            userId: 1,
+                            id: 1,
+                            title: 'sunt aut facere repellat provident occaecati excepturi optio reprehenderit',
+                            body: 'quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto',
+                        },
+                    ],
+                },
+            },
+        },
+    }}
+></StatusCodes>

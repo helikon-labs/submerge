@@ -1,0 +1,91 @@
+---
+id: get-post-by-id
+title: 'Get a specific post'
+description: 'Returns a single post by ID'
+sidebar_label: 'Get a specific post'
+hide_title: true
+hide_table_of_contents: true
+api: eJyVVUtv4zYQ/ivTObWA1k6KRQ+6ubuLhQu0DRLnUNg50NTI4kZ8mBw6MQz992JoJevEWaQFDJkazeObxzc8YENJRxPYeIc1XhPn6BIoSMZteoLgE8N6D/PPWKEPFJVozhuscUN85RP/vp83WCGrTcJ6iSJKeFdhUFFZYooiPqBTlrBGI7pGQgXFHVYYaZtNpAZrjpmqV3gW3QihxE+6I6uwPiDvQ/HmmDYUsUJrnLHZYn1ZIT0qG3rC+nIY7iRCCt4lSmL468WF/L2MMjvNFivU3jE5FkUVQm90SXr6LYn24RyGX38jLYYhSonYHGPlRFEq9Qbcl/Hnn8G3wB2BmMBD50FHUkxNEY6oTtKqpI7v+711ZpsJTEOOTWsoQuvjD12yYTk+e00cjducOV2I2hPe134wZcegMkOrNEWCSIH6XjGE6HcFCHitFUlJgR41Bc7RgBfvohypI9dQNIxDhWvf7N9H9OnYrh9i2majgBhSTtoEwyv3dIJIOiflGkWgZUa2OTvOEegxUGO4mOlsV+4FNLC+p8RGEWSW3zarBOxZ2ZVzPnHMFiLJk1IpB1kolYlkgXbkDDGoqDvDpNnjMJwSYfk0OdWRLsfGjNW4e25UoRoOgxh/vPh4PtbyHZxnaH12TQliiTs/klfmVThY41RKlqYH0wzCMoq7J9bm2GONHXNI9bQQIPRKU+f7huKE98Fo39BEe3vWlT9u/v7r6rsyzK7mcFNco7DSuNaX1o7JvKF+5nIGbSQC73rjCK6/3CyKV+4Uw95n0MoJg+ChI0c7ikXoiBpI3hK06p6gUawmK/c6nPaWEjwY7mT3URmm30RqvYNIyeeoKdUr9wHKhpPDJ28tOU4A8jbr19kW+VXn2ZfTwjfHw22imFZu5RadSWBkwba57/fQZqclO9WXVD6A6nsg1wRvxLOKBL3ZESjXwIOP98Ztflq5f8ZkWcaLO7JgrKXGKKZ+D4rhv3Rs5bBC6fSxuJeTi8nFuPyULstv3NmvaoXV/xmLocLeaHKJTjz+OV+cefGB3LHMEx8309EoTUVXRldm1Cp34uWrkAhSIG1ao594/2JkDt93+Tt327himB55GnplnCAvCA8jTZYFQsIKa9MIDzsJWC/xcFirRLexHwYRbzPFPdbLuwp3Khq1lvleHrAxSc4N1q3q0+ur7hTpz9fjLvgFXl6Ab4IchcrtpZ+qz/KGFd7T/njhDndDhR0p6Z0AOX6YaVm+JyZnV53Q9HlhfP0ibfgXo0LXGQ==
+sidebar_class_name: 'get api-method'
+info_path: docs/api/jsonplaceholder-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from '@theme/ApiExplorer/MethodEndpoint';
+import ParamsDetails from '@theme/ParamsDetails';
+import RequestSchema from '@theme/RequestSchema';
+import StatusCodes from '@theme/StatusCodes';
+import OperationTabs from '@theme/OperationTabs';
+import TabItem from '@theme/TabItem';
+import Heading from '@theme/Heading';
+
+<Heading as={'h1'} className={'openapi__heading'} children={'Get a specific post'}></Heading>
+
+<MethodEndpoint method={'get'} path={'/posts/{id}'} context={'endpoint'}></MethodEndpoint>
+
+Returns a single post by ID
+
+<Heading
+    id={'request'}
+    as={'h2'}
+    className={'openapi-tabs__heading'}
+    children={'Request'}
+></Heading>
+
+<ParamsDetails
+    parameters={[
+        {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'The post ID',
+            schema: { type: 'integer', minimum: 1, example: 1 },
+        },
+    ]}
+></ParamsDetails>
+
+<RequestSchema title={'Body'} body={undefined}></RequestSchema>
+
+<StatusCodes
+    id={undefined}
+    label={undefined}
+    responses={{
+        '200': {
+            description: 'A single post',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            userId: {
+                                type: 'integer',
+                                description: 'ID of the user who created the post',
+                                example: 1,
+                            },
+                            id: {
+                                type: 'integer',
+                                description: 'Unique identifier for the post',
+                                example: 1,
+                            },
+                            title: {
+                                type: 'string',
+                                description: 'Title of the post',
+                                example:
+                                    'sunt aut facere repellat provident occaecati excepturi optio reprehenderit',
+                            },
+                            body: {
+                                type: 'string',
+                                description: 'Content of the post',
+                                example:
+                                    'quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto',
+                            },
+                        },
+                        required: ['userId', 'id', 'title', 'body'],
+                        title: 'Post',
+                    },
+                },
+            },
+        },
+        '404': { description: 'Post not found' },
+    }}
+></StatusCodes>
