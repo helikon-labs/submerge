@@ -79,6 +79,25 @@ fn extract_docs(
     }
 }
 
+fn extract_module_name(name: &DecodeDifferent<&'static str, String>) -> String {
+    match name {
+        DecodeDifferent::Encode(name) => name.to_string(),
+        DecodeDifferent::Decoded(name) => name.clone(),
+    }
+}
+
+fn create_base_pallet(index: u8, name: String) -> MetadataPallet {
+    MetadataPallet {
+        index,
+        name: name.to_case(Case::UpperCamel),
+        events: Vec::new(),
+        constants: Vec::new(),
+        calls: Vec::new(),
+        storage_items: Vec::new(),
+        errors: Vec::new(),
+    }
+}
+
 macro_rules! from_metadata {
     ($a:ty) => {
         impl TryFrom<&$a> for Metadata {
@@ -87,15 +106,8 @@ macro_rules! from_metadata {
             fn try_from(value: &$a) -> Result<Self, anyhow::Error> {
                 let mut metadata = Metadata::default();
                 for pallet_metadata in value.pallets.iter() {
-                    let mut pallet = MetadataPallet {
-                        index: pallet_metadata.index,
-                        name: pallet_metadata.name.to_case(Case::UpperCamel),
-                        events: Vec::new(),
-                        constants: Vec::new(),
-                        calls: Vec::new(),
-                        storage_items: Vec::new(),
-                        errors: Vec::new(),
-                    };
+                    let mut pallet =
+                        create_base_pallet(pallet_metadata.index, pallet_metadata.name.clone());
                     // events
                     if let Some(events) = &pallet_metadata.event {
                         let type_id = events.ty.id;
@@ -203,20 +215,8 @@ macro_rules! from_legacy_metadata {
                 match &value.modules {
                     DecodeDifferent::Decoded(modules) => {
                         for (index, module) in modules.iter().enumerate() {
-                            let name = match &module.name {
-                                DecodeDifferent::Encode(name) => name.to_string(),
-                                DecodeDifferent::Decoded(name) => name.clone(),
-                            }
-                            .to_case(Case::UpperCamel);
-                            let mut pallet = MetadataPallet {
-                                index: index as u8,
-                                name,
-                                events: Vec::new(),
-                                constants: Vec::new(),
-                                calls: Vec::new(),
-                                storage_items: Vec::new(),
-                                errors: Vec::new(),
-                            };
+                            let name = extract_module_name(&module.name).to_case(Case::UpperCamel);
+                            let mut pallet = create_base_pallet(index as u8, name);
                             if let Some(module_events) = &module.event {
                                 match module_events {
                                     DecodeDifferent::Encode(module_events) => {
