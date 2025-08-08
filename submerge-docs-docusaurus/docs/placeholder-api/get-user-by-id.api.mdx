@@ -1,0 +1,71 @@
+---
+id: get-user-by-id
+title: "Get a specific user"
+description: "Returns a single user by ID"
+sidebar_label: "Get a specific user"
+hide_title: true
+hide_table_of_contents: true
+api: eJyNVllz20YM/ivbfWpnSB3xzacqbupx66QeH9Pp2H6ASIjceA9mF2tb0fC/d0DSlmQpsZ+0hIDvw7EAdiELDLlXNSlnZSYvkKK3QYAIypYaRQzoxXQuTv+QiXQ1emDN00JmskS6Dug/zk8LmUiCMsjsRrIoyLtE1uDBIPFXdrOQFgzKTCrWVUxVA1UykR6/ReWxkBn5iMkrf66q3oWWP+QVGpDZQtK8btEsYYleJtIoq0w0Mhsn0sBTfx4lEp/A1BplNm6aO6YLtbMBA6N8GI34Z51yshq6TGTuLKElVoS61ipvMzD8Glh7semTm37FnGQia8/5ItVxqWKr3+vc11Z9iyhUgZbUTKEXM+cFVS/OrEST9Cl9AQ3klS03MP+MWgtWFW62FUqeIViL4sRDBUY2iWSN94FfP2uu4n30SAyDBpTehjFz3gDJrNd4DfqJpQKKwmMIa8iXyubo8XeovdKDqfrONM+Kb5YgkEekbQ4tGf6OGoI4U2XVhhCioq1pWFpMahqIvb19Vs8VzX+uffKIduq8i2XFBt9VnbviDYajD0dHh+nO4cEum5To3g5Vw9Y41/N8BqQoFuvFS3cOBjvjvSOm0rZ8B4qz5SbM4Xgw3j3al02TSFLUxY5u7XvSF65JZF05+47rds5qwkYzfXWFx+nBwSg92NlPD0c7Y/G0t7+7+4GBH3EaflDCl1sYvdpg+rezE9cXZ2tEldIFluCLgfNlW3JnarDzt0vyo4ZaYl84A2VED+mxdxZadKC8Oq88hDdsP0dNKtUwR4+FyLVCS2lA/4BeWIwedGq7rpyGnyNV4C2GIDyCTkkZFJga8PdIYa16x33gLFsO8ZtuwvczIa6Mh7bV75b2PDpk07D57mh3cw7z/8I6EjMXbdHSGKTK9auH88sbJJNDZgnDhSoa3hFtzN3OiV5zQER1yIbtxK415Fg5XaAf0LxW3HyD3JmN+v91+c+X86WymJyfissWWvIaUXbWdWEfzBb1DciJmHlE4axWFsXFp8urFpUqIDF3UeRgeTaLxwotct1YaBELEZxBMYN7FAUQDG7ta7rcGQziUVHFmxuJR/0+S42zwmNw0ecYslubinMXKPDh2BmDloIQ/DXR02ha+XnlyLWnK1d0h3an39pbe1WpIBQ/D2ZR67mYRZtzdKDbUFIBWgu0Re0UI4NHodUDCrCFeHT+Xtnyl1v7Xx8sYSDeSEYoY7BQQKjnAki8p2K3ViaSK90ldzwYDUb9toaclg33ujR8K99/LXgIqhxt13494ufTqw0UV6Pt0syDYdgbhSHr8tWtXSADdgXlBImLVWOuZip/3sprV2axfHy88TLr25nwiYa1BmXbNe7b7du1yU3bjLxOM1VwH1YuEIsXiykEvPa6aVj8LaKfy+zmLpEP4BVM+X7fLGShAp8Lmc1Ah9cPtVVPf73op8FvYv35ttXJXsiThBl15C+ZyHucd8/F5q5JZIXAtWNHuj8meY41rZhsvM24TV8GxsknLsP/F+yz5w==
+sidebar_class_name: "get api-method"
+info_path: placeholder-api/jsonplaceholder-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get a specific user"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/users/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Returns a single user by ID
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"id","in":"path","required":true,"description":"The user ID","schema":{"type":"integer","minimum":1,"maximum":10,"example":1}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A single user","content":{"application/json":{"schema":{"type":"object","properties":{"id":{"type":"integer","description":"Unique identifier for the user","example":1},"name":{"type":"string","description":"Full name of the user","example":"Leanne Graham"},"username":{"type":"string","description":"Username","example":"Bret"},"email":{"type":"string","format":"email","description":"Email address","example":"Sincere@april.biz"},"address":{"type":"object","properties":{"street":{"type":"string","example":"Kulas Light"},"suite":{"type":"string","example":"Apt. 556"},"city":{"type":"string","example":"Gwenborough"},"zipcode":{"type":"string","example":"92998-3874"},"geo":{"type":"object","properties":{"lat":{"type":"string","description":"Latitude","example":"-37.3159"},"lng":{"type":"string","description":"Longitude","example":"81.1496"}},"title":"Geo"}},"title":"Address"},"phone":{"type":"string","description":"Phone number","example":"1-770-736-8031 x56442"},"website":{"type":"string","format":"uri","description":"Website URL","example":"hildegard.org"},"company":{"type":"object","properties":{"name":{"type":"string","example":"Romaguera-Crona"},"catchPhrase":{"type":"string","example":"Multi-layered client-server neural-net"},"bs":{"type":"string","example":"harness real-time e-markets"}},"title":"Company"}},"required":["id","name","username","email"],"title":"User"}}}},"404":{"description":"User not found"}}}
+>
+  
+</StatusCodes>
+
+
+      

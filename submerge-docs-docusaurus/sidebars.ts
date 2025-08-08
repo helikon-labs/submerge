@@ -17,7 +17,7 @@ const sidebars: SidebarsConfig = {
                     'This is a sample server Petstore server. You can find out more about Swagger at http://swagger.io or on irc.freenode.net, #swagger. For this sample, you can use the api key special-key to test the authorization filters.',
                 slug: '/petstore-api',
             },
-            items: require('./docs/petstore/sidebar.js'),
+            items: require('./docs/petstore-api/sidebar.js'),
         },
     ],
     placeholderApiSidebar: [
@@ -30,7 +30,7 @@ const sidebars: SidebarsConfig = {
                 description: 'A dummy API.',
                 slug: '/placeholder-api',
             },
-            items: require('./docs/placeholder/sidebar.js'),
+            items: require('./docs/placeholder-api/sidebar.js'),
         },
     ],
 };

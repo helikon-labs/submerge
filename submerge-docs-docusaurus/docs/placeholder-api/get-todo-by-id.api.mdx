@@ -1,0 +1,71 @@
+---
+id: get-todo-by-id
+title: "Get a specific todo"
+description: "Returns a single todo by ID"
+sidebar_label: "Get a specific todo"
+hide_title: true
+hide_table_of_contents: true
+api: eJyVVU1v40YM/SssTy2gtZ1i0YNubnexcIG2QeKgKGwfxhJlzWY+lBkqXkHQf19wLCdKHOxuD4ZHHM7jI/mG02NJsQi6Ye0d5nhD3AYXQUHU7mAI2Jce9h2sPmCGvqGgxHNVYo4H4rUv/e/dqsQMWR0i5hsUU8Rdho0KyhJTEHOPTlnCHLX4agnVKK4xw0APrQ5UYs6hpewVn3U9UkjxY1GTVZj3yF2T0BzTgQJmaLXTtrWYX2VIX5RtDGF+NQw7iRAb7yJFOfjrYiF/L6Msp9lihoV3TI7FUTWN0UVKev45ind/ScPvP1PBmGETpESsT7HaSEEq9Qbdl/FXH8BXwDWBHIFj7cEfXQSudTxzmiSVSRW/j3rn9ENLoEtyrCtNASofUpS3IFmzLJ9QIwftDhega3E7s02d0Ux2CoYlGSq4jaBalh9ZHKSmss00Zb733pByF0H+rYlrCpMYEZ7PT2JVykQahqmKNueyZyetnfKaxt89JZvEisMgCO8X7y+FIfvgPEPlW1ei+Fni2o/yl46LinOcC80473U5iE4pPJ513waDOdbMTcznSUKNUQXV3pQUZtw1uvAlzQpvL8rw5+0/f18/O8PyegW3CRpF19pVPhVzTOYN9wvIJVSBCLwz2hHcfLxdJ1SuFUPnWyiUEw3CsSZHjxSS0RGVEL0lqNQ9QalYzbbudbjCW4pw1FzL9CAWkfwmVusdBIq+DQXFfOvewbWPHGXxh7eWHEcA+VqafWuT/br27NMqjRNZ3EUKceu2bi2XQsuIqlpjOqhaV0h2yqRU3oEyBsiVjdeCrAKB0Y8EypVw9OFeu8NPW/ffmCxTZNGZBW0tlVoxmQ4Uw490bCvSlU6fins1W8wW4/hQRRof49R7VSvM/o8shgyNLshFmiD+tVpfoPiG3KnMMx8O8/FQnIuvSLfxka1yE5RPxNKshgpd6eI8F15Ipn+eht95HcZLzfSF541R2gnzxLAfr8kG0zXBDHOd7mHtI4u57/cq0l0wwyDmh5ZCh/lml+GjClrtRd+bHksdZV2OF/8bTH++GQfCL/DyCXmT5GhUrpN+KtPKF2Z4T93pyRp2Q4Y1KemdEDltLIuCGp4cuXgs5Jo+DYxPH6UNXwEhAozw
+sidebar_class_name: "get api-method"
+info_path: placeholder-api/jsonplaceholder-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get a specific todo"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/todos/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Returns a single todo by ID
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"id","in":"path","required":true,"description":"The todo ID","schema":{"type":"integer","minimum":1,"example":1}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"A single todo","content":{"application/json":{"schema":{"type":"object","properties":{"userId":{"type":"integer","description":"ID of the user who owns this todo","example":1},"id":{"type":"integer","description":"Unique identifier for the todo","example":1},"title":{"type":"string","description":"Title of the todo item","example":"delectus aut autem"},"completed":{"type":"boolean","description":"Whether the todo is completed","example":false}},"required":["userId","id","title","completed"],"title":"Todo"}}}},"404":{"description":"Todo not found"}}}
+>
+  
+</StatusCodes>
+
+
+      

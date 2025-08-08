@@ -1,0 +1,71 @@
+---
+id: update-post
+title: "Update a post"
+description: "Update an existing post (Note - will not be persisted to the server but will be faked as if)"
+sidebar_label: "Update a post"
+hide_title: true
+hide_table_of_contents: true
+api: eJzNVk1v2zgQ/Suzc2oBJU72sAfd0o9DFthu0DqHRZzDmBpbbERSIYdxDEP/fTGUXCdOtuihBdYwbIoavvng4xvusOFkou3FBo81XvcNCQN54EebxPo19CEJvPkUhOEENrbrwAeBJUPPMdkk3IAEkJYhcXzgCMsso92SYUV33AAlsKu3WGHoOZK6umywxlycXYUkWKHQOmF9g/qY8LbCniI5Fo46vUNPjrFG22CFVkPtSVqsMPJ9tpEbrCVmro7ymbc8JnD5AStMpmVHWO9Qtn1B88Jrjlihs9667LA+H4bbEZWTvAvNVs2PnZjghb3oK+r7zpqS1OxrUqe7l37C8isbzbKPWgKxnPStbV6N5WhLvL3PDLZhL3ZlOcIqxFLvfqwcP5LrO9bQKxQrOvyGmiRav34BOlczCKtXcXAVAg4VLqfsvw/1fqzFf4ItKSpYThwvfyTfyw97KF0CmzaAiUyFZ68mPTwlwc3IkLEMUwrfnN9+q0+h2Uh2HIYRIvXBp3Fjfj8707/ngekSGDnbQMrGcEqr3HXq4CcR4tcVqfrfki1lL0BZYEWGI0PknruOBPoYHkogEIwh1pICPxruJUcLQdHVOHLLvuFo5edx9j5bAhZIORnbW1n4/Qgim5zIN8RglC/3OXvJEfix58ZKWWayW/hnoYELHSexxJBFv/eZEkgQcgvvQ5KYHUTWX06lHOygVCayA35gb1mAommtsJGAx6yfmFO9Qv8j1he+DxU6ljaoDPe5EFHltMaZ1iLNdrYZVDCLoo8CnGOHNbYifapnhdl9R4bb0DUcT2XbWxMaPjXBvSj3n1/+/nR1MIaLq0v4UqBRxVaxPh8E9+N+G0aBPD+Er7q03+KiKwdZKQz3q1D2fjJ/xe2L0C5gFZkh+M56hs8fv8xLdNKSwDZkMOT1iMGmZc/a3XTSsypAcGN/g4aEThf+2J0JjhNsrLRAkLiw7Q+ddcFD5BRyNJzqhT+B0vR08D44x14SgD5ddMvsyvxVGySU0Tw04+A6cUwLv/Dz1iawCQiKGsEqe6PZUVdSOQHqOmDf9MEqMkWGzj5ok29gE+Kd9evfFv6fKVlR/knLDqxz3FgS7rZAAj+y8wuPFSpjxuKen56dnk3qSKao49TGj2qlG/nj9Boq7Kxhn/gJ4l+X8xcooWc/lvk0xPVsWpRmaqtHQLnuyD9B2d9/9pLwjCy7g8z/6ovSJF/CjzLrO7K+tFBNbjed1JsSfcIKa1s6W6sR1ze42y0p8XXshkGn7zPHLdY3txU+ULS01KNxs8PGJh03WK+oS8cXp6epvvk86cxbeH6dejXIaZK8tsUH6rI+YYV3vB2vb8PtUGHLpNuugYwvJkU+mevyw8IXzXSo9isujLaC79rePlG5q+s5HtqDC40uibTRKyRtxhhLT/GlE5e5HXbk15nWajtC6udfwPfh4g==
+sidebar_class_name: "put api-method"
+info_path: placeholder-api/jsonplaceholder-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Update a post"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"put"}
+  path={"/posts/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Update an existing post (Note - will not be persisted to the server but will be faked as if)
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"id","in":"path","required":true,"description":"The post ID","schema":{"type":"integer","minimum":1}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"id":{"type":"integer","description":"Unique identifier for the post","example":1},"title":{"type":"string","description":"Title of the post","example":"foo"},"body":{"type":"string","description":"Content of the post","example":"bar"},"userId":{"type":"integer","description":"ID of the user who created the post","example":1}},"required":["id","title","body","userId"],"title":"PostUpdate"}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Post updated successfully","content":{"application/json":{"schema":{"type":"object","properties":{"userId":{"type":"integer","description":"ID of the user who created the post","example":1},"id":{"type":"integer","description":"Unique identifier for the post","example":1},"title":{"type":"string","description":"Title of the post","example":"sunt aut facere repellat provident occaecati excepturi optio reprehenderit"},"body":{"type":"string","description":"Content of the post","example":"quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}},"required":["userId","id","title","body"],"title":"Post"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

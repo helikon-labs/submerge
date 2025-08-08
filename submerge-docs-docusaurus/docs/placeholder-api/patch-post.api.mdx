@@ -1,0 +1,71 @@
+---
+id: patch-post
+title: "Partially update a post"
+description: "Partially update an existing post (Note - will not be persisted to the server but will be faked as if)"
+sidebar_label: "Partially update a post"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VktvGzcQ/ivTOSXA2nJ66GFvzgOoCzQVEudQWD6MuCMtEz7W5NCyIOx/L4YrxQ85aQ5pBUHicocf5/HxG+6w42ySHcTGgC3OKYkl57ZQho6EgQLwnc1iwxqGmAVevI/CcAIb6xyEKLBkGDhlm4U7kAjSM2ROt5xgWWSyWzKs6At3QBns6iU2GAdOpJtedNjiQGL6ecyCDQqtM7ZXqI8ZrxscKJFn4aTTOwzkGVu0HTZow7S4xwYT3xSbuMNWUuHmSWCXPU/+X7zFBrPp2RO2O5TtUNGC8JoTNuhtsL54bF+N4/WEyllex26r5k83MTEIB9FXNAzOmhrT7HPWTXfH+8TlZzYa5ZA0A2I517dWHD8wy5JsWONREGoGcVVzPEzp4jvygy7GVYw4Nrjcu/p9qDeT498EW1JSsJI5aYWeSdRjvIu3ByhdAps+gklMlRPP4L8ax+YQda30XBmA46jzifMQQ55S8+vZmf49oalWcmJoB7kYwzmvinNb/Gkl+e8ib5S7/477KdibwmA7DmJXlhOsYvom5E9hUC5BgIrAigwnhsQDO0cCQ4q31RGIxhBrSoHvDA9SkoWo6GqcuOfQcbLy84h4UywBC+SSjR2sLMJhBIlNyRQ6YjDKl5tSgpQEfDdwZ6UuM8UvwiPXwEfHWSwxFNHvTaEMEoX8IoSYJRUPifWXc00He6iZSeyBbzlYFqBkeitsJOJE2YMuXB2Y00wSNRVmn43rx6SvfB8b9Cx9/KqDSkWVtBZnmo0829luVNGqojqJYEkOW+xFhtzOKrcHR4b76DpOp7IdrIkdn5rojxL+x8e/3s/vjeF8fgEfKzSq4CnWh3vRe3coxFeRqjpzqG7ViXuZqOQOq/jQ/Jn9jnw6h1VihhicDQwf3n28rG5JTwLbWMBQ0NMFm54Da2fRycB6+KOfegt0JHS6CE+3M9Fzho2VHggyV6L9prM+BkicY0mGc7sIJ1A7jg7eRO85SAbQp3O3LL7Oz/sosY4uYzcNPmVOeREW4bK3GWwGgipEsCrBaHTkaignQM4Bh26IVpEpMTh7qw22g01MX2xY/7IIf++DFaWe9OzBes+dJWG3BRL4kZIvAjaoVJmS++r07PRsL4xkqjDue+iTXGkhf5xXY4POGg6ZHyD+eXF5hBIHDlOaT2Naz/aL8kxtlf1Kck/hAcrxLeSgC49os7vX+v/v4rJXM+E7mQ2ObKhtUgPe7Y/tVY0oY4Ot7fTI9+p7e4W73ZIyf0puHHX6pnDaYnt13eAtJUtLPS5XO+xs1nGH7YpcfnqTeRj0iw972XkJj+83zzq5n6SgXfKWXNEnbPALb6f71Hg9NtgzKRXUkenFXqBPLnX5/cKj3jo2hxXnRjvDd22vH4je/Pzyze943y987HRRoo3e6mgzeVmbTKituc7t0FFYF1qr7QSqn38Aum3CVg==
+sidebar_class_name: "patch api-method"
+info_path: placeholder-api/jsonplaceholder-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Partially update a post"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"patch"}
+  path={"/posts/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Partially update an existing post (Note - will not be persisted to the server but will be faked as if)
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"id","in":"path","required":true,"description":"The post ID","schema":{"type":"integer","minimum":1}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"title":{"type":"string","description":"Title of the post","example":"foo"},"body":{"type":"string","description":"Content of the post","example":"bar"},"userId":{"type":"integer","description":"ID of the user who created the post","example":1}},"title":"PostPatch"}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Post updated successfully","content":{"application/json":{"schema":{"type":"object","properties":{"userId":{"type":"integer","description":"ID of the user who created the post","example":1},"id":{"type":"integer","description":"Unique identifier for the post","example":1},"title":{"type":"string","description":"Title of the post","example":"sunt aut facere repellat provident occaecati excepturi optio reprehenderit"},"body":{"type":"string","description":"Content of the post","example":"quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}},"required":["userId","id","title","body"],"title":"Post"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

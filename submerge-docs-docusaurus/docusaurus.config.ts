@@ -56,10 +56,10 @@ const config: Config = {
         // Replace with your project's social card
         image: 'img/docusaurus-social-card.jpg',
         navbar: {
-            title: 'Developer',
+            title: null,
             logo: {
                 alt: 'Submerge Developer Documentation',
-                src: 'img/logo.svg',
+                src: 'img/submerge_logo_black.png',
             },
             items: [
                 {
@@ -145,7 +145,7 @@ const config: Config = {
                 config: {
                     petstore: {
                         specPath: 'spec/petstore.yaml',
-                        outputDir: 'docs/petstore',
+                        outputDir: 'docs/petstore-api',
                         downloadUrl:
                             'https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml',
                         sidebarOptions: {
@@ -155,7 +155,7 @@ const config: Config = {
                     } satisfies OpenApiPlugin.Options,
                     placeholder: {
                         specPath: 'spec/placeholder.yaml',
-                        outputDir: 'docs/placeholder',
+                        outputDir: 'docs/placeholder-api',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
                             categoryLinkSource: 'tag',
