@@ -1,0 +1,558 @@
+openapi: 3.1.0
+info:
+    title: JSONPlaceholder API
+    description: |
+        A free online REST API that you can use whenever you need some fake data.
+        JSONPlaceholder comes with a set of 6 common resources:
+        - Posts
+        - Comments  
+        - Albums
+        - Photos
+        - Todos
+        - Users
+
+        This is a fully functional API - all endpoints are live and working!
+        You can test them immediately at https://jsonplaceholder.typicode.com
+    version: 1.0.0
+    contact:
+        name: JSONPlaceholder
+        url: https://jsonplaceholder.typicode.com
+    license:
+        name: MIT
+        url: https://opensource.org/licenses/MIT
+
+servers:
+    - url: https://jsonplaceholder.typicode.com
+      description: JSONPlaceholder API Server
+
+paths:
+    /posts:
+        get:
+            summary: Get all posts
+            description: Returns all posts from the database
+            operationId: getAllPosts
+            tags:
+                - Posts
+            parameters:
+                - name: userId
+                  in: query
+                  description: Filter posts by user ID
+                  required: false
+                  schema:
+                      type: integer
+                      example: 1
+            responses:
+                '200':
+                    description: A list of posts
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Post'
+                            example:
+                                - userId: 1
+                                  id: 1
+                                  title: 'sunt aut facere repellat provident occaecati excepturi optio reprehenderit'
+                                  body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+        post:
+            summary: Create a new post
+            description: Create a new post (Note - will not be persisted to the server but will be faked as if)
+            operationId: createPost
+            tags:
+                - Posts
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PostInput'
+                        example:
+                            title: 'foo'
+                            body: 'bar'
+                            userId: 1
+            responses:
+                '201':
+                    description: Post created successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Post'
+
+    /posts/{id}:
+        get:
+            summary: Get a specific post
+            description: Returns a single post by ID
+            operationId: getPostById
+            tags:
+                - Posts
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The post ID
+                  schema:
+                      type: integer
+                      minimum: 1
+                      example: 1
+            responses:
+                '200':
+                    description: A single post
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Post'
+                '404':
+                    description: Post not found
+        put:
+            summary: Update a post
+            description: Update an existing post (Note - will not be persisted to the server but will be faked as if)
+            operationId: updatePost
+            tags:
+                - Posts
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The post ID
+                  schema:
+                      type: integer
+                      minimum: 1
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PostUpdate'
+            responses:
+                '200':
+                    description: Post updated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Post'
+        patch:
+            summary: Partially update a post
+            description: Partially update an existing post (Note - will not be persisted to the server but will be faked as if)
+            operationId: patchPost
+            tags:
+                - Posts
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The post ID
+                  schema:
+                      type: integer
+                      minimum: 1
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PostPatch'
+            responses:
+                '200':
+                    description: Post updated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Post'
+        delete:
+            summary: Delete a post
+            description: Delete a post (Note - will not be persisted to the server but will be faked as if)
+            operationId: deletePost
+            tags:
+                - Posts
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The post ID
+                  schema:
+                      type: integer
+                      minimum: 1
+            responses:
+                '200':
+                    description: Post deleted successfully
+
+    /posts/{id}/comments:
+        get:
+            summary: Get comments for a post
+            description: Returns all comments for a specific post
+            operationId: getCommentsByPostId
+            tags:
+                - Comments
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The post ID
+                  schema:
+                      type: integer
+                      minimum: 1
+            responses:
+                '200':
+                    description: A list of comments for the post
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Comment'
+
+    /comments:
+        get:
+            summary: Get all comments
+            description: Returns all comments from the database
+            operationId: getAllComments
+            tags:
+                - Comments
+            parameters:
+                - name: postId
+                  in: query
+                  description: Filter comments by post ID
+                  required: false
+                  schema:
+                      type: integer
+                      example: 1
+            responses:
+                '200':
+                    description: A list of comments
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Comment'
+
+    /users:
+        get:
+            summary: Get all users
+            description: Returns all users from the database
+            operationId: getAllUsers
+            tags:
+                - Users
+            responses:
+                '200':
+                    description: A list of users
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/User'
+
+    /users/{id}:
+        get:
+            summary: Get a specific user
+            description: Returns a single user by ID
+            operationId: getUserById
+            tags:
+                - Users
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The user ID
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 10
+                      example: 1
+            responses:
+                '200':
+                    description: A single user
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/User'
+                '404':
+                    description: User not found
+
+    /todos:
+        get:
+            summary: Get all todos
+            description: Returns all todos from the database
+            operationId: getAllTodos
+            tags:
+                - Todos
+            parameters:
+                - name: userId
+                  in: query
+                  description: Filter todos by user ID
+                  required: false
+                  schema:
+                      type: integer
+                      example: 1
+            responses:
+                '200':
+                    description: A list of todos
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Todo'
+
+    /todos/{id}:
+        get:
+            summary: Get a specific todo
+            description: Returns a single todo by ID
+            operationId: getTodoById
+            tags:
+                - Todos
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The todo ID
+                  schema:
+                      type: integer
+                      minimum: 1
+                      example: 1
+            responses:
+                '200':
+                    description: A single todo
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Todo'
+                '404':
+                    description: Todo not found
+
+components:
+    schemas:
+        Post:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    description: ID of the user who created the post
+                    example: 1
+                id:
+                    type: integer
+                    description: Unique identifier for the post
+                    example: 1
+                title:
+                    type: string
+                    description: Title of the post
+                    example: 'sunt aut facere repellat provident occaecati excepturi optio reprehenderit'
+                body:
+                    type: string
+                    description: Content of the post
+                    example: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+            required:
+                - userId
+                - id
+                - title
+                - body
+
+        PostInput:
+            type: object
+            properties:
+                title:
+                    type: string
+                    description: Title of the post
+                    example: 'foo'
+                body:
+                    type: string
+                    description: Content of the post
+                    example: 'bar'
+                userId:
+                    type: integer
+                    description: ID of the user creating the post
+                    example: 1
+            required:
+                - title
+                - body
+                - userId
+
+        PostUpdate:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Unique identifier for the post
+                    example: 1
+                title:
+                    type: string
+                    description: Title of the post
+                    example: 'foo'
+                body:
+                    type: string
+                    description: Content of the post
+                    example: 'bar'
+                userId:
+                    type: integer
+                    description: ID of the user who created the post
+                    example: 1
+            required:
+                - id
+                - title
+                - body
+                - userId
+
+        PostPatch:
+            type: object
+            properties:
+                title:
+                    type: string
+                    description: Title of the post
+                    example: 'foo'
+                body:
+                    type: string
+                    description: Content of the post
+                    example: 'bar'
+                userId:
+                    type: integer
+                    description: ID of the user who created the post
+                    example: 1
+
+        Comment:
+            type: object
+            properties:
+                postId:
+                    type: integer
+                    description: ID of the post this comment belongs to
+                    example: 1
+                id:
+                    type: integer
+                    description: Unique identifier for the comment
+                    example: 1
+                name:
+                    type: string
+                    description: Name of the commenter
+                    example: 'id labore ex et quam laborum'
+                email:
+                    type: string
+                    format: email
+                    description: Email of the commenter
+                    example: 'Eliseo@gardner.biz'
+                body:
+                    type: string
+                    description: Content of the comment
+                    example: "laudantium enim quasi est quidem magnam voluptate ipsam eos\ntempora quo necessitatibus\ndolor quam autem quasi\nreiciendis et nam sapiente accusantium"
+            required:
+                - postId
+                - id
+                - name
+                - email
+                - body
+
+        User:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: Unique identifier for the user
+                    example: 1
+                name:
+                    type: string
+                    description: Full name of the user
+                    example: 'Leanne Graham'
+                username:
+                    type: string
+                    description: Username
+                    example: 'Bret'
+                email:
+                    type: string
+                    format: email
+                    description: Email address
+                    example: 'Sincere@april.biz'
+                address:
+                    $ref: '#/components/schemas/Address'
+                phone:
+                    type: string
+                    description: Phone number
+                    example: '1-770-736-8031 x56442'
+                website:
+                    type: string
+                    format: uri
+                    description: Website URL
+                    example: 'hildegard.org'
+                company:
+                    $ref: '#/components/schemas/Company'
+            required:
+                - id
+                - name
+                - username
+                - email
+
+        Address:
+            type: object
+            properties:
+                street:
+                    type: string
+                    example: 'Kulas Light'
+                suite:
+                    type: string
+                    example: 'Apt. 556'
+                city:
+                    type: string
+                    example: 'Gwenborough'
+                zipcode:
+                    type: string
+                    example: '92998-3874'
+                geo:
+                    $ref: '#/components/schemas/Geo'
+
+        Geo:
+            type: object
+            properties:
+                lat:
+                    type: string
+                    description: Latitude
+                    example: '-37.3159'
+                lng:
+                    type: string
+                    description: Longitude
+                    example: '81.1496'
+
+        Company:
+            type: object
+            properties:
+                name:
+                    type: string
+                    example: 'Romaguera-Crona'
+                catchPhrase:
+                    type: string
+                    example: 'Multi-layered client-server neural-net'
+                bs:
+                    type: string
+                    example: 'harness real-time e-markets'
+
+        Todo:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    description: ID of the user who owns this todo
+                    example: 1
+                id:
+                    type: integer
+                    description: Unique identifier for the todo
+                    example: 1
+                title:
+                    type: string
+                    description: Title of the todo item
+                    example: 'delectus aut autem'
+                completed:
+                    type: boolean
+                    description: Whether the todo is completed
+                    example: false
+            required:
+                - userId
+                - id
+                - title
+                - completed
+
+tags:
+    - name: Posts
+      description: Operations related to blog posts
+    - name: Comments
+      description: Operations related to post comments
+    - name: Users
+      description: Operations related to users
+    - name: Todos
+      description: Operations related to todo items
