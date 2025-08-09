@@ -96,6 +96,12 @@ const config: Config = {
                 src: 'img/submerge_logo_black.png',
             },
             items: [
+                /*
+                {
+                    type: 'docsVersionDropdown',
+                    position: 'left',
+                },
+                */
                 {
                     href: 'https://github.com/helikon-labs/submerge',
                     label: 'GitHub',
@@ -106,7 +112,6 @@ const config: Config = {
                     label: 'Introduction',
                     docId: 'introduction',
                     position: 'right',
-                    className: 'ITEMS_CLASS',
                 },
                 {
                     label: 'Crystal API Reference',
