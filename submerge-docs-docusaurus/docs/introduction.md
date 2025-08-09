@@ -4,7 +4,7 @@ sidebar_position: 1
 slug: /
 ---
 
-# Tutorial Intro
+# Introduction
 
 <FAIcon icon="fa-brands fa-github" size="4x" /> This is a GitHub icon.
 

@@ -37,7 +37,7 @@
       },
       {
         "tab": "Crystal API reference",
-        "openapi": "/api-reference/placeholder.yaml"
+        "openapi": "/api-reference/petstore.yaml"
       }
     ],
     "global": {

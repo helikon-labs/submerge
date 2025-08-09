@@ -113,6 +113,11 @@ const config: Config = {
                     position: 'right',
                     to: '/placeholder-api',
                 },
+                {
+                    label: 'Petstore API Reference',
+                    position: 'right',
+                    to: '/petstore-api',
+                },
             ],
         },
         footer: {
@@ -158,7 +163,7 @@ const config: Config = {
                     ],
                 },
             ],
-            copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+            copyright: `Copyright © ${new Date().getFullYear()} Helikon`,
         },
         prism: {
             theme: prismThemes.github,
@@ -173,19 +178,18 @@ const config: Config = {
                 id: 'openapi',
                 docsPluginId: 'classic',
                 config: {
-                    petstore: {
-                        specPath: 'spec/petstore.yaml',
-                        outputDir: 'docs/petstore-api',
-                        downloadUrl:
-                            'https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml',
+                    placeholder: {
+                        specPath: 'spec/placeholder.yaml',
+                        outputDir: 'docs/placeholder-api',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
                             categoryLinkSource: 'tag',
                         },
+                        showSchemas: true,
                     } satisfies OpenApiPlugin.Options,
-                    placeholder: {
-                        specPath: 'spec/placeholder.yaml',
-                        outputDir: 'docs/placeholder-api',
+                    petstore: {
+                        specPath: 'spec/petstore.yaml',
+                        outputDir: 'docs/petstore-api',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
                             categoryLinkSource: 'tag',

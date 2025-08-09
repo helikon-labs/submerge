@@ -174,6 +174,66 @@ const sidebar: SidebarsConfig = {
                 },
             ],
         },
+        {
+            type: 'category',
+            label: 'Schemas',
+            items: [
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/apiresponse',
+                    label: 'ApiResponse',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/category',
+                    label: 'Category',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/dog',
+                    label: 'Dog',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/honeybee',
+                    label: 'HoneyBee',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/id',
+                    label: 'Id',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/order',
+                    label: 'Order',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/pet',
+                    label: 'Pet',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/tag',
+                    label: 'Tag',
+                    className: 'schema',
+                },
+                {
+                    type: 'doc',
+                    id: 'petstore-api/schemas/user',
+                    label: 'User',
+                    className: 'schema',
+                },
+            ],
+        },
     ],
 };
 

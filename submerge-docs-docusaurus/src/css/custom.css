@@ -6,7 +6,9 @@
 
 /* You can override the default Infima variables here. */
 :root {
-    --ifm-color-primary: #2e8555;
+    --ifm-global-shadow-lw: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+    --ifm-background-color: rgb(255 255 255);
+    --ifm-color-primary: #111;
     --ifm-color-primary-dark: #29784c;
     --ifm-color-primary-darker: #277148;
     --ifm-color-primary-darkest: #205d3b;
@@ -22,15 +24,58 @@
     --ifm-font-weight-semibold: 520;
     --ifm-font-weight-semibold-active: 560;
     --ifm-font-family-base: 'Inter', sans-serif;
-    --ifm-navbar-padding-horizontal: 36px;
+    --ifm-navbar-padding-horizontal: 2.4rem;
     --ifm-navbar-padding-vertical: 0;
     --ifm-navbar-height: auto;
-    /* --ifm-navbar-link-hover-color: var(--ifm-navbar-link-color); */
+    --ifm-color-emphasis-200: #eaeaea;
+
+    /* get */
+    --get-inactive-color: rgb(21 128 61);
+    --get-inactive-background-color: rgb(74 222 128 / 0.2);
+    --get-active-color: rgb(255 255 255);
+    --get-active-background-color: rgb(42 182 115);
+    /* post */
+    --post-inactive-color: rgb(29 78 216);
+    --post-inactive-background-color: rgb(96 165 250 / 0.2);
+    --post-active-color: rgb(255 255 255);
+    --post-active-background-color: rgb(48 100 227);
+    /* put */
+    --put-inactive-color: rgb(161 98 7);
+    --put-inactive-background-color: rgb(250 204 21 / 0.2);
+    --put-active-color: rgb(255 255 255);
+    --put-active-background-color: rgb(194 140 48);
+    /* delete */
+    --delete-inactive-color: rgb(185 28 28);
+    --delete-inactive-background-color: rgb(248 113 113 / 0.2);
+    --delete-active-color: rgb(255 255 255);
+    --delete-active-background-color: rgb(203 58 50);
+    /* patch */
+    --patch-inactive-color: rgb(194 65 12);
+    --patch-inactive-background-color: rgb(251 146 60 / 0.2);
+    --patch-active-color: rgb(255 255 255);
+    --patch-active-background-color: rgb(218 98 43);
+    /* schema */
+    --schema-inactive-color: rgb(60 60 60);
+    --schema-inactive-background-color: rgb(120 120 120 / 0.2);
+    --schema-active-color: rgb(255 255 255);
+    --schema-active-background-color: rgb(90 90 90);
+    /* head */
+    --head-inactive-color: rgb(126 34 206);
+    --head-inactive-background-color: rgb(196 181 253 / 0.2);
+    --head-active-color: rgb(255 255 255);
+    --head-active-background-color: rgb(147 51 234);
+    /* event */
+    --event-inactive-color: rgb(15 118 110);
+    --event-inactive-background-color: rgb(94 234 212 / 0.2);
+    --event-active-color: rgb(255 255 255);
+    --event-active-background-color: rgb(20 184 166);
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-    --ifm-color-primary: #25c2a0;
+    --ifm-global-shadow-lw: 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+    --ifm-background-color: rgb(14 14 16);
+    --ifm-color-primary: #fff;
     --ifm-color-primary-dark: #21af90;
     --ifm-color-primary-darker: #1fa588;
     --ifm-color-primary-darkest: #1a8870;
@@ -38,6 +83,32 @@
     --ifm-color-primary-lighter: #32d8b4;
     --ifm-color-primary-lightest: #4fddbf;
     --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+    --ifm-color-emphasis-200: #222;
+
+    /* get */
+    --get-inactive-color: rgb(74 222 128);
+    /* post */
+    --post-inactive-color: rgb(96 165 250);
+    /* put */
+    --put-inactive-color: rgb(250 204 21);
+    /* delete */
+    --delete-inactive-color: rgb(248 113 113);
+    /* patch */
+    --patch-inactive-color: rgb(251 146 60);
+    /* schema */
+    --schema-inactive-color: rgb(180 180 180);
+    /* head */
+    --head-inactive-color: rgb(126 34 206);
+    /* event */
+    --event-inactive-color: rgb(77, 170, 164);
+}
+
+html[data-theme='dark'] .navbar .navbar__logo {
+    content: url(/img/submerge_logo_white.png);
+}
+
+.navbar {
+    background-color: var(--ifm-background-color);
 }
 
 .navbar__inner {
@@ -93,11 +164,13 @@
     flex-direction: row;
     align-items: center;
     font-size: 0.95rem;
+    font-weight: 500;
     gap: 4px;
 }
 
 .navbar__link--active {
     border-color: var(--ifm-navbar-link-hover-color);
+    font-weight: 600;
 }
 
 .toggle_vylO {
@@ -110,6 +183,190 @@
     padding: 0.35rem;
 }
 
+.theme-doc-sidebar-menu {
+    padding-left: calc(var(--ifm-navbar-padding-horizontal) / 2);
+    font-size: 0.95rem;
+    font-weight: 450;
+}
+
+.theme-doc-sidebar-container .menu {
+    padding: calc(var(--ifm-navbar-padding-horizontal) / 2)
+        calc(var(--ifm-navbar-padding-horizontal) / 2) 0 0;
+}
+
+.theme-doc-sidebar-container .menu__link {
+    border-radius: 0.75rem;
+    padding: 0.5rem 0 0.5rem calc(var(--ifm-navbar-padding-horizontal) / 2);
+}
+
+.theme-doc-sidebar-container .menu__link:hover {
+    background-color: var(--ifm-color-emphasis-100);
+}
+
+.theme-doc-sidebar-container .menu__link--active {
+    font-weight: 600;
+    background-color: var(--ifm-color-emphasis-200);
+}
+
+.theme-doc-sidebar-container .menu__link--active:hover {
+    background-color: var(--ifm-color-emphasis-200);
+}
+
+.theme-doc-sidebar-container .menu__list-item-collapsible {
+    margin-top: 0.75rem;
+}
+
+.theme-doc-sidebar-container .menu__list-item-collapsible a {
+    color: var(--ifm-color-primary) !important;
+
+    font-weight: 700 !important;
+}
+
+.theme-doc-sidebar-container .menu__list-item-collapsible:hover {
+    background-color: var(--ifm-background-color);
+}
+
+.theme-doc-sidebar-container .menu__list-item .menu__list {
+    padding-left: 0;
+}
+
+.openapi__method-endpoint {
+    background-color: transparent;
+}
+
+.openapi-tabs__code-container {
+    display: none;
+}
+
+.openapi__method-endpoint > span {
+    border-width: 0;
+    font-size: 0.8rem;
+    line-height: 1rem;
+}
+
+.api-method > .menu__link,
+.schema > .menu__link {
+    align-items: center;
+    justify-content: start;
+}
+
+.api-method > .menu__link::before,
+.schema > .menu__link::before {
+    width: 2.9rem;
+    line-height: 1.2rem;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+    text-align: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* get */
+.get > .menu__link::before,
+.openapi__method-endpoint .badge--primary {
+    content: 'get';
+    color: var(--get-inactive-color);
+    background-color: var(--get-inactive-background-color);
+}
+.get > .menu__link--active::before {
+    content: 'get';
+    color: var(--get-active-color);
+    background-color: var(--get-active-background-color);
+}
+
+/* post */
+.post > .menu__link::before,
+.openapi__method-endpoint .badge--success {
+    content: 'post';
+    color: var(--post-inactive-color);
+    background-color: var(--post-inactive-background-color);
+}
+.post > .menu__link--active::before {
+    content: 'post';
+    color: var(--post-active-color);
+    background-color: var(--post-active-background-color);
+}
+
+/* delete */
+.delete > .menu__link::before,
+.openapi__method-endpoint .badge--danger {
+    content: 'del';
+    color: var(--delete-inactive-color);
+    background-color: var(--delete-inactive-background-color);
+}
+.delete > .menu__link--active::before {
+    content: 'del';
+    color: var(--delete-active-color);
+    background-color: var(--delete-active-background-color);
+}
+
+/* put */
+.put > .menu__link::before,
+.openapi__method-endpoint .badge--info {
+    content: 'put';
+    color: var(--put-inactive-color);
+    background-color: var(--put-inactive-background-color);
+}
+.put > .menu__link--active::before {
+    content: 'put';
+    color: var(--put-active-color);
+    background-color: var(--put-active-background-color);
+}
+
+/* patch */
+.patch > .menu__link::before,
+.openapi__method-endpoint .badge--warning {
+    content: 'patch';
+    color: var(--patch-inactive-color);
+    background-color: var(--patch-inactive-background-color);
+}
+.patch > .menu__link--active::before {
+    content: 'patch';
+    color: var(--patch-active-color);
+    background-color: var(--patch-active-background-color);
+}
+
+/* schema */
+.schema > .menu__link::before {
+    content: 'sch';
+    color: var(--schema-inactive-color);
+    background-color: var(--schema-inactive-background-color);
+}
+.schema > .menu__link--active::before {
+    content: 'sch';
+    color: var(--schema-active-color);
+    background-color: var(--schema-active-background-color);
+}
+
+/* head */
+.head > .menu__link::before {
+    content: 'head';
+    color: var(--head-inactive-color);
+    background-color: var(--head-inactive-background-color);
+}
+.head > .menu__link--active::before {
+    content: 'head';
+    color: var(--head-active-color);
+    background-color: var(--head-active-background-color);
+}
+
+/* event */
+.event > .menu__link::before,
+.openapi__method-endpoint .badge--secondary {
+    content: 'event';
+    text-transform: uppercase;
+    color: var(--event-inactive-color);
+    background-color: var(--event-inactive-background-color);
+}
+.event > .menu__link--active::before {
+    content: 'event';
+    color: var(--event-active-color);
+    background-color: var(--event-active-background-color);
+}
+
+/*
 .api-method > .menu__link,
 .schema > .menu__link {
     align-items: center;
@@ -174,3 +431,4 @@
 .openapi-tabs__code-container {
     display: none;
 }
+*/
