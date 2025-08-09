@@ -1,13 +1,16 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "aspen",
   "name": "Submerge Developer Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#1c1c1c",
+    "light": "#ffffff",
+    "dark": "#ffffff"
   },
   "favicon": "/images/submerge_icon_circular.png",
+  "fonts": {
+    "family": "Inter"
+  },
   "navigation": {
     "tabs": [
       {
@@ -49,14 +52,9 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:info@helikon.io"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -72,9 +70,8 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/helikon-labs",
+      "github": "https://github.com/helikon-labs/submerge"
     }
   }
 }

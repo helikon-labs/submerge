@@ -1,0 +1,33 @@
+---
+id: postpatch
+title: "PostPatch"
+description: ""
+sidebar_label: "PostPatch"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"title":"foo","body":"bar","userId":1}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostPatch"}
+>
+</Heading>
+
+
+
+
+
+<Schema
+  schema={{"type":"object","properties":{"title":{"type":"string","description":"Title of the post","example":"foo"},"body":{"type":"string","description":"Content of the post","example":"bar"},"userId":{"type":"integer","description":"ID of the user who created the post","example":1}},"title":"PostPatch"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            

@@ -1,0 +1,33 @@
+---
+id: todo
+title: "Todo"
+description: ""
+sidebar_label: "Todo"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"userId":1,"id":1,"title":"delectus aut autem","completed":false}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Todo"}
+>
+</Heading>
+
+
+
+
+
+<Schema
+  schema={{"type":"object","properties":{"userId":{"type":"integer","description":"ID of the user who owns this todo","example":1},"id":{"type":"integer","description":"Unique identifier for the todo","example":1},"title":{"type":"string","description":"Title of the todo item","example":"delectus aut autem"},"completed":{"type":"boolean","description":"Whether the todo is completed","example":false}},"required":["userId","id","title","completed"],"title":"Todo"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            

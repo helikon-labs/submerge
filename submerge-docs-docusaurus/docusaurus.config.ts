@@ -11,6 +11,31 @@ const config: Config = {
     tagline: 'Blockchain data simplified',
     favicon: 'img/submerge_icon_circular.png',
 
+    headTags: [
+        {
+            tagName: "link",
+            attributes: {
+                rel: "preconnect",
+                href: "https://fonts.googleapis.com",
+            },
+        },
+        {
+            tagName: "link",
+            attributes: {
+                rel: "preconnect",
+                href: "https://fonts.gstatic.com",
+                crossorigin: "anonymous",
+            },
+        },
+        {
+            tagName: "link",
+            attributes: {
+                rel: "stylesheet",
+                href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+            },
+        },
+    ],
+
     // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
     future: {
         v4: true, // Improve compatibility with the upcoming Docusaurus v4
@@ -160,6 +185,7 @@ const config: Config = {
                             groupPathsBy: 'tag',
                             categoryLinkSource: 'tag',
                         },
+                        showSchemas: true,
                     } satisfies OpenApiPlugin.Options,
                 } satisfies Plugin.PluginOptions,
             },

@@ -118,6 +118,72 @@ const sidebar: SidebarsConfig = {
         },
       ],
     },
+    {
+      type: "category",
+      label: "Schemas",
+      items: [
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/post",
+          label: "Post",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/postinput",
+          label: "PostInput",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/postupdate",
+          label: "PostUpdate",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/postpatch",
+          label: "PostPatch",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/comment",
+          label: "Comment",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/user",
+          label: "User",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/address",
+          label: "Address",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/geo",
+          label: "Geo",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/company",
+          label: "Company",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "placeholder-api/schemas/todo",
+          label: "Todo",
+          className: "schema",
+        },
+      ],
+    },
   ],
 };
 
