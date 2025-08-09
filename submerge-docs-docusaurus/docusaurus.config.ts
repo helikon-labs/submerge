@@ -3,6 +3,8 @@ import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import type * as Plugin from '@docusaurus/types/src/plugin';
 import type * as OpenApiPlugin from 'docusaurus-plugin-openapi-docs';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -13,25 +15,25 @@ const config: Config = {
 
     headTags: [
         {
-            tagName: "link",
+            tagName: 'link',
             attributes: {
-                rel: "preconnect",
-                href: "https://fonts.googleapis.com",
+                rel: 'preconnect',
+                href: 'https://fonts.googleapis.com',
             },
         },
         {
-            tagName: "link",
+            tagName: 'link',
             attributes: {
-                rel: "preconnect",
-                href: "https://fonts.gstatic.com",
-                crossorigin: "anonymous",
+                rel: 'preconnect',
+                href: 'https://fonts.gstatic.com',
+                crossorigin: 'anonymous',
             },
         },
         {
-            tagName: "link",
+            tagName: 'link',
             attributes: {
-                rel: "stylesheet",
-                href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+                rel: 'stylesheet',
+                href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
             },
         },
     ],
@@ -69,6 +71,8 @@ const config: Config = {
                     editUrl: 'https://github.com/helikon-labs/submerge/tree/main/submerge-docs/',
                     docItemComponent: '@theme/ApiItem',
                     routeBasePath: '/',
+                    remarkPlugins: [remarkMath],
+                    rehypePlugins: [rehypeKatex],
                 },
                 theme: {
                     customCss: './src/css/custom.css',
@@ -80,6 +84,11 @@ const config: Config = {
     themeConfig: {
         // Replace with your project's social card
         image: 'img/docusaurus-social-card.jpg',
+        colorMode: {
+            defaultMode: 'light',
+            disableSwitch: false,
+            respectPrefersColorScheme: false,
+        },
         navbar: {
             title: null,
             logo: {
@@ -88,25 +97,21 @@ const config: Config = {
             },
             items: [
                 {
+                    href: 'https://github.com/helikon-labs/submerge',
+                    label: 'GitHub',
+                    position: 'left',
+                },
+                {
                     type: 'doc',
                     label: 'Introduction',
                     docId: 'introduction',
-                    position: 'left',
-                },
-                {
-                    label: 'Petstore API',
-                    position: 'left',
-                    to: '/petstore-api',
-                },
-                {
-                    label: 'Placeholder API',
-                    position: 'left',
-                    to: '/placeholder-api',
-                },
-                {
-                    href: 'https://github.com/helikon-labs/submerge',
-                    label: 'GitHub',
                     position: 'right',
+                    className: 'ITEMS_CLASS',
+                },
+                {
+                    label: 'Crystal API Reference',
+                    position: 'right',
+                    to: '/placeholder-api',
                 },
             ],
         },
@@ -192,6 +197,14 @@ const config: Config = {
         ],
     ],
     themes: ['docusaurus-theme-openapi-docs'],
+    stylesheets: [
+        {
+            href: 'https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css',
+            type: 'text/css',
+            integrity: 'sha384-odtC+0UGzzFL/6PNoE8rX/SPcQDXBJ+uRepguP4QkPCm2LBxH3FA3y+fKSiJ+AmM',
+            crossorigin: 'anonymous',
+        },
+    ],
 };
 
 export default config;

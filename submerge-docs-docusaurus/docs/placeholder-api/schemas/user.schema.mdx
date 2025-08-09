@@ -1,33 +1,103 @@
 ---
 id: user
-title: "User"
-description: ""
-sidebar_label: "User"
+title: 'User'
+description: ''
+sidebar_label: 'User'
 hide_title: true
 hide_table_of_contents: true
 schema: true
-sample: {"id":1,"name":"Leanne Graham","username":"Bret","email":"Sincere@april.biz","address":{"street":"Kulas Light","suite":"Apt. 556","city":"Gwenborough","zipcode":"92998-3874","geo":{"lat":"-37.3159","lng":"81.1496"}},"phone":"1-770-736-8031 x56442","website":"hildegard.org","company":{"name":"Romaguera-Crona","catchPhrase":"Multi-layered client-server neural-net","bs":"harness real-time e-markets"}}
+sample:
+    {
+        'id': 1,
+        'name': 'Leanne Graham',
+        'username': 'Bret',
+        'email': 'Sincere@april.biz',
+        'address':
+            {
+                'street': 'Kulas Light',
+                'suite': 'Apt. 556',
+                'city': 'Gwenborough',
+                'zipcode': '92998-3874',
+                'geo': { 'lat': '-37.3159', 'lng': '81.1496' },
+            },
+        'phone': '1-770-736-8031 x56442',
+        'website': 'hildegard.org',
+        'company':
+            {
+                'name': 'Romaguera-Crona',
+                'catchPhrase': 'Multi-layered client-server neural-net',
+                'bs': 'harness real-time e-markets',
+            },
+    }
 custom_edit_url: null
 ---
 
-import Schema from "@theme/Schema";
-import Heading from "@theme/Heading";
+import Schema from '@theme/Schema';
+import Heading from '@theme/Heading';
 
-<Heading
-  as={"h1"}
-  className={"openapi__heading"}
-  children={"User"}
->
-</Heading>
-
-
-
-
+<Heading as={'h1'} className={'openapi__heading'} children={'User'}></Heading>
 
 <Schema
-  schema={{"type":"object","properties":{"id":{"type":"integer","description":"Unique identifier for the user","example":1},"name":{"type":"string","description":"Full name of the user","example":"Leanne Graham"},"username":{"type":"string","description":"Username","example":"Bret"},"email":{"type":"string","format":"email","description":"Email address","example":"Sincere@april.biz"},"address":{"type":"object","properties":{"street":{"type":"string","example":"Kulas Light"},"suite":{"type":"string","example":"Apt. 556"},"city":{"type":"string","example":"Gwenborough"},"zipcode":{"type":"string","example":"92998-3874"},"geo":{"type":"object","properties":{"lat":{"type":"string","description":"Latitude","example":"-37.3159"},"lng":{"type":"string","description":"Longitude","example":"81.1496"}},"title":"Geo"}},"title":"Address"},"phone":{"type":"string","description":"Phone number","example":"1-770-736-8031 x56442"},"website":{"type":"string","format":"uri","description":"Website URL","example":"hildegard.org"},"company":{"type":"object","properties":{"name":{"type":"string","example":"Romaguera-Crona"},"catchPhrase":{"type":"string","example":"Multi-layered client-server neural-net"},"bs":{"type":"string","example":"harness real-time e-markets"}},"title":"Company"}},"required":["id","name","username","email"],"title":"User"}}
-  schemaType={"response"}
->
-  
-</Schema>
-            
+    schema={{
+        type: 'object',
+        properties: {
+            id: { type: 'integer', description: 'Unique identifier for the user', example: 1 },
+            name: {
+                type: 'string',
+                description: 'Full name of the user',
+                example: 'Leanne Graham',
+            },
+            username: { type: 'string', description: 'Username', example: 'Bret' },
+            email: {
+                type: 'string',
+                format: 'email',
+                description: 'Email address',
+                example: 'Sincere@april.biz',
+            },
+            address: {
+                type: 'object',
+                properties: {
+                    street: { type: 'string', example: 'Kulas Light' },
+                    suite: { type: 'string', example: 'Apt. 556' },
+                    city: { type: 'string', example: 'Gwenborough' },
+                    zipcode: { type: 'string', example: '92998-3874' },
+                    geo: {
+                        type: 'object',
+                        properties: {
+                            lat: { type: 'string', description: 'Latitude', example: '-37.3159' },
+                            lng: { type: 'string', description: 'Longitude', example: '81.1496' },
+                        },
+                        title: 'Geo',
+                    },
+                },
+                title: 'Address',
+            },
+            phone: {
+                type: 'string',
+                description: 'Phone number',
+                example: '1-770-736-8031 x56442',
+            },
+            website: {
+                type: 'string',
+                format: 'uri',
+                description: 'Website URL',
+                example: 'hildegard.org',
+            },
+            company: {
+                type: 'object',
+                properties: {
+                    name: { type: 'string', example: 'Romaguera-Crona' },
+                    catchPhrase: {
+                        type: 'string',
+                        example: 'Multi-layered client-server neural-net',
+                    },
+                    bs: { type: 'string', example: 'harness real-time e-markets' },
+                },
+                title: 'Company',
+            },
+        },
+        required: ['id', 'name', 'username', 'email'],
+        title: 'User',
+    }}
+    schemaType={'response'}
+></Schema>

@@ -1,71 +1,91 @@
 ---
 id: get-all-todos
-title: "Get all todos"
-description: "Returns all todos from the database"
-sidebar_label: "Get all todos"
+title: 'Get all todos'
+description: 'Returns all todos from the database'
+sidebar_label: 'Get all todos'
 hide_title: true
 hide_table_of_contents: true
 api: eJyVVU1v40YM/Sssz1o720MPuhndD7hA22DjoCjiHMYSZc1mPpQh5axh6L8XHCmJEmeB1IDtEUU+PnLecE5YE1fJdmJjwBK/kfQpMBjnQGIdGZoUPUhLUBsxO8OEBcaOktGIdY0l7klWzm3UGwsUs2csb3B8vi2wM8l4EkpqPmEwnrDEnimtayzQatr7ntIRi1dkvlgnlCYeuyNoDKw/YYGJ7nubqMayMY6pQK5a8gbLE8qxU3wbhPaUsED6YXznCMuPw3CrodzFwMTq/OvFhf69TLsCZ1kgNmNmLLCKQSiIupquc7bKxS+/s/qfzpOblIyWY4U8z+xx950qwQK7pC0UO7KYevEW+ZfM1p8yq5bGVjy0EeJDYJDWcib7stwC7XtQr4O97wlsTUFsYylBE1PO8hakWNHlEypLsmF/BrpRt0e2igPajDkY1uSokp7B9KJf8jhor/W10Jz5LkZHJpwl+aclaSnNcjA8x89yZZUMw1w4NzMJ6s9Y1zz/7VOxWcw45E+BnqSNk/B1L420WOLyUSxM6fAo9j45LLEV6bhcZr10zlTURldTWsixs1WsaVFFf1bbH1d//3X57AyryzVcZWhUGdvQxNyhieEb7meQK2gSEcTgbCD49vlqk1GlNQLH2ENlggoLHloKdKCUjYGoBo6eoDF34xRYbMPrdFX0xPBgpQUDTPn0/KZWHwMk4tinirjchg9wGVlYF79H7ykIA+jTyu16n+2XbZSYV3mG6OKaKfE2bMNGlW4ZDDS9c0do+lBpdcblUj7kwUWh7qJVZJMInD0QmFDDQ0x3Nux/2YZ/p2KFWFQ8Hqz3VFsj5I5gBN6zY1vVo+702NyPi4vFxTQrTJVnxTTqXvUKi/8ji6FAZysKTDPEP9ebM5TYURjbvIhpv5yCeKm+qtousngTZihfSZ7n/GuxnJ6H3jsvhemsCv2QZeeMDco9czxNZ+QG5fFSaCOLGk4njb5ObhjUPN4DenJqy2bnZhP+p+x+fku8yeiOjvPr52Bcr075UB1MspoVy5vbocCWjO6X0hmjVlVFncyizm4DRXmaD18/a+v/A7c3jH8=
-sidebar_class_name: "get api-method"
+sidebar_class_name: 'get api-method'
 info_path: placeholder-api/jsonplaceholder-api
 custom_edit_url: null
 ---
 
-import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
-import ParamsDetails from "@theme/ParamsDetails";
-import RequestSchema from "@theme/RequestSchema";
-import StatusCodes from "@theme/StatusCodes";
-import OperationTabs from "@theme/OperationTabs";
-import TabItem from "@theme/TabItem";
-import Heading from "@theme/Heading";
+import MethodEndpoint from '@theme/ApiExplorer/MethodEndpoint';
+import ParamsDetails from '@theme/ParamsDetails';
+import RequestSchema from '@theme/RequestSchema';
+import StatusCodes from '@theme/StatusCodes';
+import OperationTabs from '@theme/OperationTabs';
+import TabItem from '@theme/TabItem';
+import Heading from '@theme/Heading';
 
-<Heading
-  as={"h1"}
-  className={"openapi__heading"}
-  children={"Get all todos"}
->
-</Heading>
+<Heading as={'h1'} className={'openapi__heading'} children={'Get all todos'}></Heading>
 
-<MethodEndpoint
-  method={"get"}
-  path={"/todos"}
-  context={"endpoint"}
->
-  
-</MethodEndpoint>
-
-
+<MethodEndpoint method={'get'} path={'/todos'} context={'endpoint'}></MethodEndpoint>
 
 Returns all todos from the database
 
 <Heading
-  id={"request"}
-  as={"h2"}
-  className={"openapi-tabs__heading"}
-  children={"Request"}
->
-</Heading>
+    id={'request'}
+    as={'h2'}
+    className={'openapi-tabs__heading'}
+    children={'Request'}
+></Heading>
 
 <ParamsDetails
-  parameters={[{"name":"userId","in":"query","description":"Filter todos by user ID","required":false,"schema":{"type":"integer","example":1}}]}
->
-  
-</ParamsDetails>
+    parameters={[
+        {
+            name: 'userId',
+            in: 'query',
+            description: 'Filter todos by user ID',
+            required: false,
+            schema: { type: 'integer', example: 1 },
+        },
+    ]}
+></ParamsDetails>
 
-<RequestSchema
-  title={"Body"}
-  body={undefined}
->
-  
-</RequestSchema>
+<RequestSchema title={'Body'} body={undefined}></RequestSchema>
 
 <StatusCodes
-  id={undefined}
-  label={undefined}
-  responses={{"200":{"description":"A list of todos","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","properties":{"userId":{"type":"integer","description":"ID of the user who owns this todo","example":1},"id":{"type":"integer","description":"Unique identifier for the todo","example":1},"title":{"type":"string","description":"Title of the todo item","example":"delectus aut autem"},"completed":{"type":"boolean","description":"Whether the todo is completed","example":false}},"required":["userId","id","title","completed"],"title":"Todo"}}}}}}}
->
-  
-</StatusCodes>
-
-
-      
+    id={undefined}
+    label={undefined}
+    responses={{
+        '200': {
+            description: 'A list of todos',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                userId: {
+                                    type: 'integer',
+                                    description: 'ID of the user who owns this todo',
+                                    example: 1,
+                                },
+                                id: {
+                                    type: 'integer',
+                                    description: 'Unique identifier for the todo',
+                                    example: 1,
+                                },
+                                title: {
+                                    type: 'string',
+                                    description: 'Title of the todo item',
+                                    example: 'delectus aut autem',
+                                },
+                                completed: {
+                                    type: 'boolean',
+                                    description: 'Whether the todo is completed',
+                                    example: false,
+                                },
+                            },
+                            required: ['userId', 'id', 'title', 'completed'],
+                            title: 'Todo',
+                        },
+                    },
+                },
+            },
+        },
+    }}
+></StatusCodes>

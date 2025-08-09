@@ -14,13 +14,18 @@
     --ifm-color-primary-lighter: #359962;
     --ifm-color-primary-lightest: #3cad6e;
     --ifm-code-font-size: 95%;
+    --ifm-font-size-base: 92%;
     --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-    --ifm-heading-font-family: "Inter", sans-serif;
+    --ifm-heading-font-family: 'Inter', sans-serif;
     --ifm-heading-font-weight: 560;
     --ifm-heading-line-height: 1.2;
-    --ifm-font-weight-semibold: 500;
-    --ifm-font-family-base: "Inter", sans-serif;
-    --ifm-navbar-padding-horizontal: 42px;
+    --ifm-font-weight-semibold: 520;
+    --ifm-font-weight-semibold-active: 560;
+    --ifm-font-family-base: 'Inter', sans-serif;
+    --ifm-navbar-padding-horizontal: 36px;
+    --ifm-navbar-padding-vertical: 0;
+    --ifm-navbar-height: auto;
+    /* --ifm-navbar-link-hover-color: var(--ifm-navbar-link-color); */
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -35,76 +40,135 @@
     --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-.navbar {
-    /* backdrop-filter: blur(20px);
-    background-color: white;
-    */
+.navbar__inner {
+    flex-direction: column;
+}
+
+.navbar__items {
+    height: auto;
+    justify-content: space-between;
+    padding: 0.95rem 0;
+}
+
+.navbar__items--right {
+    justify-content: flex-start;
+    height: 2.6rem;
+    padding: 0;
+    margin-top: 0.1rem;
 }
 
 .navbar__logo {
-    height: 1.8rem;
+    height: 1.62em;
     margin-right: 0rem;
+    margin-top: 0.2rem;
+}
+
+@media (max-width: 996px) {
+    :root {
+        --ifm-navbar-padding-horizontal: 18px;
+    }
+
+    .navbar__item {
+        display: none !important;
+    }
+
+    .navbar__items {
+        justify-content: flex-start;
+    }
+
+    .navbar__items--right {
+        display: none;
+    }
+}
+
+.navbar__link {
+    height: 100%;
+    box-sizing: border-box;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 0px 0px 1px 0px;
+    padding: 0;
+    margin: 0 1.4rem 0 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: 0.95rem;
+    gap: 4px;
+}
+
+.navbar__link--active {
+    border-color: var(--ifm-navbar-link-hover-color);
+}
+
+.toggle_vylO {
+    width: 2rem;
+    height: 2rem;
+    margin-left: 0.5rem;
+}
+
+.toggleButton_gllP {
+    padding: 0.35rem;
 }
 
 .api-method > .menu__link,
 .schema > .menu__link {
-  align-items: center;
-  justify-content: space-between;
+    align-items: center;
+    justify-content: space-between;
 }
 .api-method > .menu__link::after,
 .schema > .menu__link::after {
-  width: 55px;
-  height: 20px;
-  font-size: 12px;
-  line-height: 20px;
-  text-transform: uppercase;
-  font-weight: 600;
-  border-radius: 0.25rem;
-  align-content: start;
-  margin-right: var(--ifm-spacing-horizontal);
-  text-align: right;
-  flex-shrink: 0;
-  border-color: transparent;
+    width: 55px;
+    height: 20px;
+    font-size: 12px;
+    line-height: 20px;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    align-content: start;
+    margin-right: var(--ifm-spacing-horizontal);
+    text-align: right;
+    flex-shrink: 0;
+    border-color: transparent;
 }
 
 .get > .menu__link::after {
-  content: "get";
-  color: var(--ifm-color-info);
+    content: 'get';
+    color: var(--ifm-color-info);
 }
 
 .post > .menu__link::after {
-  content: "post";
-  color: var(--ifm-color-success);
+    content: 'post';
+    color: var(--ifm-color-success);
 }
 
 .delete > .menu__link::after {
-  content: "del";
-  color: var(--ifm-color-danger);
+    content: 'del';
+    color: var(--ifm-color-danger);
 }
 
 .put > .menu__link::after {
-  content: "put";
-  color: var(--ifm-color-warning);
+    content: 'put';
+    color: var(--ifm-color-warning);
 }
 
 .patch > .menu__link::after {
-  content: "patch";
-  color: var(--ifm-color-warning);
+    content: 'patch';
+    color: var(--ifm-color-warning);
 }
 
 .head > .menu__link::after {
-  content: "head";
-  color: var(--ifm-color-secondary-contrast-foreground);
+    content: 'head';
+    color: var(--ifm-color-secondary-contrast-foreground);
 }
 
 .event > .menu__link::after {
-  content: "event";
-  color: var(--ifm-color-secondary-contrast-foreground);
+    content: 'event';
+    color: var(--ifm-color-secondary-contrast-foreground);
 }
 
 .schema > .menu__link::after {
-  content: "schema";
-  color: var(--ifm-color-secondary-contrast-foreground);
+    content: 'schema';
+    color: var(--ifm-color-secondary-contrast-foreground);
 }
 
 .openapi-tabs__code-container {

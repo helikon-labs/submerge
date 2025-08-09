@@ -1,33 +1,28 @@
 ---
 id: geo
-title: "Geo"
-description: ""
-sidebar_label: "Geo"
+title: 'Geo'
+description: ''
+sidebar_label: 'Geo'
 hide_title: true
 hide_table_of_contents: true
 schema: true
-sample: {"lat":"-37.3159","lng":"81.1496"}
+sample: { 'lat': '-37.3159', 'lng': '81.1496' }
 custom_edit_url: null
 ---
 
-import Schema from "@theme/Schema";
-import Heading from "@theme/Heading";
+import Schema from '@theme/Schema';
+import Heading from '@theme/Heading';
 
-<Heading
-  as={"h1"}
-  className={"openapi__heading"}
-  children={"Geo"}
->
-</Heading>
-
-
-
-
+<Heading as={'h1'} className={'openapi__heading'} children={'Geo'}></Heading>
 
 <Schema
-  schema={{"type":"object","properties":{"lat":{"type":"string","description":"Latitude","example":"-37.3159"},"lng":{"type":"string","description":"Longitude","example":"81.1496"}},"title":"Geo"}}
-  schemaType={"response"}
->
-  
-</Schema>
-            
+    schema={{
+        type: 'object',
+        properties: {
+            lat: { type: 'string', description: 'Latitude', example: '-37.3159' },
+            lng: { type: 'string', description: 'Longitude', example: '81.1496' },
+        },
+        title: 'Geo',
+    }}
+    schemaType={'response'}
+></Schema>

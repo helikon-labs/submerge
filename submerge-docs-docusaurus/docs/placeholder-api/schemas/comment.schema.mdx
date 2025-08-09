@@ -1,33 +1,57 @@
 ---
 id: comment
-title: "Comment"
-description: ""
-sidebar_label: "Comment"
+title: 'Comment'
+description: ''
+sidebar_label: 'Comment'
 hide_title: true
 hide_table_of_contents: true
 schema: true
-sample: {"postId":1,"id":1,"name":"id labore ex et quam laborum","email":"Eliseo@gardner.biz","body":"laudantium enim quasi est quidem magnam voluptate ipsam eos\ntempora quo necessitatibus\ndolor quam autem quasi\nreiciendis et nam sapiente accusantium"}
+sample:
+    {
+        'postId': 1,
+        'id': 1,
+        'name': 'id labore ex et quam laborum',
+        'email': 'Eliseo@gardner.biz',
+        'body': "laudantium enim quasi est quidem magnam voluptate ipsam eos\ntempora quo necessitatibus\ndolor quam autem quasi\nreiciendis et nam sapiente accusantium",
+    }
 custom_edit_url: null
 ---
 
-import Schema from "@theme/Schema";
-import Heading from "@theme/Heading";
+import Schema from '@theme/Schema';
+import Heading from '@theme/Heading';
 
-<Heading
-  as={"h1"}
-  className={"openapi__heading"}
-  children={"Comment"}
->
-</Heading>
-
-
-
-
+<Heading as={'h1'} className={'openapi__heading'} children={'Comment'}></Heading>
 
 <Schema
-  schema={{"type":"object","properties":{"postId":{"type":"integer","description":"ID of the post this comment belongs to","example":1},"id":{"type":"integer","description":"Unique identifier for the comment","example":1},"name":{"type":"string","description":"Name of the commenter","example":"id labore ex et quam laborum"},"email":{"type":"string","format":"email","description":"Email of the commenter","example":"Eliseo@gardner.biz"},"body":{"type":"string","description":"Content of the comment","example":"laudantium enim quasi est quidem magnam voluptate ipsam eos\ntempora quo necessitatibus\ndolor quam autem quasi\nreiciendis et nam sapiente accusantium"}},"required":["postId","id","name","email","body"],"title":"Comment"}}
-  schemaType={"response"}
->
-  
-</Schema>
-            
+    schema={{
+        type: 'object',
+        properties: {
+            postId: {
+                type: 'integer',
+                description: 'ID of the post this comment belongs to',
+                example: 1,
+            },
+            id: { type: 'integer', description: 'Unique identifier for the comment', example: 1 },
+            name: {
+                type: 'string',
+                description: 'Name of the commenter',
+                example: 'id labore ex et quam laborum',
+            },
+            email: {
+                type: 'string',
+                format: 'email',
+                description: 'Email of the commenter',
+                example: 'Eliseo@gardner.biz',
+            },
+            body: {
+                type: 'string',
+                description: 'Content of the comment',
+                example:
+                    'laudantium enim quasi est quidem magnam voluptate ipsam eos\ntempora quo necessitatibus\ndolor quam autem quasi\nreiciendis et nam sapiente accusantium',
+            },
+        },
+        required: ['postId', 'id', 'name', 'email', 'body'],
+        title: 'Comment',
+    }}
+    schemaType={'response'}
+></Schema>

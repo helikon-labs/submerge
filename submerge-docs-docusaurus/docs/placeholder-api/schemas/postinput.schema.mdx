@@ -1,33 +1,34 @@
 ---
 id: postinput
-title: "PostInput"
-description: ""
-sidebar_label: "PostInput"
+title: 'PostInput'
+description: ''
+sidebar_label: 'PostInput'
 hide_title: true
 hide_table_of_contents: true
 schema: true
-sample: {"title":"foo","body":"bar","userId":1}
+sample: { 'title': 'foo', 'body': 'bar', 'userId': 1 }
 custom_edit_url: null
 ---
 
-import Schema from "@theme/Schema";
-import Heading from "@theme/Heading";
+import Schema from '@theme/Schema';
+import Heading from '@theme/Heading';
 
-<Heading
-  as={"h1"}
-  className={"openapi__heading"}
-  children={"PostInput"}
->
-</Heading>
-
-
-
-
+<Heading as={'h1'} className={'openapi__heading'} children={'PostInput'}></Heading>
 
 <Schema
-  schema={{"type":"object","properties":{"title":{"type":"string","description":"Title of the post","example":"foo"},"body":{"type":"string","description":"Content of the post","example":"bar"},"userId":{"type":"integer","description":"ID of the user creating the post","example":1}},"required":["title","body","userId"],"title":"PostInput"}}
-  schemaType={"response"}
->
-  
-</Schema>
-            
+    schema={{
+        type: 'object',
+        properties: {
+            title: { type: 'string', description: 'Title of the post', example: 'foo' },
+            body: { type: 'string', description: 'Content of the post', example: 'bar' },
+            userId: {
+                type: 'integer',
+                description: 'ID of the user creating the post',
+                example: 1,
+            },
+        },
+        required: ['title', 'body', 'userId'],
+        title: 'PostInput',
+    }}
+    schemaType={'response'}
+></Schema>

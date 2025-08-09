@@ -1,71 +1,53 @@
 ---
 id: delete-post
-title: "Delete a post"
-description: "Delete a post (Note - will not be persisted to the server but will be faked as if)"
-sidebar_label: "Delete a post"
+title: 'Delete a post'
+description: 'Delete a post (Note - will not be persisted to the server but will be faked as if)'
+sidebar_label: 'Delete a post'
 hide_title: true
 hide_table_of_contents: true
 api: eJy1VE1P3EAM/SuuTyANu9BDD7mhwoGqpQi2h2qXw2zGS6bMRxg70FWU/145WQlYOLSHnuKxnDfv2W/coyOui2/F54QVnlEgIbDQZhY4uMxCcARPPgRIWWBN0FJhz0IOJIM0BEzlkQqsO5nq1gQbe08OLIPfHKLB3FKxesGFwwrdeMVVZkGDYu8YqyXqkfHWYGuLjSRUNN1jspGwQu/QoFeCrZUGDRZ66Hwhh5WUjsyeikVDk4CLMzTIdUPRYtWjbNsRLQndUUGD0Scfu4jVyTDcKiq3OTGxFn88PtbPa2TlCZMCB9zVNTFvuhC2OAwGI0mTnzWimehWOFc2PO+9G5TQ2LFJYFcCVtiItFzN5784pzbYmpocHJWZbFtfZ0ezOkfcV/nl5vvl1XMxnF5dwM0IjSrGp00eRXsJ9H75G8hT2BQiyCn4RHB9frMYUaWxAtvcQW0TdEzw1FAinbomE2kvcpzmDs6Kna3S/nV1jsTw5KUBC0wCeQOfNBtzgkKcu1ITV6t0BKMZNPicY6QkDKCn07Du4pi/arLkMVpkNwU/mAqv0iotGs/gGSyMc4FNl2pVZ8Mo5QhsCEDJtdkrsi0EwT8S2OTgKZd7n+4+rNLPnVghFnV5BB8jOW+FwhaswN9MbJXQoE56au7J7Hh2jAbrnMTWorPZ2XuvV2j+xRaDweBrSkwvEL9dLN6g5JbS1OZZLnfz3U8811p1r3o02vQC5dU22DdLPwqhJP9rbexeq9BvmbfB+qRSR0n97l0tR86MBivvdHs0yrNaYt+vLdOPEoZB0w8dlS1Wy1uDj7Z4u9YHsezRedbYYbWxgffXyEuBB9e7hXMIr5fLuyR3SZu2agAbOj2hwXvaTstsuH25Lc7Ov54vznEY/gBqMOfq
-sidebar_class_name: "delete api-method"
+sidebar_class_name: 'delete api-method'
 info_path: placeholder-api/jsonplaceholder-api
 custom_edit_url: null
 ---
 
-import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
-import ParamsDetails from "@theme/ParamsDetails";
-import RequestSchema from "@theme/RequestSchema";
-import StatusCodes from "@theme/StatusCodes";
-import OperationTabs from "@theme/OperationTabs";
-import TabItem from "@theme/TabItem";
-import Heading from "@theme/Heading";
+import MethodEndpoint from '@theme/ApiExplorer/MethodEndpoint';
+import ParamsDetails from '@theme/ParamsDetails';
+import RequestSchema from '@theme/RequestSchema';
+import StatusCodes from '@theme/StatusCodes';
+import OperationTabs from '@theme/OperationTabs';
+import TabItem from '@theme/TabItem';
+import Heading from '@theme/Heading';
 
-<Heading
-  as={"h1"}
-  className={"openapi__heading"}
-  children={"Delete a post"}
->
-</Heading>
+<Heading as={'h1'} className={'openapi__heading'} children={'Delete a post'}></Heading>
 
-<MethodEndpoint
-  method={"delete"}
-  path={"/posts/{id}"}
-  context={"endpoint"}
->
-  
-</MethodEndpoint>
-
-
+<MethodEndpoint method={'delete'} path={'/posts/{id}'} context={'endpoint'}></MethodEndpoint>
 
 Delete a post (Note - will not be persisted to the server but will be faked as if)
 
 <Heading
-  id={"request"}
-  as={"h2"}
-  className={"openapi-tabs__heading"}
-  children={"Request"}
->
-</Heading>
+    id={'request'}
+    as={'h2'}
+    className={'openapi-tabs__heading'}
+    children={'Request'}
+></Heading>
 
 <ParamsDetails
-  parameters={[{"name":"id","in":"path","required":true,"description":"The post ID","schema":{"type":"integer","minimum":1}}]}
->
-  
-</ParamsDetails>
+    parameters={[
+        {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'The post ID',
+            schema: { type: 'integer', minimum: 1 },
+        },
+    ]}
+></ParamsDetails>
 
-<RequestSchema
-  title={"Body"}
-  body={undefined}
->
-  
-</RequestSchema>
+<RequestSchema title={'Body'} body={undefined}></RequestSchema>
 
 <StatusCodes
-  id={undefined}
-  label={undefined}
-  responses={{"200":{"description":"Post deleted successfully"}}}
->
-  
-</StatusCodes>
-
-
-      
+    id={undefined}
+    label={undefined}
+    responses={{ '200': { description: 'Post deleted successfully' } }}
+></StatusCodes>
