@@ -3,7 +3,7 @@ import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 function headerifyTopCategories(items: [any]) {
     return items.map((item) => {
         if (item.type === 'category') {
-            // Remove link & collapse behaviour
+            // remove link & collapse behaviour
             const { link, ...rest } = item;
             return {
                 ...rest,

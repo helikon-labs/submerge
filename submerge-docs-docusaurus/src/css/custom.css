@@ -183,6 +183,62 @@ html[data-theme='dark'] .navbar .navbar__logo {
     padding: 0.35rem;
 }
 
+h1 {
+    font-size: 2rem;
+    font-weight: 650;
+    letter-spacing: -0.05rem;
+}
+
+h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.015rem;
+}
+
+h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.008rem;
+}
+
+h4 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: -0.005rem;
+}
+
+.container {
+    margin-top: 1.6rem;
+    margin-left: 3.3rem;
+}
+
+@media (min-width: 997px) {
+    .container .docItemCol_xLCN {
+        max-width: 70% !important;
+    }
+}
+
+@media (max-width: 996px) {
+    .container {
+        margin-top: 0.1rem;
+        margin-left: 0.4rem;
+    }
+}
+
+@media (max-width: 1100px) and (min-width: 997px) {
+    .table-of-contents {
+        display: none;
+    }
+
+    .col--3 {
+        display: none;
+    }
+
+    .container .docItemCol_xLCN {
+        max-width: 94% !important;
+    }
+}
+
 .theme-doc-sidebar-menu {
     padding-left: calc(var(--ifm-navbar-padding-horizontal) / 2);
     font-size: 0.95rem;
