@@ -118,11 +118,6 @@ const config: Config = {
                     position: 'right',
                     to: '/placeholder-api',
                 },
-                {
-                    label: 'Petstore API Reference',
-                    position: 'right',
-                    to: '/petstore-api',
-                },
             ],
         },
         footer: {
@@ -184,17 +179,8 @@ const config: Config = {
                 docsPluginId: 'classic',
                 config: {
                     placeholder: {
-                        specPath: 'spec/placeholder.yaml',
+                        specPath: 'api-spec/placeholder.yaml',
                         outputDir: 'docs/placeholder-api',
-                        sidebarOptions: {
-                            groupPathsBy: 'tag',
-                            categoryLinkSource: 'tag',
-                        },
-                        showSchemas: true,
-                    } satisfies OpenApiPlugin.Options,
-                    petstore: {
-                        specPath: 'spec/petstore.yaml',
-                        outputDir: 'docs/petstore-api',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
                             categoryLinkSource: 'tag',

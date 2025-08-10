@@ -17,7 +17,6 @@ function headerifyTopCategories(items: [any]) {
 }
 
 const placeholderAPISidebar = require('./docs/placeholder-api/sidebar.js');
-const petstoreAPISidebar = require('./docs/petstore-api/sidebar.js');
 
 const sidebars: SidebarsConfig = {
     tutorialSidebar: [
@@ -50,7 +49,6 @@ const sidebars: SidebarsConfig = {
         },
     ],
     placeholderAPISidebar: headerifyTopCategories(placeholderAPISidebar),
-    petstoreAPISidebar: headerifyTopCategories(petstoreAPISidebar),
 };
 
 export default sidebars;

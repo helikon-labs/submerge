@@ -271,7 +271,8 @@ article {
 
 .theme-doc-sidebar-container .menu {
     padding: calc(var(--ifm-navbar-padding-horizontal) / 2)
-        calc(var(--ifm-navbar-padding-horizontal) / 2) 0 0;
+        calc(var(--ifm-navbar-padding-horizontal) / 2)
+        calc(var(--ifm-navbar-padding-horizontal) / 2) 0;
 }
 
 .theme-doc-sidebar-container .menu__link {
