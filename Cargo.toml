@@ -16,7 +16,6 @@ members = [
     "submerge-sentinel",
     "submerge-substrate-client",
     "submerge-util",
-    "submerge-web",
 ]
 resolver = "2"
 
