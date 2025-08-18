@@ -30,12 +30,12 @@ jobs:
       - name: Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly #-2022-11-15 # toolchain
+          toolchain: nightly-2025-08-01 #-2022-11-15 # toolchain
           components: clippy, rustfmt
           override: true
       - run: rustup update
-      - run: rustup update nightly #-2022-11-15 # toolchain
-      - run: rustup default nightly #-2022-11-15 # toolchain
+      - run: rustup update nightly-2025-08-01 # toolchain
+      - run: rustup default nightly-2025-08-01 # toolchain
       - run: rustup target add wasm32-unknown-unknown --toolchain nightly #-2022-11-15 # toolchain
       - run: rustup default stable
       - name: Reset test DB

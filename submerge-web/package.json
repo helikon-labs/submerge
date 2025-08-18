@@ -17,6 +17,7 @@
     "dependencies": {
         "date-fns": "^4.1.0",
         "ky": "^1.8.2",
+        "lucide": "^0.539.0",
         "mitt": "^3.0.1",
         "nanostores": "^1.0.1"
     },
