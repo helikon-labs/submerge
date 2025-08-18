@@ -1,6 +1,6 @@
 {
     "name": "submerge-crystal-legacy-decoder",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "Submerge Crystal pre-metadata-V14 decoder service.",
     "main": "index.js",
     "scripts": {

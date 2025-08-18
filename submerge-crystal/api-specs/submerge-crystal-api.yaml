@@ -1,0 +1,85 @@
+openapi: 3.1.0
+info:
+  title: Submerge Crystal API
+  description: |
+    REST API for Submerge Crystal, the indexer component of Submerge.
+    Submerge API comes with a set of 6 resources:
+    - Blocks
+    - Extrinsics
+    - Calls
+    - Events
+
+    This API is available for access at https://api.submerge.io/crystal.
+  version: 1.0.0
+  contact:
+    name: Helikon Labs
+    url: https://helikon.io
+    email: info@helikon.io
+  license:
+    name: GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+
+servers:
+  - url: https://api.crystal.submerge.io/{version}/{chain}
+    description: Submerge Crystal API Server
+    variables:
+      version:
+        default: v1
+        enum: [v1]
+      chain:
+        default: polkadot
+        enum: [polkadot, kusama]
+
+paths:
+  /blocks:
+    get:
+      summary: Get all blocks
+      description: Returns all blocks from the database
+      operationId: getAllBlocks
+      tags:
+        - Blocks
+      parameters:
+        - name: number
+          in: query
+          description: Filter blocks by number
+          required: false
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: A list of blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Block"
+              example:
+                - number: 1
+                  hash: "0xABC...54D"
+                  title: "op title"
+                  body: "op body\nop body line 2"
+        '500':
+          description: Internal server error
+components:
+  schemas:
+    Block:
+      description: A block in the blockchain
+      type: object
+      properties:
+        number:
+          type: integer
+          description: Block height
+          example: 1
+        hash:
+          type: string
+          description: Hash of the block in hexadecimal format
+          example: "0xABC...54D"
+      required:
+        - number
+        - hash
+
+tags:
+  - name: Blocks
+    description: Operations related to blocks

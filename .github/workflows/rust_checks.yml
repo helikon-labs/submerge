@@ -27,7 +27,14 @@ jobs:
         run: chmod +x ./_chainspecs/init.sh
       - name: Fetch chainspecs
         run: ./_chainspecs/init.sh
-      - name: Toolchain
+      - name: Install vacuum
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Increases rate limit from 60 to 5000 requests/hour
+        run: |
+          curl -fsSL https://quobix.com/scripts/install_vacuum.sh | sh
+      - name: Lint OpenAPI specs
+        run: vacuum lint -d ./submerge-crystal/api-specs/submerge-crystal-api.yaml
+      - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2025-08-01 # toolchain
