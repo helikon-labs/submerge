@@ -116,7 +116,7 @@ const config: Config = {
                 {
                     label: 'Crystal API Reference',
                     position: 'right',
-                    to: '/placeholder-api',
+                    to: '/crystal-api',
                 },
             ],
         },
@@ -178,9 +178,10 @@ const config: Config = {
                 id: 'openapi',
                 docsPluginId: 'classic',
                 config: {
-                    placeholder: {
-                        specPath: 'api-spec/placeholder.yaml',
-                        outputDir: 'docs/placeholder-api',
+                    crystal: {
+                        specPath: '../submerge-crystal/api-spec/submerge-crystal-api.yaml',
+                        outputDir: './docs/crystal-api',
+                        infoTemplate: './templates/crystal-api-info.mustache',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
                             categoryLinkSource: 'tag',

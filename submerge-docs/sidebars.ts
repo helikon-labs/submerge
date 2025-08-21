@@ -16,7 +16,7 @@ function headerifyTopCategories(items: [any]) {
     });
 }
 
-const placeholderAPISidebar = require('./docs/placeholder-api/sidebar.js');
+const crystalAPISidebar = require('./docs/crystal-api/sidebar.ts');
 
 const sidebars: SidebarsConfig = {
     tutorialSidebar: [
@@ -48,7 +48,7 @@ const sidebars: SidebarsConfig = {
             ],
         },
     ],
-    placeholderAPISidebar: headerifyTopCategories(placeholderAPISidebar),
+    crystalAPISidebar: headerifyTopCategories(crystalAPISidebar),
 };
 
 export default sidebars;

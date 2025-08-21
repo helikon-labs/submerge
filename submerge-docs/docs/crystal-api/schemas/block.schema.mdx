@@ -1,0 +1,33 @@
+---
+id: block
+title: "Block"
+description: "A block in the blockchain"
+sidebar_label: "Block"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"number":20324123,"hash":"0x109f468f38b89f7b64035783ff166cfba47c8c1b8b8cdde77b46dc391ceee4fc"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Block"}
+>
+</Heading>
+
+
+
+A block in the blockchain
+
+<Schema
+  schema={{"type":"object","description":"A block in the blockchain","tags":["block"],"properties":{"number":{"type":"integer","description":"Block height","example":20324123},"hash":{"type":"string","description":"Hash of the block in hexadecimal format","example":"0x109f468f38b89f7b64035783ff166cfba47c8c1b8b8cdde77b46dc391ceee4fc"}},"required":["number","hash"],"example":{"number":20324123,"hash":"0x109f468f38b89f7b64035783ff166cfba47c8c1b8b8cdde77b46dc391ceee4fc"},"title":"Block"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            
