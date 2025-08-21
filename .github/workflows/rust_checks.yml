@@ -33,7 +33,7 @@ jobs:
         run: |
           curl -fsSL https://quobix.com/scripts/install_vacuum.sh | sh
       - name: Lint OpenAPI specs
-        run: vacuum lint -d ./submerge-crystal/api-specs/submerge-crystal-api.yaml
+        run: vacuum lint -d ./submerge-crystal/api-spec/submerge-crystal-api.yaml
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
