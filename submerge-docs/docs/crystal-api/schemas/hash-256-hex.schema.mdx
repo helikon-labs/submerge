@@ -1,0 +1,33 @@
+---
+id: hash-256-hex
+title: "Hash256Hex"
+description: "32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix."
+sidebar_label: "Hash256Hex"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Hash256Hex"}
+>
+</Heading>
+
+
+
+32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.
+
+<Schema
+  schema={{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            

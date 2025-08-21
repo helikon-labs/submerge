@@ -20,6 +20,12 @@ const sidebar: SidebarsConfig = {
           label: "Get all blocks",
           className: "api-method get",
         },
+        {
+          type: "doc",
+          id: "crystal-api/get-blocks-by-hash-or-number",
+          label: "Get block(s) by hash or number.",
+          className: "api-method get",
+        },
       ],
     },
     {
@@ -28,14 +34,26 @@ const sidebar: SidebarsConfig = {
       items: [
         {
           type: "doc",
-          id: "crystal-api/schemas/chainslug",
-          label: "ChainSlug",
+          id: "crystal-api/schemas/paginationdata",
+          label: "PaginationData",
           className: "schema",
         },
         {
           type: "doc",
-          id: "crystal-api/schemas/paginationdata",
-          label: "PaginationData",
+          id: "crystal-api/schemas/accountidhex",
+          label: "AccountIdHex",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "crystal-api/schemas/hash-256-hex",
+          label: "Hash256Hex",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "crystal-api/schemas/blockstatus",
+          label: "BlockStatus",
           className: "schema",
         },
         {

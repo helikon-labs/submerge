@@ -1,0 +1,72 @@
+---
+id: get-blocks-by-hash-or-number
+title: "Get block(s) by hash or number."
+description: "If a hash is passed, returns the matching block. If a number is given, gives the blocks by that number - could be pruned and/or finalized."
+sidebar_label: "Get block(s) by hash or number."
+hide_title: true
+hide_table_of_contents: true
+api: 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
+sidebar_class_name: "get api-method"
+info_path: crystal-api/submerge-crystal-api-v-1
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get block(s) by hash or number."}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/blocks/{block_ref}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+If a hash is passed, returns the matching block. If a number is given, gives the blocks by that number - could be pruned and/or finalized.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"block_ref","in":"path","required":true,"description":"Block reference. Either: - a block number (integer ≥ 0), or - a block hash in hex (with or without `0x` prefix, case-insensitive).\n","schema":{"oneOf":[{"type":"integer","minimum":0,"example":1234567},{"type":"string","pattern":"^(0x)?[A-Fa-f0-9]{64}$","examples":["0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","91B171BB158E2D3848FA23A9F1C25182FB8E20313B2C1EB49219DA7A70CE90C3"]}]}},{"name":"page_number","in":"query","description":"Page number to retrieve.","required":false,"schema":{"type":"integer","minimum":1,"default":1},"example":1},{"name":"page_size","in":"query","description":"Number of items per page to be returned.","required":false,"schema":{"type":"integer","minimum":1,"maximum":100,"default":25},"example":25}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Response with a paginated list of blocks.","content":{"application/json":{"schema":{"type":"object","description":"List of blocks with pagination info.","tags":["block"],"properties":{"data":{"type":"array","items":{"type":"object","description":"A block in the blockchain","tags":["block"],"properties":{"hash":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"parentHash":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"stateRoot":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"extrinsicRoot":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"number":{"type":"integer","description":"Block height.","minimum":0,"example":20324123},"timestamp":{"type":"integer","description":"Block timestamp - milliseconds.","minimum":0,"example":1755773684012},"specVersion":{"type":"integer","minimum":0,"description":"Runtime spec version.","example":1001},"status":{"type":"string","enum":["proposed","finalized","pruned"],"description":"Block status. - `finalized`: Blocks that have been finalized on chain. - `proposed`: Blocks that have been authored but not yet finalized. - `pruned`: Blocks that have been removed or are no longer accessible.\n","title":"BlockStatus"},"weight":{"type":"object","additionalProperties":true,"description":"Block weight - varying schema depending on runtime version."},"extrinsicCount":{"type":"integer","minimum":0,"description":"Number of extrinsics in the block.","example":3},"eventCount":{"type":"integer","minimum":0,"description":"Number of events in the block.","example":12},"authorAccountId":{"description":"Author validator account id.","type":"string","pattern":"^0x[a-f0-9]{64}$","example":"0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a","title":"AccountIdHex"}},"required":["hash","parentHash","stateRoot","extrinsicRoot","number","timestamp","specVersion","status","weight","extrinsicCount","eventCount","authorAccountId"],"example":{"hash":"0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8","parentHash":"0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b","stateRoot":"0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603","extrinsicRoot":"0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454","number":27419831,"timestamp":1755773684012,"specVersion":1006001,"status":"finalized","weight":{"weight":14},"extrinsicCount":2,"eventCount":56,"authorAccountId":"0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"},"title":"Block"},"description":"Array of blocks for the current page."},"pagination":{"type":"object","description":"Pagination data for paged responses.","properties":{"pageNumber":{"type":"integer","description":"Current page number.","minimum":1,"example":1},"pageSize":{"type":"integer","description":"Number of items per page.","minimum":1,"example":1},"totalCount":{"type":"integer","description":"Total number of items across all pages.","minimum":0,"example":78},"hasNext":{"type":"boolean","description":"Whether there is a next page.","example":true},"hasPrevious":{"type":"boolean","description":"Whether there is a previous page.","example":false}},"required":["pageNumber","pageSize","totalCount","hasNext","hasPrevious"],"example":{"pageNumber":1,"pageSize":20,"totalCount":78,"hasNext":true,"hasPrevious":false},"title":"PaginationData"}},"required":["data","pagination"],"example":{"data":[{"hash":"0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8","parentHash":"0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b","stateRoot":"0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603","extrinsicRoot":"0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454","number":27419831,"timestamp":1755773684012,"specVersion":1006001,"status":"finalized","weight":{"weight":14},"extrinsicCount":2,"eventCount":56,"authorAccountId":"0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"}],"pagination":{"pageNumber":1,"pageSize":20,"totalCount":78,"hasNext":true,"hasPrevious":false}},"title":"PaginatedBlockList"},"example":{"data":[{"number":20324125,"hash":"0x109f468f38b89f7b64035783ff166cfba47c8c1b8b8cdde77b46dc391ceee4fc"},{"number":20324124,"hash":"0x209f468f38b89f7b64035783ff166cfba47c8c1b8b8cdde77b46dc391ceee4fd"},{"number":20324123,"hash":"0x309f468f38b89f7b64035783ff166cfba47c8c1b8b8cdde77b46dc391ceee4fe"}],"pagination":{"pageNumber":1,"pageSize":25,"totalCount":78,"hasNext":true,"hasPrevious":false}}}}},"500":{"description":"Internal server error."}}}
+>
+  
+</StatusCodes>
+
+
+      
