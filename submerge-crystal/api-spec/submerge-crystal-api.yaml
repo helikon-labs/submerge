@@ -19,7 +19,7 @@ info:
     url: https://www.gnu.org/licenses/gpl-3.0.html
 
 servers:
-  - url: https://crystal.submerge.io/api/v1/{chain}
+  - url: https://{chain}.api.crystal.submerge.io/v1
     description: Submerge Crystal API Server
     variables:
       chain:
@@ -76,15 +76,92 @@ components:
           - type: string
             pattern: '^(0x)?[A-Fa-f0-9]{64}$'
             examples:
-              - "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
-              - "91B171BB158E2D3848FA23A9F1C25182FB8E20313B2C1EB49219DA7A70CE90C3"
+              - '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
+              - '91B171BB158E2D3848FA23A9F1C25182FB8E20313B2C1EB49219DA7A70CE90C3'
     BlockStatus:
       name: status
       in: query
       required: false
-      description: Filter blocks by status.
+      description: Filter results by block status.
       schema:
         $ref: '#/components/schemas/BlockStatus'
+    MinBlockNumber:
+      name: min_block_number
+      in: query
+      description: Filter results by minimum block number.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+    MaxBlockNumber:
+      name: min_block_number
+      in: query
+      description: Filter results by maximum block number.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+    MinBlockTimestamp:
+      name: min_block_timestamp
+      in: query
+      required: false
+      description: Filter results by minimum block timestamp.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+        example: 1755773684012
+    MaxBlockTimestamp:
+      name: max_block_timestamp
+      in: query
+      required: false
+      description: Filter results by maximum block timestamp.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+        example: 1755773684012
+    MinSpecVersion:
+      name: min_spec_version
+      in: query
+      description: Filter results by minimum runtime spec version.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+    MaxSpecVersion:
+      name: max_spec_version
+      in: query
+      description: Filter results by maximum runtime spec version.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+    AuthorRef:
+      name: author
+      in: query
+      description: Filter results by block author.
+      required: false
+      schema:
+        oneOf:
+          - type: string
+            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
+            description: 'A Substrate SS58 address string.'
+            example: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+          - type: string
+            pattern: '^(?:0x)?[a-f0-9]{64}$'
+            description: '32-byte Substrate account id encoded in hex with optional `0x` prefix.'
+            examples:
+              - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+              - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
   schemas:
     PaginationData:
       type: object
@@ -125,11 +202,23 @@ components:
         totalCount: 78
         hasNext: true
         hasPrevious: false
+    SS58Address:
+      type: string
+      pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
+      description: 'A Substrate SS58 address string.'
+      example: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
     AccountIdHex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
       description: '32-byte Substrate account id encoded in hex.'
       example: '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+    AccountIdHexOptionalPrefix:
+      type: string
+      pattern: '^(?:0x)?[a-f0-9]{64}$'
+      description: '32-byte Substrate account id encoded in hex with optional `0x` prefix.'
+      examples:
+        - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+        - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
     Hash256Hex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
@@ -177,7 +266,7 @@ components:
         weight:
           type: object
           additionalProperties: true
-          description: Block weight - varying schema depending on runtime version.
+          description: Block weight - varying schema depending on runtime metadata.
         extrinsicCount:
           type: integer
           minimum: 0
@@ -190,7 +279,7 @@ components:
           example: 12
         authorAccountId:
           $ref: '#/components/schemas/AccountIdHex'
-          description: Author validator account id.
+          description: Authoring validator account id.
       required:
         - hash
         - parentHash
@@ -218,52 +307,145 @@ components:
         extrinsicCount: 2
         eventCount: 56
         authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
-    PaginatedBlockList:
+    Trace:
       type: object
-      description: List of blocks with pagination info.
+      description: A trace record in a block
       tags:
         - block
+        - trace
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Block'
-          description: Array of blocks for the current page.
-        pagination:
-          $ref: '#/components/schemas/PaginationData'
+        id:
+          type: integer
+          description: Id of the trace record.
+        blockHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        blockParentHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        blockNumber:
+          type: integer
+          description: Trace block height.
+          minimum: 0
+          example: 20324123
+        blockTimestamp:
+          type: integer
+          description: Trace block timestamp - milliseconds.
+          minimum: 0
+          example: 1755773684012
+        specVersion:
+          type: integer
+          minimum: 0
+          description: Trace runtime spec version.
+          example: 1001
+        blockStatus:
+          $ref: '#/components/schemas/BlockStatus'
+        index:
+          type: integer
+          description: Index of the trace record in the block.
+          minimum: 0
+          example: 23
+        key:
+          type: string
+          description: Storage key.
+        value:
+          type: string
+          description: Storage value.
+        extId:
+          type: string
+          description: External id.
+        method:
+          type: string
+          description: Trace method.
+        parentId:
+          type: string
+          description: Parent storage id.
       required:
-        - data
-        - pagination
+        - id
+        - blockHash
+        - blockParentHash
+        - blockNumber
+        - blockTimestamp
+        - specVersion
+        - blockStatus
+        - index
+        - key
+        - value
+        - extId
+        - method
       example:
-        data:
-          - hash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
-            parentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
-            stateRoot: '0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603'
-            extrinsicRoot: '0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454'
-            number: 27419831
-            timestamp: 1755773684012
-            specVersion: 1006001
-            status: 'finalized'
-            weight:
-              weight: 14
-            extrinsicCount: 2
-            eventCount: 56
-            authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
-        pagination:
-          pageNumber: 1
-          pageSize: 20
-          totalCount: 78
-          hasNext: true
-          hasPrevious: false
+        id: 2567824
+        blockHash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
+        blockParentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
+        blockNumber: 27419831
+        blockTimestamp: 1755773684012
+        specVersion: 1006001
+        blockStatus: 'finalized'
+        index: 0
+        key: '0xab43526'
+        value: '0x1435adde34ff94782'
+        extId: ''
+        method: 'Put'
   responses:
     ErrorResponse:
       description: Internal server error.
-    PaginatedBlockListResponse:
+    PaginatedBlockList:
       description: Response with a paginated list of blocks.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/PaginatedBlockList"
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Block'
+                example:
+                  - hash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
+                    parentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
+                    stateRoot: '0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603'
+                    extrinsicRoot: '0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454'
+                    number: 27419831
+                    timestamp: 1755773684012
+                    specVersion: 1006001
+                    status: 'finalized'
+                    weight:
+                      weight: 14
+                    extrinsicCount: 2
+                    eventCount: 56
+                    authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
+    PaginatedTraceList:
+      description: Response with a paginated list of traces.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trace'
+                example:
+                  - id: 2567824
+                    blockHash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
+                    blockParentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
+                    blockNumber: 27419831
+                    blockTimestamp: 1755773684012
+                    specVersion: 1006001
+                    blockStatus: 'finalized'
+                    index: 0
+                    key: '0xab43526'
+                    value: '0x1435adde34ff94782'
+                    extId: ''
+                    method: 'Put'
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
             
 tags:
   - name: block
@@ -280,8 +462,10 @@ tags:
 paths:
   /blocks:
     get:
-      summary: Get all blocks
-      description: Returns all blocks from the database. It will return a paginated response, ordered ascending by block number.
+      summary: Get blocks
+      description: >
+        Returns all blocks from the database that satisfy the query parameters.
+        It will return a paginated response, ordered descending by block number.
       operationId: getAllBlocks
       tags:
         - block
@@ -289,19 +473,26 @@ paths:
         - $ref: '#/components/parameters/PageNumber'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/BlockStatus'
+        - $ref: '#/components/parameters/MinBlockNumber'
+        - $ref: '#/components/parameters/MaxBlockNumber'
+        - $ref: '#/components/parameters/MinBlockTimestamp'
+        - $ref: '#/components/parameters/MaxBlockTimestamp'
+        - $ref: '#/components/parameters/MinSpecVersion'
+        - $ref: '#/components/parameters/MaxSpecVersion'
+        - $ref: '#/components/parameters/AuthorRef'
       responses:
         '200':
-          $ref: '#/components/responses/PaginatedBlockListResponse'
+          $ref: '#/components/responses/PaginatedBlockList'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /blocks/{block_ref}:
     get:
-      summary: Get block(s) by hash or number.
+      summary: Get block by reference
       description: >
         If a hash is passed, returns the matching block.
-        If a number is given, gives the blocks by that number - could be pruned and/or finalized.
+        If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot.
       operationId: getBlocksByHashOrNumber
       tags:
         - block
@@ -311,6 +502,24 @@ paths:
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
-          $ref: '#/components/responses/PaginatedBlockListResponse'
+          $ref: '#/components/responses/PaginatedBlockList'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/traces:
+    get:
+      summary: Get traces in a block
+      description: >
+        If a hash is passed, returns the traces for the matching block.
+        If a number is passed, gives the traces for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.
+      operationId: getTracesForBlockByHashOrNumber
+      tags:
+        - trace
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedTraceList'
         '500':
           $ref: '#/components/responses/ErrorResponse'

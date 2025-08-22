@@ -17,13 +17,29 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "crystal-api/get-all-blocks",
-          label: "Get all blocks",
+          label: "Get blocks",
           className: "api-method get",
         },
         {
           type: "doc",
           id: "crystal-api/get-blocks-by-hash-or-number",
-          label: "Get block(s) by hash or number.",
+          label: "Get block by reference",
+          className: "api-method get",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "trace",
+      link: {
+        type: "doc",
+        id: "crystal-api/trace",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "crystal-api/get-traces-for-block-by-hash-or-number",
+          label: "Get traces in a block",
           className: "api-method get",
         },
       ],
@@ -40,8 +56,20 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "crystal-api/schemas/ss-58-address",
+          label: "SS58Address",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "crystal-api/schemas/accountidhex",
           label: "AccountIdHex",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "crystal-api/schemas/accountidhexoptionalprefix",
+          label: "AccountIdHexOptionalPrefix",
           className: "schema",
         },
         {
@@ -64,8 +92,8 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
-          id: "crystal-api/schemas/paginatedblocklist",
-          label: "PaginatedBlockList",
+          id: "crystal-api/schemas/trace",
+          label: "Trace",
           className: "schema",
         },
       ],
