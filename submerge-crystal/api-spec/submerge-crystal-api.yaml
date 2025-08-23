@@ -1,4 +1,5 @@
 openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Submerge Crystal API v1
   description: |
@@ -37,6 +38,22 @@ servers:
           - coretime-kusama
           - people-kusama
 
+tags:
+  - name: block
+    description: Operations and items related to blocks.
+  - name: trace
+    description: Operations and items related to block traces.
+  - name: call
+    description: Operations and items related to calls in extrinsics.
+  - name: extrinsic
+    description: Operations and items related to extrinsics.
+  - name: event
+    description: Operations and items related to events.
+  - name: genesis
+    description: Operations and items related to genesis records.
+  - name: metadata
+    description: Operations and items related to metadata.
+
 components:
   parameters:
     PageNumber:
@@ -69,15 +86,8 @@ components:
         - a block number (integer ≥ 0), or
         - a block hash in hex (with or without `0x` prefix, case-insensitive).
       schema:
-        oneOf:
-          - type: integer
-            minimum: 0
-            example: 1234567
-          - type: string
-            pattern: '^(0x)?[A-Fa-f0-9]{64}$'
-            examples:
-              - '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
-              - '91B171BB158E2D3848FA23A9F1C25182FB8E20313B2C1EB49219DA7A70CE90C3'
+        type: string
+        pattern: '^(?:\d+|(0x)?[a-f0-9A-F]{64})$'
     BlockStatus:
       name: status
       in: query
@@ -92,16 +102,18 @@ components:
       required: false
       schema:
         type: integer
+        format: int64
         minimum: 0
         default: 0
       example: 0
     MaxBlockNumber:
-      name: min_block_number
+      name: max_block_number
       in: query
       description: Filter results by maximum block number.
       required: false
       schema:
         type: integer
+        format: int64
         minimum: 0
         default: 0
       example: 0
@@ -112,6 +124,7 @@ components:
       description: Filter results by minimum block timestamp.
       schema:
         type: integer
+        format: int64
         minimum: 0
         default: 0
         example: 1755773684012
@@ -122,6 +135,7 @@ components:
       description: Filter results by maximum block timestamp.
       schema:
         type: integer
+        format: int64
         minimum: 0
         default: 0
         example: 1755773684012
@@ -153,16 +167,126 @@ components:
       schema:
         oneOf:
           - type: string
-            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
-            description: 'A Substrate SS58 address string.'
-            example: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+            pattern: ^[1-9A-HJ-NP-Za-km-z]{47,48}$
+            description: Author's Substrate SS58 address string.
+            example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - type: string
-            pattern: '^(?:0x)?[a-f0-9]{64}$'
-            description: '32-byte Substrate account id encoded in hex with optional `0x` prefix.'
+            pattern: ^(?:0x)?[a-f0-9]{64}$
+            description: Author's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
+            examples:
+              - 0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a
+              - 008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a
+    SignerRef:
+      name: signer
+      in: query
+      description: Filter results by a signer.
+      required: false
+      schema:
+        oneOf:
+          - type: string
+            pattern: ^[1-9A-HJ-NP-Za-km-z]{47,48}$
+            description: Signer's Substrate SS58 address string.
+            example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+          - type: string
+            pattern: ^(?:0x)?[a-f0-9]{64}$
+            description: Signer's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
             examples:
               - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
               - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+    PalletName:
+      name: pallet_name
+      in: query
+      description: Filter results by pallet name. Can be full or partial name. Case insensitive.
+      required: false
+      schema:
+        type: string
+    PalletCallName:
+      name: pallet_call_name
+      in: query
+      description: Filter results by pallet call name. Can be full or partial name. Case insensitive.
+      required: false
+      schema:
+        type: string
+    PalletEventName:
+      name: pallet_event_name
+      in: query
+      description: Filter results by pallet event name. Can be full or partial name. Case insensitive.
+      required: false
+      schema:
+        type: string
+    ItemIndex:
+      name: index
+      in: path
+      description: Index of an item.
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+    ItemId:
+      name: id
+      in: path
+      description: Database id of an item.
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    ExtrinsicRef:
+      name: extrinsic_ref
+      in: path
+      description: Extrinsic reference (hash or database id).
+      required: true
+      schema:
+        oneOf:
+          - type: string
+            pattern: '^0x[a-f0-9]{64}$'
+            description: Extrinsic hash.
+            example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
+          - type: integer
+            format: int64
+            minimum: 0
+            default: 0
+            description: Extrinsic database id.
+            example: 748
+    SpecVersion:
+      name: spec_version
+      in: path
+      description: Spec version path parameter.
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
   schemas:
+    Error:
+      type: object
+      description: Generic error type.
+      properties:
+        code:
+          type: integer
+          minimum: 0
+          description: Error code.
+          example: 0
+        message:
+          type: string
+          description: Error message.
+          example: Internal server error.
+        details:
+          type: object
+          additionalProperties: true
+          description: Error details.
+          example:
+            field: Random value.
+      required:
+        - code
+        - message
+      example:
+        code: 0
+        message: Internal server error.
     PaginationData:
       type: object
       description: Pagination data for paged responses.
@@ -202,28 +326,33 @@ components:
         totalCount: 78
         hasNext: true
         hasPrevious: false
-    SS58Address:
+    HexString:
       type: string
-      pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
-      description: 'A Substrate SS58 address string.'
-      example: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+      description: >
+        Arbitrary hex-encoded string. Accepts any length, with `0x` prefix.
+      pattern: '^0x[0-9a-fA-F]+$'
+      examples:
+        - "0xdeadbeef"
+        - "0x0123456789abcdef"
     AccountIdHex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
       description: '32-byte Substrate account id encoded in hex.'
       example: '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
-    AccountIdHexOptionalPrefix:
-      type: string
-      pattern: '^(?:0x)?[a-f0-9]{64}$'
-      description: '32-byte Substrate account id encoded in hex with optional `0x` prefix.'
-      examples:
-        - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
-        - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
     Hash256Hex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
       description: '32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.'
       example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
+    SignatureHex:
+      type: string
+      description: >
+        Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)
+        and ECDSA (65 bytes → 130 hex chars). `0x`-prefixed.
+      pattern: '^0x([0-9a-fA-F]{128}|[0-9a-fA-F]{130})$'
+      examples:
+        - "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+        - "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
     BlockStatus:
       type: string
       enum: [proposed, finalized, pruned]
@@ -232,6 +361,10 @@ components:
         - `finalized`: Blocks that have been finalized on chain.
         - `proposed`: Blocks that have been authored but not yet finalized.
         - `pruned`: Blocks that have been removed or are no longer accessible.
+    TraceMethod:
+      type: string
+      enum: [Put, ChildPut, ChildKill, ClearPrefix, ChildClearPrefix, Append, Genesis]
+      description: Trace method.
     Block:
       type: object
       description: A block in the blockchain
@@ -248,11 +381,13 @@ components:
           $ref: '#/components/schemas/Hash256Hex'
         number:
           type: integer
+          format: int64
           description: Block height.
           minimum: 0
           example: 20324123
         timestamp:
           type: integer
+          format: int64
           description: Block timestamp - milliseconds.
           minimum: 0
           example: 1755773684012
@@ -303,7 +438,15 @@ components:
         specVersion: 1006001
         status: 'finalized'
         weight:
-          weight: 14
+          normal:
+            refTime: '0'
+            proofSize: '0'
+          mandatory:
+            refTime: '701777135384'
+            "proofSize": '204955'
+          operational:
+            refTime: '0'
+            proofSize: '0'
         extrinsicCount: 2
         eventCount: 56
         authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
@@ -311,26 +454,24 @@ components:
       type: object
       description: A trace record in a block
       tags:
-        - block
         - trace
       properties:
         id:
           type: integer
+          format: int64
+          minimum: 0
           description: Id of the trace record.
+          example: 1
         blockHash:
           $ref: '#/components/schemas/Hash256Hex'
         blockParentHash:
           $ref: '#/components/schemas/Hash256Hex'
         blockNumber:
           type: integer
+          format: int64
           description: Trace block height.
           minimum: 0
           example: 20324123
-        blockTimestamp:
-          type: integer
-          description: Trace block timestamp - milliseconds.
-          minimum: 0
-          example: 1755773684012
         specVersion:
           type: integer
           minimum: 0
@@ -346,15 +487,22 @@ components:
         key:
           type: string
           description: Storage key.
+          example: '26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a'
         value:
           type: string
           description: Storage value.
+          examples:
+            - 'None'
+            - 'Some(02)'
+            - 'Some(9e44c0f852654f5750818ec680e04124e37b711deaa44e739e1d994729508168)'
         extId:
           type: string
-          description: External id.
+          description: External id in hex.
+          examples: 
+            - 'cafe'
+            - 'ee54'
         method:
-          type: string
-          description: Trace method.
+          $ref: '#/components/schemas/TraceMethod'
         parentId:
           type: string
           description: Parent storage id.
@@ -363,7 +511,6 @@ components:
         - blockHash
         - blockParentHash
         - blockNumber
-        - blockTimestamp
         - specVersion
         - blockStatus
         - index
@@ -376,7 +523,6 @@ components:
         blockHash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
         blockParentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
         blockNumber: 27419831
-        blockTimestamp: 1755773684012
         specVersion: 1006001
         blockStatus: 'finalized'
         index: 0
@@ -384,9 +530,364 @@ components:
         value: '0x1435adde34ff94782'
         extId: ''
         method: 'Put'
+    Call:
+      type: object
+      description: A call in an extrinsic.
+      tags:
+        - call
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Database id of the call record.
+          example: 1
+        blockHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        blockNumber:
+          type: integer
+          format: int64
+          description: Call block height.
+          minimum: 0
+          example: 20324123
+        blockTimestamp:
+          type: integer
+          format: int64
+          description: Call block timestamp - milliseconds.
+          minimum: 0
+          example: 1755773684012
+        specVersion:
+          type: integer
+          minimum: 0
+          description: Call runtime spec version.
+          example: 1001
+        blockStatus:
+          $ref: '#/components/schemas/BlockStatus'
+        extrinsicId:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Call extrinsic database id.
+          example: 1
+        extrinsicIndex:
+          type: integer
+          minimum: 0
+          description: Call extrinsic index.
+          example: 0
+        extrinsicHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        parentCallId:
+          oneOf: [{ type: integer, minimum: 0, example: 175 }, { type: 'null' }]
+          description: If a nested call, the call's parent call record id.
+        nestingIndex:
+          type: string
+          description: Submerge-specific nesting identifier for nested calls.
+          example: 'calls::0'
+        palletIndex:
+          type: integer
+          minimum: 0
+          description: Call's pallet index in the metadata.
+          example: 0
+        palletName:
+          type: string
+          description: Call's pallet name in the metadata - capital case.
+          example: Balances
+        palletCallIndex:
+          type: integer
+          minimum: 0
+          description: Call's index in the pallet in the metadata.
+          example: 0
+        palletCallName:
+          type: string
+          description: Call's name name in the pallet in the metadata - capital case.
+          example: ForceTransfer
+        isSuccessful:
+          type: boolean
+          description: Whether the call's extrinsic was successful.
+        args:
+          type: object
+          additionalProperties: true
+          description: Call arguments.
+      required:
+        - id
+        - blockHash
+        - blockNumber
+        - blockTimestamp
+        - specVersion
+        - blockStatus
+        - extrinsicId
+        - extrinsicIndex
+        - extrinsicHash
+        - palletIndex
+        - palletName
+        - palletCallIndex
+        - palletCallName
+        - isSuccessful
+        - args
+      example:
+        id: 1
+        blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
+        blockNumber: 29781585
+        blockTimestamp: 1755935208000
+        specVersion: 1006001
+        blockStatus: finalized
+        extrinsicId: 1
+        extrinsicIndex: 0
+        extrinsicHash: '0x5cffd6624df1b3447bc5aa9db09a414f7b5058ff1b7bc3c53ae564248924fa0a'
+        palletIndex: 2
+        palletName: 'Timestamp'
+        palletCallIndex: 0
+        palletCallName: 'Set'
+        isSuccessful: true
+        args:
+          now: '1755935208000'
+    Event:
+      type: object
+      description: An event in a block.
+      tags:
+        - event
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Id of the event record.
+          example: 1
+        blockHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        blockNumber:
+          type: integer
+          format: int64
+          description: Event block height.
+          minimum: 0
+          example: 29781585
+        blockTimestamp:
+          type: integer
+          format: int64
+          description: Event block timestamp - milliseconds.
+          minimum: 0
+          example: 1755935208000
+        specVersion:
+          type: integer
+          minimum: 0
+          description: Event runtime spec version.
+          example: 1001
+        blockStatus:
+          $ref: '#/components/schemas/BlockStatus'
+        traceIndex:
+          type: integer
+          minimum: 0
+          description: Event trace index.
+          example: 40
+        palletIndex:
+          type: integer
+          minimum: 0
+          description: Event's pallet index in the metadata.
+          example: 0
+        palletName:
+          type: string
+          description: Event's pallet name in the metadata - capital case.
+          example: Balances
+        palletEventIndex:
+          type: integer
+          minimum: 0
+          description: Event's index in the pallet in the metadata.
+          example: 0
+        palletEventName:
+          type: string
+          description: Event's name name in the pallet in the metadata - capital case.
+          example: ForceTransfer
+        extrinsicIndex:
+          type: integer
+          minimum: 0
+          description: Event extrinsic index.
+          example: 0
+        extrinsicHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        phase:
+          type: string
+          description: Event phase.
+          example: ApplyExtrinsic
+        index:
+          type: integer
+          minimum: 0
+          description: Event index in block.
+          example: 0
+        args:
+          type: object
+          additionalProperties: true
+          description: Event arguments.
+      required:
+        - id
+        - blockHash
+        - blockNumber
+        - blockTimestamp
+        - specVersion
+        - blockStatus
+        - traceIndex
+        - palletIndex
+        - palletName
+        - palletEventIndex
+        - palletEventName
+        - extrinsicIndex
+        - extrinsicHash
+        - phase
+        - index
+        - args
+      example:
+        id: 392
+        blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
+        blockNumber: 25000005
+        blockTimestamp: 1726829136000
+        specVersion: 1003000
+        blockStatus: finalized
+        traceIndex: 324
+        palletIndex: 53
+        palletName: 'ParaInclusion'
+        palletEventIndex: 3
+        palletEventName: 'UpwardMessagesReceived'
+        extrinsicIndex: 1
+        extrinsicHash: '0x5cffd6624df1b3447bc5aa9db09a414f7b5058ff1b7bc3c53ae564248924fa0a'
+        phase: ApplyExtrinsic
+        index: 24
+        args:
+          from: '1005'
+          count: '1'
+    Extrinsic:
+      type: object
+      description: An extrinsic in a block.
+      tags:
+        - extrinsic
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Database id of the extrinsic record.
+          example: 1
+        blockHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        blockNumber:
+          type: integer
+          format: int64
+          description: Extrinsic block height.
+          minimum: 0
+          example: 29781585
+        blockTimestamp:
+          type: integer
+          format: int64
+          description: Extrinsic block timestamp - milliseconds.
+          minimum: 0
+          example: 1755935208000
+        specVersion:
+          type: integer
+          minimum: 0
+          description: Extrinsic runtime spec version.
+          example: 1001
+        blockStatus:
+          $ref: '#/components/schemas/BlockStatus'
+        traceIndex:
+          type: integer
+          minimum: 0
+          description: Extrinsic data trace index.
+          example: 40
+        hash:
+          $ref: '#/components/schemas/Hash256Hex'
+        index:
+          type: integer
+          minimum: 0
+          description: Extrinsic index in block.
+        version:
+          type: integer
+          minimum: 0
+          description: Extrinsic version.
+        signer:
+          $ref: '#/components/schemas/HexString'
+          description: SCALE-encoded multiaddress in hex format.
+        signature:
+          $ref: '#/components/schemas/SignatureHex'
+        extra:
+          type: object
+          additionalProperties: true
+          description: Extrinsic extras - checkNonce, checkGenesis, chargeTransactionPayment, etc.
+        isSuccessful:
+          type: boolean
+          description: Whether the extrinsic execution was successful.
+      required:
+        - id
+        - blockHash
+        - blockNumber
+        - blockTimestamp
+        - specVersion
+        - blockStatus
+        - traceIndex
+        - hash
+        - index
+        - version
+        - isSuccessful
+      example:
+        id: 392
+        blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
+        blockNumber: 25000005
+        blockTimestamp: 1726829136000
+        specVersion: 1003000
+        blockStatus: finalized
+        traceIndex: 324
+        hash: '0x35efc78bd55f0a7425d6f3adb2c7990f5c6ea42c186a9ec3103045a152f12f48'
+        index: 1
+        version: 3
+        signer: '0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea262'
+        signature: '0x01ae6408aef67c5e6d1a5b6f8bc8bb43af4a2f322f53430a9c89e7ffbd16b1006dc62b91ed38ca87ed826431eb6858da720a89dd8841dd2fed7f80d45a48ad098f'
+        extra:
+          checkNonce: '295'
+          checkMortality:
+            type: 'Mortal229'
+            value: '3'
+          checkMetadataHash:
+            mode:
+              type: 'Disabled'
+          chargeTransactionPayment: '0'
+        isSuccessful: true
+    GenesisRecord:
+      type: object
+      description: A storage item initialized at genesis.
+      tags:
+        - genesis
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Database id.
+          example: 1
+        key:
+          $ref: '#/components/schemas/HexString'
+        value:
+          $ref: '#/components/schemas/HexString'
+      required: [id, key, value]
+    MetadataSummary:
+      type: object
+      description: Basic fields to define a runtime version metadata.
+      tags:
+        - metadata
+      properties:
+        specVersion:
+          type: integer
+          minimum: 0
+          description: Metadata tuntime spec version.
+          example: 1001
+        version:
+          type: integer
+          minimum: 1
+          description: Metadata version.
+          example: 14
   responses:
     ErrorResponse:
-      description: Internal server error.
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     PaginatedBlockList:
       description: Response with a paginated list of blocks.
       content:
@@ -408,7 +909,15 @@ components:
                     specVersion: 1006001
                     status: 'finalized'
                     weight:
-                      weight: 14
+                      normal:
+                        refTime: '0'
+                        proofSize: '0'
+                      mandatory:
+                        refTime: '701777135384'
+                        "proofSize": '204955'
+                      operational:
+                        refTime: '0'
+                        proofSize: '0'
                     extrinsicCount: 2
                     eventCount: 56
                     authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
@@ -433,7 +942,6 @@ components:
                     blockHash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
                     blockParentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
                     blockNumber: 27419831
-                    blockTimestamp: 1755773684012
                     specVersion: 1006001
                     blockStatus: 'finalized'
                     index: 0
@@ -446,19 +954,163 @@ components:
             required:
               - data
               - pagination
-            
-tags:
-  - name: block
-    description: Operations and items related to blocks.
-  - name: trace
-    description: Operations and items related to block traces.
-  - name: call
-    description: Operations and items related to calls in extrinsics.
-  - name: extrinsic
-    description: Operations and items related to extrinsics.
-  - name: event
-    description: Operations and items related to events.
-
+    PaginatedCallList:
+      description: Response with a paginated list of calls.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Call'
+                example:
+                  - id: 1
+                    blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
+                    blockNumber: 29781585
+                    blockTimestamp: 1755935208000
+                    specVersion: 1006001
+                    blockStatus: finalized
+                    extrinsicId: 1
+                    extrinsicIndex: 0
+                    extrinsicHash: '0x5cffd6624df1b3447bc5aa9db09a414f7b5058ff1b7bc3c53ae564248924fa0a'
+                    palletIndex: 2
+                    palletName: 'Timestamp'
+                    palletCallIndex: 0
+                    palletCallName: 'Set'
+                    isSuccessful: true
+                    args:
+                      now: '1755935208000'
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
+    PaginatedEventList:
+      description: Response with a paginated list of events.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+                example:
+                  - id: 392
+                    blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
+                    blockNumber: 25000005
+                    blockTimestamp: 1726829136000
+                    specVersion: 1003000
+                    blockStatus: finalized
+                    traceIndex: 324
+                    palletIndex: 53
+                    palletName: 'ParaInclusion'
+                    palletEventIndex: 3
+                    palletEventName: 'UpwardMessagesReceived'
+                    extrinsicIndex: 1
+                    extrinsicHash: '0x5cffd6624df1b3447bc5aa9db09a414f7b5058ff1b7bc3c53ae564248924fa0a'
+                    phase: ApplyExtrinsic
+                    index: 24
+                    args:
+                      from: '1005'
+                      count: '1'
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
+    PaginatedExtrinsicList:
+      description: Response with a paginated list of extrinsics.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Extrinsic'
+                example:
+                  - id: 392
+                    blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
+                    blockNumber: 25000005
+                    blockTimestamp: 1726829136000
+                    specVersion: 1003000
+                    blockStatus: finalized
+                    traceIndex: 324
+                    hash: '0x35efc78bd55f0a7425d6f3adb2c7990f5c6ea42c186a9ec3103045a152f12f48'
+                    index: 1
+                    version: 3
+                    signer: '0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea262'
+                    signature: '0x01ae6408aef67c5e6d1a5b6f8bc8bb43af4a2f322f53430a9c89e7ffbd16b1006dc62b91ed38ca87ed826431eb6858da720a89dd8841dd2fed7f80d45a48ad098f'
+                    extra:
+                      checkNonce: '295'
+                      checkMortality:
+                        type: 'Mortal229'
+                        value: '3'
+                      checkMetadataHash:
+                        mode:
+                          type: 'Disabled'
+                      chargeTransactionPayment: '0'
+                    isSuccessful: true
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
+    PaginatedGenesisRecordList:
+      description: Response with a paginated list of genesis records.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GenesisRecord'
+                example:
+                  - id: 392
+                    key: '0x9c5d795d0297be56027a4b2464e333979c5d795d0297be56027a4b2464e333970daec67e6a8ba64c55a539a8e14bd50a93f5188777f0d34bc7c69f77504ad823'
+                    value: '0x002acfc5745300000000000000000000'
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
+    PaginatedMetadataSummaryList:
+      description: Response with a paginated list of metadata summaries.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataSummary'
+                example:
+                  - spec_version: 1001
+                    version: 14
+              pagination:
+                $ref: '#/components/schemas/PaginationData'
+            required:
+              - data
+              - pagination
+    MetadataJSONResponse:
+      description: Complete metadata in JSON representation.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              schema:
+                type: object
+                additionalProperties: true
+            example: [1635018093, { "V14": {}}]
 paths:
   /blocks:
     get:
@@ -466,7 +1118,7 @@ paths:
       description: >
         Returns all blocks from the database that satisfy the query parameters.
         It will return a paginated response, ordered descending by block number.
-      operationId: getAllBlocks
+      operationId: getBlocks
       tags:
         - block
       parameters:
@@ -493,7 +1145,7 @@ paths:
       description: >
         If a hash is passed, returns the matching block.
         If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot.
-      operationId: getBlocksByHashOrNumber
+      operationId: getBlock
       tags:
         - block
       parameters:
@@ -511,7 +1163,7 @@ paths:
       description: >
         If a hash is passed, returns the traces for the matching block.
         If a number is passed, gives the traces for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.
-      operationId: getTracesForBlockByHashOrNumber
+      operationId: getBlockTraces
       tags:
         - trace
       parameters:
@@ -521,5 +1173,385 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedTraceList'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/calls:
+    get:
+      summary: Get calls in a block
+      description: >
+        If a hash is passed, returns the calls for the matching block.
+        If a number is passed, gives the calls for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.
+      operationId: getBlockCalls
+      tags:
+        - call
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PalletName'
+        - $ref: '#/components/parameters/PalletCallName'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedCallList'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/events:
+    get:
+      summary: Get events in a block
+      description: >
+        If a hash is passed, returns the events for the matching block.
+        If a number is passed, gives the events for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.
+      operationId: getBlockEvents
+      tags:
+        - event
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PalletName'
+        - $ref: '#/components/parameters/PalletEventName'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedEventList'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/events/{index}:
+    get:
+      summary: Get block event by index
+      description: Returns an event in a block by its index.
+      operationId: getBlockEvent
+      tags:
+        - event
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/extrinsics:
+    get:
+      summary: Get extrinsics in a block
+      description: >
+        If a hash is passed, returns the extrinsics for the matching block.
+        If a number is passed, gives the extrinsics for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.
+      operationId: getBlockExtrinsics
+      tags:
+        - extrinsic
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SignerRef'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedExtrinsicList'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/extrinsics/{index}:
+    get:
+      summary: Get block extrinsic by index
+      description: Returns an extrinsic in a block by its index.
+      operationId: getBlockExtrinsic
+      tags:
+        - extrinsic
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Extrinsic'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/extrinsics/{index}/calls:
+    get:
+      summary: Get block extrinsic calls
+      description: Returns the calls for extrinsic in a block by its index.
+      operationId: getBlockExtrinsicCalls
+      tags:
+        - call
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedCallList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /blocks/{block_ref}/extrinsics/{index}/events:
+    get:
+      summary: Get block extrinsic events
+      description: Returns the events for extrinsic in a block by its index.
+      operationId: getBlockExtrinsicEvents
+      tags:
+        - event
+      parameters:
+        - $ref: '#/components/parameters/BlockRef'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedEventList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /traces:
+    get:
+      summary: Get traces
+      description: >
+        Returns all traces from the database that satisfy the query parameters.
+        It will return a paginated response, ordered descending by trace id.
+      operationId: getTraces
+      tags:
+        - trace
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: key
+          description: Trace key.
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/HexString'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedTraceList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /traces/{id}:
+    get:
+      summary: Get trace by id
+      description: Returns a trace by its database id.
+      operationId: getTraceById
+      tags:
+        - trace
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Trace'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /calls:
+    get:
+      summary: Get calls
+      description: >
+        Returns all calls from the database that satisfy the query parameters.
+        It will return a paginated response, ordered descending by block number, then call id.
+      operationId: getCalls
+      tags:
+        - call
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/MinBlockNumber'
+        - $ref: '#/components/parameters/MaxBlockNumber'
+        - $ref: '#/components/parameters/MinBlockTimestamp'
+        - $ref: '#/components/parameters/MaxBlockTimestamp'
+        - $ref: '#/components/parameters/MinSpecVersion'
+        - $ref: '#/components/parameters/MaxSpecVersion'
+        - $ref: '#/components/parameters/PalletName'
+        - $ref: '#/components/parameters/PalletCallName'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedCallList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /calls/{id}:
+    get:
+      summary: Get call by id
+      description: Returns a call by its database id.
+      operationId: getCallById
+      tags:
+        - call
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Call'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /events:
+    get:
+      summary: Get events
+      description: >
+        Returns all events from the database that satisfy the query parameters.
+        It will return a paginated response, ordered descending by block number, then ascending event index.
+      operationId: getEvents
+      tags:
+        - event
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/MinBlockNumber'
+        - $ref: '#/components/parameters/MaxBlockNumber'
+        - $ref: '#/components/parameters/MinBlockTimestamp'
+        - $ref: '#/components/parameters/MaxBlockTimestamp'
+        - $ref: '#/components/parameters/MinSpecVersion'
+        - $ref: '#/components/parameters/MaxSpecVersion'
+        - $ref: '#/components/parameters/PalletName'
+        - $ref: '#/components/parameters/PalletEventName'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedEventList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /events/{id}:
+    get:
+      summary: Get event by id
+      description: Returns an event by its database id.
+      operationId: getEventById
+      tags:
+        - event
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /extrinsics:
+    get:
+      summary: Get extrinsics
+      description: >
+        Returns all extrinsics from the database that satisfy the query parameters.
+        It will return a paginated response, ordered descending by block number, then ascending extrinsic index.
+      operationId: getExtrinsics
+      tags:
+        - extrinsic
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/MinBlockNumber'
+        - $ref: '#/components/parameters/MaxBlockNumber'
+        - $ref: '#/components/parameters/MinBlockTimestamp'
+        - $ref: '#/components/parameters/MaxBlockTimestamp'
+        - $ref: '#/components/parameters/MinSpecVersion'
+        - $ref: '#/components/parameters/MaxSpecVersion'
+        - $ref: '#/components/parameters/SignerRef'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedExtrinsicList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /extrinsics/{extrinsic_ref}:
+    get:
+      summary: Get extrinsic by reference
+      description: Returns an extrinsic by its hash or database id.
+      operationId: getExtrinsicByRef
+      tags:
+        - extrinsic
+      parameters:
+        - $ref: '#/components/parameters/ExtrinsicRef'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Extrinsic'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /extrinsics/{extrinsic_ref}/calls:
+    get:
+      summary: Get extrinsic calls
+      description: Returns the calls for extrinsic by reference.
+      operationId: getExtrinsicCalls
+      tags:
+        - call
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/ExtrinsicRef'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedCallList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /extrinsics/{extrinsic_ref}/events:
+    get:
+      summary: Get extrinsic events
+      description: Returns the events for extrinsic by reference.
+      operationId: getExtrinsicEvents
+      tags:
+        - event
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/ExtrinsicRef'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedEventList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /genesis:
+    get:
+      summary: Get genesis records
+      description: Returns the genesis storage records.
+      operationId: getGenesis
+      tags:
+        - genesis
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedGenesisRecordList'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /metadata:
+    get:
+      summary: Get metadata list
+      description: Returns a list of metadata summary for all runtime versions.
+      operationId: getMetadataList
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedMetadataSummaryList'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /metadata/{spec_version}/json:
+    get:
+      summary: Get metadata JSON
+      description: Returns the JSON for a spec version.
+      operationId: getMetadataJSON
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+      responses:
+        '200':
+          $ref: '#/components/responses/MetadataJSONResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'

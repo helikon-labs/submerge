@@ -1,0 +1,34 @@
+---
+id: hexstring
+title: "HexString"
+description: "Arbitrary hex-encoded string. Accepts any length, with `0x` prefix."
+sidebar_label: "HexString"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: "string"
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"HexString"}
+>
+</Heading>
+
+
+
+Arbitrary hex-encoded string. Accepts any length, with `0x` prefix.
+
+
+<Schema
+  schema={{"type":"string","description":"Arbitrary hex-encoded string. Accepts any length, with `0x` prefix.\n","pattern":"^0x[0-9a-fA-F]+$","examples":["0xdeadbeef","0x0123456789abcdef"],"title":"HexString"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            

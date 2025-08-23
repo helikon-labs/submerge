@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS trace
     CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX IF NOT EXISTS trace_idx_number ON trace (block_number);
-CREATE INDEX IF NOT EXISTS trace_idx_hash ON trace (block_hash);
+CREATE INDEX IF NOT EXISTS trace_idx_block_number ON trace (block_number);
+CREATE INDEX IF NOT EXISTS trace_idx_block_hash ON trace (block_hash);
 CREATE INDEX IF NOT EXISTS trace_idx_key ON trace (key);
 
 CREATE TABLE trace_0_500000 PARTITION OF trace FOR VALUES FROM (0) TO (500000);

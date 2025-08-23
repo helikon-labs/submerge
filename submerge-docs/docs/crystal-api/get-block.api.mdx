@@ -1,0 +1,72 @@
+---
+id: get-block
+title: "Get block by reference"
+description: "If a hash is passed, returns the matching block. If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot."
+sidebar_label: "Get block by reference"
+hide_title: true
+hide_table_of_contents: true
+api: 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
+sidebar_class_name: "get api-method"
+info_path: crystal-api/submerge-crystal-api-v-1
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get block by reference"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/blocks/{block_ref}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+If a hash is passed, returns the matching block. If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"block_ref","in":"path","required":true,"description":"Block reference. Either: - a block number (integer ≥ 0), or - a block hash in hex (with or without `0x` prefix, case-insensitive).\n","schema":{"type":"string","pattern":"^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"}},{"name":"page_number","in":"query","description":"Page number to retrieve.","required":false,"schema":{"type":"integer","minimum":1,"default":1},"example":1},{"name":"page_size","in":"query","description":"Number of items per page to be returned.","required":false,"schema":{"type":"integer","minimum":1,"maximum":100,"default":25},"example":25}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Response with a paginated list of blocks.","content":{"application/json":{"schema":{"type":"object","properties":{"data":{"type":"array","items":{"type":"object","description":"A block in the blockchain","tags":["block"],"properties":{"hash":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"parentHash":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"stateRoot":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"extrinsicRoot":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"number":{"type":"integer","format":"int64","description":"Block height.","minimum":0,"example":20324123},"timestamp":{"type":"integer","format":"int64","description":"Block timestamp - milliseconds.","minimum":0,"example":1755773684012},"specVersion":{"type":"integer","minimum":0,"description":"Runtime spec version.","example":1001},"status":{"type":"string","enum":["proposed","finalized","pruned"],"description":"Block status. - `finalized`: Blocks that have been finalized on chain. - `proposed`: Blocks that have been authored but not yet finalized. - `pruned`: Blocks that have been removed or are no longer accessible.\n","title":"BlockStatus"},"weight":{"type":"object","additionalProperties":true,"description":"Block weight - varying schema depending on runtime metadata."},"extrinsicCount":{"type":"integer","minimum":0,"description":"Number of extrinsics in the block.","example":3},"eventCount":{"type":"integer","minimum":0,"description":"Number of events in the block.","example":12},"authorAccountId":{"description":"Authoring validator account id.","type":"string","pattern":"^0x[a-f0-9]{64}$","example":"0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a","title":"AccountIdHex"}},"required":["hash","parentHash","stateRoot","extrinsicRoot","number","timestamp","specVersion","status","weight","extrinsicCount","eventCount","authorAccountId"],"example":{"hash":"0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8","parentHash":"0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b","stateRoot":"0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603","extrinsicRoot":"0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454","number":27419831,"timestamp":1755773684012,"specVersion":1006001,"status":"finalized","weight":{"normal":{"refTime":"0","proofSize":"0"},"mandatory":{"refTime":"701777135384","proofSize":"204955"},"operational":{"refTime":"0","proofSize":"0"}},"extrinsicCount":2,"eventCount":56,"authorAccountId":"0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"},"title":"Block"},"example":[{"hash":"0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8","parentHash":"0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b","stateRoot":"0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603","extrinsicRoot":"0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454","number":27419831,"timestamp":1755773684012,"specVersion":1006001,"status":"finalized","weight":{"normal":{"refTime":"0","proofSize":"0"},"mandatory":{"refTime":"701777135384","proofSize":"204955"},"operational":{"refTime":"0","proofSize":"0"}},"extrinsicCount":2,"eventCount":56,"authorAccountId":"0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"}]},"pagination":{"type":"object","description":"Pagination data for paged responses.","properties":{"pageNumber":{"type":"integer","description":"Current page number.","minimum":1,"example":1},"pageSize":{"type":"integer","description":"Number of items per page.","minimum":1,"example":1},"totalCount":{"type":"integer","description":"Total number of items across all pages.","minimum":0,"example":78},"hasNext":{"type":"boolean","description":"Whether there is a next page.","example":true},"hasPrevious":{"type":"boolean","description":"Whether there is a previous page.","example":false}},"required":["pageNumber","pageSize","totalCount","hasNext","hasPrevious"],"example":{"pageNumber":1,"pageSize":20,"totalCount":78,"hasNext":true,"hasPrevious":false},"title":"PaginationData"}},"required":["data","pagination"]}}}},"500":{"description":"Error","content":{"application/json":{"schema":{"type":"object","description":"Generic error type.","properties":{"code":{"type":"integer","minimum":0,"description":"Error code.","example":0},"message":{"type":"string","description":"Error message.","example":"Internal server error."},"details":{"type":"object","additionalProperties":true,"description":"Error details.","example":{"field":"Random value."}}},"required":["code","message"],"example":{"code":0,"message":"Internal server error."},"title":"Error"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

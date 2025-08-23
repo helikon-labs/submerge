@@ -1,0 +1,72 @@
+---
+id: get-block-extrinsics
+title: "Get extrinsics in a block"
+description: "If a hash is passed, returns the extrinsics for the matching block. If a number is passed, gives the extrinsics for the latest block by that number - could be multiple blocks if there's a pruned block in that slot."
+sidebar_label: "Get extrinsics in a block"
+hide_title: true
+hide_table_of_contents: true
+api: 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
+sidebar_class_name: "get api-method"
+info_path: crystal-api/submerge-crystal-api-v-1
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get extrinsics in a block"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/blocks/{block_ref}/extrinsics"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+If a hash is passed, returns the extrinsics for the matching block. If a number is passed, gives the extrinsics for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"block_ref","in":"path","required":true,"description":"Block reference. Either: - a block number (integer ≥ 0), or - a block hash in hex (with or without `0x` prefix, case-insensitive).\n","schema":{"type":"string","pattern":"^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"}},{"name":"page_number","in":"query","description":"Page number to retrieve.","required":false,"schema":{"type":"integer","minimum":1,"default":1},"example":1},{"name":"page_size","in":"query","description":"Number of items per page to be returned.","required":false,"schema":{"type":"integer","minimum":1,"maximum":100,"default":25},"example":25},{"name":"signer","in":"query","description":"Filter results by a signer.","required":false,"schema":{"oneOf":[{"type":"string","pattern":"^[1-9A-HJ-NP-Za-km-z]{47,48}$","description":"Signer's Substrate SS58 address string.","example":"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"},{"type":"string","pattern":"^(?:0x)?[a-f0-9]{64}$","description":"Signer's 32-byte Substrate account id encoded in hex with optional `0x` prefix.","examples":["0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a","008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a"]}]}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Response with a paginated list of extrinsics.","content":{"application/json":{"schema":{"type":"object","properties":{"data":{"type":"array","items":{"type":"object","description":"An extrinsic in a block.","tags":["extrinsic"],"properties":{"id":{"type":"integer","format":"int64","minimum":0,"description":"Database id of the extrinsic record.","example":1},"blockHash":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"blockNumber":{"type":"integer","format":"int64","description":"Extrinsic block height.","minimum":0,"example":29781585},"blockTimestamp":{"type":"integer","format":"int64","description":"Extrinsic block timestamp - milliseconds.","minimum":0,"example":1755935208000},"specVersion":{"type":"integer","minimum":0,"description":"Extrinsic runtime spec version.","example":1001},"blockStatus":{"type":"string","enum":["proposed","finalized","pruned"],"description":"Block status. - `finalized`: Blocks that have been finalized on chain. - `proposed`: Blocks that have been authored but not yet finalized. - `pruned`: Blocks that have been removed or are no longer accessible.\n","title":"BlockStatus"},"traceIndex":{"type":"integer","minimum":0,"description":"Extrinsic data trace index.","example":40},"hash":{"type":"string","pattern":"^0x[a-f0-9]{64}$","description":"32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.","example":"0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3","title":"Hash256Hex"},"index":{"type":"integer","minimum":0,"description":"Extrinsic index in block."},"version":{"type":"integer","minimum":0,"description":"Extrinsic version."},"signer":{"description":"SCALE-encoded multiaddress in hex format.","type":"string","pattern":"^0x[0-9a-fA-F]+$","examples":["0xdeadbeef","0x0123456789abcdef"],"title":"HexString"},"signature":{"type":"string","description":"Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars) and ECDSA (65 bytes → 130 hex chars). `0x`-prefixed.\n","pattern":"^0x([0-9a-fA-F]{128}|[0-9a-fA-F]{130})$","examples":["0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab","0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"],"title":"SignatureHex"},"extra":{"type":"object","additionalProperties":true,"description":"Extrinsic extras - checkNonce, checkGenesis, chargeTransactionPayment, etc."},"isSuccessful":{"type":"boolean","description":"Whether the extrinsic execution was successful."}},"required":["id","blockHash","blockNumber","blockTimestamp","specVersion","blockStatus","traceIndex","hash","index","version","isSuccessful"],"example":{"id":392,"blockHash":"0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51","blockNumber":25000005,"blockTimestamp":1726829136000,"specVersion":1003000,"blockStatus":"finalized","traceIndex":324,"hash":"0x35efc78bd55f0a7425d6f3adb2c7990f5c6ea42c186a9ec3103045a152f12f48","index":1,"version":3,"signer":"0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea262","signature":"0x01ae6408aef67c5e6d1a5b6f8bc8bb43af4a2f322f53430a9c89e7ffbd16b1006dc62b91ed38ca87ed826431eb6858da720a89dd8841dd2fed7f80d45a48ad098f","extra":{"checkNonce":"295","checkMortality":{"type":"Mortal229","value":"3"},"checkMetadataHash":{"mode":{"type":"Disabled"}},"chargeTransactionPayment":"0"},"isSuccessful":true},"title":"Extrinsic"},"example":[{"id":392,"blockHash":"0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51","blockNumber":25000005,"blockTimestamp":1726829136000,"specVersion":1003000,"blockStatus":"finalized","traceIndex":324,"hash":"0x35efc78bd55f0a7425d6f3adb2c7990f5c6ea42c186a9ec3103045a152f12f48","index":1,"version":3,"signer":"0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea262","signature":"0x01ae6408aef67c5e6d1a5b6f8bc8bb43af4a2f322f53430a9c89e7ffbd16b1006dc62b91ed38ca87ed826431eb6858da720a89dd8841dd2fed7f80d45a48ad098f","extra":{"checkNonce":"295","checkMortality":{"type":"Mortal229","value":"3"},"checkMetadataHash":{"mode":{"type":"Disabled"}},"chargeTransactionPayment":"0"},"isSuccessful":true}]},"pagination":{"type":"object","description":"Pagination data for paged responses.","properties":{"pageNumber":{"type":"integer","description":"Current page number.","minimum":1,"example":1},"pageSize":{"type":"integer","description":"Number of items per page.","minimum":1,"example":1},"totalCount":{"type":"integer","description":"Total number of items across all pages.","minimum":0,"example":78},"hasNext":{"type":"boolean","description":"Whether there is a next page.","example":true},"hasPrevious":{"type":"boolean","description":"Whether there is a previous page.","example":false}},"required":["pageNumber","pageSize","totalCount","hasNext","hasPrevious"],"example":{"pageNumber":1,"pageSize":20,"totalCount":78,"hasNext":true,"hasPrevious":false},"title":"PaginationData"}},"required":["data","pagination"]}}}},"500":{"description":"Error","content":{"application/json":{"schema":{"type":"object","description":"Generic error type.","properties":{"code":{"type":"integer","minimum":0,"description":"Error code.","example":0},"message":{"type":"string","description":"Error message.","example":"Internal server error."},"details":{"type":"object","additionalProperties":true,"description":"Error details.","example":{"field":"Random value."}}},"required":["code","message"],"example":{"code":0,"message":"Internal server error."},"title":"Error"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

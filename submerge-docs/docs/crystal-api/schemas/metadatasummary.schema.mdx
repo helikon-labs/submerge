@@ -1,0 +1,33 @@
+---
+id: metadatasummary
+title: "MetadataSummary"
+description: "Basic fields to define a runtime version metadata."
+sidebar_label: "MetadataSummary"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"specVersion":1001,"version":14}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MetadataSummary"}
+>
+</Heading>
+
+
+
+Basic fields to define a runtime version metadata.
+
+<Schema
+  schema={{"type":"object","description":"Basic fields to define a runtime version metadata.","tags":["metadata"],"properties":{"specVersion":{"type":"integer","minimum":0,"description":"Metadata tuntime spec version.","example":1001},"version":{"type":"integer","minimum":1,"description":"Metadata version.","example":14}},"title":"MetadataSummary"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            

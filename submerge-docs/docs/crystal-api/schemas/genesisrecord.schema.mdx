@@ -1,0 +1,33 @@
+---
+id: genesisrecord
+title: "GenesisRecord"
+description: "A storage item initialized at genesis."
+sidebar_label: "GenesisRecord"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"id":1,"key":"string","value":"string"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"GenesisRecord"}
+>
+</Heading>
+
+
+
+A storage item initialized at genesis.
+
+<Schema
+  schema={{"type":"object","description":"A storage item initialized at genesis.","tags":["genesis"],"properties":{"id":{"type":"integer","format":"int64","minimum":1,"description":"Database id.","example":1},"key":{"type":"string","description":"Arbitrary hex-encoded string. Accepts any length, with `0x` prefix.\n","pattern":"^0x[0-9a-fA-F]+$","examples":["0xdeadbeef","0x0123456789abcdef"],"title":"HexString"},"value":{"type":"string","description":"Arbitrary hex-encoded string. Accepts any length, with `0x` prefix.\n","pattern":"^0x[0-9a-fA-F]+$","examples":["0xdeadbeef","0x0123456789abcdef"],"title":"HexString"}},"required":["id","key","value"],"title":"GenesisRecord"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            

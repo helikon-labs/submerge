@@ -1,0 +1,33 @@
+---
+id: error
+title: "Error"
+description: "Generic error type."
+sidebar_label: "Error"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"code":0,"message":"Internal server error."}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Error"}
+>
+</Heading>
+
+
+
+Generic error type.
+
+<Schema
+  schema={{"type":"object","description":"Generic error type.","properties":{"code":{"type":"integer","minimum":0,"description":"Error code.","example":0},"message":{"type":"string","description":"Error message.","example":"Internal server error."},"details":{"type":"object","additionalProperties":true,"description":"Error details.","example":{"field":"Random value."}}},"required":["code","message"],"example":{"code":0,"message":"Internal server error."},"title":"Error"}}
+  schemaType={"response"}
+>
+  
+</Schema>
+            
