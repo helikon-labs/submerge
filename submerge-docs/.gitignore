@@ -1,14 +1,16 @@
-# Dependencies
+# dependencies
 /node_modules
 
-# Production
+# production
 /build
 
-# Generated files
+# generated files
 .docusaurus
 .cache-loader
 
-# Misc
+# generated api docs
+
+# misc
 .DS_Store
 .env.local
 .env.development.local
