@@ -39,20 +39,22 @@ servers:
           - people-kusama
 
 tags:
+  - name: system
+    description: System-related endpoints.
   - name: block
-    description: Operations and items related to blocks.
+    description: Endpoints related to blocks.
   - name: trace
-    description: Operations and items related to block traces.
+    description: Endpoints related to block traces.
   - name: call
-    description: Operations and items related to calls in extrinsics.
+    description: Endpoints related to calls in extrinsics.
   - name: extrinsic
-    description: Operations and items related to extrinsics.
+    description: Endpoints related to extrinsics.
   - name: event
-    description: Operations and items related to events.
+    description: Endpoints related to events.
   - name: genesis
-    description: Operations and items related to genesis records.
+    description: Endpoints related to genesis records.
   - name: metadata
-    description: Operations and items related to metadata.
+    description: Endpoints related to metadata.
 
 components:
   parameters:
@@ -104,7 +106,6 @@ components:
         type: integer
         format: int64
         minimum: 0
-        default: 0
       example: 0
     MaxBlockNumber:
       name: max_block_number
@@ -115,7 +116,6 @@ components:
         type: integer
         format: int64
         minimum: 0
-        default: 0
       example: 0
     MinBlockTimestamp:
       name: min_block_timestamp
@@ -126,7 +126,6 @@ components:
         type: integer
         format: int64
         minimum: 0
-        default: 0
         example: 1755773684012
     MaxBlockTimestamp:
       name: max_block_timestamp
@@ -137,7 +136,6 @@ components:
         type: integer
         format: int64
         minimum: 0
-        default: 0
         example: 1755773684012
     MinSpecVersion:
       name: min_spec_version
@@ -147,7 +145,6 @@ components:
       schema:
         type: integer
         minimum: 0
-        default: 0
       example: 0
     MaxSpecVersion:
       name: max_spec_version
@@ -157,7 +154,6 @@ components:
       schema:
         type: integer
         minimum: 0
-        default: 0
       example: 0
     AuthorRef:
       name: author
@@ -171,7 +167,7 @@ components:
             description: Author's Substrate SS58 address string.
             example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - type: string
-            pattern: ^(?:0x)?[a-f0-9]{64}$
+            pattern: ^(?:0x)?[0-9a-fA-F]{64}$
             description: Author's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
             examples:
               - 0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a
@@ -188,7 +184,7 @@ components:
             description: Signer's Substrate SS58 address string.
             example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - type: string
-            pattern: ^(?:0x)?[a-f0-9]{64}$
+            pattern: ^(?:0x)?[0-9a-fA-F]{64}$
             description: Signer's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
             examples:
               - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
@@ -222,7 +218,6 @@ components:
       schema:
         type: integer
         minimum: 0
-        default: 0
       example: 0
     ItemId:
       name: id
@@ -232,7 +227,6 @@ components:
       schema:
         type: integer
         minimum: 1
-        default: 1
       example: 1
     ExtrinsicRef:
       name: extrinsic_ref
@@ -242,13 +236,12 @@ components:
       schema:
         oneOf:
           - type: string
-            pattern: '^0x[a-f0-9]{64}$'
+            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
             description: Extrinsic hash.
             example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
           - type: integer
             format: int64
             minimum: 0
-            default: 0
             description: Extrinsic database id.
             example: 748
     SpecVersion:
@@ -259,7 +252,6 @@ components:
       schema:
         type: integer
         minimum: 0
-        default: 0
       example: 0
   schemas:
     Error:
@@ -287,6 +279,135 @@ components:
       example:
         code: 0
         message: Internal server error.
+    WorkerStatus:
+      type: object
+      description: Current status of a single indexer worker.
+      required: [id, state, from, to, current, blocksPerSec]
+      properties:
+        id:
+          type: string
+          example: 'backfill-3'
+        state:
+          type: string
+          enum: [idle, indexing, paused, error, stopping]
+        from:
+          type: integer
+          format: int64
+          description: Start block number.
+          minimum: 0
+        to:
+          type: integer
+          format: int64
+          description: Target block number.
+          minimum: 0
+        current:
+          type: integer
+          format: int64
+          description: Current block number being indexed.
+          minimum: 0
+        blocksPerSec:
+          type: number
+          description: Indexing speed of the worker.
+          minimum: 0
+      example:
+        id: 'backfill-3'
+        state: indexing
+        from: 0
+        to: 15243769
+        current: 3102
+        blocksPerSec: 15
+    ServiceInfo:
+      type: object
+      description: Basic indexer information.
+      required: [name, version, uptimeSeconds, startedAt, chain]
+      properties:
+        name:
+          type: string
+          description: Instance name.
+          example: 'Submerge Crystal'
+        version:
+          type: string
+          description: Version of the Crystal binary.
+          example: '1.0.0'
+        uptimeSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 62
+        startedAt:
+          type: integer
+          format: int64
+          description: Start time epoch milliseconds.
+          example: 1756009805000
+        chain:
+          type: string
+          description: Blockchain name.
+          example: polkadot
+      example:
+        name: 'submerge-crystal-01'
+        version: '1.0.0'
+        uptimeSeconds: 62
+        startedAt: 1756009805000
+        chain: 'polkadot'
+    ServiceHealth:
+      type: object
+      description: Service health summary.
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, error]
+        reason:
+          type: string
+          nullable: true
+          description: Short machine-readable reason for non-OK states.
+      example:
+        status: ok
+    BlockSummary:
+      type: object
+      required: [number, hash, timestamp]
+      description: Basic information about a block.
+      properties:
+        number:
+          type: integer
+          format: int64
+          minimum: 0
+        hash:
+          $ref: '#/components/schemas/Hash256Hex'
+        parentHash:
+          $ref: '#/components/schemas/Hash256Hex'
+        timestamp:
+          type: integer
+          format: int64
+          description: Block timestamp.
+          minimum: 0
+      example:
+        number: 29793989
+        hash: '0x504303740c518bbffb81efbac64974e5dbb90640e364e7606bdc2e4b5fbac1c3'
+        parentHash: '0x056c65c83840f75140aadc78d1e9fa604b73ab8b5db684f64774293434b9d6b3'
+        timestamp: 1756009805000
+    IndexerTip:
+      type: object
+      description: The last best and finalized blocks received and written/committed by Crystal.
+      required: [best, finalized, indexed]
+      properties:
+        best:
+          description: Current best block on the blockchain.
+          $ref: '#/components/schemas/BlockSummary'
+        finalized:
+          description: Current finalized block on the blockchain.
+          $ref: '#/components/schemas/BlockSummary'
+        indexed:
+          type: object
+          description: What Crystal has fully written/committed locally.
+          required: [best, finalized]
+          properties:
+            best:
+              description: Latest best block indexed by Crystal.
+              $ref: '#/components/schemas/BlockSummary'
+            finalized:
+              description: Latest finalized block indexed by Crystal.
+              $ref: '#/components/schemas/BlockSummary'
     PaginationData:
       type: object
       description: Pagination data for paged responses.
@@ -337,19 +458,19 @@ components:
     AccountIdHex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
-      description: '32-byte Substrate account id encoded in hex.'
+      description: '32-byte Substrate account id, 0x-prefixed, lowercase in responses.'
       example: '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
     Hash256Hex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
-      description: '32-byte Blake2b-256 hash, lowercase hex-encoded with `0x` prefix.'
+      description: '32-byte Blake2b-256 hash, 0x-prefixed, **lowercase** in responses.'
       example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
     SignatureHex:
       type: string
       description: >
         Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)
-        and ECDSA (65 bytes → 130 hex chars). `0x`-prefixed.
-      pattern: '^0x([0-9a-fA-F]{128}|[0-9a-fA-F]{130})$'
+        and ECDSA (65 bytes → 130 hex chars). `0x`-prefixed, **lowercase** in responses.'
+      pattern: '^0x([0-9a-f]{128}|[0-9a-f]{130})$'
       examples:
         - "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
         - "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
@@ -368,8 +489,6 @@ components:
     Block:
       type: object
       description: A block in the blockchain
-      tags:
-        - block
       properties:
         hash:
           $ref: '#/components/schemas/Hash256Hex'
@@ -452,14 +571,12 @@ components:
         authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
     Trace:
       type: object
-      description: A trace record in a block
-      tags:
-        - trace
+      description: A trace record in a block.
       properties:
         id:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 1
           description: Id of the trace record.
           example: 1
         blockHash:
@@ -486,18 +603,20 @@ components:
           example: 23
         key:
           type: string
-          description: Storage key.
-          example: '26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a'
+          description: Storage key (hex, 0x-prefixed).
+          example: '0x26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a'
         value:
           type: string
-          description: Storage value.
+          description: Storage value (hex, 0x-prefixed).
+          nullable: true
           examples:
-            - 'None'
-            - 'Some(02)'
-            - 'Some(9e44c0f852654f5750818ec680e04124e37b711deaa44e739e1d994729508168)'
+            - null
+            - '0x02'
+            - '0x9e44c0f852654f5750818ec680e04124e37b711deaa44e739e1d994729508168'
         extId:
           type: string
-          description: External id in hex.
+          description: External id in hex (may be empty).
+          pattern: '^[0-9a-f]*$'
           examples: 
             - 'cafe'
             - 'ee54'
@@ -506,6 +625,7 @@ components:
         parentId:
           type: string
           description: Parent storage id.
+          nullable: true
       required:
         - id
         - blockHash
@@ -533,13 +653,11 @@ components:
     Call:
       type: object
       description: A call in an extrinsic.
-      tags:
-        - call
       properties:
         id:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 1
           description: Database id of the call record.
           example: 1
         blockHash:
@@ -599,7 +717,7 @@ components:
           example: 0
         palletCallName:
           type: string
-          description: Call's name name in the pallet in the metadata - capital case.
+          description: Call's name in the pallet in the metadata - capital case.
           example: ForceTransfer
         isSuccessful:
           type: boolean
@@ -644,13 +762,11 @@ components:
     Event:
       type: object
       description: An event in a block.
-      tags:
-        - event
       properties:
         id:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 1
           description: Id of the event record.
           example: 1
         blockHash:
@@ -695,7 +811,7 @@ components:
           example: 0
         palletEventName:
           type: string
-          description: Event's name name in the pallet in the metadata - capital case.
+          description: Event's name in the pallet in the metadata - capital case.
           example: ForceTransfer
         extrinsicIndex:
           type: integer
@@ -756,13 +872,11 @@ components:
     Extrinsic:
       type: object
       description: An extrinsic in a block.
-      tags:
-        - extrinsic
       properties:
         id:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 1
           description: Database id of the extrinsic record.
           example: 1
         blockHash:
@@ -851,8 +965,6 @@ components:
     GenesisRecord:
       type: object
       description: A storage item initialized at genesis.
-      tags:
-        - genesis
       properties:
         id:
           type: integer
@@ -868,13 +980,11 @@ components:
     MetadataSummary:
       type: object
       description: Basic fields to define a runtime version metadata.
-      tags:
-        - metadata
       properties:
         specVersion:
           type: integer
           minimum: 0
-          description: Metadata tuntime spec version.
+          description: Metadata runtime spec version.
           example: 1001
         version:
           type: integer
@@ -1093,7 +1203,7 @@ components:
                 items:
                   $ref: '#/components/schemas/MetadataSummary'
                 example:
-                  - spec_version: 1001
+                  - specVersion: 1001
                     version: 14
               pagination:
                 $ref: '#/components/schemas/PaginationData'
@@ -1106,12 +1216,51 @@ components:
         application/json:
           schema:
             type: array
-            items:
-              schema:
-                type: object
-                additionalProperties: true
+            prefixItems:
+              - type: integer   # metadata version or magic/identifier
+              - type: object    # metadata body
+            minItems: 2
+            maxItems: 2
             example: [1635018093, { "V14": {}}]
+    StatusResponse:
+      description: Status information for this Crystal instance.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              service:
+                $ref: "#/components/schemas/ServiceInfo"
+              health:
+                $ref: "#/components/schemas/ServiceHealth"
+              tip:
+                $ref: "#/components/schemas/IndexerTip"
+              workers:
+                type: array
+                description: Info for each active worker.
+                items:
+                  $ref: "#/components/schemas/WorkerStatus"
+                example:
+                  - id: 'backfill-3'
+                    state: indexing
+                    from: 0
+                    to: 15243769
+                    current: 3102
+                    blocksPerSec: 15
 paths:
+  /status:
+    get:
+      summary: Crystal indexer status
+      description: >
+        Overall liveness/readiness plus chain tips and per-worker progress.
+        While backfilling, Crystal continues to index recent best/finalized blocks.
+      operationId: getStatus
+      tags: [system]
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
   /blocks:
     get:
       summary: Get blocks
@@ -1135,7 +1284,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedBlockList'
-        '404':
+        '400':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
@@ -1155,6 +1304,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedBlockList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /blocks/{block_ref}/traces:
@@ -1173,6 +1326,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedTraceList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /blocks/{block_ref}/calls:
@@ -1193,6 +1350,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /blocks/{block_ref}/events:
@@ -1213,6 +1374,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /blocks/{block_ref}/events/{index}:
@@ -1227,7 +1392,13 @@ paths:
         - $ref: '#/components/parameters/ItemIndex'
       responses:
         '200':
-          $ref: '#/components/schemas/Event'
+          description: Event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1249,6 +1420,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedExtrinsicList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /blocks/{block_ref}/extrinsics/{index}:
@@ -1263,7 +1438,13 @@ paths:
         - $ref: '#/components/parameters/ItemIndex'
       responses:
         '200':
-          $ref: '#/components/schemas/Extrinsic'
+          description: Extrinsic.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Extrinsic'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1281,6 +1462,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1298,6 +1481,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1323,7 +1508,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedTraceList'
-        '404':
+        '400':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
@@ -1338,7 +1523,13 @@ paths:
         - $ref: '#/components/parameters/ItemId'
       responses:
         '200':
-          $ref: '#/components/schemas/Trace'
+          description: Trace by id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trace'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1366,7 +1557,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
-        '404':
+        '400':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
@@ -1381,7 +1572,13 @@ paths:
         - $ref: '#/components/parameters/ItemId'
       responses:
         '200':
-          $ref: '#/components/schemas/Call'
+          description: Call by id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Call'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1409,7 +1606,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
-        '404':
+        '400':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
@@ -1424,7 +1621,13 @@ paths:
         - $ref: '#/components/parameters/ItemId'
       responses:
         '200':
-          $ref: '#/components/schemas/Event'
+          description: Event by id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1451,7 +1654,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedExtrinsicList'
-        '404':
+        '400':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
@@ -1466,7 +1669,13 @@ paths:
         - $ref: '#/components/parameters/ExtrinsicRef'
       responses:
         '200':
-          $ref: '#/components/schemas/Extrinsic'
+          description: Extrinsic by ref.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Extrinsic'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1485,6 +1694,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1503,6 +1714,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
@@ -1520,7 +1733,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedGenesisRecordList'
-        '404':
+        '400':
           $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
@@ -1537,6 +1750,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PaginatedMetadataSummaryList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '500':
           $ref: '#/components/responses/ErrorResponse'
   /metadata/{spec_version}/json:
@@ -1551,6 +1766,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/MetadataJSONResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
         '500':
