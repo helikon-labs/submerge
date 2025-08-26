@@ -10,11 +10,14 @@ info:
     - Calls
     - Events
     - Traces
+    
+    Public API is limited by 5 requests per second.
+    Request parameters use snake_case; response fields use camelCase.
   version: 1.0.0
   contact:
     name: Helikon Labs
-    url: https://helikon.io
-    email: info@helikon.io
+    url: https://submerge.io
+    email: info@submerge.io
   license:
     name: GPLv3
     url: https://www.gnu.org/licenses/gpl-3.0.html
@@ -57,6 +60,28 @@ tags:
     description: Endpoints related to metadata.
 
 components:
+  headers:
+    X-RateLimit-Limit:
+      description: Max requests allowed in the current window.
+      schema:
+        type: integer
+        minimum: 1
+    X-RateLimit-Remaining:
+      description: Requests remaining in the current window.
+      schema:
+        type: integer
+        minimum: 0
+    X-RateLimit-Reset:
+      description: Epoch seconds when the window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    Retry-After:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+        minimum: 1
   parameters:
     PageNumber:
       name: page_number
@@ -94,7 +119,7 @@ components:
       name: status
       in: query
       required: false
-      description: Filter results by block status.
+      description: Filter results by block status. If not specified, all blocks are returned.
       schema:
         $ref: '#/components/schemas/BlockStatus'
     MinBlockNumber:
@@ -163,15 +188,15 @@ components:
       schema:
         oneOf:
           - type: string
-            pattern: ^[1-9A-HJ-NP-Za-km-z]{47,48}$
+            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
             description: Author's Substrate SS58 address string.
             example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - type: string
-            pattern: ^(?:0x)?[0-9a-fA-F]{64}$
+            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
             description: Author's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
             examples:
-              - 0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a
-              - 008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a
+              - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+              - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
     SignerRef:
       name: signer
       in: query
@@ -180,11 +205,11 @@ components:
       schema:
         oneOf:
           - type: string
-            pattern: ^[1-9A-HJ-NP-Za-km-z]{47,48}$
+            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
             description: Signer's Substrate SS58 address string.
             example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - type: string
-            pattern: ^(?:0x)?[0-9a-fA-F]{64}$
+            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
             description: Signer's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
             examples:
               - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
@@ -421,7 +446,7 @@ components:
           type: integer
           description: Number of items per page.
           minimum: 1
-          example: 1
+          example: 25
         totalCount:
           type: integer
           description: Total number of items across all pages.
@@ -443,33 +468,38 @@ components:
         - hasPrevious
       example:
         pageNumber: 1
-        pageSize: 20
+        pageSize: 25
         totalCount: 78
         hasNext: true
         hasPrevious: false
     HexString:
       type: string
       description: >
-        Arbitrary hex-encoded string. Accepts any length, with `0x` prefix.
-      pattern: '^0x[0-9a-fA-F]+$'
+        Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.
+      pattern: '^0x(?:[0-9a-f]{2})+$'
       examples:
         - "0xdeadbeef"
         - "0x0123456789abcdef"
     AccountIdHex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
-      description: '32-byte Substrate account id, 0x-prefixed, lowercase in responses.'
+      description: >
+        32-byte Substrate account id, **always** `0x`-prefixed and lowercase in responses.
+        Inputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.
       example: '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
     Hash256Hex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
-      description: '32-byte Blake2b-256 hash, 0x-prefixed, **lowercase** in responses.'
+      description: >
+        32-byte Blake2b-256, **always** `0x`-prefixed and lowercase in responses.
+        Inputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.
       example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
     SignatureHex:
       type: string
       description: >
         Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)
-        and ECDSA (65 bytes → 130 hex chars). `0x`-prefixed, **lowercase** in responses.'
+        and ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.
+        Inputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.
       pattern: '^0x([0-9a-f]{128}|[0-9a-f]{130})$'
       examples:
         - "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
@@ -520,7 +550,7 @@ components:
         weight:
           type: object
           additionalProperties: true
-          description: Block weight - varying schema depending on runtime metadata.
+          description: Block weight. Schema depends on runtime metadata. Example includes a version 1006001 Kusama weight.
         extrinsicCount:
           type: integer
           minimum: 0
@@ -607,7 +637,7 @@ components:
           example: '0x26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a'
         value:
           type: string
-          description: Storage value (hex, 0x-prefixed).
+          description: Storage value (hex, 0x-prefixed). Can be odd-length.
           nullable: true
           examples:
             - null
@@ -615,7 +645,7 @@ components:
             - '0x9e44c0f852654f5750818ec680e04124e37b711deaa44e739e1d994729508168'
         extId:
           type: string
-          description: External id in hex (may be empty).
+          description: External id in hex (may be empty). Can be odd-length.
           pattern: '^[0-9a-f]*$'
           examples: 
             - 'cafe'
@@ -623,8 +653,8 @@ components:
         method:
           $ref: '#/components/schemas/TraceMethod'
         parentId:
-          type: string
-          description: Parent storage id.
+          $ref: '#/components/schemas/HexString'
+          description: Parent storage id in hex format.
           nullable: true
       required:
         - id
@@ -646,8 +676,8 @@ components:
         specVersion: 1006001
         blockStatus: 'finalized'
         index: 0
-        key: '0xab43526'
-        value: '0x1435adde34ff94782'
+        key: '0xab435260'
+        value: '0x1435adde34ff94782a'
         extId: ''
         method: 'Put'
     Call:
@@ -699,7 +729,7 @@ components:
           description: If a nested call, the call's parent call record id.
         nestingIndex:
           type: string
-          description: Submerge-specific nesting identifier for nested calls.
+          description: A string representing the call path, using '::' as a delimiter and the index at each level.
           example: 'calls::0'
         palletIndex:
           type: integer
@@ -977,6 +1007,11 @@ components:
         value:
           $ref: '#/components/schemas/HexString'
       required: [id, key, value]
+    MetadataItemDocs:
+      type: array
+      description: Documentation for a metadata item.
+      items:
+        type: string
     MetadataSummary:
       type: object
       description: Basic fields to define a runtime version metadata.
@@ -991,9 +1026,133 @@ components:
           minimum: 1
           description: Metadata version.
           example: 14
+    MetadataPallet:
+      type: object
+      description: A pallet in a metadata.
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: Pallet's index inside the metadata.
+          example: 0
+        name:
+          type: string
+    MetadataPalletCall:
+      type: object
+      description: A call in a metadata pallet.
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: Call's index inside the metadata pallet.
+          example: 0
+        name:
+          type: string
+          description: Call name.
+        docs:
+          $ref: '#/components/schemas/MetadataItemDocs'
+    MetadataPalletConstant:
+      type: object
+      description: A constant in a metadata pallet.
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: Constant's index inside the metadata pallet.
+          example: 0
+        name:
+          type: string
+          description: Constant name.
+          example: BlockLength
+        typeId:
+          type: integer
+          description: Constant type id.
+          minimum: 0
+        typeName:
+          type: string
+          description: Constant type name - usually a Rust-style type path.
+        valueHex:
+          $ref: '#/components/schemas/HexString'
+        value:
+          type: object
+          description: Constant value in JSON format.
+          additionalProperties: true
+        docs:
+          $ref: '#/components/schemas/MetadataItemDocs'
+    MetadataPalletError:
+      type: object
+      description: An error defined in a metadata pallet.
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: Error's index inside the metadata pallet.
+          example: 0
+        name:
+          type: string
+          description: Error name.
+        docs:
+          $ref: '#/components/schemas/MetadataItemDocs'
+    MetadataPalletEvent:
+      type: object
+      description: An event defined in a metadata pallet.
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: Event's index inside the metadata pallet.
+          example: 0
+        name:
+          type: string
+          description: Event name.
+        docs:
+          $ref: '#/components/schemas/MetadataItemDocs'
+    MetadataPalletStorageItem:
+      type: object
+      description: A storage item defined in a metadata pallet.
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          description: Storage item's index inside the metadata pallet.
+          example: 0
+        name:
+          type: string
+          description: Storage item name.
+        key:
+          description: Storage item key.
+          $ref: '#/components/schemas/HexString'
+        docs:
+          $ref: '#/components/schemas/MetadataItemDocs'
   responses:
-    ErrorResponse:
-      description: Error
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/X-RateLimit-Limit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/X-RateLimit-Remaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/X-RateLimit-Reset'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidParameter:
+      description: Invalid path or query parameter(s).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ItemNotFound:
+      description: Item not found.
       content:
         application/json:
           schema:
@@ -1055,8 +1214,8 @@ components:
                     specVersion: 1006001
                     blockStatus: 'finalized'
                     index: 0
-                    key: '0xab43526'
-                    value: '0x1435adde34ff94782'
+                    key: '0xab43526a'
+                    value: '0x1435adde34ff947820'
                     extId: ''
                     method: 'Put'
               pagination:
@@ -1259,8 +1418,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/StatusResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks:
     get:
       summary: Get blocks
@@ -1285,9 +1446,11 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedBlockList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}:
     get:
       summary: Get block by reference
@@ -1305,11 +1468,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedBlockList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/traces:
     get:
       summary: Get traces in a block
@@ -1327,11 +1492,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedTraceList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/calls:
     get:
       summary: Get calls in a block
@@ -1351,11 +1518,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/events:
     get:
       summary: Get events in a block
@@ -1375,11 +1544,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/events/{index}:
     get:
       summary: Get block event by index
@@ -1398,11 +1569,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/extrinsics:
     get:
       summary: Get extrinsics in a block
@@ -1421,11 +1594,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedExtrinsicList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/extrinsics/{index}:
     get:
       summary: Get block extrinsic by index
@@ -1444,11 +1619,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Extrinsic'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/extrinsics/{index}/calls:
     get:
       summary: Get block extrinsic calls
@@ -1459,15 +1636,19 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BlockRef'
         - $ref: '#/components/parameters/ItemIndex'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}/extrinsics/{index}/events:
     get:
       summary: Get block extrinsic events
@@ -1478,15 +1659,19 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BlockRef'
         - $ref: '#/components/parameters/ItemIndex'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /traces:
     get:
       summary: Get traces
@@ -1502,16 +1687,18 @@ paths:
         - name: key
           description: Trace key.
           in: query
-          required: true
+          required: false
           schema:
             $ref: '#/components/schemas/HexString'
       responses:
         '200':
           $ref: '#/components/responses/PaginatedTraceList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /traces/{id}:
     get:
       summary: Get trace by id
@@ -1529,11 +1716,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Trace'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /calls:
     get:
       summary: Get calls
@@ -1558,9 +1747,11 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /calls/{id}:
     get:
       summary: Get call by id
@@ -1578,11 +1769,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Call'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /events:
     get:
       summary: Get events
@@ -1607,9 +1800,11 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /events/{id}:
     get:
       summary: Get event by id
@@ -1627,11 +1822,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /extrinsics:
     get:
       summary: Get extrinsics
@@ -1655,9 +1852,11 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedExtrinsicList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /extrinsics/{extrinsic_ref}:
     get:
       summary: Get extrinsic by reference
@@ -1675,11 +1874,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Extrinsic'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /extrinsics/{extrinsic_ref}/calls:
     get:
       summary: Get extrinsic calls
@@ -1695,11 +1896,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /extrinsics/{extrinsic_ref}/events:
     get:
       summary: Get extrinsic events
@@ -1715,11 +1918,13 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /genesis:
     get:
       summary: Get genesis records
@@ -1734,13 +1939,15 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedGenesisRecordList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /metadata:
     get:
       summary: Get metadata list
-      description: Returns a list of metadata summary for all runtime versions.
+      description: Returns a list of metadata summaries for all runtime versions.
       operationId: getMetadataList
       tags:
         - metadata
@@ -1751,9 +1958,11 @@ paths:
         '200':
           $ref: '#/components/responses/PaginatedMetadataSummaryList'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
   /metadata/{spec_version}/json:
     get:
       summary: Get metadata JSON
@@ -1767,8 +1976,226 @@ paths:
         '200':
           $ref: '#/components/responses/MetadataJSONResponse'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InvalidParameter'
         '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/hex:
+    get:
+      summary: Get metadata hex string
+      description: Returns the SCALE-encoded metadata in hex format for a spec version.
+      operationId: getMetadataHex
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+      responses:
+        '200':
+          description: Hex-encoded metadata string.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/HexString'
+              example: '0x6d65746164617461'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/pallets:
+    get:
+      summary: Get metadata pallets
+      description: Returns pallets in a metadata version
+      operationId: getMetadataPallets
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+      responses:
+        '200':
+          description: Metadata pallet list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataPallet'
+              example:
+                - index: 0
+                  name: System
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/pallets/{index}/calls:
+    get:
+      summary: Get pallet calls
+      description: Returns calls in a metadata pallet
+      operationId: getMetadataPalletCalls
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          description: Call list for a metadata pallet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataPalletCall'
+              example:
+                - index: 0
+                  name: remark
+                  docs: ["Make some on-chain remark.", "", "Can be executed by every `origin`."]
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/pallets/{index}/constants:
+    get:
+      summary: Get pallet constants
+      description: Returns constants in a metadata pallet
+      operationId: getMetadataPalletConstants
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          description: Constant list for a metadata pallet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataPalletConstant'
+              example:
+                - index: 0
+                  name: BlockWeights
+                  typeId: 532
+                  typeName: frame_system::limits::BlockWeights
+                  valueHex: '0xaf34528fd32'
+                  value:
+                    read: '25000000'
+                    write: '100000000'
+                  docs: ['Block & extrinsics weights: base values and limits.']
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/pallets/{index}/errors:
+    get:
+      summary: Get pallet errors
+      description: Returns errors defined in a metadata pallet
+      operationId: getMetadataPalletErrors
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          description: Error list for a metadata pallet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataPalletError'
+              example:
+                - index: 4
+                  name: NonZeroRefCount
+                  docs: ["There is a non-zero reference count preventing the account from being purged."]
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/pallets/{index}/events:
+    get:
+      summary: Get pallet events
+      description: Returns events defined in a metadata pallet
+      operationId: getMetadataPalletEvents
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          description: Event list for a metadata pallet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataPalletEvent'
+              example:
+                - index: 7
+                  name: Unbonded
+                  docs: ["An account has unbonded this amount."]
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /metadata/{spec_version}/pallets/{index}/storage:
+    get:
+      summary: Get pallet storage items
+      description: Returns storage items defined in a metadata pallet
+      operationId: getMetadataPalletStorageItems
+      tags:
+        - metadata
+      parameters:
+        - $ref: '#/components/parameters/SpecVersion'
+        - $ref: '#/components/parameters/ItemIndex'
+      responses:
+        '200':
+          description: Storage item list for a metadata pallet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataPalletStorageItem'
+              example:
+                - index: 13
+                  name: LastRuntimeUpgrade
+                  key: '0x26aa394eea5630e07c48ae0c9558cef7f9cce9c888469bb1a0dceaa129672ef8'
+                  docs: [" Stores the `spec_version` and `spec_name` of when the last runtime upgrade happened."]
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/ItemNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
