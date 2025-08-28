@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS metadata_pallet_constant
     index           INTEGER NOT NULL,
     name            VARCHAR(128) NOT NULL,
     type_id         INTEGER,
-    type_name       VARCHAR(128),
+    type_name       VARCHAR(128) NOT NULL,
     value           BYTEA NOT NULL, -- SCALE-encoded value
     value_json      JSONB,
-    docs            TEXT[],
+    docs            TEXT[] NOT NULL,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT metadata_pallet_constant_pk PRIMARY KEY(spec_version, pallet_index, index),
     CONSTRAINT metadata_pallet_constant_fk_metadata_pallet

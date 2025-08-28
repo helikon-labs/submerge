@@ -5,14 +5,9 @@ use serde_json::Value as JSONValue;
 use sp_runtime::AccountId32;
 use sp_runtime::DigestItem;
 use sqlx::{Postgres, Transaction};
-use std::str::FromStr;
-use submerge_base::types::submerge::BlockTrace as SubmergeBlockTrace;
-use submerge_base::types::submerge::BlockTraces;
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
-use submerge_base::types::substrate::block_trace::{
-    BlockTrace as SubstrateBlockTrace, StorageMethod,
-};
+use submerge_base::types::substrate::block_trace::BlockTrace as SubstrateBlockTrace;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
@@ -24,6 +19,7 @@ use crate::types::Event;
 use crate::types::Extrinsic;
 use types::BlockRow;
 
+pub mod api;
 mod types;
 
 pub(crate) trait CrystalPostgreSQLStorage {
@@ -104,14 +100,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         status: BlockStatus,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    async fn get_block_traces_by_number(
-        &self,
-        block_number: u64,
-    ) -> anyhow::Result<Vec<BlockTraces>>;
-    async fn get_block_traces_by_hash(
-        &self,
-        block_hash: &[u8],
-    ) -> anyhow::Result<Option<BlockTraces>>;
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>>;
     async fn get_blocks_by_number(
         &self,
@@ -573,60 +561,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .execute(&mut **tx)
             .await?;
         Ok(())
-    }
-
-    async fn get_block_traces_by_number(
-        &self,
-        block_number: u64,
-    ) -> anyhow::Result<Vec<BlockTraces>> {
-        let block_hash_rows: Vec<(Vec<u8>,)> =
-            sqlx::query_as("SELECT DISTINCT block_hash FROM trace WHERE block_number = $1")
-                .bind(block_number as i64)
-                .fetch_all(&self.connection_pool)
-                .await?;
-        let mut result = vec![];
-        for block_hash_row in block_hash_rows.iter() {
-            if let Some(block_traces) = self.get_block_traces_by_hash(&block_hash_row.0).await? {
-                result.push(block_traces);
-            }
-        }
-        Ok(result)
-    }
-
-    async fn get_block_traces_by_hash(
-        &self,
-        block_hash: &[u8],
-    ) -> anyhow::Result<Option<BlockTraces>> {
-        #[allow(clippy::type_complexity)]
-        let rows: Vec<(Vec<u8>, i64, i32, BlockStatus, i32, String, String, String, String, Option<String>)> = sqlx::query_as("SELECT block_parent_hash, block_number, spec_version, block_status, index, key, value, ext_id, method, parent_id FROM trace WHERE block_hash = $1 ORDER BY index ASC")
-            .bind(block_hash)
-            .fetch_all(&self.connection_pool)
-            .await?;
-
-        if let Some(first_row) = rows.first() {
-            let block_hash_hex = format!("0x{}", hex::encode(block_hash));
-            let block_parent_hash_hex = format!("0x{}", hex::encode(&first_row.0));
-            let mut block_traces = BlockTraces {
-                block_hash: block_hash_hex,
-                block_parent_hash: block_parent_hash_hex,
-                block_number: first_row.1 as u64,
-                spec_version: first_row.2 as u32,
-                traces: vec![],
-            };
-            for row in rows.iter() {
-                block_traces.traces.push(SubmergeBlockTrace {
-                    index: row.4 as u32,
-                    key: row.5.clone(),
-                    value: row.6.clone(),
-                    ext_id: row.7.clone(),
-                    method: StorageMethod::from_str(&row.8)?,
-                    parent_id: row.9.clone(),
-                })
-            }
-            Ok(Some(block_traces))
-        } else {
-            Ok(None)
-        }
     }
 
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>> {

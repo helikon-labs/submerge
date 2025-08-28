@@ -7,6 +7,7 @@ use submerge_base::types::substrate::Signature;
 
 use crate::process::decode::Call;
 
+pub(crate) mod api;
 pub mod legacy;
 pub mod metadata;
 

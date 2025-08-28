@@ -28,6 +28,7 @@ authors = ["kukabi <kutsal@helikon.io>"]
 license = "GPL-3"
 
 [workspace.dependencies]
+actix-cors = "0.7"
 actix-web = "4.11"
 async-recursion = "1.1.1"
 async-trait = "0.1"

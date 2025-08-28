@@ -8,6 +8,7 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+actix-cors = { workspace = true }
 actix-web = { workspace = true }
 anyhow = { workspace = true }
 async-recursion = { workspace = true }

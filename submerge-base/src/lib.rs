@@ -8,7 +8,6 @@ use tokio::time::sleep;
 use tokio::{select, signal};
 
 pub mod args;
-pub mod err;
 pub mod types;
 
 #[async_trait(?Send)]

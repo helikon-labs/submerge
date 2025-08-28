@@ -1,19 +1,22 @@
+use crate::api::v1::metadata::{
+    get_metadata_hex, get_metadata_json, get_metadata_list, get_metadata_pallet_calls,
+    get_metadata_pallet_constants, get_metadata_pallet_errors, get_metadata_pallet_events,
+    get_metadata_pallet_storage_items, get_metadata_pallets,
+};
 use crate::metrics;
-use crate::persistence::CrystalPostgreSQLStorage;
+use crate::types::api::error::APIError;
 use actix_web::dev::Service as _;
-use actix_web::{get, http::header::ContentType, web, HttpResponse};
+use actix_web::{web, HttpResponse};
 use actix_web::{App, HttpServer};
 use futures_util::future::FutureExt;
-use serde::Deserialize;
 use std::sync::Arc;
 use submerge_base::args::PostgreSQLArgs;
-use submerge_base::err::{InternalServerError, ServiceError};
-use submerge_base::types::submerge::BlockTraces;
-use submerge_base::types::substrate::BLOCK_HASH_HEX_LENGTH;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 pub mod legacy;
-pub(crate) type ResultResponse = Result<HttpResponse, InternalServerError>;
+mod v1;
+
+type APIResult = Result<HttpResponse, APIError>;
 
 #[derive(Clone)]
 pub struct ServiceState {
@@ -31,7 +34,18 @@ pub(crate) async fn run_api(
 ) -> anyhow::Result<()> {
     let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
     let server = HttpServer::new(move || {
+        let cors = actix_cors::Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allowed_headers(vec![
+                actix_web::http::header::AUTHORIZATION,
+                actix_web::http::header::ACCEPT,
+            ])
+            .allowed_header(actix_web::http::header::CONTENT_TYPE)
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .app_data(web::Data::new(ServiceState {
                 postgres: postgres.clone(),
             }))
@@ -62,8 +76,18 @@ pub(crate) async fn run_api(
                     result
                 })
             })
-            .service(hello_world)
-            .service(get_block_traces)
+            .service(
+                web::scope("v1")
+                    .service(get_metadata_list)
+                    .service(get_metadata_json)
+                    .service(get_metadata_hex)
+                    .service(get_metadata_pallets)
+                    .service(get_metadata_pallet_calls)
+                    .service(get_metadata_pallet_constants)
+                    .service(get_metadata_pallet_errors)
+                    .service(get_metadata_pallet_events)
+                    .service(get_metadata_pallet_storage_items),
+            )
     })
     .workers(10)
     .disable_signals()
@@ -71,48 +95,4 @@ pub(crate) async fn run_api(
     .run();
     let (server_result, _) = tokio::join!(server, on_server_ready(host, port));
     Ok(server_result?)
-}
-
-#[get("/hello_world")]
-pub(crate) async fn hello_world() -> ResultResponse {
-    Ok(HttpResponse::Ok()
-        .content_type(ContentType::plaintext())
-        .body("Hello, world!"))
-}
-
-#[derive(Deserialize)]
-pub(crate) struct BlockHashOrNumberParameter {
-    block_hash_or_number: String,
-}
-
-#[get("/block/{block_hash_or_number}/trace")]
-pub(crate) async fn get_block_traces(
-    path: web::Path<BlockHashOrNumberParameter>,
-    data: web::Data<ServiceState>,
-) -> ResultResponse {
-    match path.block_hash_or_number.parse::<u64>() {
-        Ok(block_number) => Ok(HttpResponse::Ok().json(
-            data.postgres
-                .get_block_traces_by_number(block_number)
-                .await?,
-        )),
-        Err(_) => {
-            let input = path.block_hash_or_number.trim_start_matches("0x");
-            if input.len() < BLOCK_HASH_HEX_LENGTH {
-                Ok(HttpResponse::BadRequest()
-                    .json(ServiceError::from("Invalid block hash or number.")))
-            } else {
-                match hex::decode(input) {
-                    Ok(block_hash) => {
-                        match data.postgres.get_block_traces_by_hash(&block_hash).await? {
-                            Some(block_traces) => Ok(HttpResponse::Ok().json(vec![block_traces])),
-                            None => Ok(HttpResponse::Ok().json(Vec::<BlockTraces>::new())),
-                        }
-                    }
-                    Err(_) => Ok(HttpResponse::BadRequest()
-                        .json(ServiceError::from("Invalid block hash or number."))),
-                }
-            }
-        }
-    }
 }

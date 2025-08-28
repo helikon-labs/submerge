@@ -23,8 +23,10 @@ info:
     url: https://www.gnu.org/licenses/gpl-3.0.html
 
 servers:
+  - url: http://localhost:3030/v1
+    description: Local development API.
   - url: https://{chain}.api.crystal.submerge.io/v1
-    description: Submerge Crystal API Server
+    description: Production API.
     variables:
       chain:
         default: polkadot
@@ -292,12 +294,6 @@ components:
           type: string
           description: Error message.
           example: Internal server error.
-        details:
-          type: object
-          additionalProperties: true
-          description: Error details.
-          example:
-            field: Random value.
       required:
         - code
         - message
@@ -477,6 +473,14 @@ components:
       description: >
         Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.
       pattern: '^0x(?:[0-9a-f]{2})+$'
+      examples:
+        - "0xdeadbeef"
+        - "0x0123456789abcdef"
+    HexStringLoose:
+      type: string
+      description: >
+        Arbitrary hex-encoded bytes. Lowercase, odd or even length, `0x`-prefixed.
+      pattern: '^0x(?:[0-9a-f])+$'
       examples:
         - "0xdeadbeef"
         - "0x0123456789abcdef"
@@ -1012,7 +1016,7 @@ components:
       description: Documentation for a metadata item.
       items:
         type: string
-    MetadataSummary:
+    Metadata:
       type: object
       description: Basic fields to define a runtime version metadata.
       properties:
@@ -1021,7 +1025,7 @@ components:
           minimum: 0
           description: Metadata runtime spec version.
           example: 1001
-        version:
+        metadataVersion:
           type: integer
           minimum: 1
           description: Metadata version.
@@ -1072,7 +1076,7 @@ components:
           type: string
           description: Constant type name - usually a Rust-style type path.
         valueHex:
-          $ref: '#/components/schemas/HexString'
+          $ref: '#/components/schemas/HexStringLoose'
         value:
           type: object
           description: Constant value in JSON format.
@@ -1350,7 +1354,7 @@ components:
             required:
               - data
               - pagination
-    PaginatedMetadataSummaryList:
+    PaginatedMetadataList:
       description: Response with a paginated list of metadata summaries.
       content:
         application/json:
@@ -1360,7 +1364,7 @@ components:
               data:
                 type: array
                 items:
-                  $ref: '#/components/schemas/MetadataSummary'
+                  $ref: '#/components/schemas/Metadata'
                 example:
                   - specVersion: 1001
                     version: 14
@@ -1956,7 +1960,7 @@ paths:
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
-          $ref: '#/components/responses/PaginatedMetadataSummaryList'
+          $ref: '#/components/responses/PaginatedMetadataList'
         '400':
           $ref: '#/components/responses/InvalidParameter'
         '429':
