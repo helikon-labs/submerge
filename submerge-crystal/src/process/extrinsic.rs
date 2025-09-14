@@ -250,7 +250,7 @@ impl BlockProcessor {
                                 &metadata_v14.types,
                                 visitor,
                             )?;
-                            let extensions = get_signed_extensions(metadata_v14);
+                            let extensions = get_signed_extensions(metadata)?;
                             extra = match &extra_json_array {
                                 Value::Array(values) => {
                                     if values.len() != extensions.len() {
@@ -452,7 +452,7 @@ impl BlockProcessor {
                                 &metadata_v14.types,
                                 visitor,
                             )?;
-                            let extensions = get_signed_extensions(metadata_v14);
+                            let extensions = get_signed_extensions(metadata)?;
                             extra = match &extra_json_array {
                                 Value::Array(values) => {
                                     if values.len() != extensions.len() {

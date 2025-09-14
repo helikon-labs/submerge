@@ -5,13 +5,18 @@ use frame_metadata::v11::RuntimeMetadataV11;
 use frame_metadata::v12::RuntimeMetadataV12;
 use frame_metadata::v13::RuntimeMetadataV13;
 use frame_metadata::v14::RuntimeMetadataV14;
+use frame_metadata::v15::RuntimeMetadataV15;
 use frame_metadata::v8::RuntimeMetadataV8;
 use frame_metadata::v9::RuntimeMetadataV9;
 use frame_metadata::RuntimeMetadata;
+use paste::paste;
 use serde_json::Value as JSONValue;
 use util::get_decode_different_string;
 
-use crate::types::metadata::util::{get_metadata_type_by_id, get_metadata_version};
+use crate::types::metadata::util::{
+    get_metadata_version, v14::get_metadata_type_by_id as get_metadata_type_by_id_v14,
+    v15::get_metadata_type_by_id as get_metadata_type_by_id_v15,
+};
 
 pub mod util;
 
@@ -98,12 +103,14 @@ fn create_base_pallet(index: u8, name: String) -> MetadataPallet {
     }
 }
 
-macro_rules! from_metadata {
-    ($a:ty) => {
-        impl TryFrom<&$a> for Metadata {
+macro_rules! from_metadata_version {
+    ($version:literal) => {
+        impl TryFrom<&paste! {[<RuntimeMetadataV $version>]}> for Metadata {
             type Error = anyhow::Error;
 
-            fn try_from(value: &$a) -> Result<Self, anyhow::Error> {
+            fn try_from(
+                value: &paste! {[<RuntimeMetadataV $version>]},
+            ) -> Result<Self, anyhow::Error> {
                 let mut metadata = Metadata::default();
                 for pallet_metadata in value.pallets.iter() {
                     let mut pallet =
@@ -112,9 +119,12 @@ macro_rules! from_metadata {
                     if let Some(events) = &pallet_metadata.event {
                         let type_id = events.ty.id;
                         let events_type =
-                            get_metadata_type_by_id(value, type_id).ok_or(anyhow::Error::msg(
-                                format!("Events type not found in pallet {}.", pallet.name),
-                            ))?;
+                            paste! {[<get_metadata_type_by_id_v $version>](value, type_id)}.ok_or(
+                                anyhow::Error::msg(format!(
+                                    "Events type not found in pallet {}.",
+                                    pallet.name
+                                )),
+                            )?;
                         match &events_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for event_variant in type_def_variant.variants.iter() {
@@ -131,12 +141,13 @@ macro_rules! from_metadata {
                     // constants
                     for (index, constant) in pallet_metadata.constants.iter().enumerate() {
                         let type_id = constant.ty.id;
-                        let constant_type = get_metadata_type_by_id(value, type_id).ok_or(
-                            anyhow::Error::msg(format!(
-                                "Constant type with id {type_id} not found in pallet {}.",
-                                pallet.name,
-                            )),
-                        )?;
+                        let constant_type =
+                            paste! {[<get_metadata_type_by_id_v $version>](value, type_id)}.ok_or(
+                                anyhow::Error::msg(format!(
+                                    "Constant type with id {type_id} not found in pallet {}.",
+                                    pallet.name,
+                                )),
+                            )?;
                         let type_name = constant_type.ty.path.segments.join("::");
                         pallet.constants.push(MetadataPalletConstant {
                             index: index as u8,
@@ -152,9 +163,12 @@ macro_rules! from_metadata {
                     if let Some(calls) = &pallet_metadata.calls {
                         let type_id = calls.ty.id;
                         let calls_type =
-                            get_metadata_type_by_id(value, type_id).ok_or(anyhow::Error::msg(
-                                format!("Calls type not found in pallet {}.", pallet.name),
-                            ))?;
+                            paste! {[<get_metadata_type_by_id_v $version>](value, type_id)}.ok_or(
+                                anyhow::Error::msg(format!(
+                                    "Calls type not found in pallet {}.",
+                                    pallet.name
+                                )),
+                            )?;
                         match &calls_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for call_variant in type_def_variant.variants.iter() {
@@ -182,9 +196,12 @@ macro_rules! from_metadata {
                     if let Some(error) = &pallet_metadata.error {
                         let type_id = error.ty.id;
                         let errors_type =
-                            get_metadata_type_by_id(value, type_id).ok_or(anyhow::Error::msg(
-                                format!("Errors type not found in pallet {}.", pallet.name),
-                            ))?;
+                            paste! {[<get_metadata_type_by_id_v $version>](value, type_id)}.ok_or(
+                                anyhow::Error::msg(format!(
+                                    "Errors type not found in pallet {}.",
+                                    pallet.name
+                                )),
+                            )?;
                         match &errors_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for error_variant in type_def_variant.variants.iter() {
@@ -603,7 +620,8 @@ from_legacy_metadata!(RuntimeMetadataV11);
 from_legacy_metadata!(RuntimeMetadataV12);
 from_legacy_metadata!(RuntimeMetadataV13);
 
-from_metadata!(RuntimeMetadataV14);
+from_metadata_version!(14);
+from_metadata_version!(15);
 
 impl TryFrom<&RuntimeMetadata> for Metadata {
     type Error = anyhow::Error;

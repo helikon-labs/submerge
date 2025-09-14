@@ -17,9 +17,7 @@ use crate::{
         BlockProcessor,
     },
     types::{
-        metadata::util::{
-            get_event_variant, get_metadata_version, get_pallet_metadata, get_runtime_call_type,
-        },
+        metadata::util::{get_metadata_version, get_runtime_call_type, v14, v15},
         BlockStatus, Event, Extrinsic,
     },
 };
@@ -105,12 +103,12 @@ impl BlockProcessor {
             let pallet_index: u8 = Decode::decode(bytes)?;
             let pallet_event_index: u8 = Decode::decode(bytes)?;
             match &metadata {
-                RuntimeMetadata::V14(metadata) => {
-                    let pallet_metadata = get_pallet_metadata(metadata, pallet_index)
+                RuntimeMetadata::V14(metadata_v14) => {
+                    let pallet_metadata = v14::get_pallet_metadata(metadata_v14, pallet_index)
                         .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
                     let pallet_name = pallet_metadata.name.to_case(Case::UpperCamel);
                     let event_variant =
-                        get_event_variant(metadata, pallet_metadata, pallet_event_index)?
+                        v14::get_event_variant(metadata_v14, pallet_metadata, pallet_event_index)?
                             .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
                     let pallet_event_name = event_variant.name.to_case(Case::UpperCamel);
 
@@ -120,7 +118,7 @@ impl BlockProcessor {
                         let value: Value = scale_decode::visitor::decode_with_visitor(
                             bytes,
                             event_field.ty.id,
-                            &metadata.types,
+                            &metadata_v14.types,
                             visitor,
                         )?;
                         if let Some(field_name) = &event_field.name {
@@ -264,11 +262,11 @@ impl BlockProcessor {
             let pallet_index: u8 = Decode::decode(&mut bytes)?;
             let pallet_event_index: u8 = Decode::decode(&mut bytes)?;
             match &metadata {
-                RuntimeMetadata::V14(metadata) => {
-                    let pallet_metadata = get_pallet_metadata(metadata, pallet_index)
+                RuntimeMetadata::V14(metadata_v14) => {
+                    let pallet_metadata = v14::get_pallet_metadata(metadata_v14, pallet_index)
                         .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
                     let event_variant =
-                        get_event_variant(metadata, pallet_metadata, pallet_event_index)?
+                        v14::get_event_variant(metadata_v14, pallet_metadata, pallet_event_index)?
                             .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
                     let mut map = serde_json::Map::new();
 
@@ -277,7 +275,43 @@ impl BlockProcessor {
                         let value: Value = scale_decode::visitor::decode_with_visitor(
                             &mut bytes,
                             event_field.ty.id,
-                            &metadata.types,
+                            &metadata_v14.types,
+                            visitor,
+                        )?;
+                        if let Some(field_name) = &event_field.name {
+                            map.insert(field_name.to_case(Case::Camel), value.into());
+                        } else if let Some(type_name) = &event_field.type_name {
+                            map.insert(type_name.clone(), value.into());
+                        } else {
+                            map.insert("unnamed".to_string(), value.into());
+                        }
+                    }
+                    let args = JSONValue::Object(map);
+                    events.push(Event {
+                        trace_index: Some(trace_index as u32),
+                        pallet_index,
+                        pallet_name: pallet_metadata.name.to_case(Case::UpperCamel),
+                        pallet_event_index,
+                        pallet_event_name: event_variant.name.to_case(Case::UpperCamel),
+                        index: events.len() as u32,
+                        phase,
+                        args,
+                    });
+                }
+                RuntimeMetadata::V15(metadata_v15) => {
+                    let pallet_metadata = v15::get_pallet_metadata(metadata_v15, pallet_index)
+                        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
+                    let event_variant =
+                        v15::get_event_variant(metadata_v15, pallet_metadata, pallet_event_index)?
+                            .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
+                    let mut map = serde_json::Map::new();
+
+                    for event_field in event_variant.fields.iter() {
+                        let visitor = ValueVisitor::new(call_type.id, None);
+                        let value: Value = scale_decode::visitor::decode_with_visitor(
+                            &mut bytes,
+                            event_field.ty.id,
+                            &metadata_v15.types,
                             visitor,
                         )?;
                         if let Some(field_name) = &event_field.name {

@@ -5509,6 +5509,7 @@ dependencies = [
  "lru",
  "once_cell",
  "parity-scale-codec",
+ "paste",
  "reqwest",
  "rustc-hash",
  "scale-decode",

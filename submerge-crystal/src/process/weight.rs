@@ -16,7 +16,7 @@ impl BlockProcessor {
         bytes: &mut &[u8],
     ) -> anyhow::Result<JSONValue> {
         if let frame_metadata::RuntimeMetadata::V14(metadata_v14) = metadata {
-            let Some(ty) = get_block_weight_type(metadata_v14)? else {
+            let Some(ty) = get_block_weight_type(metadata)? else {
                 anyhow::bail!("System.BlockWeight type not found in metadata.");
             };
             let visitor = ValueVisitor::new(0, None);
