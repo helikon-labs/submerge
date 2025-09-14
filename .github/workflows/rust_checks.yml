@@ -37,13 +37,13 @@ jobs:
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2025-08-01 # toolchain
+          toolchain: nightly #-2025-08-01 # toolchain
           components: clippy, rustfmt
           override: true
       - run: rustup update
       - run: rustup update nightly-2025-08-01 # toolchain
       - run: rustup default nightly-2025-08-01 # toolchain
-      - run: rustup target add wasm32-unknown-unknown --toolchain nightly-2025-08-01 # toolchain
+      - run: rustup target add wasm32-unknown-unknown --toolchain nightly #-2025-08-01 # toolchain
       - run: rustup default stable
       - name: Reset test DB
         env:
@@ -74,7 +74,7 @@ jobs:
       - name: Clippy
         uses: actions-rs/cargo@v1
         with:
-          toolchain: nightly-2025-08-01 # toolchain
+          toolchain: nightly #-2025-08-01 # toolchain
           command: clippy
           args: --all-targets -- -D warnings -W clippy::cognitive_complexity
       - name: Make the chainspec init script executable
