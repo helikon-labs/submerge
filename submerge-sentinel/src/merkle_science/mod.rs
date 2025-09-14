@@ -223,7 +223,7 @@ impl MerkleScienceClient {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "integration-test"))]
 mod tests {
     use super::types::RiskLevel;
     use super::MerkleScienceClient;
