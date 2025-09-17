@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     if let Some(command) = &cli.command {
         match command {
             Command::Crystal(args) => {
-                let crystal = Crystal::new(args.clone());
+                let crystal = Crystal::new(args.clone()).await?;
                 Supervisor::new(crystal, args.service.recovery_sleep_seconds) // 10 second retry delay
                     .start()
                     .await

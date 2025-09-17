@@ -1,15 +1,24 @@
 use std::fmt::{Display, Formatter};
 
+use decode::Value;
 use frame_system::Phase;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::Signature;
 
-use crate::process::decode::Call;
-
 pub(crate) mod api;
+pub mod decode;
 pub mod legacy;
 pub mod metadata;
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Call {
+    pub pallet_index: u8,
+    pub pallet_name: String,
+    pub pallet_call_index: u8,
+    pub pallet_call_name: String,
+    pub args: Value,
+}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Extrinsic {

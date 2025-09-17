@@ -1,3 +1,4 @@
+use anyhow::Context;
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use jsonrpsee::tokio::time::timeout;
 use jsonrpsee::ws_client::WsClientBuilder;
@@ -6,22 +7,30 @@ use jsonrpsee_core::rpc_params;
 use parity_scale_codec::Decode;
 use sp_runtime::AccountId32;
 use std::future::Future;
-use submerge_base::args::RPCArgs;
+use std::time::Duration;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
+use tokio_util::sync::CancellationToken;
+
+pub struct RPCConfig {
+    pub rpc_url: String,
+    pub rpc_connection_timeout_secs: u64,
+    pub rpc_request_timeout_secs: u64,
+    pub rpc_subscription_timeout_secs: u64,
+}
 
 pub struct SubstrateClient {
     ws_client: Client,
 }
 
 impl SubstrateClient {
-    pub async fn new(args: &RPCArgs) -> anyhow::Result<Self> {
+    pub async fn new(config: &RPCConfig) -> anyhow::Result<Self> {
         Self::new_inner(
-            &args.rpc_url,
-            args.rpc_connection_timeout_secs,
-            args.rpc_request_timeout_secs,
+            &config.rpc_url,
+            config.rpc_connection_timeout_secs,
+            config.rpc_request_timeout_secs,
         )
         .await
     }
@@ -128,16 +137,19 @@ impl SubstrateClient {
         }
     }
 
-    async fn subscribe_to_blocks<F>(
+    async fn subscribe_to_blocks<F, C>(
         &self,
         subscribe_method_name: &str,
         unsubscribe_method_name: &str,
-        timeout_seconds: u64,
-        callback: impl Fn(BlockHeader) -> F,
-    ) where
-        F: Future<Output = anyhow::Result<()>>,
+        subscription_timeout: Duration,
+        cancellation_token: CancellationToken,
+        mut callback: C,
+    ) -> anyhow::Result<()>
+    where
+        C: FnMut(BlockHeader) -> F + Send,
+        F: Future<Output = anyhow::Result<()>> + Send,
     {
-        let mut subscription: Subscription<BlockHeader> = match self
+        let mut subscription: Subscription<BlockHeader> = self
             .ws_client
             .subscribe(
                 subscribe_method_name,
@@ -145,73 +157,85 @@ impl SubstrateClient {
                 unsubscribe_method_name,
             )
             .await
-        {
-            Ok(subscription) => subscription,
-            Err(error) => {
-                log::error!("⚠️ Error while subscribing to blocks: {error:?}");
-                return;
-            }
-        };
+            .map_err(|error| {
+                let message = format!("⚠️ Error while subscribing to blocks: {error:?}");
+                log::error!("{message}");
+                anyhow::anyhow!(message)
+            })?;
 
-        while let Ok(maybe_block_header_result) = timeout(
-            std::time::Duration::from_secs(timeout_seconds),
-            subscription.next(),
-        )
-        .await
-        {
-            match maybe_block_header_result {
-                Some(block_header_result) => match block_header_result {
-                    Ok(block_header) => {
-                        if let Err(error) = callback(block_header).await {
-                            log::error!("⚠️ Error in callback: {error:?}");
-                            break;
+        loop {
+            let next_item = timeout(subscription_timeout, subscription.next());
+            tokio::select! {
+                _ = cancellation_token.cancelled() => {
+                    log::info!("🚫 Block subscription cancelled.");
+                    return Ok(());
+                }
+                result = next_item => {
+                    match result {
+                        Ok(Some(Ok(block_header))) => {
+                            if let Err(error) = callback(block_header).await {
+                                let message = format!("⚠️ Error in callback: {error:?}");
+                                log::error!("{message}");
+                                return Err(anyhow::anyhow!(error)).context(message);
+                            }
+                        }
+                        Ok(Some(Err(error))) => {
+                            let message = format!("⚠️ Error while receiving block header: {error:?}");
+                            log::error!("{message}");
+                            return Err(anyhow::anyhow!(error)).context(message);
+                        }
+                        Ok(None) => {
+                            let message = "⚠️ Empty block header.";
+                            return Err(anyhow::anyhow!(message));
+                        }
+                        Err(_) => {
+                            return Err(anyhow::anyhow!("⚠️ Block subscription timed out after {} sec.", subscription_timeout.as_secs()));
                         }
                     }
-                    Err(error) => {
-                        log::error!("⚠️ Error while getting block header: {error:?}");
-                        log::error!("Will exit new block subscription.");
-                        break;
-                    }
-                },
-                None => {
-                    log::error!("⚠️ Empty block header. Will exit new block subscription.");
-                    break;
                 }
             }
         }
     }
 
-    pub async fn subscribe_to_new_blocks<F>(
+    pub async fn subscribe_to_new_blocks<F, C>(
         &self,
-        timeout_seconds: u64,
-        callback: impl Fn(BlockHeader) -> F,
-    ) where
-        F: Future<Output = anyhow::Result<()>>,
+        subscription_timeout: Duration,
+        cancellation_token: CancellationToken,
+        callback: C,
+    ) -> anyhow::Result<()>
+    where
+        C: FnMut(BlockHeader) -> F + Send,
+        F: Future<Output = anyhow::Result<()>> + Send,
     {
         self.subscribe_to_blocks(
             "chain_subscribeNewHeads",
             "chain_unsubscribeNewHeads",
-            timeout_seconds,
+            subscription_timeout,
+            cancellation_token,
             callback,
         )
-        .await;
+        .await
     }
 
     /// Subscribes to finalized blocks.
-    pub async fn subscribe_to_finalized_blocks<F>(
+    pub async fn subscribe_to_finalized_blocks<F, C>(
         &self,
-        timeout_seconds: u64,
-        callback: impl Fn(BlockHeader) -> F,
-    ) where
-        F: Future<Output = anyhow::Result<()>>,
+        subscription_timeout: Duration,
+        cancellation_token: CancellationToken,
+        callback: C,
+    ) -> anyhow::Result<()>
+    where
+        C: FnMut(BlockHeader) -> F + Send,
+        F: Future<Output = anyhow::Result<()>> + Send,
     {
         self.subscribe_to_blocks(
             "chain_subscribeFinalizedHeads",
             "chain_unsubscribeFinalizedHeads",
-            timeout_seconds,
+            subscription_timeout,
+            cancellation_token,
             callback,
         )
-        .await;
+        .await
     }
 
     pub async fn get_last_runtime_upgrade_info(
@@ -222,7 +246,6 @@ impl SubstrateClient {
             .ws_client
             .request("state_getRuntimeVersion", rpc_params!(block_hash))
             .await?;
-        // let upgrade_info = LastRuntimeUpgradeInfo::from_substrate_hex_string(hex_string)?;
         Ok(upgrade_info)
     }
 

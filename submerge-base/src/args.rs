@@ -1,21 +1,6 @@
 use clap::Parser;
 
 #[derive(Parser, Clone, Debug)]
-pub struct RPCArgs {
-    #[arg(long, default_value = "wss://rpc.helikon.io/polkadot")]
-    /// JSON-RPC server WS URL
-    pub rpc_url: String,
-
-    #[arg(long, default_value = "20")]
-    /// JSON-RPC connection timeout in seconds
-    pub rpc_connection_timeout_secs: u64,
-
-    #[arg(long, default_value = "20")]
-    /// JSON-RPC request timeout in seconds
-    pub rpc_request_timeout_secs: u64,
-}
-
-#[derive(Parser, Clone, Debug)]
 pub struct PostgreSQLArgs {
     #[arg(long, default_value = "localhost")]
     /// PostgreSQL server host
@@ -41,7 +26,7 @@ pub struct PostgreSQLArgs {
     /// PostgreSQL connection timeout in seconds
     pub postgres_connection_timeout_secs: u64,
 
-    #[arg(long, default_value_t = 100)]
+    #[arg(long, default_value_t = 256)]
     /// PostgreSQL connection pool max connections
     pub postgres_pool_max_connections: u32,
 }

@@ -23,7 +23,6 @@ pub trait BaseService {
 pub struct Supervisor<S: BaseService> {
     service: Arc<S>,
     retry_delay: Duration,
-    enable_metrics: bool,
     shutdown_notify: Option<Arc<Notify>>,
 }
 
@@ -32,7 +31,6 @@ impl<S: BaseService> Supervisor<S> {
         Self {
             service: Arc::new(service),
             retry_delay: Duration::from_secs(retry_delay_secs),
-            enable_metrics: true,
             shutdown_notify: None,
         }
     }
@@ -42,20 +40,11 @@ impl<S: BaseService> Supervisor<S> {
         self
     }
 
-    pub fn without_metrics(mut self) -> Self {
-        self.enable_metrics = false;
-        self
-    }
-
     pub async fn start(self) -> anyhow::Result<()> {
-        if self.enable_metrics {
-            let (host, port) = self.service.get_metrics_server_addr();
-            tokio::spawn(async move {
-                submerge_metrics::server::start((host, port)).await;
-            });
-        } else {
-            log::info!("ℹ️ Metrics disabled.");
-        }
+        let (host, port) = self.service.get_metrics_server_addr();
+        tokio::spawn(async move {
+            submerge_metrics::server::start((host, port)).await;
+        });
         println!(
             r#"
 ███████╗██╗   ██╗██████╗ ███╗   ███╗███████╗██████╗  ██████╗ ███████╗

@@ -1,20 +1,18 @@
 use std::cmp::min;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::BlockStatus;
 use sp_runtime::AccountId32;
 use sqlx::{Postgres, Transaction};
-use submerge_base::args::{PostgreSQLArgs, RPCArgs};
 use submerge_base::types::substrate::block::BlockHeader;
-use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
-use submerge_substrate_client::SubstrateClient;
+use submerge_substrate_client::{RPCConfig, SubstrateClient};
 use submerge_util::string::truncate_hash;
 use tokio::sync::RwLock;
+use uuid::Uuid as UUID;
 
-pub(crate) mod decode;
 mod event;
 mod extrinsic;
 mod metadata;
@@ -24,25 +22,27 @@ static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId32>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
 
 pub struct BlockProcessor {
-    postgres: PostgreSQLStorage,
+    worker_id: UUID,
+    postgres: Arc<PostgreSQLStorage>,
     substrate_client: SubstrateClient,
     legacy_decode_api_client: Option<LegacyDecodeAPIClient>,
 }
 
 impl BlockProcessor {
     pub async fn new(
-        postgres_args: &PostgreSQLArgs,
-        rpc_args: &RPCArgs,
+        worker_id: UUID,
+        postgres: Arc<PostgreSQLStorage>,
+        rpc_config: &RPCConfig,
         legacy_decode_api_url: &Option<String>,
     ) -> anyhow::Result<Self> {
-        let postgres = PostgreSQLStorage::new(postgres_args).await?;
-        let substrate_client = SubstrateClient::new(rpc_args).await?;
+        let substrate_client = SubstrateClient::new(rpc_config).await?;
         let legacy_decode_api_client = if let Some(url) = legacy_decode_api_url {
             Some(LegacyDecodeAPIClient::new(url)?)
         } else {
             None
         };
         Ok(Self {
+            worker_id,
             postgres,
             substrate_client,
             legacy_decode_api_client,
@@ -61,25 +61,12 @@ impl BlockProcessor {
             .await
     }
 
-    pub async fn process_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
-        log::info!("🔽 Processing genesis from chainspec file.");
-        if self.postgres.get_genesis_record_count().await? > 0 {
-            log::info!("🔁 Genesis had already been processed.");
-            return Ok(());
-        }
-        self.postgres.ingest_genesis(chainspec).await?;
-        log::info!(
-            "✅ Processed {} storage items from the chainspec file.",
-            chainspec.genesis.raw.top.len()
-        );
-        Ok(())
-    }
-
     pub async fn process_finalized_blocks_in_range(
         &self,
-        scan: bool,
         stop_on_error: bool,
         skip_traces: bool,
+        scan: bool,
+        reindex: bool,
         start_block_number: u64,
         end_block_number: u64,
     ) -> anyhow::Result<()> {
@@ -106,10 +93,18 @@ impl BlockProcessor {
                 truncate_hash(&hash_hex),
             );
             match self
-                .process_block(skip_traces, &hash_hex, number, BlockStatus::Finalized)
+                .process_block(
+                    skip_traces,
+                    reindex,
+                    &hash_hex,
+                    number,
+                    BlockStatus::Finalized,
+                )
                 .await
             {
-                Ok(_) => crate::metrics::processed_finalized_block_number().set(number as i64),
+                Ok(_) => crate::metrics::processed_finalized_block_number()
+                    .with_label_values(&[&self.worker_id.to_string()])
+                    .set(number as i64),
                 Err(error) => {
                     log::error!("❌ Error while processing finalized block {number}: {error:?}");
                     self.save_block_error(
@@ -182,34 +177,47 @@ impl BlockProcessor {
     pub async fn process_block(
         &self,
         skip_traces: bool,
+        reindex: bool,
         block_hash_hex: &str,
         block_number: u64,
         status: BlockStatus,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
-        if let Some(row) = self.postgres.get_block_by_hash(&block_hash).await? {
+        if let Some(block_row) = self.postgres.get_block_by_hash(&block_hash).await? {
             log::info!(
                 "👍 Block [{block_number}][{}] had already been processed.",
                 truncate_hash(block_hash_hex)
             );
-            if row.status != status && status == BlockStatus::Finalized {
-                let start_time = std::time::Instant::now();
+            if reindex {
                 log::info!(
-                    "🔁 Update block [{block_number}][0x{}] status: {} ➡️ {status}",
-                    truncate_hash(block_hash_hex),
-                    row.status,
+                    "🗑️ Deleting block [{block_number}][{}] and its traces for reindexing.",
+                    truncate_hash(block_hash_hex)
                 );
-                let mut tx = self.postgres.connection_pool.begin().await?;
                 self.postgres
-                    .update_block_status(&block_hash, status, &mut tx)
+                    .delete_block_and_traces_by_hash(&block_hash)
                     .await?;
-                self.prune_other_blocks(block_number, &block_hash, &mut tx)
-                    .await?;
-                tx.commit().await?;
-                let elapsed_time_ms = start_time.elapsed().as_millis();
-                crate::metrics::block_status_update_time_ms().observe(elapsed_time_ms as f64);
+            } else {
+                if block_row.status != status && status == BlockStatus::Finalized {
+                    let start_time = std::time::Instant::now();
+                    log::info!(
+                        "🔁 Update block [{block_number}][0x{}] status: {} ➡️ {status}",
+                        truncate_hash(block_hash_hex),
+                        block_row.status,
+                    );
+                    let mut tx = self.postgres.connection_pool.begin().await?;
+                    self.postgres
+                        .update_block_status(&block_hash, status, &mut tx)
+                        .await?;
+                    self.prune_other_blocks(block_number, &block_hash, &mut tx)
+                        .await?;
+                    tx.commit().await?;
+                    let elapsed_time_ms = start_time.elapsed().as_millis();
+                    crate::metrics::block_status_update_time_ms()
+                        .with_label_values(&[&self.worker_id.to_string()])
+                        .observe(elapsed_time_ms as f64);
+                }
+                return Ok(());
             }
-            return Ok(());
         }
         let start_time = std::time::Instant::now();
         let block_header = self
@@ -372,7 +380,9 @@ impl BlockProcessor {
             BlockStatus::Finalized => "🟩",
         };
         let elapsed_time_ms = start_time.elapsed().as_millis();
-        crate::metrics::block_processing_time_ms().observe(elapsed_time_ms as f64);
+        crate::metrics::block_processing_time_ms()
+            .with_label_values(&[&self.worker_id.to_string()])
+            .observe(elapsed_time_ms as f64);
         log::info!(
             "{log_emoji} Processed {status} block [{block_number}][0x{}] in {elapsed_time_ms} ms.",
             truncate_hash(block_hash_hex),

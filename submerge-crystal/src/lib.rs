@@ -1,64 +1,73 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
-use crate::process::BlockProcessor;
+use crate::persistence::CrystalPostgreSQLStorage as _;
+use crate::worker::{WorkerConfig, WorkerManager, WorkerType};
 use anyhow::Context as _;
 use async_trait::async_trait;
 use std::fs;
 use std::sync::Arc;
+use std::time::Duration;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
+use submerge_persistence::postgres::PostgreSQLStorage;
+use submerge_substrate_client::RPCConfig;
 
 mod api;
 pub mod args;
 mod metrics;
 mod persistence;
-mod process;
 mod subscription;
 mod types;
+mod worker;
 
 pub struct Crystal {
     args: Args,
+    postgres: Arc<PostgreSQLStorage>,
+    worker_manager: Arc<WorkerManager>,
 }
 
 impl Crystal {
-    pub fn new(args: Args) -> Self {
-        Self { args }
+    pub async fn new(args: Args) -> anyhow::Result<Self> {
+        let postgres = Arc::new(PostgreSQLStorage::new(&args.postgres).await?);
+        Ok(Self {
+            args,
+            postgres,
+            worker_manager: Default::default(),
+        })
     }
 
     fn print_summary(&self, chainspec: &Chainspec) {
         log::info!(
             r#"
 ┌─────────────────────────────────────────────────────────────────────
-│ Chain:            {}
-│ RPC URL:          {}
-│ Start Block:      {}
-│ End Block:        {}
-│ API Enabled:      {}
-│ Metrics Enabled:  {}
+│ Chain:    {}
 └─────────────────────────────────────────────────────────────────────"#,
             chainspec.name,
-            self.args.rpc.rpc_url,
-            self.args
-                .start_block
-                .map_or("N/A".to_string(), |v| v.to_string()),
-            self.args
-                .end_block
-                .map_or("N/A".to_string(), |v| v.to_string()),
-            !self.args.no_api,
-            !self.args.no_metrics,
         );
     }
 
-    async fn launch_api(&self) {
-        let host = self.args.api.api_host.clone();
-        let port = self.args.api.api_port;
-        let postgres_args = self.args.postgres.clone();
-        tokio::spawn(async move {
-            if let Err(error) = api::run_api(&postgres_args, &host, port).await {
-                log::error!("❌ API failed: {error:?}");
-            }
-        });
+    async fn launch_api(&self) -> anyhow::Result<()> {
+        api::run_api(
+            &self.args.postgres,
+            &self.args.api.api_host,
+            self.args.api.api_port,
+        )
+        .await
+    }
+
+    async fn process_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
+        log::info!("🔽 Processing genesis from chainspec file.");
+        if self.postgres.get_genesis_record_count().await? > 0 {
+            log::info!("🔁 Genesis had already been processed.");
+            return Ok(());
+        }
+        self.postgres.ingest_genesis(chainspec).await?;
+        log::info!(
+            "✅ Processed {} storage items from the chainspec file.",
+            chainspec.genesis.raw.top.len()
+        );
+        Ok(())
     }
 }
 
@@ -77,42 +86,36 @@ impl BaseService for Crystal {
 
     async fn run(&self) -> anyhow::Result<()> {
         let chainspec_json = fs::read_to_string(&self.args.chainspec_path)
-            .context("Failed to read chainspec file")?;
+            .context("🔴 Failed to read the chainspec file.")?;
         let chainspec: Chainspec =
-            serde_json::from_str(&chainspec_json).context("Failed to parse chainspec JSON")?;
+            serde_json::from_str(&chainspec_json).context("🔴 Failed to parse chainspec JSON.")?;
         self.print_summary(&chainspec);
-        // launch the API
-        if !self.args.no_api {
-            self.launch_api().await;
-        } else {
-            log::info!("ℹ️ API disabled.");
-        }
+        self.process_genesis(&chainspec).await?;
 
-        let processor = Arc::new(
-            BlockProcessor::new(
-                &self.args.postgres,
-                &self.args.rpc,
-                &self.args.legacy_decode_api_url,
+        self.worker_manager
+            .spawn(
+                WorkerType::ProcessFinalizedRange {
+                    start_block_number: 1000,
+                    end_block_number: 1050,
+                    scan: true,
+                    reindex: true,
+                },
+                WorkerConfig::new(
+                    self.postgres.clone(),
+                    RPCConfig {
+                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        rpc_connection_timeout_secs: 30,
+                        rpc_request_timeout_secs: 30,
+                        rpc_subscription_timeout_secs: 60,
+                    },
+                    self.args.legacy_decode_api_url.clone(),
+                    Duration::from_secs(self.args.service.recovery_sleep_seconds),
+                    true,
+                    true,
+                ),
             )
-            .await?,
-        );
-        processor.process_genesis(&chainspec).await?;
-
-        match self.args.end_block {
-            Some(end_block) => {
-                let start_block = self.args.start_block.unwrap_or(0);
-                processor
-                    .process_finalized_blocks_in_range(
-                        self.args.scan,
-                        self.args.stop_on_error,
-                        self.args.skip_traces,
-                        start_block,
-                        end_block,
-                    )
-                    .await?;
-                Ok(())
-            }
-            None => self.subscribe_to_live_blocks(processor).await,
-        }
+            .await;
+        self.launch_api().await?;
+        Ok(())
     }
 }

@@ -1,8 +1,9 @@
+use super::BlockProcessor;
 use crate::persistence::CrystalPostgreSQLStorage;
-use crate::process::decode::ValueVisitor;
-use crate::process::BlockProcessor;
-use crate::types::metadata::util::get_metadata_version;
-use crate::types::metadata::Metadata;
+use crate::types::{
+    decode::ValueVisitor,
+    metadata::{util::get_metadata_version, Metadata},
+};
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use lru::LruCache;
 use parity_scale_codec::{Decode, Encode};

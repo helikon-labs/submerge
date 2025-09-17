@@ -10,19 +10,17 @@ use submerge_base::types::substrate::{
 };
 use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
+use super::BlockProcessor;
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{
-        decode::{Call, Value, ValueVisitor},
-        BlockProcessor,
-    },
     types::{
+        decode::{Value, ValueVisitor},
         legacy::LegacyCall,
         metadata::util::{
             get_extrinsic_extra_type, get_metadata_version, get_runtime_call_type,
             get_signed_extensions,
         },
-        BlockStatus, Event, Extrinsic,
+        BlockStatus, Call, Event, Extrinsic,
     },
 };
 

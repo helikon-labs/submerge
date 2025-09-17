@@ -13,6 +13,25 @@ macro_rules! define_gauge {
 }
 
 #[macro_export]
+macro_rules! define_gauge_vec {
+    ($prefix:expr, $name:ident, $metric_name:expr, $description:expr, $labels:expr,) => {
+        pub fn $name() -> $crate::registry::IntGaugeVec {
+            static METER: once_cell::sync::Lazy<$crate::registry::IntGaugeVec> =
+                once_cell::sync::Lazy::new(|| {
+                    $crate::registry::register_int_gauge_vec(
+                        $prefix,
+                        $metric_name,
+                        $description,
+                        $labels,
+                    )
+                    .unwrap()
+                });
+            METER.clone()
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! define_counter {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr,) => {
         pub fn $name() -> $crate::registry::IntCounter {
@@ -55,6 +74,26 @@ macro_rules! define_histogram {
                         $prefix,
                         $metric_name,
                         $description,
+                        $buckets,
+                    )
+                    .unwrap()
+                });
+            METER.clone()
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! define_histogram_vec {
+    ($prefix:expr, $name:ident, $metric_name:expr, $description:expr, $labels:expr, $buckets:expr,) => {
+        pub fn $name() -> $crate::registry::HistogramVec {
+            static METER: once_cell::sync::Lazy<$crate::registry::HistogramVec> =
+                once_cell::sync::Lazy::new(|| {
+                    $crate::registry::register_histogram_vec(
+                        $prefix,
+                        $metric_name,
+                        $description,
+                        $labels,
                         $buckets,
                     )
                     .unwrap()

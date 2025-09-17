@@ -12,14 +12,12 @@ use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
     persistence::CrystalPostgreSQLStorage,
-    process::{
-        decode::{Value, ValueVisitor},
-        BlockProcessor,
-    },
     types::{
+        decode::{Value, ValueVisitor},
         metadata::util::{get_metadata_version, get_runtime_call_type, v14, v15},
         BlockStatus, Event, Extrinsic,
     },
+    worker::processor::BlockProcessor,
 };
 
 impl BlockProcessor {

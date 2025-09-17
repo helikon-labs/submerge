@@ -1,6 +1,6 @@
 use crate::{
-    process::{decode::ValueVisitor, BlockProcessor},
-    types::metadata::util::get_block_weight_type,
+    types::{decode::ValueVisitor, metadata::util::get_block_weight_type},
+    worker::processor::BlockProcessor,
 };
 use frame_metadata::RuntimeMetadata;
 use serde_json::Value as JSONValue;

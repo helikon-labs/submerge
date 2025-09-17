@@ -1,4 +1,5 @@
-use crate::process::BlockProcessor;
+/*
+use crate::processor::BlockProcessor;
 use crate::types::BlockStatus;
 use crate::Crystal;
 use once_cell::sync::OnceCell;
@@ -31,7 +32,7 @@ impl Crystal {
                 }
             };
             substrate_client
-                .subscribe_to_new_blocks(rpc_args.rpc_request_timeout_secs, |header| {
+                .subscribe_to_new_blocks(rpc_args.rpc_subscription_timeout_secs, |header| {
                     let processor = processor.clone();
                     async move {
                         let hash_bytes = header.get_hash_bytes()?;
@@ -93,7 +94,7 @@ impl Crystal {
                 }
             };
             substrate_client
-                .subscribe_to_finalized_blocks(rpc_args.rpc_request_timeout_secs, |header| {
+                .subscribe_to_finalized_blocks(rpc_args.rpc_subscription_timeout_secs, |header| {
                     let processor = processor.clone();
                     let error_cell = error_cell.clone();
                     async move {
@@ -191,3 +192,5 @@ impl Crystal {
         }
     }
 }
+
+*/

@@ -94,6 +94,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         author_account_id: &AccountId32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    async fn delete_block_and_traces_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
     async fn update_block_status(
         &self,
         block_hash: &[u8],
@@ -485,6 +486,18 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
+    async fn delete_block_and_traces_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+        let block_delete_result = sqlx::query("DELETE FROM block WHERE hash = $1")
+            .bind(hash)
+            .execute(&self.connection_pool)
+            .await?;
+        sqlx::query("DELETE FROM trace WHERE block_hash = $1")
+            .bind(hash)
+            .execute(&self.connection_pool)
+            .await?;
+        Ok(block_delete_result.rows_affected() == 1)
+    }
+
     async fn ingest_block(
         &self,
         hash: &[u8],
@@ -814,11 +827,8 @@ mod tests {
     };
     use sp_runtime::AccountId32;
     use std::fs;
-    use submerge_base::{
-        args::{PostgreSQLArgs, RPCArgs},
-        types::substrate::chainspec::Chainspec,
-    };
-    use submerge_substrate_client::SubstrateClient;
+    use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::Chainspec};
+    use submerge_substrate_client::{RPCConfig, SubstrateClient};
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
         let args = PostgreSQLArgs {
@@ -846,12 +856,13 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_ingest_blocks() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
-        let args = RPCArgs {
+        let rpc_config = RPCConfig {
             rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
             rpc_connection_timeout_secs: 30,
             rpc_request_timeout_secs: 30,
+            rpc_subscription_timeout_secs: 30,
         };
-        let substrate_client = SubstrateClient::new(&args).await?;
+        let substrate_client = SubstrateClient::new(&rpc_config).await?;
         for number in 100..150 {
             let hash = substrate_client.get_block_hash(number).await?;
             let header = substrate_client.get_block_header(&hash).await?;
@@ -899,12 +910,13 @@ mod tests {
     async fn test_trace_error() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let block_number = 100;
-        let args = RPCArgs {
+        let rpc_config = RPCConfig {
             rpc_url: "wss://rpc.helikon.io/coretime-westend-dev".to_owned(),
             rpc_connection_timeout_secs: 30,
             rpc_request_timeout_secs: 30,
+            rpc_subscription_timeout_secs: 30,
         };
-        let substrate_client = SubstrateClient::new(&args).await?;
+        let substrate_client = SubstrateClient::new(&rpc_config).await?;
         let block_hash = substrate_client.get_block_hash(block_number).await?;
         let block_hash = hex::decode(block_hash)?;
         let mut tx = postgres.connection_pool.begin().await?;

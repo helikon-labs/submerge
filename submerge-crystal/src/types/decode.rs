@@ -1,18 +1,10 @@
+use super::Call;
 use convert_case::{Case, Casing};
 use rustc_hash::FxHashMap as HashMap;
 use scale_info::PortableRegistry;
 use serde::Serialize;
 use serde_json::Map as JsonMap;
 use serde_json::Value as JSONValue;
-
-#[derive(Clone, Debug, Serialize)]
-pub struct Call {
-    pub pallet_index: u8,
-    pub pallet_name: String,
-    pub pallet_call_index: u8,
-    pub pallet_call_name: String,
-    pub args: Value,
-}
 
 #[derive(Clone, Debug, Serialize)]
 pub enum Value {
