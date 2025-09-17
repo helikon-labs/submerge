@@ -279,7 +279,6 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
                     Some((value.index(), name.clone())),
                 ))?;
                 match field_value {
-                    Value::Null => todo!(),
                     Value::Call(_) => return Ok(field_value.clone()),
                     _ => anyhow::bail!("Call field cannot have any type other than a call."),
                 }
