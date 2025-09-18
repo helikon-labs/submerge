@@ -13,7 +13,7 @@ integration-test = []
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
-clap = { workspace = true, features = ["env"] }
+clap = { workspace = true }
 log = { workspace = true }
 reqwest = { workspace = true}
 serde = { workspace = true }

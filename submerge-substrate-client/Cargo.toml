@@ -11,7 +11,7 @@ license.workspace = true
 anyhow = { workspace = true }
 frame-metadata = { workspace = true }
 hex = { workspace = true }
-jsonrpsee = { workspace = true, features = ["full"] }
+jsonrpsee = { workspace = true }
 jsonrpsee-core = { workspace = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }

@@ -17,7 +17,6 @@ mod api;
 pub mod args;
 mod metrics;
 mod persistence;
-mod subscription;
 mod types;
 mod worker;
 
@@ -95,8 +94,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    start_block_number: 1000,
-                    end_block_number: 1050,
+                    maybe_start_block_number: Some(1000),
+                    maybe_end_block_number: Some(1100),
                     scan: true,
                     reindex: true,
                 },

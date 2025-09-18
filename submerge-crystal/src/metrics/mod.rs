@@ -5,7 +5,6 @@ use submerge_metrics::{
 
 const METRIC_PREFIX: &str = "submerge_crystal";
 
-// Core block metrics (unchanged)
 define_gauge_vec!(
     METRIC_PREFIX,
     processed_best_block_number,

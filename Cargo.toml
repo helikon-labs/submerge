@@ -34,7 +34,7 @@ async-recursion = "1.1.1"
 async-trait = "0.1"
 anyhow = "1"
 chrono = "0.4"
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.5", features = ["env", "derive"] }
 convert_case = "0.8"
 frame-metadata = { version = "23.0", default-features = true, features = ["legacy"] }
 frame-system = "42.0"
@@ -42,7 +42,7 @@ frame-support = "42.0"
 futures-util = "0.3"
 env_logger = "0.11"
 hex = "0.4"
-jsonrpsee = "0.25"
+jsonrpsee = { version = "0.25", features = ["full"] }
 jsonrpsee-core = "0.25"
 lazy_static = "1.5"
 log = "0.4"

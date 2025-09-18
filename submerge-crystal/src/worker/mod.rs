@@ -15,8 +15,8 @@ mod subscription;
 #[allow(dead_code)]
 pub enum WorkerType {
     ProcessFinalizedRange {
-        start_block_number: u64,
-        end_block_number: u64,
+        maybe_start_block_number: Option<u64>,
+        maybe_end_block_number: Option<u64>,
         scan: bool,
         reindex: bool,
     },
@@ -152,8 +152,8 @@ impl Worker {
                 self.process_subscription(BlockStatus::Finalized).await
             }
             WorkerType::ProcessFinalizedRange {
-                start_block_number,
-                end_block_number,
+                maybe_start_block_number,
+                maybe_end_block_number,
                 scan,
                 reindex,
             } => loop {
@@ -185,14 +185,14 @@ impl Worker {
                         self.config.skip_traces,
                         scan,
                         reindex,
-                        start_block_number,
-                        end_block_number,
+                        maybe_start_block_number,
+                        maybe_end_block_number,
                     )
                     .await
                 {
                     Ok(()) => break,
                     Err(error) => {
-                        log::error!("🔴 Error while processing finalized blocks {start_block_number}-{end_block_number}: {error:?}");
+                        log::error!("🔴 Error while processing finalized blocks {maybe_start_block_number:?}-{maybe_end_block_number:?}: {error:?}");
                         if self.config.stop_on_error {
                             break;
                         }

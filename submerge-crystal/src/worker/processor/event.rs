@@ -11,7 +11,7 @@ use submerge_base::types::substrate::{
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
-    persistence::CrystalPostgreSQLStorage,
+    persistence::{types::EventRow, CrystalPostgreSQLStorage},
     types::{
         decode::{Value, ValueVisitor},
         metadata::util::{get_metadata_version, get_runtime_call_type, v14, v15},
@@ -353,28 +353,19 @@ impl BlockProcessor {
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
+        let mut rows: Vec<EventRow> = Vec::new();
         for event in events.iter() {
-            let (phase, maybe_extrinsic) = match &event.phase {
-                frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
-                    ("ApplyExtrinsic", extrinsics.get(*extrinsic_index as usize))
-                }
-                frame_system::Phase::Finalization => ("Finalization", None),
-                frame_system::Phase::Initialization => ("Initialization", None),
-            };
-            self.postgres
-                .ingest_event(
-                    block_hash,
-                    block_header.get_number()?,
-                    block_timestamp,
-                    spec_version,
-                    block_status,
-                    event,
-                    phase,
-                    maybe_extrinsic,
-                    tx,
-                )
-                .await?;
+            rows.push(EventRow::from_block_event(
+                block_hash,
+                block_header.get_number()?,
+                block_timestamp,
+                spec_version,
+                block_status,
+                event,
+                extrinsics,
+            ));
         }
+        self.postgres.ingest_events(&rows, tx).await?;
         Ok(())
     }
 }

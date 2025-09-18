@@ -61,15 +61,23 @@ impl BlockProcessor {
             .await
     }
 
-    pub async fn process_finalized_blocks_in_range(
+    async fn get_actual_finalized_block_range(
         &self,
-        stop_on_error: bool,
-        skip_traces: bool,
+        maybe_start_block_number: Option<u64>,
+        maybe_end_block_number: Option<u64>,
         scan: bool,
-        reindex: bool,
-        start_block_number: u64,
-        end_block_number: u64,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<(u64, u64)> {
+        let start_block_number = maybe_start_block_number.unwrap_or(0);
+        let finalized_block_hash = self.substrate_client.get_finalized_block_hash().await?;
+        let finalized_block_number = self
+            .substrate_client
+            .get_block_header(&finalized_block_hash)
+            .await?
+            .get_number()?;
+        let end_block_number = min(
+            maybe_end_block_number.unwrap_or(finalized_block_number),
+            finalized_block_number,
+        );
         let start_block_number = if scan {
             start_block_number
         } else {
@@ -77,13 +85,25 @@ impl BlockProcessor {
                 .get_next_block_number(start_block_number, end_block_number, BlockStatus::Finalized)
                 .await?
         };
-        let finalized_block_hash = self.substrate_client.get_finalized_block_hash().await?;
-        let finalized_block_number = self
-            .substrate_client
-            .get_block_header(&finalized_block_hash)
-            .await?
-            .get_number()?;
-        let end_block_number = min(end_block_number, finalized_block_number);
+        Ok((start_block_number, end_block_number))
+    }
+
+    pub async fn process_finalized_blocks_in_range(
+        &self,
+        stop_on_error: bool,
+        skip_traces: bool,
+        scan: bool,
+        reindex: bool,
+        maybe_start_block_number: Option<u64>,
+        maybe_end_block_number: Option<u64>,
+    ) -> anyhow::Result<()> {
+        let (start_block_number, end_block_number) = self
+            .get_actual_finalized_block_range(
+                maybe_start_block_number,
+                maybe_end_block_number,
+                scan,
+            )
+            .await?;
         log::info!("⚙️ Process finalized blocks {start_block_number}-{end_block_number}.");
         for number in start_block_number..=end_block_number {
             let hash_hex = self.substrate_client.get_block_hash(number).await?;
@@ -183,6 +203,7 @@ impl BlockProcessor {
         status: BlockStatus,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
+        let mut tx = self.postgres.connection_pool.begin().await?;
         if let Some(block_row) = self.postgres.get_block_by_hash(&block_hash).await? {
             log::info!(
                 "👍 Block [{block_number}][{}] had already been processed.",
@@ -194,7 +215,7 @@ impl BlockProcessor {
                     truncate_hash(block_hash_hex)
                 );
                 self.postgres
-                    .delete_block_and_traces_by_hash(&block_hash)
+                    .delete_block_and_traces_by_hash(&block_hash, &mut tx)
                     .await?;
             } else {
                 if block_row.status != status && status == BlockStatus::Finalized {
@@ -204,18 +225,17 @@ impl BlockProcessor {
                         truncate_hash(block_hash_hex),
                         block_row.status,
                     );
-                    let mut tx = self.postgres.connection_pool.begin().await?;
                     self.postgres
                         .update_block_status(&block_hash, status, &mut tx)
                         .await?;
                     self.prune_other_blocks(block_number, &block_hash, &mut tx)
                         .await?;
-                    tx.commit().await?;
                     let elapsed_time_ms = start_time.elapsed().as_millis();
                     crate::metrics::block_status_update_time_ms()
                         .with_label_values(&[&self.worker_id.to_string()])
                         .observe(elapsed_time_ms as f64);
                 }
+                tx.commit().await?;
                 return Ok(());
             }
         }
@@ -266,7 +286,6 @@ impl BlockProcessor {
             .substrate_client
             .get_block_timestamp(block_hash_hex)
             .await?;
-        let mut tx = self.postgres.connection_pool.begin().await?;
         let (events, extrinsics, weight) = if skip_traces {
             let event_bytes = self
                 .substrate_client

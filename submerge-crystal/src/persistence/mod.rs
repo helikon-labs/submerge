@@ -4,6 +4,7 @@ use parity_scale_codec::Encode;
 use serde_json::Value as JSONValue;
 use sp_runtime::AccountId32;
 use sp_runtime::DigestItem;
+use sqlx::QueryBuilder;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
@@ -12,15 +13,15 @@ use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
+use crate::persistence::types::EventRow;
 use crate::types::metadata::Metadata;
 use crate::types::metadata::MetadataPallet;
 use crate::types::BlockStatus;
-use crate::types::Event;
 use crate::types::Extrinsic;
 use types::BlockRow;
 
 pub mod api;
-mod types;
+pub mod types;
 
 pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_metadata(
@@ -94,7 +95,11 @@ pub(crate) trait CrystalPostgreSQLStorage {
         author_account_id: &AccountId32,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    async fn delete_block_and_traces_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
+    async fn delete_block_and_traces_by_hash(
+        &self,
+        hash: &[u8],
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<bool>;
     async fn update_block_status(
         &self,
         block_hash: &[u8],
@@ -134,19 +139,11 @@ pub(crate) trait CrystalPostgreSQLStorage {
         extrinsic: &Extrinsic,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
-    #[allow(clippy::too_many_arguments)]
-    async fn ingest_event(
+    async fn ingest_events(
         &self,
-        block_hash: &[u8],
-        block_number: u64,
-        block_timestamp: u64,
-        spec_version: u32,
-        status: BlockStatus,
-        event: &Event,
-        phase: &str,
-        maybe_extrinsic: Option<&Extrinsic>,
+        event_rows: &[EventRow],
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<i64>;
+    ) -> anyhow::Result<()>;
     #[allow(clippy::too_many_arguments)]
     async fn ingest_call(
         &self,
@@ -486,14 +483,18 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
-    async fn delete_block_and_traces_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+    async fn delete_block_and_traces_by_hash(
+        &self,
+        hash: &[u8],
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<bool> {
         let block_delete_result = sqlx::query("DELETE FROM block WHERE hash = $1")
             .bind(hash)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         sqlx::query("DELETE FROM trace WHERE block_hash = $1")
             .bind(hash)
-            .execute(&self.connection_pool)
+            .execute(&mut **tx)
             .await?;
         Ok(block_delete_result.rows_affected() == 1)
     }
@@ -731,43 +732,36 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(row.0)
     }
 
-    async fn ingest_event(
+    async fn ingest_events(
         &self,
-        block_hash: &[u8],
-        block_number: u64,
-        block_timestamp: u64,
-        spec_version: u32,
-        block_status: BlockStatus,
-        event: &Event,
-        phase: &str,
-        maybe_extrinsic: Option<&Extrinsic>,
+        event_rows: &[EventRow],
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<i64> {
-        let row: (i64,) = sqlx::query_as(
-            r#"
-            INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, extrinsic_hash, phase, index, args_json)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-            RETURNING id
-            "#,
-        )
-            .bind(block_hash)
-            .bind(block_number as i64)
-            .bind(block_timestamp as i64)
-            .bind(spec_version as i32)
-            .bind(block_status)
-            .bind(event.trace_index.map(|i| i as i32))
-            .bind(event.pallet_index as i32)
-            .bind(&event.pallet_name)
-            .bind(event.pallet_event_index as i32)
-            .bind(&event.pallet_event_name)
-            .bind(maybe_extrinsic.map(|e| e.index as i32))
-            .bind(maybe_extrinsic.map(|e| e.hash))
-            .bind(phase)
-            .bind(event.index as i32)
-            .bind(&event.args)
-            .fetch_one(&mut **tx)
-            .await?;
-        Ok(row.0)
+    ) -> anyhow::Result<()> {
+        let mut query_builder = QueryBuilder::new(
+            "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, extrinsic_hash, phase, index, args_json) ",
+        );
+        query_builder.push_values(event_rows, |mut query, event| {
+            query
+                .push_bind(&event.block_hash)
+                .push_bind(event.block_number)
+                .push_bind(event.block_timestamp)
+                .push_bind(event.spec_version)
+                .push_bind(event.block_status)
+                .push_bind(event.trace_index)
+                .push_bind(event.pallet_index)
+                .push_bind(&event.pallet_name)
+                .push_bind(event.pallet_event_index)
+                .push_bind(&event.pallet_event_name)
+                .push_bind(event.extrinsic_index)
+                .push_bind(event.extrinsic_hash)
+                .push_bind(&event.phase)
+                .push_bind(event.index)
+                .push_bind(&event.args_json);
+        });
+        let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
+            query_builder.build();
+        query.execute(&mut **tx).await?;
+        Ok(())
     }
 
     async fn ingest_call(
