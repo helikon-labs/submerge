@@ -379,8 +379,9 @@ components:
           type: string
           enum: [ok, degraded, error]
         reason:
-          type: string
-          nullable: true
+          type:
+            - 'null'
+            - string
           description: Short machine-readable reason for non-OK states.
       example:
         status: ok
@@ -640,9 +641,10 @@ components:
           description: Storage key (hex, 0x-prefixed).
           example: '0x26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a'
         value:
-          type: string
+          type:
+            - 'null'
+            - string
           description: Storage value (hex, 0x-prefixed). Can be odd-length.
-          nullable: true
           examples:
             - null
             - '0x02'

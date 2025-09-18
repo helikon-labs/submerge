@@ -8,15 +8,15 @@ use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use lru::LruCache;
 use parity_scale_codec::{Decode, Encode};
 use serde_json::Value as JSONValue;
-use std::num::NonZero;
+use std::num::NonZeroUsize;
 use std::sync::{Arc, LazyLock};
 use submerge_util::serde::strip_nuls;
 use tokio::sync::RwLock;
 
-const METADATA_CACHE_SIZE: usize = 10;
+const METADATA_CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(10).unwrap();
 
 static METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<RuntimeMetadata>>>> =
-    LazyLock::new(|| RwLock::new(LruCache::new(NonZero::new(METADATA_CACHE_SIZE).unwrap())));
+    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
 
 impl BlockProcessor {
     pub async fn get_metadata(

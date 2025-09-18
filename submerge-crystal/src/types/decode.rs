@@ -272,7 +272,7 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
         }
 
         if type_id == self.call_type_id {
-            for field in value.fields().by_ref() {
+            if let Some(field) = value.fields().by_ref().next() {
                 let field = field?;
                 let field_value = field.decode_with_visitor(ValueVisitor::new(
                     self.call_type_id,
