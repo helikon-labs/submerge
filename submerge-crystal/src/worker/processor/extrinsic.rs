@@ -528,20 +528,33 @@ impl BlockProcessor {
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
+        let block_number = block_header.get_number()?;
+        let ids_to_indices = self
+            .postgres
+            .ingest_extrinsics(
+                block_hash,
+                block_number,
+                block_timestamp,
+                spec_version,
+                block_status,
+                extrinsics,
+                tx,
+            )
+            .await?;
         for extrinsic in extrinsics.iter() {
-            let block_number = block_header.get_number()?;
-            let extrinsic_id = self
-                .postgres
-                .ingest_extrinsic(
-                    block_hash,
-                    block_number,
-                    block_timestamp,
-                    spec_version,
-                    block_status,
-                    extrinsic,
-                    tx,
-                )
-                .await?;
+            let extrinsic_id = ids_to_indices
+                .iter()
+                .find_map(|id_to_index| {
+                    if id_to_index.1 as u32 == extrinsic.index {
+                        Some(id_to_index.0)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or(anyhow::anyhow!(
+                    "Database for extrinsic index {} is not found after batch ingestion.",
+                    extrinsic.index
+                ))?;
             self.process_extrinsic_arg(
                 block_hash,
                 block_number,

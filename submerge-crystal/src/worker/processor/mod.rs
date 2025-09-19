@@ -211,7 +211,7 @@ impl BlockProcessor {
             );
             if reindex {
                 log::info!(
-                    "🗑️ Deleting block [{block_number}][{}] and its traces for reindexing.",
+                    "🗑️  Deleting block [{block_number}][{}] and its traces for reindexing.",
                     truncate_hash(block_hash_hex)
                 );
                 self.postgres

@@ -14,6 +14,8 @@ use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::persistence::types::EventRow;
+use crate::persistence::types::ExtrinsicRow;
+use crate::persistence::types::LogRow;
 use crate::types::metadata::Metadata;
 use crate::types::metadata::MetadataPallet;
 use crate::types::BlockStatus;
@@ -22,6 +24,8 @@ use types::BlockRow;
 
 pub mod api;
 pub mod types;
+
+const INSERT_BATCH_SIZE: usize = 1000;
 
 pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_metadata(
@@ -129,16 +133,16 @@ pub(crate) trait CrystalPostgreSQLStorage {
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     #[allow(clippy::too_many_arguments)]
-    async fn ingest_extrinsic(
+    async fn ingest_extrinsics(
         &self,
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: u64,
         spec_version: u32,
         status: BlockStatus,
-        extrinsic: &Extrinsic,
+        extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<i64>;
+    ) -> anyhow::Result<Vec<(i64, i32)>>;
     async fn ingest_events(
         &self,
         event_rows: &[EventRow],
@@ -651,6 +655,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_status: BlockStatus,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
+        let mut rows = Vec::new();
         for (index, log) in header.get_logs()?.iter().enumerate() {
             let (ty, engine, data) = match log {
                 DigestItem::PreRuntime(engine, data) => {
@@ -668,68 +673,102 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 DigestItem::Other(data) => ("Other", None, Some(data)),
                 DigestItem::RuntimeEnvironmentUpdated => ("RuntimeEnvironmentUpdated", None, None),
             };
-            sqlx::query(
-                r#"
-                INSERT INTO log (block_hash, block_number, block_status, index, type, engine, data)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                ON CONFLICT (block_hash, index) DO NOTHING
-                "#,
-            )
-            .bind(hash)
-            .bind(header.get_number()? as i64)
-            .bind(block_status)
-            .bind(index as i32)
-            .bind(ty)
-            .bind(engine)
-            .bind(data)
-            .execute(&mut **tx)
-            .await?;
+            rows.push(LogRow {
+                block_hash: hash.into(),
+                block_number: header.get_number()? as i64,
+                block_status,
+                index: index as i32,
+                ty: ty.to_string(),
+                engine,
+                data: data.cloned(),
+            });
+        }
+        for row_chunk in rows.chunks(INSERT_BATCH_SIZE) {
+            let mut query_builder = QueryBuilder::new(
+                "INSERT INTO log (block_hash, block_number, block_status, index, type, engine, data) ",
+            );
+            query_builder.push_values(row_chunk, |mut query, log| {
+                query
+                    .push_bind(&log.block_hash)
+                    .push_bind(log.block_number)
+                    .push_bind(log.block_status)
+                    .push_bind(log.index)
+                    .push_bind(&log.ty)
+                    .push_bind(&log.engine)
+                    .push_bind(&log.data);
+            });
+            let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
+                query_builder.build();
+            query.execute(&mut **tx).await?;
         }
         Ok(())
     }
 
-    async fn ingest_extrinsic(
+    async fn ingest_extrinsics(
         &self,
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: u64,
         spec_version: u32,
         block_status: BlockStatus,
-        extrinsic: &Extrinsic,
+        extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<i64> {
-        let (signer, signature, extra) = if let Some(signature) = &extrinsic.signature {
-            (
-                Some(Encode::encode(&signature.signer)),
-                Some(Encode::encode(&signature.signature)),
-                signature.extra.clone(),
-            )
-        } else {
-            (None, None, None)
-        };
-        let row: (i64,) = sqlx::query_as(
-            r#"
-            INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            RETURNING id
-            "#,
-        )
-            .bind(block_hash)
-            .bind(block_number as i64)
-            .bind(block_timestamp as i64)
-            .bind(spec_version as i32)
-            .bind(block_status)
-            .bind(extrinsic.trace_index.map(|i| i as i32))
-            .bind(extrinsic.hash)
-            .bind(extrinsic.index as i32)
-            .bind(extrinsic.version as i32)
-            .bind(signer)
-            .bind(signature)
-            .bind(extra)
-            .bind(extrinsic.is_successful)
-            .fetch_one(&mut **tx)
-            .await?;
-        Ok(row.0)
+    ) -> anyhow::Result<Vec<(i64, i32)>> {
+        let extrinsic_rows: Vec<ExtrinsicRow> = extrinsics
+            .iter()
+            .map(|extrinsic| {
+                let (signer, signature, extra) = if let Some(signature) = &extrinsic.signature {
+                    (
+                        Some(Encode::encode(&signature.signer)),
+                        Some(Encode::encode(&signature.signature)),
+                        signature.extra.clone(),
+                    )
+                } else {
+                    (None, None, None)
+                };
+                ExtrinsicRow {
+                    block_hash: block_hash.into(),
+                    block_number: block_number as i64,
+                    block_timestamp: block_timestamp as i64,
+                    spec_version: spec_version as i32,
+                    block_status,
+                    trace_index: extrinsic.trace_index.map(|i| i as i32),
+                    hash: extrinsic.hash,
+                    index: extrinsic.index as i32,
+                    version: extrinsic.version as i32,
+                    signer,
+                    signature,
+                    extra,
+                    is_successful: extrinsic.is_successful,
+                }
+            })
+            .collect();
+        let mut ids_to_indices = Vec::new();
+        for extrinsic_row_chunk in extrinsic_rows.chunks(INSERT_BATCH_SIZE) {
+            let mut query_builder = QueryBuilder::new(
+                "INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful) ",
+            );
+            query_builder.push_values(extrinsic_row_chunk, |mut query, extrinsic| {
+                query
+                    .push_bind(&extrinsic.block_hash)
+                    .push_bind(extrinsic.block_number)
+                    .push_bind(extrinsic.block_number)
+                    .push_bind(extrinsic.spec_version)
+                    .push_bind(extrinsic.block_status)
+                    .push_bind(extrinsic.trace_index)
+                    .push_bind(extrinsic.hash)
+                    .push_bind(extrinsic.index)
+                    .push_bind(extrinsic.version)
+                    .push_bind(&extrinsic.signer)
+                    .push_bind(&extrinsic.signature)
+                    .push_bind(&extrinsic.extra)
+                    .push_bind(extrinsic.is_successful);
+            });
+            query_builder.push(" RETURNING id, index");
+            let rows: Vec<(i64, i32)> = query_builder.build_query_as().fetch_all(&mut **tx).await?;
+            ids_to_indices.extend(rows);
+        }
+        Ok(ids_to_indices)
     }
 
     async fn ingest_events(
@@ -737,30 +776,32 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         event_rows: &[EventRow],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let mut query_builder = QueryBuilder::new(
-            "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, extrinsic_hash, phase, index, args_json) ",
-        );
-        query_builder.push_values(event_rows, |mut query, event| {
-            query
-                .push_bind(&event.block_hash)
-                .push_bind(event.block_number)
-                .push_bind(event.block_timestamp)
-                .push_bind(event.spec_version)
-                .push_bind(event.block_status)
-                .push_bind(event.trace_index)
-                .push_bind(event.pallet_index)
-                .push_bind(&event.pallet_name)
-                .push_bind(event.pallet_event_index)
-                .push_bind(&event.pallet_event_name)
-                .push_bind(event.extrinsic_index)
-                .push_bind(event.extrinsic_hash)
-                .push_bind(&event.phase)
-                .push_bind(event.index)
-                .push_bind(&event.args_json);
-        });
-        let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
-            query_builder.build();
-        query.execute(&mut **tx).await?;
+        for event_row_chunk in event_rows.chunks(INSERT_BATCH_SIZE) {
+            let mut query_builder = QueryBuilder::new(
+                "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, extrinsic_hash, phase, index, args_json) ",
+            );
+            query_builder.push_values(event_row_chunk, |mut query, event| {
+                query
+                    .push_bind(&event.block_hash)
+                    .push_bind(event.block_number)
+                    .push_bind(event.block_timestamp)
+                    .push_bind(event.spec_version)
+                    .push_bind(event.block_status)
+                    .push_bind(event.trace_index)
+                    .push_bind(event.pallet_index)
+                    .push_bind(&event.pallet_name)
+                    .push_bind(event.pallet_event_index)
+                    .push_bind(&event.pallet_event_name)
+                    .push_bind(event.extrinsic_index)
+                    .push_bind(event.extrinsic_hash)
+                    .push_bind(&event.phase)
+                    .push_bind(event.index)
+                    .push_bind(&event.args_json);
+            });
+            let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
+                query_builder.build();
+            query.execute(&mut **tx).await?;
+        }
         Ok(())
     }
 

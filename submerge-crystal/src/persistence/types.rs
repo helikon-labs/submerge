@@ -74,3 +74,33 @@ impl EventRow {
         }
     }
 }
+
+#[derive(Debug, FromRow)]
+pub struct LogRow {
+    pub block_hash: Vec<u8>,
+    pub block_number: i64,
+    pub block_status: BlockStatus,
+    pub index: i32,
+    #[sqlx(rename = "type")]
+    pub ty: String,
+    pub engine: Option<String>,
+    pub data: Option<Vec<u8>>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, FromRow)]
+pub struct ExtrinsicRow {
+    pub block_hash: Vec<u8>,
+    pub block_number: i64,
+    pub block_timestamp: i64,
+    pub spec_version: i32,
+    pub block_status: BlockStatus,
+    pub trace_index: Option<i32>,
+    pub hash: [u8; 32],
+    pub index: i32,
+    pub version: i32,
+    pub signer: Option<Vec<u8>>,
+    pub signature: Option<Vec<u8>>,
+    pub extra: Option<JSONValue>,
+    pub is_successful: bool,
+}

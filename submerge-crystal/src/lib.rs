@@ -94,15 +94,16 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(1000),
-                    maybe_end_block_number: Some(1100),
+                    maybe_start_block_number: Some(27832870),
+                    maybe_end_block_number: Some(27832880),
                     scan: true,
                     reindex: true,
                 },
                 WorkerConfig::new(
                     self.postgres.clone(),
                     RPCConfig {
-                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        rpc_url: "wss://rpc.helikon.io/polkadot".to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
