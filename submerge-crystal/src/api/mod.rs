@@ -1,9 +1,13 @@
-use crate::api::v1::metadata::{
-    get_metadata_hex, get_metadata_json, get_metadata_list, get_metadata_pallet_calls,
-    get_metadata_pallet_constants, get_metadata_pallet_errors, get_metadata_pallet_events,
-    get_metadata_pallet_storage_items, get_metadata_pallets,
+use crate::api::v1::{
+    metadata::{
+        get_metadata_hex, get_metadata_json, get_metadata_list, get_metadata_pallet_calls,
+        get_metadata_pallet_constants, get_metadata_pallet_errors, get_metadata_pallet_events,
+        get_metadata_pallet_storage_items, get_metadata_pallets,
+    },
+    system::{cancel_all_workers, get_worker_ids, spawn_worker},
 };
 use crate::metrics;
+use crate::worker::WorkerManager;
 use axum::extract::Request;
 use axum::http::HeaderValue;
 use axum::middleware::{self, Next};
@@ -23,6 +27,7 @@ mod v1;
 #[derive(Clone)]
 pub struct ServiceState {
     pub postgres: Arc<PostgreSQLStorage>,
+    pub worker_manager: Arc<WorkerManager>,
 }
 
 pub(crate) async fn on_server_ready(host: &str, port: u16) {
@@ -82,6 +87,12 @@ fn build_api_routes() -> Router<ServiceState> {
             "/metadata/{spec_version}/pallets/{pallet_index}/storage",
             get(get_metadata_pallet_storage_items),
         )
+        .route(
+            "/system/workers",
+            get(get_worker_ids)
+                .post(spawn_worker)
+                .delete(cancel_all_workers),
+        )
         .layer(middleware::from_fn(metrics_middleware))
 }
 
@@ -112,12 +123,14 @@ async fn shutdown_signal() {
 
 pub(crate) async fn run_api(
     postgres_args: &PostgreSQLArgs,
+    worker_manager: &Arc<WorkerManager>,
     host: &str,
     port: u16,
 ) -> anyhow::Result<()> {
     let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
     let service_state = ServiceState {
         postgres: postgres.clone(),
+        worker_manager: worker_manager.clone(),
     };
     let cors = CorsLayer::new()
         .allow_origin([

@@ -23,7 +23,7 @@ impl super::Worker {
             .with_label_values(&[&id])
             .set(number as i64);
         log::info!(
-            "🟦 New proposed block [{number}][0x{}].",
+            "🟦 New {block_status} block [{number}][0x{}].",
             truncate_hash(&hash_hex)
         );
         match processor

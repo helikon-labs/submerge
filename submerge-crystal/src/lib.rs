@@ -49,6 +49,7 @@ impl Crystal {
     async fn launch_api(&self) -> anyhow::Result<()> {
         api::run_api(
             &self.args.postgres,
+            &self.worker_manager,
             &self.args.api.api_host,
             self.args.api.api_port,
         )
@@ -90,6 +91,26 @@ impl BaseService for Crystal {
             serde_json::from_str(&chainspec_json).context("🔴 Failed to parse chainspec JSON.")?;
         self.print_summary(&chainspec);
         self.process_genesis(&chainspec).await?;
+
+        self.worker_manager
+            .spawn(
+                WorkerType::SubscribeFinalizedBlocks,
+                WorkerConfig::new(
+                    self.postgres.clone(),
+                    RPCConfig {
+                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        //rpc_url: "wss://rpc.helikon.io/polkadot".to_string(),
+                        rpc_connection_timeout_secs: 30,
+                        rpc_request_timeout_secs: 30,
+                        rpc_subscription_timeout_secs: 60,
+                    },
+                    self.args.legacy_decode_api_url.clone(),
+                    Duration::from_secs(self.args.service.recovery_sleep_seconds),
+                    true,
+                    true,
+                ),
+            )
+            .await;
 
         self.worker_manager
             .spawn(

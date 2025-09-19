@@ -12,7 +12,6 @@ use crate::{types::BlockStatus, worker::processor::BlockProcessor};
 mod processor;
 mod subscription;
 
-#[allow(dead_code)]
 pub enum WorkerType {
     ProcessFinalizedRange {
         maybe_start_block_number: Option<u64>,
@@ -220,7 +219,7 @@ pub struct WorkerManager {
 
 #[allow(dead_code)]
 impl WorkerManager {
-    async fn get_ids(&self) -> Vec<UUID> {
+    pub async fn get_ids(&self) -> Vec<UUID> {
         let map = self.workers.read().await;
         map.keys().copied().collect()
     }
@@ -267,13 +266,16 @@ impl WorkerManager {
         removed_ids
     }
 
-    pub async fn stop_all(&self) {
+    pub async fn cancel_all(&self) {
         let workers = self.workers.read().await;
         for worker in workers.values() {
+            worker.cancel();
+            /*
             if worker.get_status().await.is_running() {
                 log::info!("Stop worker {}.", worker.id);
                 worker.cancel();
             }
+            */
         }
     }
 
