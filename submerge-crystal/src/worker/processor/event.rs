@@ -11,10 +11,11 @@ use submerge_base::types::substrate::{
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
-    persistence::{types::EventRow, CrystalPostgreSQLStorage},
+    persistence::CrystalPostgreSQLStorage,
     types::{
         decode::{Value, ValueVisitor},
         metadata::util::{get_metadata_version, get_runtime_call_type, v14, v15},
+        persistence::EventRow,
         BlockStatus, Event, Extrinsic,
     },
     worker::processor::BlockProcessor,

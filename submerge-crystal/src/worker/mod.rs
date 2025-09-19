@@ -143,7 +143,7 @@ impl Worker {
     }
 
     pub async fn start(&self) {
-        log::info!("Start worker: {}", self.id);
+        log::info!("Start worker {}.", self.id);
         match self.ty {
             WorkerType::SubscribeNewBlocks => {
                 self.process_subscription(BlockStatus::Proposed).await

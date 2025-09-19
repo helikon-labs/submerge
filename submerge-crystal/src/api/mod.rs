@@ -17,6 +17,7 @@ pub mod legacy;
 mod v1;
 
 type APIResult = Result<HttpResponse, APIError>;
+const WORKER_COUNT: usize = 10;
 
 #[derive(Clone)]
 pub struct ServiceState {
@@ -89,7 +90,7 @@ pub(crate) async fn run_api(
                     .service(get_metadata_pallet_storage_items),
             )
     })
-    .workers(10)
+    .workers(WORKER_COUNT)
     .disable_signals()
     .bind(format!("{host}:{port}"))?
     .run();

@@ -10,6 +10,7 @@ pub(crate) mod api;
 pub mod decode;
 pub mod legacy;
 pub mod metadata;
+pub mod persistence;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Call {

@@ -104,3 +104,24 @@ pub struct ExtrinsicRow {
     pub extra: Option<JSONValue>,
     pub is_successful: bool,
 }
+
+#[allow(dead_code)]
+#[derive(Debug, FromRow)]
+pub struct CallRow {
+    pub block_hash: Vec<u8>,
+    pub block_number: i64,
+    pub block_timestamp: i64,
+    pub spec_version: i32,
+    pub block_status: BlockStatus,
+    pub extrinsic_id: i64,
+    pub extrinsic_index: i32,
+    pub extrinsic_hash: [u8; 32],
+    pub parent_call_id: Option<i64>,
+    pub nesting_index: Option<String>,
+    pub pallet_index: i32,
+    pub pallet_name: String,
+    pub pallet_call_index: i32,
+    pub pallet_call_name: String,
+    pub is_successful: bool,
+    pub args: JSONValue,
+}

@@ -13,17 +13,13 @@ use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
-use crate::persistence::types::EventRow;
-use crate::persistence::types::ExtrinsicRow;
-use crate::persistence::types::LogRow;
 use crate::types::metadata::Metadata;
 use crate::types::metadata::MetadataPallet;
+use crate::types::persistence::{BlockRow, EventRow, ExtrinsicRow, LogRow};
 use crate::types::BlockStatus;
 use crate::types::Extrinsic;
-use types::BlockRow;
 
 pub mod api;
-pub mod types;
 
 const INSERT_BATCH_SIZE: usize = 1000;
 
