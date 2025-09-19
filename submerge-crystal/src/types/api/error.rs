@@ -1,7 +1,12 @@
 use std::fmt;
 
-use actix_web::{HttpResponse, ResponseError};
 use serde::Serialize;
+
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Error {
@@ -40,6 +45,15 @@ impl APIError {
             ),
         }
     }
+
+    fn status_code(&self) -> StatusCode {
+        match self {
+            APIError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            APIError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            APIError::MetadataNotFound(_) => StatusCode::NOT_FOUND,
+            APIError::MetadataPalletNotFound(_, _) => StatusCode::NOT_FOUND,
+        }
+    }
 }
 
 impl fmt::Display for APIError {
@@ -48,6 +62,8 @@ impl fmt::Display for APIError {
     }
 }
 
+impl std::error::Error for APIError {}
+
 impl From<anyhow::Error> for APIError {
     fn from(error: anyhow::Error) -> Self {
         log::error!("API internal server error: {}", error);
@@ -55,25 +71,13 @@ impl From<anyhow::Error> for APIError {
     }
 }
 
-impl ResponseError for APIError {
-    fn error_response(&self) -> HttpResponse {
-        match self {
-            APIError::BadRequest(_) => HttpResponse::BadRequest().json(Error {
-                code: self.error_code(),
-                message: self.message(),
-            }),
-            APIError::InternalServerError(_) => HttpResponse::InternalServerError().json(Error {
-                code: self.error_code(),
-                message: self.message(),
-            }),
-            APIError::MetadataNotFound(_) => HttpResponse::NotFound().json(Error {
-                code: self.error_code(),
-                message: self.message(),
-            }),
-            APIError::MetadataPalletNotFound(_, _) => HttpResponse::NotFound().json(Error {
-                code: self.error_code(),
-                message: self.message(),
-            }),
-        }
+impl IntoResponse for APIError {
+    fn into_response(self) -> Response {
+        let error_response = Error {
+            code: self.error_code(),
+            message: self.message(),
+        };
+
+        (self.status_code(), Json(error_response)).into_response()
     }
 }

@@ -4,20 +4,21 @@ use crate::api::v1::metadata::{
     get_metadata_pallet_storage_items, get_metadata_pallets,
 };
 use crate::metrics;
-use crate::types::api::error::APIError;
-use actix_web::dev::Service as _;
-use actix_web::{web, HttpResponse};
-use actix_web::{App, HttpServer};
-use futures_util::future::FutureExt;
+use axum::extract::Request;
+use axum::http::HeaderValue;
+use axum::middleware::{self, Next};
+use axum::response::Response;
+use axum::routing::get;
+use axum::Router;
 use std::sync::Arc;
 use submerge_base::args::PostgreSQLArgs;
 use submerge_persistence::postgres::PostgreSQLStorage;
+use tokio::net::TcpListener;
+use tokio::signal;
+use tower_http::cors::{Any, CorsLayer};
 
 pub mod legacy;
 mod v1;
-
-type APIResult = Result<HttpResponse, APIError>;
-const WORKER_COUNT: usize = 10;
 
 #[derive(Clone)]
 pub struct ServiceState {
@@ -28,72 +29,111 @@ pub(crate) async fn on_server_ready(host: &str, port: u16) {
     log::info!("🌐 HTTP API started on {host}:{port}.");
 }
 
+async fn hello() -> &'static str {
+    "Hello, World!"
+}
+
+async fn metrics_middleware(request: Request, next: Next) -> Response {
+    metrics::api_requests_total().inc();
+    metrics::api_active_connections().inc();
+
+    let start = std::time::Instant::now();
+    let response = next.run(request).await;
+    let elapsed = start.elapsed().as_secs_f64() * 1000.0;
+    let status_code = response.status();
+
+    metrics::api_response_time_ms().observe(elapsed);
+    metrics::api_response_status_code_counter()
+        .with_label_values(&[status_code.as_str()])
+        .inc();
+    metrics::api_active_connections().dec();
+
+    response
+}
+
+fn build_api_routes() -> Router<ServiceState> {
+    Router::new()
+        // `GET /` goes to `root`
+        .route("/hello", get(hello))
+        .route("/metadata", get(get_metadata_list))
+        .route("/metadata/{spec_version}/json", get(get_metadata_json))
+        .route("/metadata/{spec_version}/hex", get(get_metadata_hex))
+        .route(
+            "/metadata/{spec_version}/pallets",
+            get(get_metadata_pallets),
+        )
+        .route(
+            "/metadata/{spec_version}/pallets/{pallet_index}/calls",
+            get(get_metadata_pallet_calls),
+        )
+        .route(
+            "/metadata/{spec_version}/pallets/{pallet_index}/constants",
+            get(get_metadata_pallet_constants),
+        )
+        .route(
+            "/metadata/{spec_version}/pallets/{pallet_index}/errors",
+            get(get_metadata_pallet_errors),
+        )
+        .route(
+            "/metadata/{spec_version}/pallets/{pallet_index}/events",
+            get(get_metadata_pallet_events),
+        )
+        .route(
+            "/metadata/{spec_version}/pallets/{pallet_index}/storage",
+            get(get_metadata_pallet_storage_items),
+        )
+        .layer(middleware::from_fn(metrics_middleware))
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler for the API.");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install terminate signal handler for the API.")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+    log::info!("🛑 Shutdown signal received, starting graceful shutdown.");
+}
+
 pub(crate) async fn run_api(
     postgres_args: &PostgreSQLArgs,
     host: &str,
     port: u16,
 ) -> anyhow::Result<()> {
     let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
-    let server = HttpServer::new(move || {
-        let cors = actix_cors::Cors::default()
-            .allowed_origin("http://localhost:3000")
-            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-            .allowed_headers(vec![
-                actix_web::http::header::AUTHORIZATION,
-                actix_web::http::header::ACCEPT,
-            ])
-            .allowed_header(actix_web::http::header::CONTENT_TYPE)
-            .max_age(3600);
-
-        App::new()
-            .wrap(cors)
-            .app_data(web::Data::new(ServiceState {
-                postgres: postgres.clone(),
-            }))
-            .wrap_fn(|request, service| {
-                metrics::api_requests_total().inc();
-                metrics::api_active_connections().inc();
-                let start = std::time::Instant::now();
-                service.call(request).map(move |result| {
-                    match &result {
-                        Ok(response) => {
-                            let status_code = response.response().status();
-                            metrics::api_response_time_ms()
-                                .observe(start.elapsed().as_millis() as f64);
-                            metrics::api_response_status_code_counter()
-                                .with_label_values(&[status_code.as_str()])
-                                .inc();
-                        }
-                        Err(error) => {
-                            let status_code = error.as_response_error().status_code();
-                            metrics::api_response_time_ms()
-                                .observe(start.elapsed().as_millis() as f64);
-                            metrics::api_response_status_code_counter()
-                                .with_label_values(&[status_code.as_str()])
-                                .inc();
-                        }
-                    }
-                    metrics::api_active_connections().dec();
-                    result
-                })
-            })
-            .service(
-                web::scope("v1")
-                    .service(get_metadata_list)
-                    .service(get_metadata_json)
-                    .service(get_metadata_hex)
-                    .service(get_metadata_pallets)
-                    .service(get_metadata_pallet_calls)
-                    .service(get_metadata_pallet_constants)
-                    .service(get_metadata_pallet_errors)
-                    .service(get_metadata_pallet_events)
-                    .service(get_metadata_pallet_storage_items),
-            )
-    })
-    .workers(WORKER_COUNT)
-    .disable_signals()
-    .bind(format!("{host}:{port}"))?
-    .run();
-    let (server_result, _) = tokio::join!(server, on_server_ready(host, port));
-    Ok(server_result?)
+    let service_state = ServiceState {
+        postgres: postgres.clone(),
+    };
+    let cors = CorsLayer::new()
+        .allow_origin([
+            HeaderValue::from_static("http://localhost:3000"),
+            //HeaderValue::from_static("https://yourdomain.com"),
+        ])
+        .allow_methods(Any)
+        .allow_headers(Any);
+    let app = Router::new()
+        .nest("/v1", build_api_routes())
+        .with_state(service_state)
+        .layer(cors);
+    let listener = TcpListener::bind((host, port)).await?;
+    let server = axum::serve(listener, app);
+    let graceful_server = server.with_graceful_shutdown(shutdown_signal());
+    let (server_result, _) = tokio::join!(graceful_server, on_server_ready(host, port));
+    server_result?;
+    Ok(())
 }

@@ -28,11 +28,10 @@ authors = ["kukabi <kutsal@helikon.io>"]
 license = "GPL-3"
 
 [workspace.dependencies]
-actix-cors = "0.7"
-actix-web = "4.11"
 async-recursion = "1.1.1"
 async-trait = "0.1"
 anyhow = "1"
+axum = "0.8"
 chrono = "0.4"
 clap = { version = "4.5", features = ["env", "derive"] }
 convert_case = "0.8"
@@ -70,5 +69,6 @@ test-log = "0.2"
 thiserror = "2.0"
 tokio = { version = "1.47", features = ["full"] }
 tokio-util = "0.7"
+tower-http = { version = "0.6", features = ["cors"] }
 uuid = { version = "1.18", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
