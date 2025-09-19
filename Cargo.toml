@@ -41,8 +41,8 @@ frame-support = "42.0"
 futures-util = "0.3"
 env_logger = "0.11"
 hex = "0.4"
-jsonrpsee = { version = "0.25", features = ["full"] }
-jsonrpsee-core = "0.25"
+jsonrpsee = { version = "0.26", features = ["full"] }
+jsonrpsee-core = "0.26"
 lazy_static = "1.5"
 log = "0.4"
 lru = "0.16"
