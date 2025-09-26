@@ -28,6 +28,14 @@ CREATE INDEX IF NOT EXISTS block_idx_number_status
 CREATE INDEX IF NOT EXISTS block_idx_author_account_id
     ON block (author_account_id);
 
+CREATE INDEX IF NOT EXISTS block_idx_filter
+ON block (
+    status,
+    number,
+    timestamp,
+    spec_version
+);
+
 CREATE TABLE block_0 PARTITION OF block FOR VALUES WITH (modulus 100, remainder 0);
 CREATE TABLE block_1 PARTITION OF block FOR VALUES WITH (modulus 100, remainder 1);
 CREATE TABLE block_2 PARTITION OF block FOR VALUES WITH (modulus 100, remainder 2);

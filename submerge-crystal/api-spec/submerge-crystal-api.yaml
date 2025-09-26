@@ -1151,6 +1151,36 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    BlockList:
+      description: Response with a list of blocks.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Block'
+            example:
+              - hash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
+                parentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
+                stateRoot: '0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603'
+                extrinsicRoot: '0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454'
+                number: 27419831
+                timestamp: 1755773684012
+                specVersion: 1006001
+                status: 'finalized'
+                weight:
+                  normal:
+                    refTime: '0'
+                    proofSize: '0'
+                  mandatory:
+                    refTime: '701777135384'
+                    "proofSize": '204955'
+                  operational:
+                    refTime: '0'
+                    proofSize: '0'
+                extrinsicCount: 2
+                eventCount: 56
+                authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
     PaginatedBlockList:
       description: Response with a paginated list of blocks.
       content:
@@ -1447,7 +1477,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
   /blocks/{block_ref}:
     get:
-      summary: Get block by reference
+      summary: Get blocks by reference
       description: >
         If a hash is passed, returns the matching block.
         If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot.
@@ -1460,7 +1490,7 @@ paths:
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
-          $ref: '#/components/responses/PaginatedBlockList'
+          $ref: '#/components/responses/BlockList'
         '400':
           $ref: '#/components/responses/InvalidParameter'
         '404':

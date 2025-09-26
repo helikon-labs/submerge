@@ -105,8 +105,11 @@ pub(crate) trait CrystalPostgreSQLStorage {
         status: BlockStatus,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    async fn block_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>>;
-    async fn get_blocks_by_number(
+    async fn block_exists_by_number(&self, number: u64) -> anyhow::Result<bool>;
+    async fn get_blocks_by_number(&self, number: u64) -> anyhow::Result<Vec<BlockRow>>;
+    async fn get_blocks_by_number_with_tx(
         &self,
         number: u64,
         tx: &mut Transaction<'_, Postgres>,
@@ -575,10 +578,18 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
+    async fn block_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+        let exists: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM block WHERE hash = $1)")
+            .bind(hash)
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(exists.0)
+    }
+
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>> {
         let maybe_row: Option<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, extrinsic_count, event_count, author_account_id
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id
             FROM block
             WHERE hash = $1
             "#,
@@ -589,14 +600,37 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(maybe_row)
     }
 
-    async fn get_blocks_by_number(
+    async fn block_exists_by_number(&self, number: u64) -> anyhow::Result<bool> {
+        let exists: (bool,) =
+            sqlx::query_as("SELECT EXISTS(SELECT 1 FROM block WHERE number = $1)")
+                .bind(number as i64)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(exists.0)
+    }
+
+    async fn get_blocks_by_number(&self, number: u64) -> anyhow::Result<Vec<BlockRow>> {
+        let rows: Vec<BlockRow> = sqlx::query_as(
+            r#"
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id
+            FROM block
+            WHERE number = $1
+            "#,
+        )
+        .bind(number as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
+        Ok(rows)
+    }
+
+    async fn get_blocks_by_number_with_tx(
         &self,
         number: u64,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<Vec<BlockRow>> {
         let rows: Vec<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, extrinsic_count, event_count, author_account_id
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id
             FROM block
             WHERE number = $1
             "#,
@@ -721,6 +755,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     (None, None, None)
                 };
                 ExtrinsicRow {
+                    id: 0,
                     block_hash: block_hash.into(),
                     block_number: block_number as i64,
                     block_timestamp: block_timestamp as i64,
@@ -746,7 +781,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 query
                     .push_bind(&extrinsic.block_hash)
                     .push_bind(extrinsic.block_number)
-                    .push_bind(extrinsic.block_number)
+                    .push_bind(extrinsic.block_timestamp)
                     .push_bind(extrinsic.spec_version)
                     .push_bind(extrinsic.block_status)
                     .push_bind(extrinsic.trace_index)

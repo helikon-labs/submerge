@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS metadata_pallet_storage_item
             ON UPDATE CASCADE
 );
 
-CREATE INDEX metadata_pallet_storage_item_idx_spec_version ON metadata_pallet_storage_item (spec_version);
-CREATE INDEX metadata_pallet_storage_item_idx_name ON metadata_pallet_storage_item (name);
+CREATE INDEX IF NOT EXISTS metadata_pallet_storage_item_idx_spec_version ON metadata_pallet_storage_item (spec_version);
+CREATE INDEX IF NOT EXISTS metadata_pallet_storage_item_idx_name ON metadata_pallet_storage_item (name);

@@ -27,17 +27,17 @@ CREATE TABLE IF NOT EXISTS call
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX call_idx_block_hash ON call (block_hash);
-CREATE INDEX call_idx_block_number ON call (block_number);
-CREATE INDEX call_idx_timestamp ON call (block_timestamp);
+CREATE INDEX IF NOT EXISTS call_idx_block_hash ON call (block_hash);
+CREATE INDEX IF NOT EXISTS call_idx_block_number ON call (block_number);
+CREATE INDEX IF NOT EXISTS call_idx_timestamp ON call (block_timestamp);
 
-CREATE INDEX call_idx_extrinsic_hash ON call (extrinsic_hash);
+CREATE INDEX IF NOT EXISTS call_idx_extrinsic_hash ON call (extrinsic_hash);
 
-CREATE INDEX call_idx_pallet_name ON call (pallet_name);
-CREATE INDEX call_idx_call_name ON call (pallet_call_name);
-CREATE INDEX call_idx_pallet_name_call_name ON call (pallet_name, pallet_call_name);
+CREATE INDEX IF NOT EXISTS call_idx_pallet_name ON call (pallet_name);
+CREATE INDEX IF NOT EXISTS call_idx_call_name ON call (pallet_call_name);
+CREATE INDEX IF NOT EXISTS call_idx_pallet_name_call_name ON call (pallet_name, pallet_call_name);
 
-CREATE INDEX call_idx_filter_order
+CREATE INDEX IF NOT EXISTS call_idx_filter_order
 ON call (
     block_number DESC,
     block_timestamp,

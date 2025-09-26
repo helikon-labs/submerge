@@ -15,5 +15,5 @@ CREATE TABLE IF NOT EXISTS metadata_pallet_event
             ON UPDATE CASCADE
 );
 
-CREATE INDEX metadata_pallet_event_idx_spec_version ON metadata_pallet_event (spec_version);
-CREATE INDEX metadata_pallet_event_idx_name ON metadata_pallet_event (name);
+CREATE INDEX IF NOT EXISTS metadata_pallet_event_idx_spec_version ON metadata_pallet_event (spec_version);
+CREATE INDEX IF NOT EXISTS metadata_pallet_event_idx_name ON metadata_pallet_event (name);

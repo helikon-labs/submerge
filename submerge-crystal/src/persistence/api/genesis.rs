@@ -23,13 +23,12 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<GenesisRecordRow>> {
         let offset = (page_number - 1) * page_size;
-        let rows: Vec<GenesisRecordRow> = sqlx::query_as(
-            "SELECT id, key, value, created_at FROM genesis ORDER BY id ASC LIMIT $1 OFFSET $2",
-        )
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
+        let rows: Vec<GenesisRecordRow> =
+            sqlx::query_as("SELECT id, key, value FROM genesis ORDER BY id ASC LIMIT $1 OFFSET $2")
+                .bind(page_size as i64)
+                .bind(offset as i64)
+                .fetch_all(&self.connection_pool)
+                .await?;
         Ok(rows)
     }
 }

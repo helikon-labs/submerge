@@ -2,7 +2,6 @@ use crate::types::{BlockStatus, Event, Extrinsic};
 use serde_json::Value as JSONValue;
 use sqlx::FromRow;
 
-#[allow(dead_code)]
 #[derive(Debug, FromRow)]
 pub struct BlockRow {
     pub hash: Vec<u8>,
@@ -13,12 +12,12 @@ pub struct BlockRow {
     pub timestamp: i64,
     pub spec_version: i32,
     pub status: BlockStatus,
+    pub weight: JSONValue,
     pub extrinsic_count: i32,
     pub event_count: i32,
     pub author_account_id: Vec<u8>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, FromRow)]
 pub struct EventRow {
     pub block_hash: Vec<u8>,
@@ -87,9 +86,10 @@ pub struct LogRow {
     pub data: Option<Vec<u8>>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, FromRow)]
 pub struct ExtrinsicRow {
+    #[allow(dead_code)]
+    pub id: i64,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub block_timestamp: i64,

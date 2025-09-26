@@ -15,5 +15,5 @@ CREATE TABLE IF NOT EXISTS metadata_pallet_error
             ON UPDATE CASCADE
 );
 
-CREATE INDEX metadata_pallet_error_idx_spec_version ON metadata_pallet_error (spec_version);
-CREATE INDEX metadata_pallet_error_idx_name ON metadata_pallet_error (name);
+CREATE INDEX IF NOT EXISTS metadata_pallet_error_idx_spec_version ON metadata_pallet_error (spec_version);
+CREATE INDEX IF NOT EXISTS metadata_pallet_error_idx_name ON metadata_pallet_error (name);

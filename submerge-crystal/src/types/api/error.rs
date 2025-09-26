@@ -20,6 +20,8 @@ pub enum APIError {
     InternalServerError(String),
     MetadataNotFound(u32),
     MetadataPalletNotFound(u32, u32),
+    BlockNotFoundWithNumber(u64),
+    BlockNotFoundWithHash(Vec<u8>),
 }
 
 impl APIError {
@@ -29,6 +31,8 @@ impl APIError {
             APIError::InternalServerError(_) => 1,
             APIError::MetadataNotFound(_) => 2,
             APIError::MetadataPalletNotFound(_, _) => 3,
+            APIError::BlockNotFoundWithNumber(_) => 4,
+            APIError::BlockNotFoundWithHash(_) => 4,
         }
     }
 
@@ -41,8 +45,14 @@ impl APIError {
             }
             APIError::MetadataPalletNotFound(spec_version, index) => format!(
                 "Pallet index {} not found in metadata for spec version {}.",
-                index, spec_version
+                index, spec_version,
             ),
+            APIError::BlockNotFoundWithNumber(number) => {
+                format!("Block with number {} not found.", number,)
+            }
+            APIError::BlockNotFoundWithHash(hash) => {
+                format!("Block with hash 0x{} not found.", hex::encode(hash),)
+            }
         }
     }
 
@@ -52,6 +62,8 @@ impl APIError {
             APIError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             APIError::MetadataNotFound(_) => StatusCode::NOT_FOUND,
             APIError::MetadataPalletNotFound(_, _) => StatusCode::NOT_FOUND,
+            APIError::BlockNotFoundWithNumber(_) => StatusCode::NOT_FOUND,
+            APIError::BlockNotFoundWithHash(_) => StatusCode::NOT_FOUND,
         }
     }
 }

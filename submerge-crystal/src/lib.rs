@@ -109,7 +109,7 @@ impl BaseService for Crystal {
                     self.args.legacy_decode_api_url.clone(),
                     Duration::from_secs(self.args.service.recovery_sleep_seconds),
                     true,
-                    true,
+                    false,
                 ),
             )
             .await;

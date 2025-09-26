@@ -1,4 +1,6 @@
 use crate::api::v1::{
+    block::{get_blocks, get_blocks_by_reference},
+    extrinsic::{get_extrinsics, get_extrinsics_by_block_reference},
     genesis::get_genesis_records,
     metadata::{
         get_metadata_hex, get_metadata_json, get_metadata_list, get_metadata_pallet_calls,
@@ -91,6 +93,15 @@ fn build_api_routes() -> Router<ServiceState> {
         .route(
             "/metadata/{spec_version}/pallets/{pallet_index}/storage",
             get(get_metadata_pallet_storage_items),
+        )
+        // blocks
+        .route("/blocks", get(get_blocks))
+        .route("/blocks/{block_ref}", get(get_blocks_by_reference))
+        // extrinsics
+        .route("/extrinsics", get(get_extrinsics))
+        .route(
+            "/blocks/{block_ref}/extrinsics",
+            get(get_extrinsics_by_block_reference),
         )
         // genesis
         .route("/genesis", get(get_genesis_records))

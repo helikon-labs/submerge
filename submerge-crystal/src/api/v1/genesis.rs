@@ -24,11 +24,12 @@ pub(crate) async fn get_genesis_records(
 ) -> Result<Json<PagedResponse<GenesisRecord>>, APIError> {
     let page_number = query.get_page_number()?;
     let page_size = query.get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
-    let total_count = state.postgres.get_genesis_record_count().await?;
-    let rows = state
-        .postgres
-        .get_genesis_record_rows(page_number, page_size)
-        .await?;
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_genesis_record_count(),
+        state
+            .postgres
+            .get_genesis_record_rows(page_number, page_size),
+    )?;
     let response = PagedResponse {
         pagination: PaginationData {
             page_number,

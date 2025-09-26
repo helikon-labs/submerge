@@ -178,7 +178,10 @@ impl BlockProcessor {
         block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let blocks = self.postgres.get_blocks_by_number(block_number, tx).await?;
+        let blocks = self
+            .postgres
+            .get_blocks_by_number_with_tx(block_number, tx)
+            .await?;
         for block in blocks.iter() {
             if block.hash != block_hash {
                 log::info!(
