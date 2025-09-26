@@ -10,7 +10,9 @@ use std::future::Future;
 use std::time::Duration;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
+use submerge_base::types::substrate::chainspec::ChainProperties;
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
+use submerge_base::types::substrate::SystemHealth;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 use tokio_util::sync::CancellationToken;
 
@@ -86,6 +88,22 @@ impl SubstrateClient {
             )
             .await?;
         decode_hex_string(hex_string.as_str())
+    }
+
+    pub async fn get_system_health(&self) -> anyhow::Result<SystemHealth> {
+        let system_health: SystemHealth = self
+            .ws_client
+            .request("system_health", rpc_params!())
+            .await?;
+        Ok(system_health)
+    }
+
+    pub async fn get_chain_properties(&self) -> anyhow::Result<ChainProperties> {
+        let system_health: ChainProperties = self
+            .ws_client
+            .request("system_properties", rpc_params!())
+            .await?;
+        Ok(system_health)
     }
 
     pub async fn get_block_header(&self, block_hash: &str) -> anyhow::Result<BlockHeader> {

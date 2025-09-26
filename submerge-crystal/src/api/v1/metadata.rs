@@ -1,40 +1,51 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::header,
     response::{IntoResponse, Response},
     Json,
 };
 
 use crate::{
-    api::ServiceState,
-    persistence::api::CrystalAPIPostgreSQLStorage as _,
+    api::{
+        validation::metadata::{parse_pallet_index, parse_spec_version},
+        ServiceState,
+    },
+    persistence::api::metadata::CrystalMetadataAPIPostgreSQLStorage as _,
     types::api::{
-        dto::metadata::{
-            Metadata, MetadataPallet, MetadataPalletCall, MetadataPalletConstant,
-            MetadataPalletError, MetadataPalletEvent, MetadataPalletStorageItem,
+        dto::{
+            metadata::{
+                Metadata, MetadataPallet, MetadataPalletCall, MetadataPalletConstant,
+                MetadataPalletError, MetadataPalletEvent, MetadataPalletStorageItem,
+            },
+            pagination::{PagedResponse, PaginationData, PaginationQuery},
         },
         error::APIError,
     },
 };
 use serde_json::Value as JSONValue;
 
-fn parse_spec_version(spec_version: &str) -> Result<u32, APIError> {
-    spec_version.parse::<u32>().map_err(|_| {
-        APIError::BadRequest("Invalid spec_version: must be a positive integer.".to_string())
-    })
-}
-
-fn parse_pallet_index(pallet_index: &str) -> Result<u32, APIError> {
-    pallet_index.parse::<u32>().map_err(|_| {
-        APIError::BadRequest("Invalid pallet index: must be a positive integer.".to_string())
-    })
-}
+const MAX_PAGE_SIZE: u64 = 100;
+const DEFAULT_PAGE_SIZE: u64 = 50;
 
 pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,
-) -> Result<Json<Vec<Metadata>>, APIError> {
-    let rows = state.postgres.get_metadata_list().await?;
-    Ok(Json(rows))
+    Query(query): Query<PaginationQuery>,
+) -> Result<Json<PagedResponse<Metadata>>, APIError> {
+    let page_number = query.get_page_number()?;
+    let page_size = query.get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let total_count = state.postgres.get_metadata_count().await?;
+    let rows = state
+        .postgres
+        .get_metadata_list(page_number, page_size)
+        .await?;
+    Ok(Json(PagedResponse {
+        pagination: PaginationData {
+            page_number,
+            page_size,
+            total_count,
+        },
+        data: rows,
+    }))
 }
 
 pub(crate) async fn get_metadata_json(

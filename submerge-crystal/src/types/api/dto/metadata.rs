@@ -23,7 +23,7 @@ pub struct MetadataPalletCall {
     pub docs: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetadataPalletConstant {
     pub index: u32,
@@ -35,7 +35,7 @@ pub struct MetadataPalletConstant {
     pub docs: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetadataPalletError {
     pub index: u32,
@@ -43,7 +43,7 @@ pub struct MetadataPalletError {
     pub docs: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetadataPalletEvent {
     pub index: u32,
@@ -51,7 +51,7 @@ pub struct MetadataPalletEvent {
     pub docs: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetadataPalletStorageItem {
     pub index: u32,

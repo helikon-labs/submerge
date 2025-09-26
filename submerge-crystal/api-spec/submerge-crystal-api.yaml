@@ -449,26 +449,14 @@ components:
           description: Total number of items across all pages.
           minimum: 0
           example: 78
-        hasNext:
-          type: boolean
-          description: Whether there is a next page.
-          example: true
-        hasPrevious:
-          type: boolean
-          description: Whether there is a previous page.
-          example: false
       required:
         - pageNumber
         - pageSize
         - totalCount
-        - hasNext
-        - hasPrevious
       example:
         pageNumber: 1
         pageSize: 25
         totalCount: 78
-        hasNext: true
-        hasPrevious: false
     HexString:
       type: string
       description: >

@@ -398,7 +398,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     }
 
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {
-        let record_count: (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT key) FROM genesis")
+        let record_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM genesis")
             .fetch_one(&self.connection_pool)
             .await?;
         Ok(record_count.0 as u64)

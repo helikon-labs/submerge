@@ -1,5 +1,5 @@
 use parity_scale_codec::{Decode, Encode};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use sp_runtime::AccountId32;
 
@@ -25,4 +25,12 @@ pub struct Signature {
     pub signer: MultiAddress,
     pub signature: sp_runtime::MultiSignature,
     pub extra: Option<JSONValue>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemHealth {
+    pub peers: u32,
+    pub is_syncing: bool,
+    pub should_have_peers: bool,
 }

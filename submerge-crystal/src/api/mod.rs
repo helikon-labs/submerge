@@ -1,4 +1,5 @@
 use crate::api::v1::{
+    genesis::get_genesis_records,
     metadata::{
         get_metadata_hex, get_metadata_json, get_metadata_list, get_metadata_pallet_calls,
         get_metadata_pallet_constants, get_metadata_pallet_errors, get_metadata_pallet_events,
@@ -15,7 +16,7 @@ use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use std::sync::Arc;
-use submerge_base::args::PostgreSQLArgs;
+use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::ChainProperties};
 use submerge_persistence::postgres::PostgreSQLStorage;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -23,19 +24,17 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub mod legacy;
 mod v1;
+pub mod validation;
 
 #[derive(Clone)]
 pub struct ServiceState {
+    pub chain_properties: ChainProperties,
     pub postgres: Arc<PostgreSQLStorage>,
     pub worker_manager: Arc<WorkerManager>,
 }
 
 pub(crate) async fn on_server_ready(host: &str, port: u16) {
     log::info!("🌐 HTTP API started on {host}:{port}.");
-}
-
-async fn hello() -> &'static str {
-    "Hello, World!"
 }
 
 async fn metrics_middleware(request: Request, next: Next) -> Response {
@@ -58,8 +57,14 @@ async fn metrics_middleware(request: Request, next: Next) -> Response {
 
 fn build_api_routes() -> Router<ServiceState> {
     Router::new()
-        // `GET /` goes to `root`
-        .route("/hello", get(hello))
+        // system
+        .route(
+            "/system/workers",
+            get(get_worker_ids)
+                .post(spawn_worker)
+                .delete(cancel_all_workers),
+        )
+        // metadata
         .route("/metadata", get(get_metadata_list))
         .route("/metadata/{spec_version}/json", get(get_metadata_json))
         .route("/metadata/{spec_version}/hex", get(get_metadata_hex))
@@ -87,12 +92,8 @@ fn build_api_routes() -> Router<ServiceState> {
             "/metadata/{spec_version}/pallets/{pallet_index}/storage",
             get(get_metadata_pallet_storage_items),
         )
-        .route(
-            "/system/workers",
-            get(get_worker_ids)
-                .post(spawn_worker)
-                .delete(cancel_all_workers),
-        )
+        // genesis
+        .route("/genesis", get(get_genesis_records))
         .layer(middleware::from_fn(metrics_middleware))
 }
 
@@ -122,6 +123,7 @@ async fn shutdown_signal() {
 }
 
 pub(crate) async fn run_api(
+    chain_properties: ChainProperties,
     postgres_args: &PostgreSQLArgs,
     worker_manager: &Arc<WorkerManager>,
     host: &str,
@@ -129,6 +131,7 @@ pub(crate) async fn run_api(
 ) -> anyhow::Result<()> {
     let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
     let service_state = ServiceState {
+        chain_properties,
         postgres: postgres.clone(),
         worker_manager: worker_manager.clone(),
     };

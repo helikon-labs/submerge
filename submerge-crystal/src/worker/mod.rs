@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
-use submerge_substrate_client::RPCConfig;
+use submerge_base::types::substrate::chainspec::ChainProperties;
+use submerge_substrate_client::{RPCConfig, SubstrateClient};
 use tokio::sync::RwLock;
 
 use rustc_hash::FxHashMap as HashMap;
@@ -24,6 +25,7 @@ pub enum WorkerType {
 }
 
 pub struct WorkerConfig {
+    chain_properties: ChainProperties,
     postgres: Arc<PostgreSQLStorage>,
     rpc_config: RPCConfig,
     legacy_decode_api_url: Option<String>,
@@ -34,6 +36,7 @@ pub struct WorkerConfig {
 
 impl WorkerConfig {
     pub fn new(
+        chain_properties: ChainProperties,
         postgres: Arc<PostgreSQLStorage>,
         rpc_config: RPCConfig,
         legacy_decode_api_url: Option<String>,
@@ -42,6 +45,7 @@ impl WorkerConfig {
         stop_on_error: bool,
     ) -> Self {
         Self {
+            chain_properties,
             postgres,
             rpc_config,
             legacy_decode_api_url,
@@ -141,8 +145,52 @@ impl Worker {
         }
     }
 
+    async fn check_rpc_compat(&self) -> anyhow::Result<()> {
+        log::info!("🤖🔍 Check RPC endpoint compatibility.");
+        let substrate_client = SubstrateClient::new(&self.config.rpc_config).await?;
+        let health = substrate_client.get_system_health().await?;
+        if health.is_syncing {
+            anyhow::bail!(
+                "🔴 RPC endpoint at {} is still syncing.",
+                &self.config.rpc_config.rpc_url
+            );
+        }
+        let chain_properties = substrate_client.get_chain_properties().await?;
+        if chain_properties != self.config.chain_properties {
+            anyhow::bail!(
+                "🔴 RPC endpoint at {} is not compatible with the chain spec.",
+                &self.config.rpc_config.rpc_url
+            );
+        }
+        if !self.config.skip_traces {
+            let block_1_hash = substrate_client.get_block_hash(1).await?;
+            if substrate_client
+                .get_block_trace(&block_1_hash)
+                .await
+                .is_err()
+            {
+                anyhow::bail!(
+                    "🔴 RPC endpoint at {} does not support traces.",
+                    &self.config.rpc_config.rpc_url
+                );
+            }
+        }
+        log::info!("🤖✅ RPC endpoint is compatible with worker configuration.");
+        Ok(())
+    }
+
     pub async fn start(&self) {
         log::info!("Start worker {}.", self.id);
+        if let Err(error) = self.check_rpc_compat().await {
+            log::error!("{error}");
+            log::error!("🔴 RPC endpoint is incompatible. Worker is exiting.");
+            self.set_status(WorkerStatus::Error {
+                last_processed_block_number: None,
+                error: error.into(),
+            })
+            .await;
+            return;
+        }
         match self.ty {
             WorkerType::SubscribeNewBlocks => {
                 self.process_subscription(BlockStatus::Proposed).await
@@ -269,13 +317,10 @@ impl WorkerManager {
     pub async fn cancel_all(&self) {
         let workers = self.workers.read().await;
         for worker in workers.values() {
-            worker.cancel();
-            /*
             if worker.get_status().await.is_running() {
                 log::info!("Stop worker {}.", worker.id);
                 worker.cancel();
             }
-            */
         }
     }
 

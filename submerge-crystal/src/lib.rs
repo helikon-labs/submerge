@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
-use submerge_base::types::substrate::chainspec::Chainspec;
+use submerge_base::types::substrate::chainspec::{ChainProperties, Chainspec};
 use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
@@ -46,8 +46,9 @@ impl Crystal {
         );
     }
 
-    async fn launch_api(&self) -> anyhow::Result<()> {
+    async fn launch_api(&self, chain_properties: ChainProperties) -> anyhow::Result<()> {
         api::run_api(
+            chain_properties,
             &self.args.postgres,
             &self.worker_manager,
             &self.args.api.api_host,
@@ -96,6 +97,7 @@ impl BaseService for Crystal {
             .spawn(
                 WorkerType::SubscribeFinalizedBlocks,
                 WorkerConfig::new(
+                    chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
                         rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
@@ -117,10 +119,11 @@ impl BaseService for Crystal {
                 WorkerType::ProcessFinalizedRange {
                     maybe_start_block_number: Some(1000),
                     maybe_end_block_number: Some(1010),
-                    scan: false,
-                    reindex: true,
+                    scan: true,
+                    reindex: false,
                 },
                 WorkerConfig::new(
+                    chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
                         rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
@@ -136,7 +139,7 @@ impl BaseService for Crystal {
                 ),
             )
             .await;
-        self.launch_api().await?;
+        self.launch_api(chainspec.properties.clone()).await?;
         Ok(())
     }
 }

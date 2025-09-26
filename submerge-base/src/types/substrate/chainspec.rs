@@ -6,6 +6,7 @@ pub struct Chainspec {
     pub name: String,
     pub id: String,
     pub genesis: Genesis,
+    pub properties: ChainProperties,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,6 +18,14 @@ pub struct Genesis {
 #[serde(rename_all = "camelCase")]
 pub struct RawGenesis {
     pub top: HashMap<String, String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ChainProperties {
+    pub ss58_format: u16,
+    pub token_decimals: u64,
+    pub token_symbol: String,
 }
 
 #[cfg(test)]
