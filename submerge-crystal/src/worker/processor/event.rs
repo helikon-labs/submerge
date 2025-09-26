@@ -342,7 +342,6 @@ impl BlockProcessor {
         Ok(events)
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub async fn process_events(
         &self,
         block_hash: &[u8],

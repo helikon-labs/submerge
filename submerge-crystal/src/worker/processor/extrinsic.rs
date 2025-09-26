@@ -517,7 +517,6 @@ impl BlockProcessor {
         Ok(extrinsics)
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub async fn process_extrinsics(
         &self,
         block_hash: &[u8],
@@ -574,7 +573,6 @@ impl BlockProcessor {
     }
 
     #[async_recursion]
-    #[allow(clippy::too_many_arguments)]
     pub async fn process_extrinsic_arg(
         &self,
         block_hash: &[u8],

@@ -81,7 +81,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    #[allow(clippy::too_many_arguments)]
     async fn ingest_block(
         &self,
         hash: &[u8],
@@ -128,7 +127,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         status: BlockStatus,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    #[allow(clippy::too_many_arguments)]
     async fn ingest_extrinsics(
         &self,
         block_hash: &[u8],
