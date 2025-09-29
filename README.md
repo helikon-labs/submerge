@@ -1,8 +1,6 @@
 <p align="center">
-	<img width="420" src="https://raw.githubusercontent.com/helikon-labs/submerge/main/_readme-files/submerge-logo.png">
+	<img width="600" src="https://raw.githubusercontent.com/helikon-labs/submerge/main/_readme-files/submerge-logo.png">
 </p>
-
-# Submerge
 
 [Submerge](https://submerge.io) is a multi-function blockchain data indexing, processing, analysis, and compliance platform. Below is a list of the components of Submerge:
 
