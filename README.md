@@ -2,6 +2,8 @@
 	<img width="600" src="https://raw.githubusercontent.com/helikon-labs/submerge/main/_readme-files/submerge-logo.png">
 </p>
 
+![](https://github.com/helikon-labs/submerge/actions/workflows/rust_checks.yml/badge.svg)
+
 [Submerge](https://submerge.io) is a multi-function blockchain data indexing, processing, analysis, and compliance platform. Below is a list of the components of Submerge:
 
 1. **Crystal:** The main indexer component. Indexes genesis records, blocks, extrinsics, calls within extrinsics, events, traces, logs, and metadata (versions, pallets, calls, events, constants, errors). Deployed per chain.
