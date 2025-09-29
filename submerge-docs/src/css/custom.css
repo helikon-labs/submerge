@@ -493,6 +493,10 @@ article {
     text-decoration: none;
 }
 
+.menu__list a {
+    text-decoration: none;
+}
+
 /* link */
 a {
     text-decoration: underline;
