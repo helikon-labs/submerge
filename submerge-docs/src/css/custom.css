@@ -485,6 +485,14 @@ article {
     background-color: var(--event-active-background-color);
 }
 
+.theme-doc-sidebar-container a {
+    text-decoration: none;
+}
+
+.navbar__inner a {
+    text-decoration: none;
+}
+
 /* link */
 a {
     text-decoration: underline;
