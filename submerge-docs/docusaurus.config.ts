@@ -180,7 +180,9 @@ const config: Config = {
                         infoTemplate: './templates/crystal-api-info.mustache',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
-                            categoryLinkSource: 'tag',
+                            categoryLinkSource: undefined,
+                            sidebarCollapsible: false,
+                            sidebarCollapsed: false,
                         },
                         showSchemas: true,
                     } satisfies OpenApiPlugin.Options,

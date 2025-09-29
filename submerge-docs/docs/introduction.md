@@ -6,7 +6,7 @@ slug: /
 
 # Introduction
 
-[Submerge](https://submerge.io) is a multi-function blockchain data processing platform platform. This site is a documentation for Submerge, its components, and APIs. Submerge has 10 components:
+[Submerge](https://submerge.io) is a multi-function blockchain data processing platform. This site is a documentation for Submerge, its components, and APIs. Submerge has 10 components:
 
 1. **Crystal:** The main indexer component. Indexes genesis records, blocks, extrinsics, calls within extrinsics, events, traces, logs, and metadata (versions, pallets, calls, events, constants, errors). Deployed per chain.
 2. **Fractal:** Processes the output of Crystal to index selected storage items into a queryable format. Also indexes data related to state transitions, such as block headers, extrinsics, events, etc. Supports backfilling. Deployed per chain.
