@@ -485,6 +485,11 @@ article {
     background-color: var(--event-active-background-color);
 }
 
+/* link */
+a {
+    text-decoration: underline;
+}
+
 /*
 .api-method > .menu__link,
 .schema > .menu__link {

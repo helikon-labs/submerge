@@ -19,6 +19,18 @@ function headerifyTopCategories(items: [any]) {
 const crystalAPISidebar = require('./docs/crystal-api/sidebar.ts');
 
 const sidebars: SidebarsConfig = {
+    introductionSidebar: [
+        {
+            type: 'doc',
+            id: 'introduction',
+            label: 'Introduction',
+        },
+    ],
+    crystalAPISidebar: headerifyTopCategories(crystalAPISidebar),
+};
+
+/*
+const sidebars: SidebarsConfig = {
     tutorialSidebar: [
         {
             type: 'doc',
@@ -50,5 +62,6 @@ const sidebars: SidebarsConfig = {
     ],
     crystalAPISidebar: headerifyTopCategories(crystalAPISidebar),
 };
+*/
 
 export default sidebars;
