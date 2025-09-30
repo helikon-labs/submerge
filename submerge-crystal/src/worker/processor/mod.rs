@@ -96,7 +96,6 @@ impl BlockProcessor {
         reindex: bool,
         maybe_start_block_number: Option<u64>,
         maybe_end_block_number: Option<u64>,
-        is_subscription: bool,
     ) -> anyhow::Result<()> {
         let (start_block_number, end_block_number) = self
             .get_actual_finalized_block_range(
@@ -120,7 +119,6 @@ impl BlockProcessor {
                     &hash_hex,
                     number,
                     BlockStatus::Finalized,
-                    is_subscription,
                 )
                 .await
             {
@@ -198,6 +196,10 @@ impl BlockProcessor {
         Ok(())
     }
 
+    pub async fn get_finalized_block_hash_hex(&self, block_number: u64) -> anyhow::Result<String> {
+        self.substrate_client.get_block_hash(block_number).await
+    }
+
     #[allow(clippy::cognitive_complexity)]
     pub async fn process_block(
         &self,
@@ -206,25 +208,9 @@ impl BlockProcessor {
         block_hash_hex: &str,
         block_number: u64,
         status: BlockStatus,
-        is_subscription: bool,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
         let mut tx = self.postgres.connection_pool.begin().await?;
-        if status == BlockStatus::Finalized && is_subscription {
-            if let Some((last_finalized_number, _)) = self
-                .postgres
-                .get_last_indexed_finalized_block_number_and_hash(&mut tx)
-                .await?
-            {
-                log::info!("Prev last finalized :: {}", last_finalized_number);
-                let gap = block_number.saturating_sub(last_finalized_number);
-                if gap > 1 {
-                    log::error!("Process the gap :: {gap} > 1.");
-                } else {
-                    log::info!("Gap is ok :: {gap}");
-                }
-            }
-        }
         if let Some(block_row) = self.postgres.get_block_by_hash(&block_hash).await? {
             log::info!(
                 "👍 Block [{block_number}][{}] had already been processed.",
@@ -413,15 +399,6 @@ impl BlockProcessor {
         .await?;
         log::info!("Persisted {} extrinsics.", extrinsics.len());
         self.postgres.delete_error(&block_hash, &mut tx).await?;
-        if is_subscription && status == BlockStatus::Finalized {
-            self.postgres
-                .set_last_indexed_finalized_block_number_and_hash(
-                    block_number,
-                    &block_hash,
-                    &mut tx,
-                )
-                .await?;
-        }
         tx.commit().await?;
         let log_emoji = match status {
             BlockStatus::Proposed => "🟦",

@@ -113,7 +113,6 @@ impl BaseService for Crystal {
                 ),
             )
             .await;
-
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {

@@ -234,7 +234,6 @@ impl Worker {
                         reindex,
                         maybe_start_block_number,
                         maybe_end_block_number,
-                        false,
                     )
                     .await
                 {

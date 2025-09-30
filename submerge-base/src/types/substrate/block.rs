@@ -3,12 +3,12 @@ use serde::{Deserialize, Serialize};
 use sp_consensus_babe::digests::PreDigest;
 use sp_runtime::DigestItem;
 
-#[derive(Serialize, Deserialize, Debug, Encode)]
+#[derive(Clone, Serialize, Deserialize, Debug, Encode)]
 pub struct EventDigest {
     pub logs: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Encode)]
+#[derive(Clone, Serialize, Deserialize, Debug, Encode)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockHeader {
     pub digest: EventDigest,
