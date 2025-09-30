@@ -93,6 +93,27 @@ impl BaseService for Crystal {
         self.print_summary(&chainspec);
         self.process_genesis(&chainspec).await?;
 
+        let recovery_duration = Duration::from_secs(self.args.service.recovery_sleep_seconds);
+        self.worker_manager
+            .spawn(
+                WorkerType::SubscribeNewBlocks,
+                WorkerConfig::new(
+                    chainspec.properties.clone(),
+                    self.postgres.clone(),
+                    RPCConfig {
+                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        //rpc_url: "wss://rpc.helikon.io/polkadot".to_string(),
+                        rpc_connection_timeout_secs: 30,
+                        rpc_request_timeout_secs: 30,
+                        rpc_subscription_timeout_secs: 60,
+                    },
+                    self.args.legacy_decode_api_url.clone(),
+                    recovery_duration,
+                    true,
+                    false,
+                ),
+            )
+            .await;
         self.worker_manager
             .spawn(
                 WorkerType::SubscribeFinalizedBlocks,
@@ -107,7 +128,7 @@ impl BaseService for Crystal {
                         rpc_subscription_timeout_secs: 60,
                     },
                     self.args.legacy_decode_api_url.clone(),
-                    Duration::from_secs(self.args.service.recovery_sleep_seconds),
+                    recovery_duration,
                     true,
                     false,
                 ),
@@ -132,7 +153,7 @@ impl BaseService for Crystal {
                         rpc_subscription_timeout_secs: 60,
                     },
                     self.args.legacy_decode_api_url.clone(),
-                    Duration::from_secs(self.args.service.recovery_sleep_seconds),
+                    recovery_duration,
                     true,
                     true,
                 ),

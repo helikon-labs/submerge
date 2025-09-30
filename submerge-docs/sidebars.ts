@@ -10,7 +10,7 @@ const sidebars: SidebarsConfig = {
             label: 'Introduction',
         },
     ],
-    crystalAPISidebar: crystalAPISidebar,
+    crystalAPISidebar,
 };
 
 export default sidebars;

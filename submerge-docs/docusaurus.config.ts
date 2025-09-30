@@ -126,25 +126,29 @@ const config: Config = {
                     title: 'Docs',
                     items: [
                         {
+                            label: 'Introduction',
+                            to: '/',
+                        },
+                        {
                             label: 'Crystal API',
                             to: '/crystal-api',
                         },
                     ],
                 },
                 {
-                    title: 'Community',
+                    title: 'Links',
                     items: [
                         {
-                            label: 'Stack Overflow',
-                            href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-                        },
-                        {
-                            label: 'Discord',
+                            label: 'Submerge',
                             href: 'https://discordapp.com/invite/docusaurus',
                         },
                         {
-                            label: 'X',
-                            href: 'https://x.com/docusaurus',
+                            label: 'Helikon',
+                            href: 'https://helikon.io',
+                        },
+                        {
+                            label: 'Helikon X',
+                            href: 'https://x.com/helikonlabs',
                         },
                     ],
                 },
@@ -152,8 +156,12 @@ const config: Config = {
                     title: 'More',
                     items: [
                         {
-                            label: 'GitHub',
-                            href: 'https://github.com/facebook/docusaurus',
+                            label: 'Submerge GitHub',
+                            href: 'https://github.com/helikon-labs/submerge',
+                        },
+                        {
+                            label: 'Helikon GitHub',
+                            href: 'https://github.com/helikon-labs',
                         },
                     ],
                 },

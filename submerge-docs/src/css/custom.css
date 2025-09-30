@@ -485,6 +485,10 @@ article {
     background-color: var(--event-active-background-color);
 }
 
+/* link */
+a {
+}
+
 .theme-doc-sidebar-container a {
     text-decoration: none;
 }
@@ -497,9 +501,14 @@ article {
     text-decoration: none;
 }
 
-/* link */
-a {
+.footer__item a {
     text-decoration: underline;
+}
+
+.footer__item a:hover {
+    color: var(--ifm-footer-link-color);
+    text-decoration: underline;
+    transition: none;
 }
 
 /*
