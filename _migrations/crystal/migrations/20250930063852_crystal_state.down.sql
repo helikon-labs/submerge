@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS crystal_state CASCADE;

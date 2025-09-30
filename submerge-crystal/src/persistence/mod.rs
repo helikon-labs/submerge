@@ -24,6 +24,16 @@ pub mod api;
 const INSERT_BATCH_SIZE: usize = 1000;
 
 pub(crate) trait CrystalPostgreSQLStorage {
+    async fn set_last_indexed_finalized_block_number_and_hash(
+        &self,
+        number: u64,
+        hash: &[u8],
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()>;
+    async fn get_last_indexed_finalized_block_number_and_hash(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<Option<(u64, Vec<u8>)>>;
     async fn get_metadata(
         &self,
         spec_version: u32,
@@ -182,6 +192,33 @@ pub(crate) trait CrystalPostgreSQLStorage {
 }
 
 impl CrystalPostgreSQLStorage for PostgreSQLStorage {
+    async fn set_last_indexed_finalized_block_number_and_hash(
+        &self,
+        number: u64,
+        hash: &[u8],
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        sqlx::query("UPDATE crystal_state SET last_indexed_finalized_block_number = $1, last_indexed_finalized_block_hash = $2 WHERE id = 1")
+            .bind(number as i64)
+            .bind(hash)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
+    }
+    async fn get_last_indexed_finalized_block_number_and_hash(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<Option<(u64, Vec<u8>)>> {
+        let row: (Option<i64>, Option<Vec<u8>>) =
+            sqlx::query_as("SELECT last_indexed_finalized_block_number, last_indexed_finalized_block_hash FROM crystal_state WHERE id = 1")
+                .fetch_one(&mut **tx)
+                .await?;
+        Ok(match (row.0, row.1) {
+            (Some(number), Some(hash)) => Some((number as u64, hash)),
+            _ => None,
+        })
+    }
+
     async fn get_metadata(
         &self,
         spec_version: u32,

@@ -27,7 +27,7 @@ impl super::Worker {
             truncate_hash(&hash_hex)
         );
         match processor
-            .process_block(skip_traces, false, &hash_hex, number, block_status)
+            .process_block(skip_traces, false, &hash_hex, number, block_status, true)
             .await
         {
             Ok(_) => {
