@@ -1,16 +1,10 @@
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::SubstrateClient;
 use submerge_util::string::truncate_hash;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 
 use super::processor::BlockProcessor;
 use crate::{persistence::CrystalPostgreSQLStorage as _, types::BlockStatus};
@@ -174,32 +168,37 @@ impl super::Worker {
                     .await
             }
             BlockStatus::Finalized => {
-                let is_processing = Arc::new(AtomicBool::new(false));
                 let last_error: Arc<Mutex<Option<anyhow::Error>>> = Arc::new(Mutex::new(None));
+                let gate = Arc::new(Semaphore::new(1));
                 substrate_client
                     .subscribe_to_finalized_blocks(
                         subscription_timeout,
                         self.cancellation_token.clone(),
                         |header| {
+                            let gate = gate.clone();
                             let processor = block_processor.clone();
-                            let is_processing = is_processing.clone();
                             let last_error = last_error.clone();
                             async move {
                                 if let Some(err) = last_error.lock().await.take() {
                                     log::error!("⚠️ Previous finalized block processing failed, returning error.");
                                     return Err(err);
                                 }
-                                if is_processing.swap(true, Ordering::SeqCst) {
-                                    match header.get_number() {
-                                        Ok(n) => log::warn!("⚠️ Skipping finalized block {n} - previous still processing."),
-                                        Err(e) => log::warn!("⚠️ Skipping finalized block (unknown number: {e}) - previous still processing."),
+                                let permit = match gate.try_acquire_owned() {
+                                    Ok(p) => p,
+                                    Err(_) => {
+                                        match header.get_number() {
+                                            Ok(n) => log::warn!("⚠️ Skipping finalized block {n} - previous still processing."),
+                                            Err(e) => log::warn!("⚠️ Skipping finalized block (unknown number: {e}) - previous still processing."),
+                                        }
+                                        return Ok(());
                                     }
-                                    return Ok(());
-                                }
+                                };
                                 let worker_id = self.id.to_string();
                                 let postgres = self.config.postgres.clone();
                                 let header = header.clone();
                                 tokio::spawn(async move {
+                                    // hold permit for the entire task duration
+                                    let _permit_guard = permit;
                                     let result = on_finalized_block(
                                         worker_id,
                                         postgres,
@@ -212,7 +211,7 @@ impl super::Worker {
                                         log::error!("Error processing finalized block: {e:?}");
                                         *last_error.lock().await = Some(e);
                                     }
-                                    is_processing.store(false, Ordering::SeqCst);
+                                    // _permit_guard drops here, releasing the semaphore
                                 });
                                 Ok(())
                             }
