@@ -1,0 +1,1 @@
+DROP TABLE polkassembly_referendum_comment CASCADE;

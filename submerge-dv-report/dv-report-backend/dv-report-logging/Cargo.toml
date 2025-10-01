@@ -1,0 +1,13 @@
+[package]
+name = "dv-report-logging"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+env_logger = { workspace = true }
+dv-report-config = { path = "../dv-report-config" }
+log = { workspace = true }

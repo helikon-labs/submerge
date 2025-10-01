@@ -1,0 +1,1 @@
+DROP TABLE referendum_event_confirm_aborted CASCADE;

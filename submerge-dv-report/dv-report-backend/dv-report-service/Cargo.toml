@@ -1,0 +1,18 @@
+[package]
+name = "dv-report-service"
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+actix-web = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+log = { workspace = true }
+serde_json = { workspace = true }
+dv-report-metrics = { path = "../dv-report-metrics" }
+dv-report-types = { path = "../dv-report-types" }
+tokio = { workspace = true, features = ["full"] }

@@ -1,0 +1,1 @@
+DROP TABLE subsquare_referendum_comment CASCADE;

@@ -1,0 +1,1 @@
+DROP TABLE referendum_event_killed CASCADE;

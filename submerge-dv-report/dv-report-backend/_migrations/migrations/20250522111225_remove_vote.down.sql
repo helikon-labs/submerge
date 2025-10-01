@@ -1,0 +1,1 @@
+DROP TABLE remove_vote CASCADE;
