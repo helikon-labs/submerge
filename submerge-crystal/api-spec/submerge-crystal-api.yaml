@@ -285,20 +285,13 @@ components:
       type: object
       description: Generic error type.
       properties:
-        code:
-          type: integer
-          minimum: 0
-          description: Error code.
-          example: 0
         message:
           type: string
           description: Error message.
           example: Internal server error.
       required:
-        - code
         - message
       example:
-        code: 0
         message: Internal server error.
     WorkerStatus:
       type: object

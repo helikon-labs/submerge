@@ -4,6 +4,7 @@ use serde_json::Value as JSONValue;
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::ExtrinsicRow, BlockStatus};
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ExtrinsicQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,

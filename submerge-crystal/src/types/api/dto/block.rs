@@ -23,6 +23,7 @@ impl TryFrom<&str> for BlockReference {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BlockQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,

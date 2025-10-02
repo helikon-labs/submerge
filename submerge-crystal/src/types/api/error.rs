@@ -9,13 +9,14 @@ use axum::{
 };
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Error {
-    pub code: u16,
+pub struct APIErrorBody {
     pub message: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub enum APIError {
+    NotFound,
+    SerializationError,
     BadRequest(String),
     InternalServerError(String),
     MetadataNotFound(u32),
@@ -25,19 +26,10 @@ pub enum APIError {
 }
 
 impl APIError {
-    fn error_code(&self) -> u16 {
-        match self {
-            APIError::BadRequest(_) => 0,
-            APIError::InternalServerError(_) => 1,
-            APIError::MetadataNotFound(_) => 2,
-            APIError::MetadataPalletNotFound(_, _) => 3,
-            APIError::BlockNotFoundWithNumber(_) => 4,
-            APIError::BlockNotFoundWithHash(_) => 4,
-        }
-    }
-
     fn message(&self) -> String {
         match self {
+            APIError::NotFound => "Not found.".to_owned(),
+            APIError::SerializationError => "Serialization error.".to_owned(),
             APIError::BadRequest(message) => message.to_owned(),
             APIError::InternalServerError(message) => message.to_owned(),
             APIError::MetadataNotFound(spec_version) => {
@@ -58,6 +50,8 @@ impl APIError {
 
     fn status_code(&self) -> StatusCode {
         match self {
+            APIError::NotFound => StatusCode::NOT_FOUND,
+            APIError::SerializationError => StatusCode::INTERNAL_SERVER_ERROR,
             APIError::BadRequest(_) => StatusCode::BAD_REQUEST,
             APIError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             APIError::MetadataNotFound(_) => StatusCode::NOT_FOUND,
@@ -85,11 +79,10 @@ impl From<anyhow::Error> for APIError {
 
 impl IntoResponse for APIError {
     fn into_response(self) -> Response {
-        let error_response = Error {
-            code: self.error_code(),
+        let body = APIErrorBody {
             message: self.message(),
         };
 
-        (self.status_code(), Json(error_response)).into_response()
+        (self.status_code(), Json(body)).into_response()
     }
 }
