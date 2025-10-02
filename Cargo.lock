@@ -91,9 +91,9 @@ dependencies = [
 
 [[package]]
 name = "anstream"
-version = "0.6.20"
+version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ae563653d1938f79b1ab1b5e668c87c76a9930414574a6583a7b7e11a8e6192"
+checksum = "43d5b281e737544384e969a5ccad3f1cdd24b48086a0fc1b2a5262a26b8f4f4a"
 dependencies = [
  "anstyle",
  "anstyle-parse",
@@ -534,9 +534,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "axum"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98e529aee37b5c8206bb4bf4c44797127566d72f76952c970bd3d1e85de8f4e2"
+checksum = "8a18ed336352031311f4e0b4dd2ff392d4fbb370777c9d18d7fc9d7359f73871"
 dependencies = [
  "axum-core",
  "bytes",
@@ -567,9 +567,9 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ac7a6beb1182c7e30253ee75c3e918080bfb83f5a3023bcdf7209d85fd147e6"
+checksum = "59446ce19cd142f8833f856eb31f3eb097812d1479ab224f54d72428ca21ea22"
 dependencies = [
  "bytes",
  "futures-core",
@@ -619,9 +619,9 @@ checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
 
 [[package]]
 name = "binary-merkle-tree"
-version = "16.0.0"
+version = "16.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "181f5380e435b8ba6d901f8b16fc8908c6f0f8bea8973113d1c8718d89bb1809"
+checksum = "95c9f6900c9fd344d53fbdfb36e1343429079d73f4168c8ef48884bf15616dbd"
 dependencies = [
  "hash-db",
  "log",
@@ -3933,9 +3933,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.6"
+version = "0.103.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8572f3c2cb9934231157b45499fc41e1f58c589fdfb81a844ba873265e80f8eb"
+checksum = "e10b3f4191e8a80e6b43eebabfac91e5dcecebb27a71f04e820c47ec41d314bf"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -4506,9 +4506,9 @@ dependencies = [
 
 [[package]]
 name = "sp-core"
-version = "38.0.0"
+version = "38.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9eb651e016aa5556f5401596d764566240fe44f7a989dc46ebdefa684e9aeaaa"
+checksum = "707602208776d0e19d4269bb3f68c5306cacbdfabbb2e4d8d499af7b907bb0a3"
 dependencies = [
  "ark-vrf",
  "array-bytes",
@@ -4542,7 +4542,6 @@ dependencies = [
  "sp-crypto-hashing",
  "sp-debug-derive",
  "sp-externalities",
- "sp-runtime-interface",
  "sp-std",
  "sp-storage",
  "ss58-registry",
@@ -4656,9 +4655,9 @@ dependencies = [
 
 [[package]]
 name = "sp-keystore"
-version = "0.44.0"
+version = "0.44.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f63da3f73c67601452dde155804233f76e993802d4b106e33ae7d88577f46b6a"
+checksum = "8a5c0b829014afc22e992be2c198f2677592db43267fc218e9f3207dbbfb6fbb"
 dependencies = [
  "parity-scale-codec",
  "parking_lot",
@@ -4833,9 +4832,9 @@ dependencies = [
 
 [[package]]
 name = "sp-trie"
-version = "41.0.0"
+version = "41.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c17205dd7df84be66e55a136b5d80dfb6c23806376c0ef5e847ea9344c0478cf"
+checksum = "bd2a05942903900c23aaa5fded094fa8186523e646ae8874bff3fce74985d0e5"
 dependencies = [
  "ahash",
  "foldhash",
@@ -4902,9 +4901,9 @@ dependencies = [
 
 [[package]]
 name = "sp-weights"
-version = "33.0.0"
+version = "33.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cae0642af5f2dd0b1cddcd06f91c36f7abe0528713e97b6e3c36faf0b8229114"
+checksum = "beb3f1b1373a0926b44ddabfa55a608ea78c20ee356f35575c031db2f0202545"
 dependencies = [
  "bounded-collections",
  "parity-scale-codec",
@@ -5949,9 +5948,9 @@ dependencies = [
 
 [[package]]
 name = "typenum"
-version = "1.18.0"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
+checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
 
 [[package]]
 name = "uint"
