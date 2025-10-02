@@ -314,14 +314,7 @@ impl BlockProcessor {
                 .get_block_trace(block_hash_hex)
                 .await?;
             self.postgres
-                .ingest_block_trace(
-                    &block_hash,
-                    &block_header,
-                    status,
-                    spec_version,
-                    &trace,
-                    &mut tx,
-                )
+                .ingest_block_trace(&block_hash, &block_header, spec_version, &trace, &mut tx)
                 .await?;
             let event_count = trace.get_event_count()?;
             let events = self

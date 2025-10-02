@@ -126,7 +126,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         hash: &[u8],
         header: &BlockHeader,
-        status: BlockStatus,
         spec_version: u32,
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
@@ -583,11 +582,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_hash)
             .execute(&mut **tx)
             .await?;
-        sqlx::query("UPDATE trace SET block_status = $1 WHERE block_hash = $2")
-            .bind(status)
-            .bind(block_hash)
-            .execute(&mut **tx)
-            .await?;
         sqlx::query("UPDATE log SET block_status = $1 WHERE block_hash = $2")
             .bind(status)
             .bind(block_hash)
@@ -678,7 +672,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         hash: &[u8],
         header: &BlockHeader,
-        block_status: BlockStatus,
         spec_version: u32,
         trace: &SubstrateBlockTrace,
         tx: &mut Transaction<'_, Postgres>,
@@ -687,8 +680,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for (trace_index, event) in trace.events.iter().enumerate() {
             sqlx::query(
                 r#"
-                INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, block_status, index, key, value, ext_id, method, parent_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 ON CONFLICT (block_hash, block_number, index) DO NOTHING
                 "#,
             )
@@ -696,7 +689,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 .bind(&header.parent_hash)
                 .bind(header.number as i64)
                 .bind(spec_version as i32)
-                .bind(block_status)
                 .bind(trace_index as i32)
                 .bind(&event.data_wrapper.data.key)
                 .bind(&event.data_wrapper.data.value)
@@ -991,7 +983,6 @@ mod tests {
                 .ingest_block_trace(
                     &hash,
                     &header,
-                    BlockStatus::Proposed,
                     last_runtime_upgrade.spec_version,
                     &trace,
                     &mut tx,
