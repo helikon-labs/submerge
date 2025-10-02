@@ -617,8 +617,6 @@ components:
           minimum: 0
           description: Trace runtime spec version.
           example: 1001
-        blockStatus:
-          $ref: '#/components/schemas/BlockStatus'
         index:
           type: integer
           description: Index of the trace record in the block.
@@ -656,7 +654,6 @@ components:
         - blockParentHash
         - blockNumber
         - specVersion
-        - blockStatus
         - index
         - key
         - value
@@ -668,7 +665,6 @@ components:
         blockParentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
         blockNumber: 27419831
         specVersion: 1006001
-        blockStatus: 'finalized'
         index: 0
         key: '0xab435260'
         value: '0x1435adde34ff94782a'
@@ -1236,7 +1232,6 @@ components:
                     blockParentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
                     blockNumber: 27419831
                     specVersion: 1006001
-                    blockStatus: 'finalized'
                     index: 0
                     key: '0xab43526a'
                     value: '0x1435adde34ff947820'

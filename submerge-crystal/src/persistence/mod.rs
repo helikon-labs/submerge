@@ -165,9 +165,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
         pallet_index: u8,
-        pallet_name: &str,
         pallet_call_index: u8,
-        pallet_call_name: &str,
         is_successful: bool,
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
@@ -863,17 +861,15 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
         pallet_index: u8,
-        pallet_name: &str,
         pallet_call_index: u8,
-        pallet_call_name: &str,
         is_successful: bool,
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64> {
         let row: (i64,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, pallet_index, pallet_name, pallet_call_index, pallet_call_name, is_successful, args_json)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, pallet_index, pallet_call_index, is_successful, args_json)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING id
             "#,
         )
@@ -888,9 +884,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(parent_call_id)
             .bind(nesting_index)
             .bind(pallet_index as i32)
-            .bind(pallet_name)
             .bind(pallet_call_index as i32)
-            .bind(pallet_call_name)
             .bind(is_successful)
             .bind(args)
             .fetch_one(&mut **tx)

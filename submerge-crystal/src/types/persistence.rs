@@ -118,7 +118,6 @@ pub struct CallRow {
     pub parent_call_id: Option<i64>,
     pub nesting_index: Option<String>,
     pub pallet_index: i32,
-    pub pallet_name: String,
     pub pallet_call_index: i32,
     pub pallet_call_name: String,
     pub is_successful: bool,

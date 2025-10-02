@@ -12,9 +12,7 @@ CREATE TABLE IF NOT EXISTS call
     parent_call_id      BIGINT,
     nesting_index       VARCHAR(128),
     pallet_index        INTEGER NOT NULL,
-    pallet_name         VARCHAR(128) NOT NULL,
     pallet_call_index   INTEGER NOT NULL,
-    pallet_call_name    VARCHAR(128) NOT NULL,
     is_successful       BOOLEAN NOT NULL,
     args_json           JSONB,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
@@ -29,21 +27,23 @@ CREATE TABLE IF NOT EXISTS call
 
 CREATE INDEX IF NOT EXISTS call_idx_block_hash ON call (block_hash);
 CREATE INDEX IF NOT EXISTS call_idx_block_number ON call (block_number);
+CREATE INDEX IF NOT EXISTS call_idx_extrinsic_hash ON call (extrinsic_hash);
 CREATE INDEX IF NOT EXISTS call_idx_timestamp ON call (block_timestamp);
 
-CREATE INDEX IF NOT EXISTS call_idx_extrinsic_hash ON call (extrinsic_hash);
-
-CREATE INDEX IF NOT EXISTS call_idx_pallet_name ON call (pallet_name);
-CREATE INDEX IF NOT EXISTS call_idx_call_name ON call (pallet_call_name);
-CREATE INDEX IF NOT EXISTS call_idx_pallet_name_call_name ON call (pallet_name, pallet_call_name);
+CREATE INDEX IF NOT EXISTS call_idx_spec_version_pallet_index_pallet_call_index
+ON call (
+    spec_version,
+    pallet_index,
+    pallet_call_index
+);
 
 CREATE INDEX IF NOT EXISTS call_idx_filter_order
 ON call (
     block_number DESC,
     block_timestamp,
     spec_version,
-    pallet_name,
-    pallet_call_name
+    pallet_index,
+    pallet_call_index
 );
 
 CREATE TABLE call_0_1000000 PARTITION OF call FOR VALUES FROM (0) TO (1000000);
