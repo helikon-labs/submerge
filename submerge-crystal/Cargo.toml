@@ -7,6 +7,10 @@ authors.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[[bin]]
+name = "submerge-crystal"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = { workspace = true }
 async-recursion = { workspace = true }
@@ -34,6 +38,7 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sqlx = { workspace = true }
 submerge-base = { path = "../submerge-base" }
+submerge-logging = { path = "../submerge-logging" }
 submerge-metrics = { path = "../submerge-metrics" }
 submerge-persistence = { path = "../submerge-persistence" }
 submerge-substrate-client = { path = "../submerge-substrate-client" }

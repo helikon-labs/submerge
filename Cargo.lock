@@ -5274,6 +5274,7 @@ dependencies = [
  "sp-runtime",
  "sqlx",
  "submerge-base",
+ "submerge-logging",
  "submerge-metrics",
  "submerge-persistence",
  "submerge-substrate-client",
