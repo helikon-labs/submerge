@@ -821,7 +821,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<()> {
         for event_row_chunk in event_rows.chunks(INSERT_BATCH_SIZE) {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_name, pallet_event_index, pallet_event_name, extrinsic_index, extrinsic_hash, phase, index, args_json) ",
+                "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_event_index, extrinsic_index, extrinsic_hash, phase, index, args_json) ",
             );
             query_builder.push_values(event_row_chunk, |mut query, event| {
                 query
@@ -832,9 +832,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(event.block_status)
                     .push_bind(event.trace_index)
                     .push_bind(event.pallet_index)
-                    .push_bind(&event.pallet_name)
                     .push_bind(event.pallet_event_index)
-                    .push_bind(&event.pallet_event_name)
                     .push_bind(event.extrinsic_index)
                     .push_bind(event.extrinsic_hash)
                     .push_bind(&event.phase)

@@ -8,9 +8,7 @@ CREATE TABLE IF NOT EXISTS event
     block_status        BLOCK_STATUS NOT NULL,
     trace_index         INTEGER,
     pallet_index        INTEGER NOT NULL,
-    pallet_name         TEXT NOT NULL,
     pallet_event_index  INTEGER NOT NULL,
-    pallet_event_name   VARCHAR(128) NOT NULL,
     extrinsic_index     INTEGER,
     extrinsic_hash      BYTEA,
     phase               VARCHAR(32) NOT NULL,
@@ -27,22 +25,25 @@ CREATE TABLE IF NOT EXISTS event
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX IF NOT EXISTS event_idx_block_hash ON event (block_hash);
-CREATE INDEX IF NOT EXISTS event_idx_block_number ON event (block_number);
 CREATE INDEX IF NOT EXISTS event_idx_block_hash_extrinsic_index ON event (block_hash, extrinsic_index) WHERE extrinsic_index IS NOT NULL;
+CREATE INDEX IF NOT EXISTS event_idx_block_number ON event (block_number);
 CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash ON event (extrinsic_hash) WHERE extrinsic_hash IS NOT NULL;
 CREATE INDEX IF NOT EXISTS event_idx_timestamp ON event (block_timestamp);
 
-CREATE INDEX IF NOT EXISTS event_idx_pallet_name ON event (pallet_name);
-CREATE INDEX IF NOT EXISTS event_idx_pallet_event_name ON event (pallet_event_name);
-CREATE INDEX IF NOT EXISTS event_idx_pallet_name_pallet_event_name ON event (pallet_name, pallet_event_name);
+CREATE INDEX IF NOT EXISTS event_idx_spec_version_pallet_index_pallet_event_index
+ON event (
+    spec_version,
+    pallet_index,
+    pallet_event_index
+);
 
 CREATE INDEX IF NOT EXISTS event_idx_filter_order
 ON event (
     block_number DESC,
     block_timestamp,
     spec_version,
-    pallet_name,
-    pallet_event_name
+    pallet_index,
+    pallet_event_index
 );
 
 CREATE TABLE event_0_1000000 PARTITION OF event FOR VALUES FROM (0) TO (1000000);
