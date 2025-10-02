@@ -365,7 +365,7 @@ impl BlockProcessor {
             )
             .await?;
         self.postgres
-            .ingest_block_logs(&block_hash, &block_header, status, &mut tx)
+            .ingest_block_logs(&block_hash, &block_header, &mut tx)
             .await?;
         log::info!("Persisted block and logs.");
         self.process_events(

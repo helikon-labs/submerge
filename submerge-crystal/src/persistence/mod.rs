@@ -134,7 +134,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         hash: &[u8],
         header: &BlockHeader,
-        status: BlockStatus,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn ingest_extrinsics(
@@ -582,11 +581,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_hash)
             .execute(&mut **tx)
             .await?;
-        sqlx::query("UPDATE log SET block_status = $1 WHERE block_hash = $2")
-            .bind(status)
-            .bind(block_hash)
-            .execute(&mut **tx)
-            .await?;
         sqlx::query("UPDATE extrinsic SET block_status = $1 WHERE block_hash = $2")
             .bind(status)
             .bind(block_hash)
@@ -705,7 +699,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         hash: &[u8],
         header: &BlockHeader,
-        block_status: BlockStatus,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let mut rows = Vec::new();
@@ -729,7 +722,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             rows.push(LogRow {
                 block_hash: hash.into(),
                 block_number: header.get_number()? as i64,
-                block_status,
                 index: index as i32,
                 ty: ty.to_string(),
                 engine,
@@ -738,13 +730,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         }
         for row_chunk in rows.chunks(INSERT_BATCH_SIZE) {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO log (block_hash, block_number, block_status, index, type, engine, data) ",
+                "INSERT INTO log (block_hash, block_number, index, type, engine, data) ",
             );
             query_builder.push_values(row_chunk, |mut query, log| {
                 query
                     .push_bind(&log.block_hash)
                     .push_bind(log.block_number)
-                    .push_bind(log.block_status)
                     .push_bind(log.index)
                     .push_bind(&log.ty)
                     .push_bind(&log.engine)
@@ -976,9 +967,7 @@ mod tests {
                     &mut tx,
                 )
                 .await?;
-            postgres
-                .ingest_block_logs(&hash, &header, BlockStatus::Proposed, &mut tx)
-                .await?;
+            postgres.ingest_block_logs(&hash, &header, &mut tx).await?;
             postgres
                 .ingest_block_trace(
                     &hash,

@@ -78,7 +78,6 @@ impl EventRow {
 pub struct LogRow {
     pub block_hash: Vec<u8>,
     pub block_number: i64,
-    pub block_status: BlockStatus,
     pub index: i32,
     #[sqlx(rename = "type")]
     pub ty: String,
