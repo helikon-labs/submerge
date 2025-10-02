@@ -18,6 +18,7 @@ pub struct ExtrinsicQuery {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BlockExtrinsicQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
