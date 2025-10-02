@@ -36,14 +36,14 @@ pub fn get_rpc_storage_plain_params<'a>(
     module: &'a str,
     name: &'a str,
     block_hash: Option<&'a str>,
-) -> ArrayParams {
+) -> anyhow::Result<ArrayParams> {
     //let mut params: Vec<JsonValue> = vec![.into()];
     let mut params = ArrayParams::new();
-    params.insert(get_storage_plain_key(module, name)).unwrap();
+    params.insert(get_storage_plain_key(module, name))?;
     if let Some(block_hash) = block_hash {
-        params.insert(block_hash).unwrap();
+        params.insert(block_hash)?;
     }
-    params
+    Ok(params)
 }
 
 pub fn decode_hex_string<T>(hex_string: &str) -> anyhow::Result<T>

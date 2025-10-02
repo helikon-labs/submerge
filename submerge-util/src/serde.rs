@@ -42,13 +42,14 @@ where
     T: DeserializeOwned, // Use DeserializeOwned instead of Deserialize<'de>
 {
     let value: JSONValue = Deserialize::deserialize(deserializer)?;
-    if value.is_object() && value.as_object().unwrap().is_empty() {
-        Ok(None) // Convert empty `{}` to None
-    } else {
-        serde_json::from_value(value)
-            .map(Some)
-            .map_err(serde::de::Error::custom)
+    if let Some(value) = value.as_object() {
+        if value.is_empty() {
+            return Ok(None); // Convert empty `{}` to None
+        }
     }
+    serde_json::from_value(value)
+        .map(Some)
+        .map_err(serde::de::Error::custom)
 }
 
 pub fn strip_nuls(value: &mut JSONValue) {

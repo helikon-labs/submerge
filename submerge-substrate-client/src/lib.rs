@@ -84,7 +84,7 @@ impl SubstrateClient {
             .ws_client
             .request(
                 "state_getStorage",
-                get_rpc_storage_plain_params("Timestamp", "Now", Some(block_hash)),
+                get_rpc_storage_plain_params("Timestamp", "Now", Some(block_hash))?,
             )
             .await?;
         decode_hex_string(hex_string.as_str())
@@ -145,7 +145,7 @@ impl SubstrateClient {
             .ws_client
             .request(
                 "state_getStorage",
-                get_rpc_storage_plain_params("System", "BlockWeight", Some(block_hash)),
+                get_rpc_storage_plain_params("System", "BlockWeight", Some(block_hash))?,
             )
             .await?;
         if let Some(hex_string) = maybe_hex_string {
@@ -293,7 +293,7 @@ impl SubstrateClient {
             .ws_client
             .request(
                 "state_getStorage",
-                get_rpc_storage_plain_params("Session", "Validators", Some(block_hash)),
+                get_rpc_storage_plain_params("Session", "Validators", Some(block_hash))?,
             )
             .await?;
         let account_ids: Vec<AccountId32> = decode_hex_string(hex_string.as_str())?;
@@ -305,7 +305,7 @@ impl SubstrateClient {
             .ws_client
             .request(
                 "state_getStorage",
-                get_rpc_storage_plain_params("Session", "CurrentIndex", Some(block_hash)),
+                get_rpc_storage_plain_params("Session", "CurrentIndex", Some(block_hash))?,
             )
             .await?;
         if let Some(hex_string) = maybe_hex_string {
@@ -320,7 +320,7 @@ impl SubstrateClient {
             .ws_client
             .request(
                 "state_getStorage",
-                get_rpc_storage_plain_params("System", "Events", Some(block_hash)),
+                get_rpc_storage_plain_params("System", "Events", Some(block_hash))?,
             )
             .await?;
         Ok(hex::decode(events_hex_string.trim_start_matches("0x"))?)
