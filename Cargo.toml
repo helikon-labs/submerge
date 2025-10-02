@@ -32,7 +32,7 @@ async-recursion = "1.1.1"
 async-trait = "0.1"
 anyhow = "1"
 axum = "0.8"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["env", "derive"] }
 convert_case = "0.8"
 frame-metadata = { version = "23.0", default-features = true, features = ["legacy"] }

@@ -49,12 +49,22 @@ mod tests {
     use clap::Parser;
 
     #[test_log::test(tokio::test)]
-    async fn test_screen_sanctioned_address() -> anyhow::Result<()> {
+    async fn test_screen_sanctioned_address_1() -> anyhow::Result<()> {
         let args = Args::parse();
         let client = ChainalysisClient::new(&args).await?;
         let address = "0x1da5821544e25c636c1417ba96ade4cf6d2f9b5a";
         let status = client.get_sanction_status(address).await?;
         assert!(status.identifications.len() > 1);
+        Ok(())
+    }
+
+    #[test_log::test(tokio::test)]
+    async fn test_screen_sanctioned_address_2() -> anyhow::Result<()> {
+        let args = Args::parse();
+        let client = ChainalysisClient::new(&args).await?;
+        let address = "TDdbRFoBTEmE3qiR69Y6rKRSG1hoF65QaE";
+        let status = client.get_sanction_status(address).await?;
+        assert!(status.identifications.len() > 0);
         Ok(())
     }
 }

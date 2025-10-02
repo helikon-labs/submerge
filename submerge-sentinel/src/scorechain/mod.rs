@@ -49,12 +49,12 @@ mod tests {
     use clap::Parser;
 
     #[test_log::test(tokio::test)]
-    async fn test_screen_normal_address() -> anyhow::Result<()> {
+    async fn test_screen_sanctioned_address() -> anyhow::Result<()> {
         let args = Args::parse();
         let client = ScorechainClient::new(&args).await?;
-        let address = "15fTH34bbKGMUjF1bLmTqxPYgpg481imThwhWcQfCyktyBzL";
+        let address = "TDdbRFoBTEmE3qiR69Y6rKRSG1hoF65QaE";
         let status = client.get_sanction_status(address).await?;
-        assert!(!status.is_sanctioned);
+        assert!(status.is_sanctioned);
         Ok(())
     }
 }
