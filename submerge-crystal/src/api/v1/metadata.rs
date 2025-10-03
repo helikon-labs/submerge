@@ -14,8 +14,8 @@ use crate::{
     types::api::{
         dto::{
             metadata::{
-                Metadata, MetadataPallet, MetadataPalletCall, MetadataPalletConstant,
-                MetadataPalletError, MetadataPalletEvent, MetadataPalletStorageItem,
+                MetadataDTO, MetadataPalletCallDTO, MetadataPalletConstantDTO, MetadataPalletDTO,
+                MetadataPalletErrorDTO, MetadataPalletEventDTO, MetadataPalletStorageItemDTO,
             },
             pagination::{PagedResponse, PaginationData, PaginationQuery},
         },
@@ -30,7 +30,7 @@ const DEFAULT_PAGE_SIZE: u64 = 50;
 pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
-) -> Result<Json<PagedResponse<Metadata>>, APIError> {
+) -> Result<Json<PagedResponse<MetadataDTO>>, APIError> {
     let page_number = query.get_page_number()?;
     let page_size = query.get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
@@ -76,7 +76,7 @@ pub(crate) async fn get_metadata_hex(
 pub(crate) async fn get_metadata_pallets(
     State(state): State<ServiceState>,
     Path(spec_version): Path<String>,
-) -> Result<Json<Vec<MetadataPallet>>, APIError> {
+) -> Result<Json<Vec<MetadataPalletDTO>>, APIError> {
     let spec_version = parse_spec_version(&spec_version)?;
     if state.postgres.metadata_exists(spec_version).await? {
         let metadata_pallets = state.postgres.get_metadata_pallets(spec_version).await?;
@@ -89,7 +89,7 @@ pub(crate) async fn get_metadata_pallets(
 pub(crate) async fn get_metadata_pallet_calls(
     State(state): State<ServiceState>,
     Path((spec_version, pallet_index)): Path<(String, String)>,
-) -> Result<Json<Vec<MetadataPalletCall>>, APIError> {
+) -> Result<Json<Vec<MetadataPalletCallDTO>>, APIError> {
     let spec_version = parse_spec_version(&spec_version)?;
     let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
@@ -112,7 +112,7 @@ pub(crate) async fn get_metadata_pallet_calls(
 pub(crate) async fn get_metadata_pallet_constants(
     State(state): State<ServiceState>,
     Path((spec_version, pallet_index)): Path<(String, String)>,
-) -> Result<Json<Vec<MetadataPalletConstant>>, APIError> {
+) -> Result<Json<Vec<MetadataPalletConstantDTO>>, APIError> {
     let spec_version = parse_spec_version(&spec_version)?;
     let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
@@ -135,7 +135,7 @@ pub(crate) async fn get_metadata_pallet_constants(
 pub(crate) async fn get_metadata_pallet_errors(
     State(state): State<ServiceState>,
     Path((spec_version, pallet_index)): Path<(String, String)>,
-) -> Result<Json<Vec<MetadataPalletError>>, APIError> {
+) -> Result<Json<Vec<MetadataPalletErrorDTO>>, APIError> {
     let spec_version = parse_spec_version(&spec_version)?;
     let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
@@ -158,7 +158,7 @@ pub(crate) async fn get_metadata_pallet_errors(
 pub(crate) async fn get_metadata_pallet_events(
     State(state): State<ServiceState>,
     Path((spec_version, pallet_index)): Path<(String, String)>,
-) -> Result<Json<Vec<MetadataPalletEvent>>, APIError> {
+) -> Result<Json<Vec<MetadataPalletEventDTO>>, APIError> {
     let spec_version = parse_spec_version(&spec_version)?;
     let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
@@ -181,7 +181,7 @@ pub(crate) async fn get_metadata_pallet_events(
 pub(crate) async fn get_metadata_pallet_storage_items(
     State(state): State<ServiceState>,
     Path((spec_version, pallet_index)): Path<(String, String)>,
-) -> Result<Json<Vec<MetadataPalletStorageItem>>, APIError> {
+) -> Result<Json<Vec<MetadataPalletStorageItemDTO>>, APIError> {
     let spec_version = parse_spec_version(&spec_version)?;
     let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {

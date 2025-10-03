@@ -27,7 +27,7 @@ pub struct BlockExtrinsicQuery {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Extrinsic {
+pub struct ExtrinsicDTO {
     pub block_hash: String,
     pub block_number: u64,
     pub block_timestamp: u64,
@@ -43,7 +43,7 @@ pub struct Extrinsic {
     pub is_successful: bool,
 }
 
-impl From<&ExtrinsicRow> for Extrinsic {
+impl From<&ExtrinsicRow> for ExtrinsicDTO {
     fn from(row: &ExtrinsicRow) -> Self {
         Self {
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),

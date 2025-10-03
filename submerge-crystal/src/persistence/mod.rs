@@ -50,23 +50,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         pallet: &MetadataPallet,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    async fn get_pallet_index_by_name(
-        &self,
-        spec_version: u32,
-        name: &str,
-    ) -> anyhow::Result<Option<u8>>;
-    async fn get_pallet_call_index_by_name(
-        &self,
-        spec_version: u32,
-        pallet_index: u8,
-        name: &str,
-    ) -> anyhow::Result<Option<u8>>;
-    async fn get_pallet_event_index_by_name(
-        &self,
-        spec_version: u32,
-        pallet_index: u8,
-        name: &str,
-    ) -> anyhow::Result<Option<u8>>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
     async fn get_next_block_number(
@@ -376,55 +359,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .await?;
         }
         Ok(())
-    }
-
-    async fn get_pallet_index_by_name(
-        &self,
-        spec_version: u32,
-        name: &str,
-    ) -> anyhow::Result<Option<u8>> {
-        let maybe_row: Option<(i32,)> = sqlx::query_as(
-            "SELECT index FROM metadata_pallet WHERE spec_version = $1 AND name = $2",
-        )
-        .bind(spec_version as i32)
-        .bind(name)
-        .fetch_optional(&self.connection_pool)
-        .await?;
-        Ok(maybe_row.map(|row| row.0 as u8))
-    }
-
-    async fn get_pallet_call_index_by_name(
-        &self,
-        spec_version: u32,
-        pallet_index: u8,
-        name: &str,
-    ) -> anyhow::Result<Option<u8>> {
-        let maybe_row: Option<(i32,)> = sqlx::query_as(
-            "SELECT index FROM metadata_pallet_call WHERE spec_version = $1 AND pallet_index = $2 AND name = $3",
-        )
-        .bind(spec_version as i32)
-        .bind(pallet_index as i32)
-        .bind(name)
-        .fetch_optional(&self.connection_pool)
-        .await?;
-        Ok(maybe_row.map(|row| row.0 as u8))
-    }
-
-    async fn get_pallet_event_index_by_name(
-        &self,
-        spec_version: u32,
-        pallet_index: u8,
-        name: &str,
-    ) -> anyhow::Result<Option<u8>> {
-        let maybe_row: Option<(i32,)> = sqlx::query_as(
-            "SELECT index FROM metadata_pallet_event WHERE spec_version = $1 AND pallet_index = $2 AND name = $3",
-        )
-        .bind(spec_version as i32)
-        .bind(pallet_index as i32)
-        .bind(name)
-        .fetch_optional(&self.connection_pool)
-        .await?;
-        Ok(maybe_row.map(|row| row.0 as u8))
     }
 
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {

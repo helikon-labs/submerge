@@ -8,7 +8,7 @@ use crate::{
     persistence::{api::genesis::CrystalMetadataAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
-            genesis::GenesisRecord,
+            genesis::GenesisRecordDTO,
             pagination::{PagedResponse, PaginationData, PaginationQuery},
         },
         error::APIError,
@@ -21,7 +21,7 @@ const DEFAULT_PAGE_SIZE: u64 = 50;
 pub(crate) async fn get_genesis_records(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
-) -> Result<Json<PagedResponse<GenesisRecord>>, APIError> {
+) -> Result<Json<PagedResponse<GenesisRecordDTO>>, APIError> {
     let page_number = query.get_page_number()?;
     let page_size = query.get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
@@ -38,7 +38,7 @@ pub(crate) async fn get_genesis_records(
         },
         data: rows
             .iter()
-            .map(|row| GenesisRecord {
+            .map(|row| GenesisRecordDTO {
                 id: row.id as u64,
                 key: format!("0x{}", row.key),
                 value: format!("0x{}", row.value),

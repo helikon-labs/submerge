@@ -28,6 +28,7 @@ impl BlockProcessor {
     #[async_recursion]
     async fn legacy_json_value_to_value(
         &self,
+        block_hash: &[u8],
         spec_version: u32,
         json_value: &JSONValue,
     ) -> anyhow::Result<Value> {
@@ -39,7 +40,10 @@ impl BlockProcessor {
             JSONValue::Array(values) => {
                 let mut result = Vec::new();
                 for value in values.iter() {
-                    result.push(self.legacy_json_value_to_value(spec_version, value).await?);
+                    result.push(
+                        self.legacy_json_value_to_value(block_hash, spec_version, value)
+                            .await?,
+                    );
                 }
                 Value::Array(result)
             }
@@ -54,40 +58,27 @@ impl BlockProcessor {
                         Some(JSONValue::String(method)),
                         Some(args),
                     ) => {
-                        let pallet_name = section.to_case(Case::UpperCamel);
-                        let pallet_index = if let Some(pallet_index) = self
-                            .postgres
-                            .get_pallet_index_by_name(spec_version, &pallet_name)
-                            .await?
-                        {
-                            pallet_index
-                        } else {
-                            anyhow::bail!(format!(
-                                "Index for pallet {pallet_name} not found in metadata database."
-                            ));
-                        };
-                        let pallet_call_name = method.to_case(Case::UpperCamel);
-                        let pallet_call_index = if let Some(pallet_call_index) = self
-                            .postgres
-                            .get_pallet_call_index_by_name(
-                                spec_version,
-                                pallet_index,
-                                &pallet_call_name,
-                            )
-                            .await?
-                        {
-                            pallet_call_index
-                        } else {
-                            anyhow::bail!(format!(
-                                "Index for call {pallet_name}.{pallet_call_name} not found in metadata database."
-                            ))
-                        };
+                        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+                        let pallet = metadata
+                            .pallets
+                            .iter()
+                            .find(|pallet| pallet.name.to_lowercase() == section.to_lowercase())
+                            .ok_or(anyhow::Error::msg(format!("Pallet {section} not found.")))?;
+                        let pallet_call = pallet
+                            .calls
+                            .iter()
+                            .find(|call| call.name.to_lowercase() == method.to_lowercase())
+                            .ok_or(anyhow::Error::msg(format!(
+                                "Call {method} not found in pallet {section} in metadata database."
+                            )))?;
                         Value::Call(Box::new(Call {
-                            pallet_index,
-                            pallet_name,
-                            pallet_call_index,
-                            pallet_call_name,
-                            args: self.legacy_json_value_to_value(spec_version, args).await?,
+                            pallet_index: pallet.index,
+                            pallet_name: pallet.name.clone(),
+                            pallet_call_index: pallet_call.index,
+                            pallet_call_name: pallet_call.name.clone(),
+                            args: self
+                                .legacy_json_value_to_value(block_hash, spec_version, args)
+                                .await?,
                         }))
                     }
                     _ => {
@@ -96,8 +87,12 @@ impl BlockProcessor {
                             map.insert(
                                 key.clone(),
                                 Box::new(
-                                    self.legacy_json_value_to_value(spec_version, json_value)
-                                        .await?,
+                                    self.legacy_json_value_to_value(
+                                        block_hash,
+                                        spec_version,
+                                        json_value,
+                                    )
+                                    .await?,
                                 ),
                             );
                         }
@@ -111,41 +106,38 @@ impl BlockProcessor {
 
     pub async fn convert_legacy_call(
         &self,
+        block_hash: &[u8],
         spec_version: u32,
         call: &LegacyCall,
     ) -> anyhow::Result<Call> {
-        let pallet_name = call.pallet_name.to_case(Case::UpperCamel);
-        let pallet_index = if let Some(pallet_index) = self
-            .postgres
-            .get_pallet_index_by_name(spec_version, &pallet_name)
-            .await?
-        {
-            pallet_index
-        } else {
-            anyhow::bail!(format!(
-                "Index for pallet {pallet_name} not found in metadata database."
-            ));
-        };
-        let pallet_call_name = call.pallet_call_name.to_case(Case::UpperCamel);
-        let pallet_call_index = if let Some(pallet_call_index) = self
-            .postgres
-            .get_pallet_call_index_by_name(spec_version, pallet_index, &pallet_call_name)
-            .await?
-        {
-            pallet_call_index
-        } else {
-            anyhow::bail!(format!(
-                "Index for call {pallet_name}.{pallet_call_name} not found in metadata database."
-            ))
-        };
-
+        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+        let pallet_name = &call.pallet_name;
+        let pallet = metadata
+            .pallets
+            .iter()
+            .find(|pallet| pallet.name.to_lowercase() == pallet_name.to_lowercase())
+            .ok_or(anyhow::Error::msg(format!(
+                "Pallet {pallet_name} not found in metadata database."
+            )))?;
+        let pallet_call_name = &call.pallet_call_name;
+        let pallet_call = pallet
+            .calls
+            .iter()
+            .find(|event| event.name.to_lowercase() == pallet_call_name.to_lowercase())
+            .ok_or(anyhow::Error::msg(format!(
+                "Event {pallet_call_name} not found in pallet {pallet_name} in metadata database."
+            )))?;
         Ok(Call {
-            pallet_index,
-            pallet_name,
-            pallet_call_index,
-            pallet_call_name,
+            pallet_index: pallet.index,
+            pallet_name: pallet.name.clone(),
+            pallet_call_index: pallet_call.index,
+            pallet_call_name: pallet_call.name.clone(),
             args: self
-                .legacy_json_value_to_value(spec_version, &JSONValue::Object(call.args.clone()))
+                .legacy_json_value_to_value(
+                    block_hash,
+                    spec_version,
+                    &JSONValue::Object(call.args.clone()),
+                )
                 .await?,
         })
     }
@@ -221,7 +213,7 @@ impl BlockProcessor {
                     version: 0,
                     is_successful,
                     call: self
-                        .convert_legacy_call(spec_version, &extrinsic.call)
+                        .convert_legacy_call(block_hash, spec_version, &extrinsic.call)
                         .await?,
                 });
                 continue;
@@ -424,7 +416,7 @@ impl BlockProcessor {
                     version: 0,
                     is_successful,
                     call: self
-                        .convert_legacy_call(spec_version, &extrinsic.call)
+                        .convert_legacy_call(block_hash, spec_version, &extrinsic.call)
                         .await?,
                 });
                 continue;

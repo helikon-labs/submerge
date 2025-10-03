@@ -3,21 +3,21 @@ use serde_json::Value as JSONValue;
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Metadata {
+pub struct MetadataDTO {
     pub spec_version: u32,
     pub metadata_version: u32,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPallet {
+pub struct MetadataPalletDTO {
     pub index: u32,
     pub name: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletCall {
+pub struct MetadataPalletCallDTO {
     pub index: u32,
     pub name: String,
     pub docs: Vec<String>,
@@ -25,7 +25,7 @@ pub struct MetadataPalletCall {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletConstant {
+pub struct MetadataPalletConstantDTO {
     pub index: u32,
     pub name: String,
     pub type_id: Option<u32>,
@@ -37,7 +37,7 @@ pub struct MetadataPalletConstant {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletError {
+pub struct MetadataPalletErrorDTO {
     pub index: u32,
     pub name: String,
     pub docs: Vec<String>,
@@ -45,7 +45,7 @@ pub struct MetadataPalletError {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletEvent {
+pub struct MetadataPalletEventDTO {
     pub index: u32,
     pub name: String,
     pub docs: Vec<String>,
@@ -53,7 +53,7 @@ pub struct MetadataPalletEvent {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletStorageItem {
+pub struct MetadataPalletStorageItemDTO {
     pub index: u32,
     pub name: String,
     pub key: String,

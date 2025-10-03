@@ -38,7 +38,7 @@ pub struct BlockQuery {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Block {
+pub struct BlockDTO {
     pub hash: String,
     pub parent_hash: String,
     pub state_root: String,
@@ -53,7 +53,7 @@ pub struct Block {
     pub author_account_id: String,
 }
 
-impl From<&BlockRow> for Block {
+impl From<&BlockRow> for BlockDTO {
     fn from(row: &BlockRow) -> Self {
         Self {
             hash: format!("0x{}", hex::encode(&row.hash)),

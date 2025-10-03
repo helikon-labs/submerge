@@ -15,7 +15,7 @@ use uuid::Uuid as UUID;
 
 mod event;
 mod extrinsic;
-mod metadata;
+mod metadata_cache;
 mod weight;
 
 static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId32>)>> =

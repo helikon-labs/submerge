@@ -61,26 +61,29 @@ impl BlockProcessor {
                     legacy_phase.value
                 ),
             };
-            let pallet_name = event.event.pallet.to_case(Case::UpperCamel);
-            let pallet_index = self
-                .postgres
-                .get_pallet_index_by_name(spec_version, &pallet_name)
-                .await?
+            let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+            let pallet_name = &event.event.pallet;
+            let pallet = metadata
+                .pallets
+                .iter()
+                .find(|pallet| pallet.name.to_lowercase() == pallet_name.to_lowercase())
                 .ok_or(anyhow::Error::msg(format!(
-                    "Pallet index not found in the database for pallet {pallet_name}."
+                    "Pallet {pallet_name} not found in metadata database."
                 )))?;
-            let pallet_event_name = event.event.name.to_case(Case::UpperCamel);
-            let pallet_event_index = self
-                .postgres
-                .get_pallet_event_index_by_name(spec_version, pallet_index, &pallet_event_name)
-                .await?
-                .ok_or(anyhow::Error::msg(format!("Pallet event index not found in the database for event {pallet_name}.{pallet_event_name}.")))?;
+            let pallet_event_name = &event.event.name;
+            let pallet_event = pallet
+                .events
+                .iter()
+                .find(|event| event.name.to_lowercase() == pallet_event_name.to_lowercase())
+                .ok_or(anyhow::Error::msg(format!(
+                    "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
+                )))?;
             events.push(Event {
                 trace_index: None,
-                pallet_index,
-                pallet_name,
-                pallet_event_index,
-                pallet_event_name,
+                pallet_index: pallet.index,
+                pallet_name: pallet_name.clone(),
+                pallet_event_index: pallet_event.index,
+                pallet_event_name: pallet_event_name.clone(),
                 index: events.len() as u32,
                 phase,
                 args: event.event.data.clone(),
@@ -230,26 +233,30 @@ impl BlockProcessor {
                         legacy_phase.value
                     ),
                 };
-                let pallet_name = event.event.pallet.to_case(Case::UpperCamel);
-                let pallet_index = self
-                    .postgres
-                    .get_pallet_index_by_name(spec_version, &pallet_name)
-                    .await?
+
+                let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+                let pallet_name = &event.event.pallet;
+                let pallet = metadata
+                    .pallets
+                    .iter()
+                    .find(|pallet| pallet.name.to_lowercase() == pallet_name.to_lowercase())
                     .ok_or(anyhow::Error::msg(format!(
-                        "Pallet index not found in the database for pallet {pallet_name}."
+                        "Pallet {pallet_name} not found in metadata database."
                     )))?;
-                let pallet_event_name = event.event.name.to_case(Case::UpperCamel);
-                let pallet_event_index = self
-                    .postgres
-                    .get_pallet_event_index_by_name(spec_version, pallet_index, &pallet_event_name)
-                    .await?
-                    .ok_or(anyhow::Error::msg(format!("Pallet event index not found in the database for event {pallet_name}.{pallet_event_name}.")))?;
+                let pallet_event_name = &event.event.name;
+                let pallet_event = pallet
+                    .events
+                    .iter()
+                    .find(|event| event.name.to_lowercase() == pallet_event_name.to_lowercase())
+                    .ok_or(anyhow::Error::msg(format!(
+                        "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
+                    )))?;
                 events.push(Event {
                     trace_index: Some(trace_index as u32),
-                    pallet_index,
-                    pallet_name,
-                    pallet_event_index,
-                    pallet_event_name,
+                    pallet_index: pallet.index,
+                    pallet_name: pallet.name.clone(),
+                    pallet_event_index: pallet_event.index,
+                    pallet_event_name: pallet_event.name.clone(),
                     index: events.len() as u32,
                     phase,
                     args: event.event.data,

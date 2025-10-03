@@ -8,7 +8,7 @@ use crate::{
     persistence::{api::block::CrystalBlockAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
-            block::{Block, BlockQuery, BlockReference},
+            block::{BlockDTO, BlockQuery, BlockReference},
             pagination::{PagedResponse, PaginationData},
         },
         error::APIError,
@@ -21,7 +21,7 @@ const DEFAULT_PAGE_SIZE: u64 = 50;
 pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,
-) -> Result<Json<PagedResponse<Block>>, APIError> {
+) -> Result<Json<PagedResponse<BlockDTO>>, APIError> {
     let page_number = query.pagination.get_page_number()?;
     let page_size = query
         .pagination
@@ -46,7 +46,7 @@ pub(crate) async fn get_blocks(
 pub(crate) async fn get_blocks_by_reference(
     State(state): State<ServiceState>,
     Path(block_reference): Path<String>,
-) -> Result<Json<Vec<Block>>, APIError> {
+) -> Result<Json<Vec<BlockDTO>>, APIError> {
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(number)) => {
             let rows = state.postgres.get_blocks_by_number(number).await?;

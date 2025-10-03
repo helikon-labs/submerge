@@ -9,7 +9,7 @@ use crate::{
     types::api::{
         dto::{
             block::BlockReference,
-            extrinsic::{BlockExtrinsicQuery, Extrinsic, ExtrinsicQuery},
+            extrinsic::{BlockExtrinsicQuery, ExtrinsicDTO, ExtrinsicQuery},
             pagination::{PagedResponse, PaginationData},
         },
         error::APIError,
@@ -22,7 +22,7 @@ const DEFAULT_PAGE_SIZE: u64 = 50;
 pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
     Query(query): Query<ExtrinsicQuery>,
-) -> Result<Json<PagedResponse<Extrinsic>>, APIError> {
+) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
     let page_number = query.pagination.get_page_number()?;
     let page_size = query
         .pagination
@@ -48,7 +48,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
     State(state): State<ServiceState>,
     Path(block_reference): Path<String>,
     Query(query): Query<BlockExtrinsicQuery>,
-) -> Result<Json<PagedResponse<Extrinsic>>, APIError> {
+) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
     let page_number = query.pagination.get_page_number()?;
     let page_size = query
         .pagination
