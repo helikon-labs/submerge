@@ -24,6 +24,7 @@ use axum::routing::get;
 use axum::Router;
 use std::sync::Arc;
 use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::ChainProperties};
+use submerge_metrics::use_metric;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -48,7 +49,7 @@ pub(crate) async fn on_server_ready(host: &str, port: u16) {
 
 async fn metrics_middleware(request: Request, next: Next) -> Response {
     metrics::api_requests_total().inc();
-    metrics::api_active_connections().inc();
+    use_metric(metrics::api_active_connections(), |m| m.inc());
 
     let start = std::time::Instant::now();
     let response = next.run(request).await;
@@ -59,7 +60,7 @@ async fn metrics_middleware(request: Request, next: Next) -> Response {
     metrics::api_response_status_code_counter()
         .with_label_values(&[status_code.as_str()])
         .inc();
-    metrics::api_active_connections().dec();
+    use_metric(metrics::api_active_connections(), |m| m.dec());
 
     response
 }
