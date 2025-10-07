@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JSONValue;
-use sp_runtime::AccountId32;
+use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::MultiAddress;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -91,7 +91,7 @@ impl TryFrom<&LegacyMultiaddress> for MultiAddress {
             MultiaddressType::Id => {
                 let bytes = hex::decode(value.value.trim_start_matches("0x"))?;
                 let bytes: [u8; 32] = bytes.try_into().expect("Cannot convert account id.");
-                Ok(MultiAddress::Id(AccountId32::new(bytes)))
+                Ok(MultiAddress::Id(AccountId::new(bytes)))
             }
         }
     }

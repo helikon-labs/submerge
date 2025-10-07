@@ -1,7 +1,8 @@
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
-use sp_runtime::AccountId32;
+
+use crate::types::substrate::account_id::AccountId;
 
 pub mod account_id;
 pub mod block;
@@ -14,7 +15,7 @@ pub type Balance = u128;
 
 #[derive(Debug, Encode, Decode, Clone, Eq, PartialEq, Serialize)]
 pub enum MultiAddress {
-    Id(AccountId32),
+    Id(AccountId),
     Index(#[codec(compact)] u32),
     Raw(Vec<u8>),
     Address32([u8; 32]),

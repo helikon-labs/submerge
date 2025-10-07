@@ -4,8 +4,8 @@ use std::sync::{Arc, LazyLock};
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::BlockStatus;
-use sp_runtime::AccountId32;
 use sqlx::{Postgres, Transaction};
+use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::{RPCConfig, SubstrateClient};
@@ -18,7 +18,7 @@ mod extrinsic;
 mod metadata_cache;
 mod weight;
 
-static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId32>)>> =
+static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
 
 pub struct BlockProcessor {
@@ -164,7 +164,7 @@ impl BlockProcessor {
                 spec_version,
                 0,
                 0,
-                &AccountId32::new([0u8; 32]),
+                &AccountId::new([0u8; 32]),
                 &mut tx,
             )
             .await?;
@@ -284,7 +284,7 @@ impl BlockProcessor {
             };
             let validator_index = validator_index % validator_account_ids.len() as u32;
             if let Some(author_account_id) = validator_account_ids.get(validator_index as usize) {
-                author_account_id.clone()
+                *author_account_id
             } else {
                 anyhow::bail!("Author validator was not found at index {validator_index}.");
             }

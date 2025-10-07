@@ -1,4 +1,6 @@
+use parity_scale_codec::Encode;
 use sqlx::{Postgres, QueryBuilder};
+use submerge_base::types::substrate::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 use crate::types::{
@@ -36,6 +38,11 @@ fn push_extrinsic_query_params<'a>(
     }
     if query.is_signed.unwrap_or(false) {
         query_builder.push(" AND signature IS NOT NULL ");
+    }
+    if let Some(signer) = query.signer {
+        let signer: MultiAddress = MultiAddress::Id(signer);
+        query_builder.push(" AND signer = ");
+        query_builder.push_bind(signer.encode());
     }
 }
 

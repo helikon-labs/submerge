@@ -104,6 +104,12 @@ impl AsRef<[u8]> for AccountId {
     }
 }
 
+impl AsRef<[u8; 32]> for AccountId {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
 impl<'a> TryFrom<&'a [u8]> for AccountId {
     type Error = ();
     fn try_from(x: &'a [u8]) -> Result<AccountId, ()> {

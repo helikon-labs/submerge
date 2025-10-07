@@ -2,10 +2,10 @@ use frame_metadata::RuntimeMetadataPrefixed;
 use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
 use serde_json::Value as JSONValue;
-use sp_runtime::AccountId32;
 use sp_runtime::DigestItem;
 use sqlx::QueryBuilder;
 use sqlx::{Postgres, Transaction};
+use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
 use submerge_base::types::substrate::block_trace::BlockTrace as SubstrateBlockTrace;
@@ -82,7 +82,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
-        author_account_id: &AccountId32,
+        author_account_id: &AccountId,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn delete_block_and_traces_by_hash(
@@ -473,7 +473,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
-        author_account_id: &AccountId32,
+        author_account_id: &AccountId,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let header = DecodedBlockHeader::try_from(header)?;
@@ -831,9 +831,11 @@ mod tests {
         persistence::{CrystalPostgreSQLStorage, PostgreSQLStorage},
         types::BlockStatus,
     };
-    use sp_runtime::AccountId32;
     use std::fs;
-    use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::Chainspec};
+    use submerge_base::{
+        args::PostgreSQLArgs,
+        types::substrate::{account_id::AccountId, chainspec::Chainspec},
+    };
     use submerge_substrate_client::{RPCConfig, SubstrateClient};
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
@@ -889,7 +891,7 @@ mod tests {
                     last_runtime_upgrade.spec_version,
                     0,
                     0,
-                    &AccountId32::new(Default::default()),
+                    &AccountId::new(Default::default()),
                     &mut tx,
                 )
                 .await?;
