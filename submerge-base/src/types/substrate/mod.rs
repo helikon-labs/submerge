@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use sp_runtime::AccountId32;
 
+pub mod account_id;
 pub mod block;
 pub mod block_trace;
 pub mod chainspec;

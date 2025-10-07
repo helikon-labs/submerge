@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
+use submerge_base::types::substrate::account_id::AccountId;
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::BlockRow, BlockStatus};
 
@@ -34,6 +35,7 @@ pub struct BlockQuery {
     pub max_block_timestamp: Option<u64>,
     pub min_spec_version: Option<u64>,
     pub max_spec_version: Option<u64>,
+    pub author: Option<AccountId>,
 }
 
 #[derive(Debug, Serialize)]

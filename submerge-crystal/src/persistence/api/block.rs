@@ -32,6 +32,10 @@ fn push_query_params<'a>(query: &'a BlockQuery, query_builder: &mut QueryBuilder
         query_builder.push(" AND spec_version <= ");
         query_builder.push_bind(max_spec_version as i64);
     }
+    if let Some(author) = query.author {
+        query_builder.push(" AND author_account_id = ");
+        query_builder.push_bind(author.bytes());
+    }
 }
 
 pub(crate) trait CrystalBlockAPIPostgreSQLStorage {

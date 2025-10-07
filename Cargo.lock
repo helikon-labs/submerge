@@ -5220,6 +5220,7 @@ dependencies = [
  "submerge-logging",
  "submerge-metrics",
  "submerge-util",
+ "thiserror 2.0.17",
  "tokio",
 ]
 
