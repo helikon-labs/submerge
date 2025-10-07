@@ -145,3 +145,22 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
         Err(message) => Err(APIError::BadRequest(message)),
     }
 }
+
+pub(crate) async fn get_extrinsic_by_hash(
+    State(state): State<ServiceState>,
+    Path(extrinsic_hash): Path<String>,
+) -> Result<Json<ExtrinsicDTO>, APIError> {
+    let extrinsic_hash = match hex::decode(extrinsic_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid extrinsic hash: {e}"))),
+    };
+    if let Some(row) = &state
+        .postgres
+        .get_extrinsic_row_by_extrinsic_hash(&extrinsic_hash)
+        .await?
+    {
+        Ok(Json(row.into()))
+    } else {
+        Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
+    }
+}

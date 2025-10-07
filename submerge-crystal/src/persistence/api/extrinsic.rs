@@ -81,6 +81,10 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         block_hash: &[u8],
         index: u32,
     ) -> anyhow::Result<Option<ExtrinsicRow>>;
+    async fn get_extrinsic_row_by_extrinsic_hash(
+        &self,
+        hash: &[u8],
+    ) -> anyhow::Result<Option<ExtrinsicRow>>;
 }
 
 impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -267,7 +271,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         index: u32,
     ) -> anyhow::Result<Option<ExtrinsicRow>> {
-        let row: Option<ExtrinsicRow>  = sqlx::query_as(
+        let row: Option<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
             FROM extrinsic
@@ -276,6 +280,23 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         )
         .bind(block_hash)
         .bind(index as i32)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(row)
+    }
+
+    async fn get_extrinsic_row_by_extrinsic_hash(
+        &self,
+        hash: &[u8],
+    ) -> anyhow::Result<Option<ExtrinsicRow>> {
+        let row: Option<ExtrinsicRow> = sqlx::query_as(
+            r#"
+            SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
+            FROM extrinsic
+            WHERE hash = $1
+            "#,
+        )
+        .bind(hash)
         .fetch_optional(&self.connection_pool)
         .await?;
         Ok(row)

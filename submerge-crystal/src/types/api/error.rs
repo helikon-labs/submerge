@@ -23,6 +23,7 @@ pub enum APIError {
     MetadataPalletNotFound(u32, u32),
     BlockNotFoundWithNumber(u64),
     BlockNotFoundWithHash(Vec<u8>),
+    ExtrinsicNotFoundWithHash(Vec<u8>),
 }
 
 impl APIError {
@@ -45,6 +46,9 @@ impl APIError {
             APIError::BlockNotFoundWithHash(hash) => {
                 format!("Block with hash 0x{} not found.", hex::encode(hash),)
             }
+            APIError::ExtrinsicNotFoundWithHash(hash) => {
+                format!("Extrinsic with hash 0x{} not found.", hex::encode(hash),)
+            }
         }
     }
 
@@ -58,6 +62,7 @@ impl APIError {
             APIError::MetadataPalletNotFound(_, _) => StatusCode::NOT_FOUND,
             APIError::BlockNotFoundWithNumber(_) => StatusCode::NOT_FOUND,
             APIError::BlockNotFoundWithHash(_) => StatusCode::NOT_FOUND,
+            APIError::ExtrinsicNotFoundWithHash(_) => StatusCode::NOT_FOUND,
         }
     }
 }

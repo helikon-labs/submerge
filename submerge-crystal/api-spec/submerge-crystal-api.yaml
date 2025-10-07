@@ -246,22 +246,15 @@ components:
         type: integer
         minimum: 0
       example: 0
-    ExtrinsicRef:
-      name: extrinsic_ref
+    ExtrinsicHash:
+      name: extrinsic_hash
       in: path
-      description: Extrinsic reference (hash or database id).
+      description: Extrinsic hash.
       required: true
       schema:
-        oneOf:
-          - type: string
-            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
-            description: Extrinsic hash.
-            example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
-          - type: integer
-            format: int64
-            minimum: 0
-            description: Extrinsic database id.
-            example: 748
+        type: string
+        pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
+        example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
     SpecVersion:
       name: spec_version
       in: path
@@ -1794,18 +1787,18 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /extrinsics/{extrinsic_ref}:
+  /extrinsics/{extrinsic_hash}:
     get:
-      summary: Get extrinsic by reference
-      description: Returns an extrinsic by its hash or database id.
-      operationId: getExtrinsicByRef
+      summary: Get extrinsic by hash
+      description: Returns an extrinsic by its hash.
+      operationId: getExtrinsicByHash
       tags:
         - extrinsic
       parameters:
-        - $ref: '#/components/parameters/ExtrinsicRef'
+        - $ref: '#/components/parameters/ExtrinsicHash'
       responses:
         '200':
-          description: Extrinsic by ref.
+          description: Extrinsic by hash.
           content:
             application/json:
               schema:
@@ -1818,7 +1811,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /extrinsics/{extrinsic_ref}/calls:
+  /extrinsics/{extrinsic_hash}/calls:
     get:
       summary: Get extrinsic calls
       description: Returns the calls for extrinsic by reference.
@@ -1828,7 +1821,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageNumber'
         - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/ExtrinsicRef'
+        - $ref: '#/components/parameters/ExtrinsicHash'
       responses:
         '200':
           $ref: '#/components/responses/PaginatedCallList'
@@ -1840,7 +1833,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /extrinsics/{extrinsic_ref}/events:
+  /extrinsics/{extrinsic_hash}/events:
     get:
       summary: Get extrinsic events
       description: Returns the events for extrinsic by reference.
@@ -1850,7 +1843,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageNumber'
         - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/ExtrinsicRef'
+        - $ref: '#/components/parameters/ExtrinsicHash'
       responses:
         '200':
           $ref: '#/components/responses/PaginatedEventList'
