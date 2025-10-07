@@ -71,6 +71,16 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         block_number: u64,
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
+    async fn get_extrinsic_rows_by_block_number_and_index(
+        &self,
+        block_number: u64,
+        index: u32,
+    ) -> anyhow::Result<Vec<ExtrinsicRow>>;
+    async fn get_extrinsic_row_by_block_hash_and_index(
+        &self,
+        block_hash: &[u8],
+        index: u32,
+    ) -> anyhow::Result<Option<ExtrinsicRow>>;
 }
 
 impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -231,5 +241,43 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             .fetch_all(&self.connection_pool)
             .await?;
         Ok(rows)
+    }
+
+    async fn get_extrinsic_rows_by_block_number_and_index(
+        &self,
+        block_number: u64,
+        index: u32,
+    ) -> anyhow::Result<Vec<ExtrinsicRow>> {
+        let rows: Vec<ExtrinsicRow>  = sqlx::query_as(
+            r#"
+            SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
+            FROM extrinsic
+            WHERE block_number = $1 AND index = $2
+            "#,
+        )
+        .bind(block_number as i64)
+        .bind(index as i32)
+        .fetch_all(&self.connection_pool)
+        .await?;
+        Ok(rows)
+    }
+
+    async fn get_extrinsic_row_by_block_hash_and_index(
+        &self,
+        block_hash: &[u8],
+        index: u32,
+    ) -> anyhow::Result<Option<ExtrinsicRow>> {
+        let row: Option<ExtrinsicRow>  = sqlx::query_as(
+            r#"
+            SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
+            FROM extrinsic
+            WHERE block_hash = $1 AND index = $2
+            "#,
+        )
+        .bind(block_hash)
+        .bind(index as i32)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(row)
     }
 }

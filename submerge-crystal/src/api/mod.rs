@@ -1,3 +1,4 @@
+use crate::api::v1::extrinsic::get_extrinsics_by_block_reference_and_index;
 use crate::metrics;
 use crate::worker::WorkerManager;
 use crate::{
@@ -157,6 +158,10 @@ fn build_api_routes() -> Router<ServiceState> {
         .route(
             "/blocks/{block_ref}/extrinsics",
             get(get_extrinsics_by_block_reference),
+        )
+        .route(
+            "/blocks/{block_ref}/extrinsics/{index}",
+            get(get_extrinsics_by_block_reference_and_index),
         )
         // genesis
         .route("/genesis", get(get_genesis_records))

@@ -1616,7 +1616,11 @@ paths:
   /blocks/{block_ref}/extrinsics/{index}:
     get:
       summary: Get block extrinsic by index
-      description: Returns an extrinsic in a block by its index.
+      description: Returns a list of extrinsics in a block by index.
+        If a number is passed for block reference, multiple blocks can be found in different states such as `proposed`,
+        and `best` or `finalized`, therefore this endpoint returns a list of extrinsics. The result will be a single extrinsic
+        if the supplied block reference is a block hash, given that both the block and the extrinsic at the given index
+        within the block exist.
       operationId: getBlockExtrinsic
       tags:
         - extrinsic
@@ -1629,7 +1633,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Extrinsic'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Extrinsic'
         '400':
           $ref: '#/components/responses/InvalidParameter'
         '404':

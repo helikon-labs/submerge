@@ -15,10 +15,11 @@
         "typecheck": "tsc",
         "format:check": "prettier . --check",
         "format": "prettier . --write",
-        "gen-api-docs": "docusaurus gen-api-docs all",
-        "clean-api-docs": "docusaurus clean-api-docs all",
-        "gen-api-docs:version": "docusaurus gen-api-docs:version",
-        "clean-api-docs:version": "docusaurus clean-api-docs:version"
+        "gen-all-api-docs": "docusaurus gen-api-docs all",
+        "regen-all-api-docs": "docusaurus clean-api-docs all && docusaurus gen-api-docs all",
+        "clean-all-api-docs": "docusaurus clean-api-docs all",
+        "gen-all-api-docs:version": "docusaurus gen-api-docs:version all",
+        "clean-all-api-docs:version": "docusaurus clean-api-docs:version all"
     },
     "dependencies": {
         "@docusaurus/core": "3.9.1",
