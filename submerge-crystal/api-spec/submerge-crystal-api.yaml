@@ -474,6 +474,96 @@ components:
       examples:
         - "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
         - "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+    MultiAddress:
+      description: Discriminated union for Substrate multiaddresses. The `type` tag selects the variant; `value` carries the payload.
+      oneOf:
+        - $ref: "#/components/schemas/MultiAddress_AccountId"
+        - $ref: "#/components/schemas/MultiAddress_Index"
+        - $ref: "#/components/schemas/MultiAddress_Raw"
+        - $ref: "#/components/schemas/MultiAddress_Address20"
+        - $ref: "#/components/schemas/MultiAddress_Address32"
+      discriminator:
+        propertyName: type
+        mapping:
+          accountId: "#/components/schemas/MultiAddress_AccountId"
+          index: '#/components/schemas/MultiAddress_Index'
+          raw: '#/components/schemas/MultiAddress_Raw'
+          address20: '#/components/schemas/Address20'
+          address32: '#/components/schemas/Address32'
+    MultiAddress_AccountId:
+      type: object
+      description: 32-byte account id.
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          const: accountId
+        value:
+          $ref: '#/components/schemas/AccountIdHex'
+    MultiAddress_Index:
+      type: object
+      description: Account index.
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          const: index
+        value:
+          type: integer
+          minimum: 0
+      example:
+        type: index
+        value: 42
+    MultiAddress_Raw:
+      type: object
+      description: Raw account address.
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          const: raw
+        value:
+          type: string
+          description: 0x-prefixed lowercase hex, even length (whole bytes).
+          pattern: '^0x(?:[0-9a-f]{2})+$'
+      example:
+        type: raw
+        value: '0xdeadbeef'
+    MultiAddress_Address20:
+      type: object
+      description: 20-byte address.
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          const: address20
+        value:
+          type: string
+          description: 20-byte address as 0x-prefixed lowercase hex.
+          pattern: '^0x[0-9a-f]{40}$'
+      example:
+        type: address20
+        value: '0x00112233445566778899aabbccddeeff00112233'
+    MultiAddress_Address32:
+      type: object
+      description: 32-byte address.
+      additionalProperties: false
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          const: address32
+        value:
+          type: string
+          description: 32-byte address as 0x-prefixed lowercase hex.
+          pattern: '^0x[0-9a-f]{64}$'
+      example:
+        type: address32
+        value: '0x00112233445566778899aabbccddeeff001122338899aabbccddeeff00112233'
     BlockStatus:
       type: string
       enum: [proposed, finalized, pruned]
@@ -913,8 +1003,8 @@ components:
           minimum: 0
           description: Extrinsic version.
         signer:
-          $ref: '#/components/schemas/HexString'
-          description: SCALE-encoded multiaddress in hex format.
+          $ref: '#/components/schemas/MultiAddress'
+          description: Substrate multiaddress representation.
         signature:
           $ref: '#/components/schemas/SignatureHex'
         extra:
@@ -947,7 +1037,9 @@ components:
         hash: '0x35efc78bd55f0a7425d6f3adb2c7990f5c6ea42c186a9ec3103045a152f12f48'
         index: 1
         version: 3
-        signer: '0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea262'
+        signer:
+          type: accountId
+          value: '0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea2'
         signature: '0x01ae6408aef67c5e6d1a5b6f8bc8bb43af4a2f322f53430a9c89e7ffbd16b1006dc62b91ed38ca87ed826431eb6858da720a89dd8841dd2fed7f80d45a48ad098f'
         extra:
           checkNonce: '295'
@@ -1309,7 +1401,9 @@ components:
                     hash: '0x35efc78bd55f0a7425d6f3adb2c7990f5c6ea42c186a9ec3103045a152f12f48'
                     index: 1
                     version: 3
-                    signer: '0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea262'
+                    signer:
+                      type: accountId
+                      value: '0x006691ffb1fea3613197fdf95dc2d850f7ce48d2bb458810e81b47aed4997ea2'
                     signature: '0x01ae6408aef67c5e6d1a5b6f8bc8bb43af4a2f322f53430a9c89e7ffbd16b1006dc62b91ed38ca87ed826431eb6858da720a89dd8841dd2fed7f80d45a48ad098f'
                     extra:
                       checkNonce: '295'

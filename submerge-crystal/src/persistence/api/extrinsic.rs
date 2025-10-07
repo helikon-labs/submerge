@@ -1,6 +1,6 @@
 use parity_scale_codec::Encode;
 use sqlx::{Postgres, QueryBuilder};
-use submerge_base::types::substrate::MultiAddress;
+use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 use crate::types::{

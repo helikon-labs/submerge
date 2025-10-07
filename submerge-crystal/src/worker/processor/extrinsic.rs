@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap as HashMap;
 use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
-    block::BlockHeader, block_trace::BlockTrace, MultiAddress, Signature,
+    block::BlockHeader, block_trace::BlockTrace, multi_address::MultiAddress, signature::Signature,
 };
 use submerge_util::substrate::storage::{self, get_storage_plain_key};
 

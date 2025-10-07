@@ -1,6 +1,7 @@
+use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
-use submerge_base::types::substrate::account_id::AccountId;
+use submerge_base::types::substrate::{account_id::AccountId, multi_address::MultiAddress};
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::ExtrinsicRow, BlockStatus};
 
@@ -39,15 +40,17 @@ pub struct ExtrinsicDTO {
     pub hash: String,
     pub index: u32,
     pub version: u32,
-    pub signer: Option<String>,
+    pub signer: Option<MultiAddress>,
     pub signature: Option<String>,
     pub extra: Option<JSONValue>,
     pub is_successful: bool,
 }
 
-impl From<&ExtrinsicRow> for ExtrinsicDTO {
-    fn from(row: &ExtrinsicRow) -> Self {
-        Self {
+impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
+    type Error = anyhow::Error;
+
+    fn try_from(row: &ExtrinsicRow) -> Result<Self, Self::Error> {
+        Ok(Self {
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),
             block_number: row.block_number as u64,
             block_timestamp: row.block_timestamp as u64,
@@ -57,16 +60,18 @@ impl From<&ExtrinsicRow> for ExtrinsicDTO {
             hash: format!("0x{}", hex::encode(row.hash)),
             index: row.index as u32,
             version: row.version as u32,
-            signer: row
-                .signer
-                .as_ref()
-                .map(|signer| format!("0x{}", hex::encode(signer))),
+            signer: if let Some(bytes) = &row.signer {
+                let mut bytes: &[u8] = bytes;
+                Some(MultiAddress::decode(&mut bytes)?)
+            } else {
+                None
+            },
             signature: row
                 .signature
                 .as_ref()
                 .map(|signature| format!("0x{}", hex::encode(signature))),
             extra: row.extra.clone(),
             is_successful: row.is_successful,
-        }
+        })
     }
 }

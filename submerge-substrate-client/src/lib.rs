@@ -12,7 +12,7 @@ use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::chainspec::ChainProperties;
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
-use submerge_base::types::substrate::SystemHealth;
+use submerge_base::types::substrate::system::SystemHealth;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 use tokio_util::sync::CancellationToken;
 

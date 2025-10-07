@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Map as JsonMap;
 use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::account_id::AccountId;
-use submerge_base::types::substrate::MultiAddress;
+use submerge_base::types::substrate::multi_address::MultiAddress;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -33,13 +33,17 @@ pub(crate) async fn get_extrinsics(
             .postgres
             .get_extrinsic_rows(page_number, page_size, &query),
     )?;
+    let mut data = Vec::new();
+    for row in rows.iter() {
+        data.push(row.try_into()?);
+    }
     let response = PagedResponse {
         pagination: PaginationData {
             page_number,
             page_size,
             total_count,
         },
-        data: rows.iter().map(|row| row.into()).collect(),
+        data,
     };
     Ok(Json(response))
 }
@@ -69,13 +73,17 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                     &query
                 ),
             )?;
+            let mut data = Vec::new();
+            for row in rows.iter() {
+                data.push(row.try_into()?);
+            }
             let response = PagedResponse {
                 pagination: PaginationData {
                     page_number,
                     page_size,
                     total_count,
                 },
-                data: rows.iter().map(|row| row.into()).collect(),
+                data,
             };
             Ok(Json(response))
         }
@@ -94,13 +102,17 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                     &query
                 ),
             )?;
+            let mut data = Vec::new();
+            for row in rows.iter() {
+                data.push(row.try_into()?);
+            }
             let response = PagedResponse {
                 pagination: PaginationData {
                     page_number,
                     page_size,
                     total_count,
                 },
-                data: rows.iter().map(|row| row.into()).collect(),
+                data,
             };
             Ok(Json(response))
         }
@@ -117,15 +129,15 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
             if !state.postgres.block_exists_by_number(block_number).await? {
                 return Err(APIError::BlockNotFoundWithNumber(block_number));
             }
-            Ok(Json(
-                state
-                    .postgres
-                    .get_extrinsic_rows_by_block_number_and_index(block_number, index)
-                    .await?
-                    .iter()
-                    .map(|row| row.into())
-                    .collect(),
-            ))
+            let rows = state
+                .postgres
+                .get_extrinsic_rows_by_block_number_and_index(block_number, index)
+                .await?;
+            let mut data = Vec::new();
+            for row in rows.iter() {
+                data.push(row.try_into()?);
+            }
+            Ok(Json(data))
         }
         Ok(BlockReference::Hash(block_hash)) => {
             if !state.postgres.block_exists_by_hash(&block_hash).await? {
@@ -136,7 +148,7 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
                 .get_extrinsic_row_by_block_hash_and_index(&block_hash, index)
                 .await?
             {
-                vec![row.into()]
+                vec![row.try_into()?]
             } else {
                 vec![]
             };
@@ -159,7 +171,7 @@ pub(crate) async fn get_extrinsic_by_hash(
         .get_extrinsic_row_by_extrinsic_hash(&extrinsic_hash)
         .await?
     {
-        Ok(Json(row.into()))
+        Ok(Json(row.try_into()?))
     } else {
         Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
     }

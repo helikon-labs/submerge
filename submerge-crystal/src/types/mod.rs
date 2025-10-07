@@ -4,7 +4,7 @@ use decode::Value;
 use frame_system::Phase;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
-use submerge_base::types::substrate::Signature;
+use submerge_base::types::substrate::signature::Signature;
 
 pub(crate) mod api;
 pub mod decode;
