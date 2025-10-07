@@ -246,15 +246,6 @@ components:
         type: integer
         minimum: 0
       example: 0
-    ItemId:
-      name: id
-      in: path
-      description: Database id of an item.
-      required: true
-      schema:
-        type: integer
-        minimum: 1
-      example: 1
     ExtrinsicRef:
       name: extrinsic_ref
       in: path
@@ -1717,30 +1708,6 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /traces/{id}:
-    get:
-      summary: Get trace by id
-      description: Returns a trace by its database id.
-      operationId: getTraceById
-      tags:
-        - trace
-      parameters:
-        - $ref: '#/components/parameters/ItemId'
-      responses:
-        '200':
-          description: Trace by id.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Trace'
-        '400':
-          $ref: '#/components/responses/InvalidParameter'
-        '404':
-          $ref: '#/components/responses/ItemNotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /calls:
     get:
       summary: Get calls
@@ -1770,30 +1737,6 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /calls/{id}:
-    get:
-      summary: Get call by id
-      description: Returns a call by its database id.
-      operationId: getCallById
-      tags:
-        - call
-      parameters:
-        - $ref: '#/components/parameters/ItemId'
-      responses:
-        '200':
-          description: Call by id.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Call'
-        '400':
-          $ref: '#/components/responses/InvalidParameter'
-        '404':
-          $ref: '#/components/responses/ItemNotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /events:
     get:
       summary: Get events
@@ -1819,30 +1762,6 @@ paths:
           $ref: '#/components/responses/PaginatedEventList'
         '400':
           $ref: '#/components/responses/InvalidParameter'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /events/{id}:
-    get:
-      summary: Get event by id
-      description: Returns an event by its database id.
-      operationId: getEventById
-      tags:
-        - event
-      parameters:
-        - $ref: '#/components/parameters/ItemId'
-      responses:
-        '200':
-          description: Event by id.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Event'
-        '400':
-          $ref: '#/components/responses/InvalidParameter'
-        '404':
-          $ref: '#/components/responses/ItemNotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
