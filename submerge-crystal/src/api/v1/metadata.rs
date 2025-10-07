@@ -6,10 +6,7 @@ use axum::{
 };
 
 use crate::{
-    api::{
-        validation::metadata::{parse_pallet_index, parse_spec_version},
-        ServiceState,
-    },
+    api::ServiceState,
     persistence::api::metadata::CrystalMetadataAPIPostgreSQLStorage as _,
     types::api::{
         dto::{
@@ -49,9 +46,8 @@ pub(crate) async fn get_metadata_list(
 
 pub(crate) async fn get_metadata_json(
     State(state): State<ServiceState>,
-    Path(spec_version): Path<String>,
+    Path(spec_version): Path<u32>,
 ) -> Result<Json<JSONValue>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
     let maybe_metadata_json = state.postgres.get_metadata_json(spec_version).await?;
     match maybe_metadata_json {
         Some(data) => Ok(Json(data)),
@@ -61,9 +57,8 @@ pub(crate) async fn get_metadata_json(
 
 pub(crate) async fn get_metadata_hex(
     State(state): State<ServiceState>,
-    Path(spec_version): Path<String>,
+    Path(spec_version): Path<u32>,
 ) -> Result<Response, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
     let maybe_metadata_bytes = state.postgres.get_metadata_bytes(spec_version).await?;
     if let Some(metadata_bytes) = maybe_metadata_bytes {
         let hex_string = format!("0x{}", hex::encode(metadata_bytes));
@@ -75,9 +70,8 @@ pub(crate) async fn get_metadata_hex(
 
 pub(crate) async fn get_metadata_pallets(
     State(state): State<ServiceState>,
-    Path(spec_version): Path<String>,
+    Path(spec_version): Path<u32>,
 ) -> Result<Json<Vec<MetadataPalletDTO>>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
     if state.postgres.metadata_exists(spec_version).await? {
         let metadata_pallets = state.postgres.get_metadata_pallets(spec_version).await?;
         Ok(Json(metadata_pallets))
@@ -88,10 +82,8 @@ pub(crate) async fn get_metadata_pallets(
 
 pub(crate) async fn get_metadata_pallet_calls(
     State(state): State<ServiceState>,
-    Path((spec_version, pallet_index)): Path<(String, String)>,
+    Path((spec_version, pallet_index)): Path<(u32, u32)>,
 ) -> Result<Json<Vec<MetadataPalletCallDTO>>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
-    let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
         Err(APIError::MetadataNotFound(spec_version))
     } else if !state
@@ -111,10 +103,8 @@ pub(crate) async fn get_metadata_pallet_calls(
 
 pub(crate) async fn get_metadata_pallet_constants(
     State(state): State<ServiceState>,
-    Path((spec_version, pallet_index)): Path<(String, String)>,
+    Path((spec_version, pallet_index)): Path<(u32, u32)>,
 ) -> Result<Json<Vec<MetadataPalletConstantDTO>>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
-    let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
         Err(APIError::MetadataNotFound(spec_version))
     } else if !state
@@ -134,10 +124,8 @@ pub(crate) async fn get_metadata_pallet_constants(
 
 pub(crate) async fn get_metadata_pallet_errors(
     State(state): State<ServiceState>,
-    Path((spec_version, pallet_index)): Path<(String, String)>,
+    Path((spec_version, pallet_index)): Path<(u32, u32)>,
 ) -> Result<Json<Vec<MetadataPalletErrorDTO>>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
-    let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
         Err(APIError::MetadataNotFound(spec_version))
     } else if !state
@@ -157,10 +145,8 @@ pub(crate) async fn get_metadata_pallet_errors(
 
 pub(crate) async fn get_metadata_pallet_events(
     State(state): State<ServiceState>,
-    Path((spec_version, pallet_index)): Path<(String, String)>,
+    Path((spec_version, pallet_index)): Path<(u32, u32)>,
 ) -> Result<Json<Vec<MetadataPalletEventDTO>>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
-    let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
         Err(APIError::MetadataNotFound(spec_version))
     } else if !state
@@ -180,10 +166,8 @@ pub(crate) async fn get_metadata_pallet_events(
 
 pub(crate) async fn get_metadata_pallet_storage_items(
     State(state): State<ServiceState>,
-    Path((spec_version, pallet_index)): Path<(String, String)>,
+    Path((spec_version, pallet_index)): Path<(u32, u32)>,
 ) -> Result<Json<Vec<MetadataPalletStorageItemDTO>>, APIError> {
-    let spec_version = parse_spec_version(&spec_version)?;
-    let pallet_index = parse_pallet_index(&pallet_index)?;
     if !state.postgres.metadata_exists(spec_version).await? {
         Err(APIError::MetadataNotFound(spec_version))
     } else if !state

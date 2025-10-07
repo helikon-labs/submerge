@@ -32,7 +32,6 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub mod legacy;
 mod v1;
-pub mod validation;
 
 const MAX_RESPONSE_MESSAGE_BYTES: usize = 64 * 1024;
 
