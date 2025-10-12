@@ -15,28 +15,26 @@ use crate::{
     },
 };
 
-const MAX_PAGE_SIZE: u64 = 100;
 const DEFAULT_PAGE_SIZE: u64 = 50;
+const MAX_PAGE_SIZE: u64 = 100;
 
 pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,
 ) -> Result<Json<PagedResponse<BlockDTO>>, APIError> {
-    let page_number = query.pagination.get_page_number()?;
+    let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_block_count(&query),
-        state
-            .postgres
-            .get_block_rows(page_number, page_size, &query),
+        state.postgres.get_block_rows(page, page_size, &query),
     )?;
     let response = PagedResponse {
         pagination: PaginationData {
-            page_number,
+            page,
             page_size,
-            total_count,
+            total: total_count,
         },
         data: rows.iter().map(|row| row.into()).collect(),
     };

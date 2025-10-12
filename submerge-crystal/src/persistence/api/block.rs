@@ -42,7 +42,7 @@ pub(crate) trait CrystalBlockAPIPostgreSQLStorage {
     async fn get_block_count(&self, query: &BlockQuery) -> anyhow::Result<u64>;
     async fn get_block_rows(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         query: &BlockQuery,
     ) -> anyhow::Result<Vec<BlockRow>>;
@@ -67,11 +67,11 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_block_rows(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         query: &BlockQuery,
     ) -> anyhow::Result<Vec<BlockRow>> {
-        let offset = (page_number - 1) * page_size;
+        let offset = (page - 1) * page_size;
         let mut query_builder = QueryBuilder::<Postgres>::new(
             r#"
             SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id

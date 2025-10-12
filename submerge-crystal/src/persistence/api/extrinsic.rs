@@ -50,7 +50,7 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
     async fn get_extrinsic_count(&self, query: &ExtrinsicQuery) -> anyhow::Result<u64>;
     async fn get_extrinsic_rows(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         query: &ExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
@@ -61,7 +61,7 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
     ) -> anyhow::Result<u64>;
     async fn get_extrinsic_rows_by_block_hash(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         block_hash: &[u8],
         query: &BlockExtrinsicQuery,
@@ -73,7 +73,7 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
     ) -> anyhow::Result<u64>;
     async fn get_extrinsic_rows_by_block_number(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         block_number: u64,
         query: &BlockExtrinsicQuery,
@@ -113,11 +113,11 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_extrinsic_rows(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         query: &ExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
-        let offset = (page_number - 1) * page_size;
+        let offset = (page - 1) * page_size;
         let mut query_builder = QueryBuilder::<Postgres>::new(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
@@ -165,12 +165,12 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_extrinsic_rows_by_block_hash(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         block_hash: &[u8],
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
-        let offset = (page_number - 1) * page_size;
+        let offset = (page - 1) * page_size;
         let mut query_builder = QueryBuilder::<Postgres>::new(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
@@ -223,12 +223,12 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_extrinsic_rows_by_block_number(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
         block_number: u64,
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
-        let offset = (page_number - 1) * page_size;
+        let offset = (page - 1) * page_size;
         let mut query_builder = QueryBuilder::<Postgres>::new(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful

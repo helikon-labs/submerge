@@ -1,23 +1,26 @@
-openapi: 3.1.0
+openapi: 3.1.1
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: Submerge Crystal API v1
   description: |
-    REST API for Submerge Crystal, the indexer component of Submerge.
-    Submerge API comes with a set of five resources:
+    REST API for Submerge Crystal, the core indexer component of Submerge.
+    Submerge API endpoints are grouped under five resource sets:
     - Blocks
-    - Extrinsics
     - Calls
     - Events
+    - Extrinsics
+    - Genesis
+    - Metadata
+    - System
     - Traces
     
     Public API is limited by 5 requests per second.
-    Request parameters use snake_case; response fields use camelCase.
+    Request query parameters use `snake_case`; response fields use `camelCase`.
   version: 1.0.0
   contact:
     name: Helikon Labs
     url: https://submerge.io
-    email: info@submerge.io
+    email: info@helikon.io
   license:
     name: GPLv3
     url: https://www.gnu.org/licenses/gpl-3.0.html
@@ -44,22 +47,22 @@ servers:
           - people-kusama
 
 tags:
-  - name: system
-    description: System-related endpoints.
   - name: block
     description: Endpoints related to blocks.
-  - name: trace
-    description: Endpoints related to block traces.
   - name: call
     description: Endpoints related to calls in extrinsics.
-  - name: extrinsic
-    description: Endpoints related to extrinsics.
   - name: event
     description: Endpoints related to events.
+  - name: extrinsic
+    description: Endpoints related to extrinsics.
   - name: genesis
     description: Endpoints related to genesis records.
   - name: metadata
     description: Endpoints related to metadata.
+  - name: trace
+    description: Endpoints related to block traces.
+  - name: system
+    description: System-related endpoints.
 
 components:
   headers:
@@ -79,191 +82,11 @@ components:
         type: integer
         format: int64
         minimum: 0
-    Retry-After:
+    X-Retry-After:
       description: Seconds to wait before retrying.
       schema:
         type: integer
         minimum: 1
-  parameters:
-    PageNumber:
-      name: page_number
-      in: query
-      description: Page number to retrieve.
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-      example: 1
-    PageSize:
-      name: page_size
-      in: query
-      description: Number of items per page to be returned.
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 25
-      example: 25
-    BlockRef:
-      name: block_ref
-      in: path
-      required: true
-      description: >
-        Block reference. Either:
-        - a block number (integer ≥ 0), or
-        - a block hash in hex (with or without `0x` prefix, case-insensitive).
-      schema:
-        type: string
-        pattern: '^(?:\d+|(0x)?[a-f0-9A-F]{64})$'
-    BlockStatus:
-      name: status
-      in: query
-      required: false
-      description: Filter results by block status. If not specified, all blocks are returned.
-      schema:
-        $ref: '#/components/schemas/BlockStatus'
-    MinBlockNumber:
-      name: min_block_number
-      in: query
-      description: Filter results by minimum block number.
-      required: false
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-      example: 0
-    MaxBlockNumber:
-      name: max_block_number
-      in: query
-      description: Filter results by maximum block number.
-      required: false
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-      example: 0
-    MinBlockTimestamp:
-      name: min_block_timestamp
-      in: query
-      required: false
-      description: Filter results by minimum block timestamp.
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-        example: 1755773684012
-    MaxBlockTimestamp:
-      name: max_block_timestamp
-      in: query
-      required: false
-      description: Filter results by maximum block timestamp.
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-        example: 1755773684012
-    MinSpecVersion:
-      name: min_spec_version
-      in: query
-      description: Filter results by minimum runtime spec version.
-      required: false
-      schema:
-        type: integer
-        minimum: 0
-      example: 0
-    MaxSpecVersion:
-      name: max_spec_version
-      in: query
-      description: Filter results by maximum runtime spec version.
-      required: false
-      schema:
-        type: integer
-        minimum: 0
-      example: 0
-    AuthorRef:
-      name: author
-      in: query
-      description: Filter results by block author.
-      required: false
-      schema:
-        oneOf:
-          - type: string
-            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
-            description: Author's Substrate SS58 address string.
-            example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-          - type: string
-            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
-            description: Author's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
-            examples:
-              - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
-              - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
-    SignerRef:
-      name: signer
-      in: query
-      description: Filter results by a signer.
-      required: false
-      schema:
-        oneOf:
-          - type: string
-            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
-            description: Signer's Substrate SS58 address string.
-            example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-          - type: string
-            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
-            description: Signer's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
-            examples:
-              - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
-              - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
-    PalletName:
-      name: pallet_name
-      in: query
-      description: Filter results by pallet name. Can be full or partial name. Case insensitive.
-      required: false
-      schema:
-        type: string
-    PalletCallName:
-      name: pallet_call_name
-      in: query
-      description: Filter results by pallet call name. Can be full or partial name. Case insensitive.
-      required: false
-      schema:
-        type: string
-    PalletEventName:
-      name: pallet_event_name
-      in: query
-      description: Filter results by pallet event name. Can be full or partial name. Case insensitive.
-      required: false
-      schema:
-        type: string
-    ItemIndex:
-      name: index
-      in: path
-      description: Index of an item.
-      required: true
-      schema:
-        type: integer
-        minimum: 0
-      example: 0
-    ExtrinsicHash:
-      name: extrinsic_hash
-      in: path
-      description: Extrinsic hash.
-      required: true
-      schema:
-        type: string
-        pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
-        example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
-    SpecVersion:
-      name: spec_version
-      in: path
-      description: Spec version path parameter.
-      required: true
-      schema:
-        type: integer
-        minimum: 0
-      example: 0
   schemas:
     Error:
       type: object
@@ -284,9 +107,10 @@ components:
       properties:
         id:
           type: string
-          example: 'backfill-3'
+          description: Machine-assigned id of the worker.
         state:
           type: string
+          descriotion: Worker state.
           enum: [idle, indexing, paused, error, stopping]
         from:
           type: integer
@@ -308,7 +132,7 @@ components:
           description: Indexing speed of the worker.
           minimum: 0
       example:
-        id: 'backfill-3'
+        id: 'crystal-worker-3'
         state: indexing
         from: 0
         to: 15243769
@@ -359,12 +183,12 @@ components:
           type:
             - 'null'
             - string
-          description: Short machine-readable reason for non-OK states.
+          description: Short reason for non-OK states.
       example:
         status: ok
     BlockSummary:
       type: object
-      required: [number, hash, timestamp]
+      required: [number, hash, parentHash, timestamp]
       description: Basic information about a block.
       properties:
         number:
@@ -411,7 +235,7 @@ components:
       type: object
       description: Pagination data for paged responses.
       properties:
-        pageNumber:
+        page:
           type: integer
           description: Current page number.
           minimum: 1
@@ -421,23 +245,22 @@ components:
           description: Number of items per page.
           minimum: 1
           example: 25
-        totalCount:
+        total:
           type: integer
           description: Total number of items across all pages.
           minimum: 0
           example: 78
       required:
-        - pageNumber
+        - page
         - pageSize
-        - totalCount
+        - total
       example:
-        pageNumber: 1
+        page: 1
         pageSize: 25
-        totalCount: 78
+        total: 78
     HexString:
       type: string
-      description: >
-        Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.
+      description: Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.
       pattern: '^0x(?:[0-9a-f]{2})+$'
       examples:
         - "0xdeadbeef"
@@ -448,8 +271,8 @@ components:
         Arbitrary hex-encoded bytes. Lowercase, odd or even length, `0x`-prefixed.
       pattern: '^0x(?:[0-9a-f])+$'
       examples:
-        - "0xdeadbeef"
-        - "0x0123456789abcdef"
+        - '0xdeadbeef'
+        - '0x0123456789abcdef'
     AccountIdHex:
       type: string
       pattern: '^0x[a-f0-9]{64}$'
@@ -475,17 +298,17 @@ components:
         - "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
         - "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
     MultiAddress:
-      description: Discriminated union for Substrate multiaddresses. The `type` tag selects the variant; `value` carries the payload.
+      description: Discriminated union for the Substrate multiaddress type. The `type` tag selects the variant; `value` carries the payload.
       oneOf:
-        - $ref: "#/components/schemas/MultiAddress_AccountId"
-        - $ref: "#/components/schemas/MultiAddress_Index"
-        - $ref: "#/components/schemas/MultiAddress_Raw"
-        - $ref: "#/components/schemas/MultiAddress_Address20"
-        - $ref: "#/components/schemas/MultiAddress_Address32"
+        - $ref: '#/components/schemas/MultiAddress_AccountId'
+        - $ref: '#/components/schemas/MultiAddress_Index'
+        - $ref: '#/components/schemas/MultiAddress_Raw'
+        - $ref: '#/components/schemas/MultiAddress_Address20'
+        - $ref: '#/components/schemas/MultiAddress_Address32'
       discriminator:
         propertyName: type
         mapping:
-          accountId: "#/components/schemas/MultiAddress_AccountId"
+          accountId: '#/components/schemas/MultiAddress_AccountId'
           index: '#/components/schemas/MultiAddress_Index'
           raw: '#/components/schemas/MultiAddress_Raw'
           address20: '#/components/schemas/Address20'
@@ -1183,6 +1006,186 @@ components:
           $ref: '#/components/schemas/HexString'
         docs:
           $ref: '#/components/schemas/MetadataItemDocs'
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: Page number to retrieve. 1-indexed.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    PageSize:
+      name: page_size
+      in: query
+      description: Number of items per page to be returned.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+      example: 25
+    BlockRef:
+      name: block_ref
+      in: path
+      required: true
+      description: >
+        Block reference. Either:
+        - a block number (integer ≥ 0), or
+        - a block hash in hex (with or without `0x` prefix, case-insensitive).
+      schema:
+        type: string
+        pattern: '^(?:\d+|(0x)?[a-f0-9A-F]{64})$'
+    BlockStatus:
+      name: status
+      in: query
+      required: false
+      description: Filter results by block status. If not specified, all blocks are returned.
+      schema:
+        $ref: '#/components/schemas/BlockStatus'
+    MinBlockNumber:
+      name: min_block_number
+      in: query
+      description: Filter results by minimum block number.
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+      example: 0
+    MaxBlockNumber:
+      name: max_block_number
+      in: query
+      description: Filter results by maximum block number.
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+      example: 0
+    MinBlockTimestamp:
+      name: min_block_timestamp
+      in: query
+      required: false
+      description: Filter results by minimum block timestamp.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        example: 1755773684012
+    MaxBlockTimestamp:
+      name: max_block_timestamp
+      in: query
+      required: false
+      description: Filter results by maximum block timestamp.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        example: 1755773684012
+    MinSpecVersion:
+      name: min_spec_version
+      in: query
+      description: Filter results by minimum runtime spec version.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      example: 0
+    MaxSpecVersion:
+      name: max_spec_version
+      in: query
+      description: Filter results by maximum runtime spec version.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      example: 0
+    AuthorRef:
+      name: author
+      in: query
+      description: Filter results by block author.
+      required: false
+      schema:
+        oneOf:
+          - type: string
+            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
+            description: Author's Substrate SS58 address string.
+            example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+          - type: string
+            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
+            description: Author's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
+            examples:
+              - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+              - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+    SignerRef:
+      name: signer
+      in: query
+      description: Filter results by a signer.
+      required: false
+      schema:
+        oneOf:
+          - type: string
+            pattern: '^[1-9A-HJ-NP-Za-km-z]{47,48}$'
+            description: Signer's Substrate SS58 address string.
+            example: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+          - type: string
+            pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
+            description: Signer's 32-byte Substrate account id encoded in hex with optional `0x` prefix.
+            examples:
+              - '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+              - '008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+    PalletName:
+      name: pallet_name
+      in: query
+      description: Filter results by pallet name. Can be full or partial name. Case insensitive.
+      required: false
+      schema:
+        type: string
+    PalletCallName:
+      name: pallet_call_name
+      in: query
+      description: Filter results by pallet call name. Can be full or partial name. Case insensitive.
+      required: false
+      schema:
+        type: string
+    PalletEventName:
+      name: pallet_event_name
+      in: query
+      description: Filter results by pallet event name. Can be full or partial name. Case insensitive.
+      required: false
+      schema:
+        type: string
+    ItemIndex:
+      name: index
+      in: path
+      description: Index of an item.
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+      example: 0
+    ExtrinsicHash:
+      name: extrinsic_hash
+      in: path
+      description: Extrinsic hash.
+      required: true
+      schema:
+        type: string
+        pattern: '^(?:0x)?[0-9a-fA-F]{64}$'
+        example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
+    SpecVersion:
+      name: spec_version
+      in: path
+      description: Spec version path parameter.
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+      example: 0
   responses:
     TooManyRequests:
       description: Rate limit exceeded.
@@ -1193,8 +1196,8 @@ components:
           $ref: '#/components/headers/X-RateLimit-Remaining'
         X-RateLimit-Reset:
           $ref: '#/components/headers/X-RateLimit-Reset'
-        Retry-After:
-          $ref: '#/components/headers/Retry-After'
+        X-Retry-After:
+          $ref: '#/components/headers/X-Retry-After'
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
@@ -1466,10 +1469,13 @@ components:
           schema:
             type: array
             prefixItems:
-              - type: integer   # metadata version or magic/identifier
-              - type: object    # metadata body
+              - type: integer
+                description: Metadata version or magic/identifier.
+              - type: object
+                description: Metadata body.
             minItems: 2
             maxItems: 2
+            additionalItems: false
             example: [1635018093, { "V14": {}}]
     StatusResponse:
       description: Status information for this Crystal instance.
@@ -1522,7 +1528,7 @@ paths:
       tags:
         - block
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/BlockStatus'
         - $ref: '#/components/parameters/MinBlockNumber'
@@ -1552,7 +1558,7 @@ paths:
         - block
       parameters:
         - $ref: '#/components/parameters/BlockRef'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
@@ -1576,7 +1582,7 @@ paths:
         - trace
       parameters:
         - $ref: '#/components/parameters/BlockRef'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
@@ -1600,7 +1606,7 @@ paths:
         - call
       parameters:
         - $ref: '#/components/parameters/BlockRef'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/PalletName'
         - $ref: '#/components/parameters/PalletCallName'
@@ -1626,7 +1632,7 @@ paths:
         - event
       parameters:
         - $ref: '#/components/parameters/BlockRef'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/PalletName'
         - $ref: '#/components/parameters/PalletEventName'
@@ -1677,7 +1683,7 @@ paths:
         - extrinsic
       parameters:
         - $ref: '#/components/parameters/BlockRef'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/SignerRef'
       responses:
@@ -1732,7 +1738,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BlockRef'
         - $ref: '#/components/parameters/ItemIndex'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
@@ -1755,7 +1761,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BlockRef'
         - $ref: '#/components/parameters/ItemIndex'
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
@@ -1778,7 +1784,7 @@ paths:
       tags:
         - trace
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - name: key
           description: Trace key.
@@ -1805,7 +1811,7 @@ paths:
       tags:
         - call
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/MinBlockNumber'
         - $ref: '#/components/parameters/MaxBlockNumber'
@@ -1834,7 +1840,7 @@ paths:
       tags:
         - event
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/MinBlockNumber'
         - $ref: '#/components/parameters/MaxBlockNumber'
@@ -1863,7 +1869,7 @@ paths:
       tags:
         - extrinsic
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/MinBlockNumber'
         - $ref: '#/components/parameters/MaxBlockNumber'
@@ -1913,7 +1919,7 @@ paths:
       tags:
         - call
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/ExtrinsicHash'
       responses:
@@ -1935,7 +1941,7 @@ paths:
       tags:
         - event
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/ExtrinsicHash'
       responses:
@@ -1957,7 +1963,7 @@ paths:
       tags:
         - genesis
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
@@ -1976,7 +1982,7 @@ paths:
       tags:
         - metadata
       parameters:
-        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
         '200':

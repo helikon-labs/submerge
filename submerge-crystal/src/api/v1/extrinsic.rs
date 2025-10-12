@@ -23,15 +23,13 @@ pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
     Query(query): Query<ExtrinsicQuery>,
 ) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
-    let page_number = query.pagination.get_page_number()?;
+    let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_extrinsic_count(&query),
-        state
-            .postgres
-            .get_extrinsic_rows(page_number, page_size, &query),
+        state.postgres.get_extrinsic_rows(page, page_size, &query),
     )?;
     let mut data = Vec::new();
     for row in rows.iter() {
@@ -39,9 +37,9 @@ pub(crate) async fn get_extrinsics(
     }
     let response = PagedResponse {
         pagination: PaginationData {
-            page_number,
+            page,
             page_size,
-            total_count,
+            total: total_count,
         },
         data,
     };
@@ -53,7 +51,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockExtrinsicQuery>,
 ) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
-    let page_number = query.pagination.get_page_number()?;
+    let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
@@ -67,7 +65,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                     .postgres
                     .get_extrinsic_row_count_by_block_number(block_number, &query),
                 state.postgres.get_extrinsic_rows_by_block_number(
-                    page_number,
+                    page,
                     page_size,
                     block_number,
                     &query
@@ -79,9 +77,9 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             }
             let response = PagedResponse {
                 pagination: PaginationData {
-                    page_number,
+                    page,
                     page_size,
-                    total_count,
+                    total: total_count,
                 },
                 data,
             };
@@ -96,7 +94,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                     .postgres
                     .get_extrinsic_row_count_by_block_hash(&block_hash, &query),
                 state.postgres.get_extrinsic_rows_by_block_hash(
-                    page_number,
+                    page,
                     page_size,
                     &block_hash,
                     &query
@@ -108,9 +106,9 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             }
             let response = PagedResponse {
                 pagination: PaginationData {
-                    page_number,
+                    page,
                     page_size,
-                    total_count,
+                    total: total_count,
                 },
                 data,
             };

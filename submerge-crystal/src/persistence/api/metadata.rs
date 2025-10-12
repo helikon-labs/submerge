@@ -22,7 +22,7 @@ pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
     async fn get_metadata_count(&self) -> anyhow::Result<u64>;
     async fn get_metadata_list(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<MetadataDTO>>;
     async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool>;
@@ -73,10 +73,10 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     }
     async fn get_metadata_list(
         &self,
-        page_number: u64,
+        page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<MetadataDTO>> {
-        let offset = (page_number - 1) * page_size;
+        let offset = (page - 1) * page_size;
         let rows: Vec<(i32, i32)> = sqlx::query_as(
             "SELECT spec_version, metadata_version FROM metadata ORDER BY spec_version ASC LIMIT $1 OFFSET $2",
         )
