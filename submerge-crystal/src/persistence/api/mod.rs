@@ -1,4 +1,5 @@
 pub mod block;
+pub mod event;
 pub mod extrinsic;
 pub mod genesis;
 pub mod metadata;

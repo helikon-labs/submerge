@@ -7,8 +7,7 @@ CREATE TABLE IF NOT EXISTS event
     spec_version        INTEGER NOT NULL,
     block_status        BLOCK_STATUS NOT NULL,
     trace_index         INTEGER,
-    pallet_index        INTEGER NOT NULL,
-    pallet_event_index  INTEGER NOT NULL,
+    metadata_event_id   INTEGER NOT NULL,
     extrinsic_index     INTEGER,
     extrinsic_hash      BYTEA,
     phase               VARCHAR(32) NOT NULL,
@@ -21,6 +20,11 @@ CREATE TABLE IF NOT EXISTS event
         FOREIGN KEY (block_hash)
             REFERENCES block (hash)
             ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT event_fk_metadata_event
+        FOREIGN KEY (metadata_event_id)
+            REFERENCES metadata_event (id)
+            ON DELETE RESTRICT
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
@@ -30,20 +34,12 @@ CREATE INDEX IF NOT EXISTS event_idx_block_number ON event (block_number);
 CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash ON event (extrinsic_hash) WHERE extrinsic_hash IS NOT NULL;
 CREATE INDEX IF NOT EXISTS event_idx_timestamp ON event (block_timestamp);
 
-CREATE INDEX IF NOT EXISTS event_idx_spec_version_pallet_index_pallet_event_index
-ON event (
-    spec_version,
-    pallet_index,
-    pallet_event_index
-);
-
 CREATE INDEX IF NOT EXISTS event_idx_filter_order
 ON event (
     block_number DESC,
     block_timestamp,
     spec_version,
-    pallet_index,
-    pallet_event_index
+    metadata_event_id
 );
 
 CREATE TABLE event_0_1000000 PARTITION OF event FOR VALUES FROM (0) TO (1000000);

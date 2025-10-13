@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS log
 (
+    id              BIGSERIAL PRIMARY KEY,
     block_hash      BYTEA NOT NULL,
     block_number    BIGINT NOT NULL,
     index           INTEGER NOT NULL,
@@ -7,7 +8,7 @@ CREATE TABLE IF NOT EXISTS log
     engine          TEXT,
     data            BYTEA,
     created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT log_pk PRIMARY KEY (block_hash, index),
+    CONSTRAINT log_u_block_hash_index UNIQUE (block_hash, index),
     CONSTRAINT log_fk_block
         FOREIGN KEY (block_hash)
             REFERENCES block (hash)

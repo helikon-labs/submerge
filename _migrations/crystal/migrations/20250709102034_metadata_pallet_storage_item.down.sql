@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS metadata_pallet_storage_item CASCADE;
