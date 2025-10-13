@@ -26,13 +26,12 @@ pub struct EventRow {
     pub spec_version: i32,
     pub block_status: BlockStatus,
     pub trace_index: Option<i32>,
-    pub pallet_index: i32,
-    pub pallet_event_index: i32,
+    pub metadata_event_id: i32,
     pub extrinsic_index: Option<i32>,
     pub extrinsic_hash: Option<[u8; 32]>,
     pub phase: String,
     pub index: i32,
-    pub args_json: JSONValue,
+    pub args: JSONValue,
 }
 
 impl EventRow {
@@ -44,6 +43,7 @@ impl EventRow {
         block_status: BlockStatus,
         event: &Event,
         extrinsics: &[Extrinsic],
+        metadata_event_id: u32,
     ) -> Self {
         let (phase, maybe_extrinsic) = match &event.phase {
             frame_system::Phase::ApplyExtrinsic(extrinsic_index) => {
@@ -59,13 +59,12 @@ impl EventRow {
             spec_version: spec_version as i32,
             block_status,
             trace_index: event.trace_index.map(|i| i as i32),
-            pallet_index: event.pallet_index as i32,
-            pallet_event_index: event.pallet_event_index as i32,
+            metadata_event_id: metadata_event_id as i32,
             extrinsic_index: maybe_extrinsic.map(|e| e.index as i32),
             extrinsic_hash: maybe_extrinsic.map(|e| e.hash),
             phase: phase.to_string(),
             index: event.index as i32,
-            args_json: event.args.clone(),
+            args: event.args.clone(),
         }
     }
 }

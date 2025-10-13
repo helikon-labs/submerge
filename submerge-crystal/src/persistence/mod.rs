@@ -50,6 +50,12 @@ pub(crate) trait CrystalPostgreSQLStorage {
         pallet: &MetadataPallet,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    async fn get_metadata_pallet_id(&self, spec_version: u32, index: u8) -> anyhow::Result<u32>;
+    async fn get_metadata_event_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
+    async fn get_metadata_call_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
+    async fn get_metadata_constant_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
+    async fn get_metadata_error_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
+    async fn get_metadata_storage_item_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
     async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
     async fn get_next_block_number(
@@ -147,8 +153,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         extrinsic_hash: &[u8],
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
-        pallet_index: u8,
-        pallet_call_index: u8,
+        metadata_call_id: u32,
         is_successful: bool,
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
@@ -261,27 +266,27 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         pallet: &MetadataPallet,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        sqlx::query(
+        let pallet_id_row: (i32,) = sqlx::query_as(
             r#"
             INSERT INTO metadata_pallet (spec_version, index, name)
             VALUES ($1, $2, $3)
+            RETURNING id
             "#,
         )
         .bind(spec_version as i32)
         .bind(pallet.index as i32)
         .bind(&pallet.name)
-        .execute(&mut **tx)
+        .fetch_one(&mut **tx)
         .await?;
+        let pallet_id = pallet_id_row.0;
         for event in pallet.events.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_event (spec_version, pallet_index, pallet_name, index, name, docs)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO metadata_event (pallet_id, index, name, docs)
+                VALUES ($1, $2, $3, $4)
                 "#,
             )
-            .bind(spec_version as i32)
-            .bind(pallet.index as i32)
-            .bind(&pallet.name)
+            .bind(pallet_id)
             .bind(event.index as i32)
             .bind(&event.name)
             .bind(&event.docs)
@@ -291,13 +296,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for constant in pallet.constants.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_constant (spec_version, pallet_index, pallet_name, index, name, type_id, type_name, value, value_json, docs)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                INSERT INTO metadata_constant (pallet_id, index, name, type_id, type_name, value, value_json, docs)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 "#,
             )
-            .bind(spec_version as i32)
-            .bind(pallet.index as i32)
-            .bind(&pallet.name)
+            .bind(pallet_id)
             .bind(constant.index as i32)
             .bind(&constant.name)
             .bind(constant.type_id.map(|i| i as i32))
@@ -311,13 +314,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for call in pallet.calls.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_call (spec_version, pallet_index, pallet_name, index, name, docs)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO metadata_call (pallet_id, index, name, docs)
+                VALUES ($1, $2, $3, $4)
                 "#,
             )
-            .bind(spec_version as i32)
-            .bind(pallet.index as i32)
-            .bind(&pallet.name)
+            .bind(pallet_id)
             .bind(call.index as i32)
             .bind(&call.name)
             .bind(&call.docs)
@@ -328,13 +329,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             let key = get_storage_plain_key(&pallet.name, &storage_item.name);
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_storage_item (spec_version, pallet_index, pallet_name, index, name, key, docs)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO metadata_storage_item (pallet_id, index, name, key, docs)
+                VALUES ($1, $2, $3, $4, $5)
                 "#,
             )
-            .bind(spec_version as i32)
-            .bind(pallet.index as i32)
-            .bind(&pallet.name)
+            .bind(pallet_id)
             .bind(storage_item.index as i32)
             .bind(&storage_item.name)
             .bind(&key)
@@ -345,13 +344,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         for error in pallet.errors.iter() {
             sqlx::query(
                 r#"
-                INSERT INTO metadata_pallet_error (spec_version, pallet_index, pallet_name, index, name, docs)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO metadata_error (pallet_id, index, name, docs)
+                VALUES ($1, $2, $3, $4)
                 "#,
             )
-            .bind(spec_version as i32)
-            .bind(pallet.index as i32)
-            .bind(&pallet.name)
+            .bind(pallet_id)
             .bind(error.index as i32)
             .bind(&error.name)
             .bind(&error.docs)
@@ -359,6 +356,67 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .await?;
         }
         Ok(())
+    }
+
+    async fn get_metadata_pallet_id(&self, spec_version: u32, index: u8) -> anyhow::Result<u32> {
+        let id_row: (i32,) =
+            sqlx::query_as("SELECT id FROM metadata_pallet WHERE spec_version = $1 AND index = $2")
+                .bind(spec_version as i32)
+                .bind(index as i32)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(id_row.0 as u32)
+    }
+
+    async fn get_metadata_event_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32> {
+        let id_row: (i32,) =
+            sqlx::query_as("SELECT id FROM metadata_event WHERE pallet_id = $1 AND index = $2")
+                .bind(pallet_id as i32)
+                .bind(index as i32)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(id_row.0 as u32)
+    }
+
+    async fn get_metadata_call_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32> {
+        let id_row: (i32,) =
+            sqlx::query_as("SELECT id FROM metadata_call WHERE pallet_id = $1 AND index = $2")
+                .bind(pallet_id as i32)
+                .bind(index as i32)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(id_row.0 as u32)
+    }
+
+    async fn get_metadata_constant_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32> {
+        let id_row: (i32,) =
+            sqlx::query_as("SELECT id FROM metadata_constant WHERE pallet_id = $1 AND index = $2")
+                .bind(pallet_id as i32)
+                .bind(index as i32)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(id_row.0 as u32)
+    }
+
+    async fn get_metadata_error_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32> {
+        let id_row: (i32,) =
+            sqlx::query_as("SELECT id FROM metadata_error WHERE pallet_id = $1 AND index = $2")
+                .bind(pallet_id as i32)
+                .bind(index as i32)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(id_row.0 as u32)
+    }
+
+    async fn get_metadata_storage_item_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32> {
+        let id_row: (i32,) = sqlx::query_as(
+            "SELECT id FROM metadata_storage_item WHERE pallet_id = $1 AND index = $2",
+        )
+        .bind(pallet_id as i32)
+        .bind(index as i32)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(id_row.0 as u32)
     }
 
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64> {
@@ -755,7 +813,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<()> {
         for event_row_chunk in event_rows.chunks(INSERT_BATCH_SIZE) {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, pallet_index, pallet_event_index, extrinsic_index, extrinsic_hash, phase, index, args_json) ",
+                "INSERT INTO event (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, metadata_event_id, extrinsic_index, extrinsic_hash, phase, index, args) ",
             );
             query_builder.push_values(event_row_chunk, |mut query, event| {
                 query
@@ -765,13 +823,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(event.spec_version)
                     .push_bind(event.block_status)
                     .push_bind(event.trace_index)
-                    .push_bind(event.pallet_index)
-                    .push_bind(event.pallet_event_index)
+                    .push_bind(event.metadata_event_id)
                     .push_bind(event.extrinsic_index)
                     .push_bind(event.extrinsic_hash)
                     .push_bind(&event.phase)
                     .push_bind(event.index)
-                    .push_bind(&event.args_json);
+                    .push_bind(&event.args);
             });
             let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
                 query_builder.build();
@@ -792,16 +849,15 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_hash: &[u8],
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
-        pallet_index: u8,
-        pallet_call_index: u8,
+        metadata_call_id: u32,
         is_successful: bool,
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64> {
         let row: (i64,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, pallet_index, pallet_call_index, is_successful, args_json)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, is_successful, args)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING id
             "#,
         )
@@ -815,8 +871,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(extrinsic_hash)
             .bind(parent_call_id)
             .bind(nesting_index)
-            .bind(pallet_index as i32)
-            .bind(pallet_call_index as i32)
+            .bind(metadata_call_id as i32)
             .bind(is_successful)
             .bind(args)
             .fetch_one(&mut **tx)

@@ -360,8 +360,22 @@ impl BlockProcessor {
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
+        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
         let mut rows: Vec<EventRow> = Vec::new();
         for event in events.iter() {
+            let pallet_event = metadata
+                .get_pallet_by_index(event.pallet_index)
+                .ok_or(anyhow::anyhow!(
+                    "Pallet {} with index {} not found in database.",
+                    event.pallet_name,
+                    event.pallet_index
+                ))?
+                .get_event_by_index(event.pallet_event_index)
+                .ok_or(anyhow::anyhow!(
+                    "Event {} with index {} not found in database.",
+                    event.pallet_event_name,
+                    event.pallet_event_index
+                ))?;
             rows.push(EventRow::from_block_event(
                 block_hash,
                 block_header.get_number()?,
@@ -370,6 +384,7 @@ impl BlockProcessor {
                 block_status,
                 event,
                 extrinsics,
+                pallet_event.id,
             ));
         }
         self.postgres.ingest_events(&rows, tx).await?;

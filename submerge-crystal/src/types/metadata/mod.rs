@@ -25,26 +25,51 @@ pub struct Metadata {
     pub pallets: Vec<MetadataPallet>,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct MetadataPallet {
-    pub index: u8,
-    pub name: String,
-    pub events: Vec<MetadataPalletEvent>,
-    pub constants: Vec<MetadataPalletConstant>,
-    pub calls: Vec<MetadataPalletCall>,
-    pub storage_items: Vec<MetadataPalletStorageItem>,
-    pub errors: Vec<MetadataPalletError>,
+impl Metadata {
+    pub fn get_pallet_by_index(&self, index: u8) -> Option<MetadataPallet> {
+        self.pallets
+            .iter()
+            .find(|pallet| pallet.index == index)
+            .cloned()
+    }
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataPalletEvent {
+pub struct MetadataPallet {
+    pub id: u32,
+    pub index: u8,
+    pub name: String,
+    pub events: Vec<MetadataEvent>,
+    pub constants: Vec<MetadataConstant>,
+    pub calls: Vec<MetadataCall>,
+    pub storage_items: Vec<MetadataStorageItem>,
+    pub errors: Vec<MetadataError>,
+}
+
+impl MetadataPallet {
+    pub fn get_event_by_index(&self, index: u8) -> Option<MetadataEvent> {
+        self.events
+            .iter()
+            .find(|event| event.index == index)
+            .cloned()
+    }
+
+    pub fn get_call_by_index(&self, index: u8) -> Option<MetadataCall> {
+        self.calls.iter().find(|call| call.index == index).cloned()
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct MetadataEvent {
+    pub id: u32,
     pub index: u8,
     pub name: String,
     pub docs: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataPalletConstant {
+pub struct MetadataConstant {
+    pub id: u32,
     pub index: u8,
     pub name: String,
     pub type_id: Option<u32>,
@@ -55,21 +80,24 @@ pub struct MetadataPalletConstant {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataPalletCall {
+pub struct MetadataCall {
+    pub id: u32,
     pub index: u8,
     pub name: String,
     pub docs: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataPalletStorageItem {
+pub struct MetadataStorageItem {
+    pub id: u32,
     pub index: u8,
     pub name: String,
     pub docs: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataPalletError {
+pub struct MetadataError {
+    pub id: u32,
     pub index: u8,
     pub name: String,
     pub docs: Vec<String>,
@@ -91,8 +119,9 @@ fn extract_module_name(name: &DecodeDifferent<&'static str, String>) -> String {
     }
 }
 
-fn create_base_pallet(index: u8, name: String) -> MetadataPallet {
+fn create_base_pallet(id: u32, index: u8, name: String) -> MetadataPallet {
     MetadataPallet {
+        id,
         index,
         name: name.to_case(Case::UpperCamel),
         events: Vec::new(),
@@ -114,7 +143,7 @@ macro_rules! from_metadata_version {
                 let mut metadata = Metadata::default();
                 for pallet_metadata in value.pallets.iter() {
                     let mut pallet =
-                        create_base_pallet(pallet_metadata.index, pallet_metadata.name.clone());
+                        create_base_pallet(0, pallet_metadata.index, pallet_metadata.name.clone());
                     // events
                     if let Some(events) = &pallet_metadata.event {
                         let type_id = events.ty.id;
@@ -128,7 +157,8 @@ macro_rules! from_metadata_version {
                         match &events_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for event_variant in type_def_variant.variants.iter() {
-                                    pallet.events.push(MetadataPalletEvent {
+                                    pallet.events.push(MetadataEvent {
+                                        id: 0,
                                         index: event_variant.index,
                                         name: event_variant.name.to_case(Case::UpperCamel),
                                         docs: event_variant.docs.clone(),
@@ -149,7 +179,8 @@ macro_rules! from_metadata_version {
                                 )),
                             )?;
                         let type_name = constant_type.ty.path.segments.join("::");
-                        pallet.constants.push(MetadataPalletConstant {
+                        pallet.constants.push(MetadataConstant {
+                            id: 0,
                             index: index as u8,
                             name: constant.name.to_case(Case::UpperCamel),
                             type_id: Some(constant.ty.id),
@@ -172,7 +203,8 @@ macro_rules! from_metadata_version {
                         match &calls_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for call_variant in type_def_variant.variants.iter() {
-                                    pallet.calls.push(MetadataPalletCall {
+                                    pallet.calls.push(MetadataCall {
+                                        id: 0,
                                         index: call_variant.index,
                                         name: call_variant.name.to_case(Case::UpperCamel),
                                         docs: call_variant.docs.clone(),
@@ -185,7 +217,8 @@ macro_rules! from_metadata_version {
                     // storage items
                     if let Some(storage) = &pallet_metadata.storage {
                         for (index, entry) in storage.entries.iter().enumerate() {
-                            pallet.storage_items.push(MetadataPalletStorageItem {
+                            pallet.storage_items.push(MetadataStorageItem {
+                                id: 0,
                                 index: index as u8,
                                 name: entry.name.to_case(Case::UpperCamel),
                                 docs: entry.docs.clone(),
@@ -205,7 +238,8 @@ macro_rules! from_metadata_version {
                         match &errors_type.ty.type_def {
                             scale_info::TypeDef::Variant(type_def_variant) => {
                                 for error_variant in type_def_variant.variants.iter() {
-                                    pallet.errors.push(MetadataPalletError {
+                                    pallet.errors.push(MetadataError {
+                                        id: 0,
                                         index: error_variant.index,
                                         name: error_variant.name.to_case(Case::UpperCamel),
                                         docs: error_variant.docs.clone(),
@@ -233,7 +267,7 @@ macro_rules! from_legacy_metadata {
                     DecodeDifferent::Decoded(modules) => {
                         for (index, module) in modules.iter().enumerate() {
                             let name = extract_module_name(&module.name).to_case(Case::UpperCamel);
-                            let mut pallet = create_base_pallet(index as u8, name);
+                            let mut pallet = create_base_pallet(0, index as u8, name);
                             if let Some(module_events) = &module.event {
                                 match module_events {
                                     DecodeDifferent::Encode(module_events) => {
@@ -245,7 +279,8 @@ macro_rules! from_legacy_metadata {
                                                     .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&module_event.documentation);
-                                            pallet.events.push(MetadataPalletEvent {
+                                            pallet.events.push(MetadataEvent {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -261,7 +296,8 @@ macro_rules! from_legacy_metadata {
                                                     .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&module_event.documentation);
-                                            pallet.events.push(MetadataPalletEvent {
+                                            pallet.events.push(MetadataEvent {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -288,7 +324,8 @@ macro_rules! from_legacy_metadata {
                                         };
                                         let docs: Vec<String> =
                                             extract_docs(&module_constant.documentation);
-                                        pallet.constants.push(MetadataPalletConstant {
+                                        pallet.constants.push(MetadataConstant {
+                                            id: 0,
                                             index: index as u8,
                                             name,
                                             type_id: None,
@@ -316,7 +353,8 @@ macro_rules! from_legacy_metadata {
                                         };
                                         let docs: Vec<String> =
                                             extract_docs(&module_constant.documentation);
-                                        pallet.constants.push(MetadataPalletConstant {
+                                        pallet.constants.push(MetadataConstant {
+                                            id: 0,
                                             index: index as u8,
                                             name,
                                             type_id: None,
@@ -336,7 +374,8 @@ macro_rules! from_legacy_metadata {
                                                 .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&call.documentation);
-                                            pallet.calls.push(MetadataPalletCall {
+                                            pallet.calls.push(MetadataCall {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -349,7 +388,8 @@ macro_rules! from_legacy_metadata {
                                                 .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&call.documentation);
-                                            pallet.calls.push(MetadataPalletCall {
+                                            pallet.calls.push(MetadataCall {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -370,7 +410,8 @@ macro_rules! from_legacy_metadata {
                                                     let docs: Vec<String> =
                                                         extract_docs(&entry.documentation);
                                                     pallet.storage_items.push(
-                                                        MetadataPalletStorageItem {
+                                                        MetadataStorageItem {
+                                                            id: 0,
                                                             index: index as u8,
                                                             name,
                                                             docs,
@@ -386,7 +427,8 @@ macro_rules! from_legacy_metadata {
                                                     let docs: Vec<String> =
                                                         extract_docs(&entry.documentation);
                                                     pallet.storage_items.push(
-                                                        MetadataPalletStorageItem {
+                                                        MetadataStorageItem {
+                                                            id: 0,
                                                             index: index as u8,
                                                             name,
                                                             docs,
@@ -403,13 +445,12 @@ macro_rules! from_legacy_metadata {
                                                     .to_case(Case::UpperCamel);
                                                 let docs: Vec<String> =
                                                     extract_docs(&entry.documentation);
-                                                pallet.storage_items.push(
-                                                    MetadataPalletStorageItem {
-                                                        index: index as u8,
-                                                        name,
-                                                        docs,
-                                                    },
-                                                );
+                                                pallet.storage_items.push(MetadataStorageItem {
+                                                    id: 0,
+                                                    index: index as u8,
+                                                    name,
+                                                    docs,
+                                                });
                                             }
                                         }
                                         DecodeDifferent::Decoded(entries) => {
@@ -418,13 +459,12 @@ macro_rules! from_legacy_metadata {
                                                     .to_case(Case::UpperCamel);
                                                 let docs: Vec<String> =
                                                     extract_docs(&entry.documentation);
-                                                pallet.storage_items.push(
-                                                    MetadataPalletStorageItem {
-                                                        index: index as u8,
-                                                        name,
-                                                        docs,
-                                                    },
-                                                );
+                                                pallet.storage_items.push(MetadataStorageItem {
+                                                    id: 0,
+                                                    index: index as u8,
+                                                    name,
+                                                    docs,
+                                                });
                                             }
                                         }
                                     },
@@ -436,7 +476,8 @@ macro_rules! from_legacy_metadata {
                                         let name = get_decode_different_string(&error.name)
                                             .to_case(Case::UpperCamel);
                                         let docs: Vec<String> = extract_docs(&error.documentation);
-                                        pallet.errors.push(MetadataPalletError {
+                                        pallet.errors.push(MetadataError {
+                                            id: 0,
                                             index: index as u8,
                                             name,
                                             docs,
@@ -448,7 +489,8 @@ macro_rules! from_legacy_metadata {
                                         let name = get_decode_different_string(&error.name)
                                             .to_case(Case::UpperCamel);
                                         let docs: Vec<String> = extract_docs(&error.documentation);
-                                        pallet.errors.push(MetadataPalletError {
+                                        pallet.errors.push(MetadataError {
+                                            id: 0,
                                             index: index as u8,
                                             name,
                                             docs,
@@ -467,6 +509,7 @@ macro_rules! from_legacy_metadata {
                             }
                             .to_case(Case::UpperCamel);
                             let mut pallet = MetadataPallet {
+                                id: 0,
                                 index: index as u8,
                                 name,
                                 events: Vec::new(),
@@ -488,7 +531,8 @@ macro_rules! from_legacy_metadata {
                                             .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&module_event.documentation);
-                                            pallet.events.push(MetadataPalletEvent {
+                                            pallet.events.push(MetadataEvent {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -506,7 +550,8 @@ macro_rules! from_legacy_metadata {
                                             .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&module_event.documentation);
-                                            pallet.events.push(MetadataPalletEvent {
+                                            pallet.events.push(MetadataEvent {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -533,7 +578,8 @@ macro_rules! from_legacy_metadata {
                                         };
                                         let docs: Vec<String> =
                                             extract_docs(&module_constant.documentation);
-                                        pallet.constants.push(MetadataPalletConstant {
+                                        pallet.constants.push(MetadataConstant {
+                                            id: 0,
                                             index: index as u8,
                                             name,
                                             type_id: None,
@@ -561,7 +607,8 @@ macro_rules! from_legacy_metadata {
                                         };
                                         let docs: Vec<String> =
                                             extract_docs(&module_constant.documentation);
-                                        pallet.constants.push(MetadataPalletConstant {
+                                        pallet.constants.push(MetadataConstant {
+                                            id: 0,
                                             index: index as u8,
                                             name,
                                             type_id: None,
@@ -581,7 +628,8 @@ macro_rules! from_legacy_metadata {
                                                 .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&call.documentation);
-                                            pallet.calls.push(MetadataPalletCall {
+                                            pallet.calls.push(MetadataCall {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,
@@ -594,7 +642,8 @@ macro_rules! from_legacy_metadata {
                                                 .to_case(Case::UpperCamel);
                                             let docs: Vec<String> =
                                                 extract_docs(&call.documentation);
-                                            pallet.calls.push(MetadataPalletCall {
+                                            pallet.calls.push(MetadataCall {
+                                                id: 0,
                                                 index: index as u8,
                                                 name,
                                                 docs,

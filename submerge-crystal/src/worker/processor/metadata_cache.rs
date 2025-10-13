@@ -33,13 +33,50 @@ impl BlockProcessor {
             }
         }
         let metadata = self.get_metadata(block_hash, spec_version).await?;
-        let parsed: Metadata = (&*metadata).try_into()?;
-        let parsed_arc = Arc::new(parsed);
+        let mut parsed_metadata: Metadata = (&*metadata).try_into()?;
+        // initialize database ids for metadata items
+        for pallet in parsed_metadata.pallets.iter_mut() {
+            pallet.id = self
+                .postgres
+                .get_metadata_pallet_id(spec_version, pallet.index)
+                .await?;
+            for event in pallet.events.iter_mut() {
+                event.id = self
+                    .postgres
+                    .get_metadata_event_id(pallet.id, event.index)
+                    .await?;
+            }
+            for constant in pallet.constants.iter_mut() {
+                constant.id = self
+                    .postgres
+                    .get_metadata_constant_id(pallet.id, constant.index)
+                    .await?;
+            }
+            for call in pallet.calls.iter_mut() {
+                call.id = self
+                    .postgres
+                    .get_metadata_call_id(pallet.id, call.index)
+                    .await?;
+            }
+            for storage_item in pallet.storage_items.iter_mut() {
+                storage_item.id = self
+                    .postgres
+                    .get_metadata_storage_item_id(pallet.id, storage_item.index)
+                    .await?;
+            }
+            for error in pallet.errors.iter_mut() {
+                error.id = self
+                    .postgres
+                    .get_metadata_error_id(pallet.id, error.index)
+                    .await?;
+            }
+        }
+        let parsed_metadata_arc = Arc::new(parsed_metadata);
         {
             let mut cache = PARSED_METADATA_CACHE.write().await;
-            cache.put(spec_version, parsed_arc.clone());
+            cache.put(spec_version, parsed_metadata_arc.clone());
         }
-        Ok(parsed_arc)
+        Ok(parsed_metadata_arc)
     }
 
     pub async fn get_metadata(
@@ -56,7 +93,6 @@ impl BlockProcessor {
         let metadata = if let Some(db_metadata) = self.postgres.get_metadata(spec_version).await? {
             db_metadata.1
         } else {
-            // All the expensive fetching, decoding, processing...
             let metadata_hex_string = self
                 .substrate_client
                 .get_metadata_hex_string_at_block(&hex::encode(block_hash))

@@ -673,12 +673,6 @@ components:
       type: object
       description: An event in a block.
       properties:
-        id:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Id of the event record.
-          example: 1
         blockHash:
           $ref: '#/components/schemas/Hash256Hex'
         blockNumber:
@@ -744,24 +738,18 @@ components:
           additionalProperties: true
           description: Event arguments.
       required:
-        - id
         - blockHash
         - blockNumber
         - blockTimestamp
         - specVersion
         - blockStatus
-        - traceIndex
         - palletIndex
         - palletName
         - palletEventIndex
         - palletEventName
-        - extrinsicIndex
-        - extrinsicHash
         - phase
         - index
-        - args
       example:
-        id: 392
         blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
         blockNumber: 25000005
         blockTimestamp: 1726829136000
@@ -844,7 +832,6 @@ components:
         - blockTimestamp
         - specVersion
         - blockStatus
-        - traceIndex
         - hash
         - index
         - version

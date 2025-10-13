@@ -3,8 +3,8 @@ use sqlx::FromRow;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 use crate::types::api::dto::metadata::{
-    MetadataDTO, MetadataPalletCallDTO, MetadataPalletConstantDTO, MetadataPalletDTO,
-    MetadataPalletErrorDTO, MetadataPalletEventDTO, MetadataPalletStorageItemDTO,
+    MetadataCallDTO, MetadataConstantDTO, MetadataDTO, MetadataErrorDTO, MetadataEventDTO,
+    MetadataPalletDTO, MetadataStorageItemDTO,
 };
 
 #[derive(Clone, Debug, FromRow)]
@@ -37,31 +37,31 @@ pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
         spec_version: u32,
         pallet_index: u32,
     ) -> anyhow::Result<bool>;
-    async fn get_metadata_pallet_calls(
+    async fn get_metadata_calls(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletCallDTO>>;
-    async fn get_metadata_pallet_constants(
+    ) -> anyhow::Result<Vec<MetadataCallDTO>>;
+    async fn get_metadata_constants(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletConstantDTO>>;
-    async fn get_metadata_pallet_errors(
+    ) -> anyhow::Result<Vec<MetadataConstantDTO>>;
+    async fn get_metadata_errors(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletErrorDTO>>;
-    async fn get_metadata_pallet_events(
+    ) -> anyhow::Result<Vec<MetadataErrorDTO>>;
+    async fn get_metadata_events(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletEventDTO>>;
-    async fn get_metadata_pallet_storage_items(
+    ) -> anyhow::Result<Vec<MetadataEventDTO>>;
+    async fn get_metadata_storage_items(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletStorageItemDTO>>;
+    ) -> anyhow::Result<Vec<MetadataStorageItemDTO>>;
 }
 
 impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -165,14 +165,14 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(count.0 > 0)
     }
 
-    async fn get_metadata_pallet_calls(
+    async fn get_metadata_calls(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletCallDTO>> {
+    ) -> anyhow::Result<Vec<MetadataCallDTO>> {
         let rows: Vec<(i32, String, Vec<String>)> = sqlx::query_as(
             r#"
-            SELECT index, name, docs FROM metadata_pallet_call
+            SELECT index, name, docs FROM metadata_call
             WHERE spec_version = $1 AND pallet_index = $2
             ORDER BY index ASC
             "#,
@@ -183,7 +183,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         .await?;
         Ok(rows
             .iter()
-            .map(|row| MetadataPalletCallDTO {
+            .map(|row| MetadataCallDTO {
                 index: row.0 as u32,
                 name: row.1.clone(),
                 docs: row.2.clone(),
@@ -191,14 +191,14 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .collect())
     }
 
-    async fn get_metadata_pallet_constants(
+    async fn get_metadata_constants(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletConstantDTO>> {
+    ) -> anyhow::Result<Vec<MetadataConstantDTO>> {
         let rows: Vec<PalletConstantRow> = sqlx::query_as(
-        r#"
-            SELECT index, name, type_id, type_name, value, value_json, docs FROM metadata_pallet_constant
+            r#"
+            SELECT index, name, type_id, type_name, value, value_json, docs FROM metadata_constant
             WHERE spec_version = $1 AND pallet_index = $2
             ORDER BY index ASC
             "#,
@@ -209,7 +209,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         .await?;
         Ok(rows
             .iter()
-            .map(|row| MetadataPalletConstantDTO {
+            .map(|row| MetadataConstantDTO {
                 index: row.index as u32,
                 name: row.name.clone(),
                 type_id: row.type_id.map(|id| id as u32),
@@ -221,11 +221,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .collect())
     }
 
-    async fn get_metadata_pallet_errors(
+    async fn get_metadata_errors(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletErrorDTO>> {
+    ) -> anyhow::Result<Vec<MetadataErrorDTO>> {
         let rows: Vec<(i32, String, Vec<String>)> = sqlx::query_as(
             r#"
             SELECT index, name, docs FROM metadata_pallet_error
@@ -239,7 +239,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         .await?;
         Ok(rows
             .iter()
-            .map(|row| MetadataPalletErrorDTO {
+            .map(|row| MetadataErrorDTO {
                 index: row.0 as u32,
                 name: row.1.clone(),
                 docs: row.2.clone(),
@@ -247,11 +247,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .collect())
     }
 
-    async fn get_metadata_pallet_events(
+    async fn get_metadata_events(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletEventDTO>> {
+    ) -> anyhow::Result<Vec<MetadataEventDTO>> {
         let rows: Vec<(i32, String, Vec<String>)> = sqlx::query_as(
             r#"
             SELECT index, name, docs FROM metadata_pallet_event
@@ -265,7 +265,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         .await?;
         Ok(rows
             .iter()
-            .map(|row| MetadataPalletEventDTO {
+            .map(|row| MetadataEventDTO {
                 index: row.0 as u32,
                 name: row.1.clone(),
                 docs: row.2.clone(),
@@ -273,11 +273,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .collect())
     }
 
-    async fn get_metadata_pallet_storage_items(
+    async fn get_metadata_storage_items(
         &self,
         spec_version: u32,
         pallet_index: u32,
-    ) -> anyhow::Result<Vec<MetadataPalletStorageItemDTO>> {
+    ) -> anyhow::Result<Vec<MetadataStorageItemDTO>> {
         let rows: Vec<(i32, String, String, Vec<String>)> = sqlx::query_as(
             r#"
             SELECT index, name, key, docs FROM metadata_pallet_storage_item
@@ -291,7 +291,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         .await?;
         Ok(rows
             .iter()
-            .map(|row| MetadataPalletStorageItemDTO {
+            .map(|row| MetadataStorageItemDTO {
                 index: row.0 as u32,
                 name: row.1.clone(),
                 key: if row.2.starts_with("0x") {

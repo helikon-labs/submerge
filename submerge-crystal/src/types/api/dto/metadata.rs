@@ -17,7 +17,7 @@ pub struct MetadataPalletDTO {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletCallDTO {
+pub struct MetadataCallDTO {
     pub index: u32,
     pub name: String,
     pub docs: Vec<String>,
@@ -25,7 +25,7 @@ pub struct MetadataPalletCallDTO {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletConstantDTO {
+pub struct MetadataConstantDTO {
     pub index: u32,
     pub name: String,
     pub type_id: Option<u32>,
@@ -37,7 +37,7 @@ pub struct MetadataPalletConstantDTO {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletErrorDTO {
+pub struct MetadataErrorDTO {
     pub index: u32,
     pub name: String,
     pub docs: Vec<String>,
@@ -45,7 +45,7 @@ pub struct MetadataPalletErrorDTO {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletEventDTO {
+pub struct MetadataEventDTO {
     pub index: u32,
     pub name: String,
     pub docs: Vec<String>,
@@ -53,7 +53,7 @@ pub struct MetadataPalletEventDTO {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataPalletStorageItemDTO {
+pub struct MetadataStorageItemDTO {
     pub index: u32,
     pub name: String,
     pub key: String,

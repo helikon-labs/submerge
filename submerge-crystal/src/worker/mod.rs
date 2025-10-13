@@ -145,7 +145,7 @@ impl Worker {
         }
     }
 
-    async fn check_rpc_compat(&self) -> anyhow::Result<()> {
+    async fn check_rpc_compatibility(&self) -> anyhow::Result<()> {
         log::info!("🤖🔍 Check RPC endpoint compatibility.");
         let substrate_client = SubstrateClient::new(&self.config.rpc_config).await?;
         let health = substrate_client.get_system_health().await?;
@@ -181,7 +181,7 @@ impl Worker {
 
     pub async fn start(&self) {
         log::info!("Start worker {}.", self.id);
-        if let Err(error) = self.check_rpc_compat().await {
+        if let Err(error) = self.check_rpc_compatibility().await {
             log::error!("{error}");
             log::error!("🔴 RPC endpoint is incompatible. Worker is exiting.");
             self.set_status(WorkerStatus::Error {

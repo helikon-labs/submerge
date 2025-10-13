@@ -1,7 +1,9 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value as JSONValue;
 
-use crate::types::api::dto::pagination::PaginationQuery;
+use crate::types::{api::dto::pagination::PaginationQuery, persistence::EventRow, BlockStatus};
 
+/*
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EventQuery {
@@ -16,12 +18,57 @@ pub struct EventQuery {
     pub pallet_name: Option<String>,
     pub pallet_event_name: Option<String>,
 }
+*/
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BlockEventQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
-    pub pallet_name: Option<String>,
-    pub pallet_event_name: Option<String>,
+    pub _pallet_name: Option<String>,
+    pub _pallet_event_name: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventDTO {
+    pub block_hash: String,
+    pub block_number: u64,
+    pub block_timestamp: u64,
+    pub spec_version: u32,
+    pub block_status: BlockStatus,
+    pub trace_index: Option<u32>,
+    pub pallet_index: u32,
+    pub pallet_name: String,
+    pub pallet_event_index: u32,
+    pub pallet_event_name: String,
+    pub extrinsic_index: Option<u32>,
+    pub extrinsic_hash: Option<String>,
+    pub phase: String,
+    pub index: u32,
+    pub args: JSONValue,
+}
+
+impl From<&EventRow> for EventDTO {
+    fn from(row: &EventRow) -> Self {
+        Self {
+            block_hash: format!("0x{}", hex::encode(&row.block_hash)),
+            block_number: row.block_number as u64,
+            block_timestamp: row.block_timestamp as u64,
+            spec_version: row.spec_version as u32,
+            block_status: row.block_status,
+            trace_index: row.trace_index.map(|i| i as u32),
+            pallet_index: 0,
+            pallet_name: "asd".to_string(),
+            pallet_event_index: 1,
+            pallet_event_name: "dsa".to_string(),
+            extrinsic_index: row.extrinsic_index.map(|i| i as u32),
+            extrinsic_hash: row
+                .extrinsic_hash
+                .map(|hash| format!("0x{}", hex::encode(hash))),
+            phase: row.phase.clone(),
+            index: row.index as u32,
+            args: row.args.clone(),
+        }
+    }
 }

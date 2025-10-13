@@ -393,6 +393,7 @@ impl BlockProcessor {
         log::info!("Persisted {} extrinsics.", extrinsics.len());
         self.postgres.delete_error(&block_hash, &mut tx).await?;
         tx.commit().await?;
+
         let log_emoji = match status {
             BlockStatus::Proposed => "🟦",
             BlockStatus::Pruned => "⬜",

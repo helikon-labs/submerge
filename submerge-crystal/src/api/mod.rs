@@ -1,3 +1,4 @@
+use crate::api::v1::event::get_events_by_block_reference;
 use crate::api::v1::extrinsic::{
     get_extrinsic_by_hash, get_extrinsics_by_block_reference_and_index,
 };
@@ -155,6 +156,11 @@ fn build_api_routes() -> Router<ServiceState> {
         // blocks
         .route("/blocks", get(get_blocks))
         .route("/blocks/{block_ref}", get(get_blocks_by_reference))
+        // events
+        .route(
+            "/blocks/{block_ref}/events",
+            get(get_events_by_block_reference),
+        )
         // extrinsics
         .route("/extrinsics", get(get_extrinsics))
         .route(

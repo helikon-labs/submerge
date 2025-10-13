@@ -8,7 +8,9 @@ use crate::{
     persistence::{api::event::CrystalEventAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
-            block::BlockReference, event::BlockEventQuery, pagination::{PagedResponse, PaginationData}
+            block::BlockReference,
+            event::{BlockEventQuery, EventDTO},
+            pagination::{PagedResponse, PaginationData},
         },
         error::APIError,
     },
@@ -35,16 +37,13 @@ pub(crate) async fn get_events_by_block_reference(
                 state
                     .postgres
                     .get_event_count_by_block_number(block_number, &query),
-                state.postgres.get_events_by_block_number(
-                    page,
-                    page_size,
-                    block_number,
-                    &query
-                ),
+                state
+                    .postgres
+                    .get_events_by_block_number(page, page_size, block_number, &query),
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
-                data.push(row.try_into()?);
+                data.push(row.into());
             }
             let response = PagedResponse {
                 pagination: PaginationData {
@@ -64,16 +63,13 @@ pub(crate) async fn get_events_by_block_reference(
                 state
                     .postgres
                     .get_event_count_by_block_hash(&block_hash, &query),
-                state.postgres.get_events_by_block_hash(
-                    page,
-                    page_size,
-                    &block_hash,
-                    &query
-                ),
+                state
+                    .postgres
+                    .get_events_by_block_hash(page, page_size, &block_hash, &query),
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
-                data.push(row.try_into()?);
+                data.push(row.into());
             }
             let response = PagedResponse {
                 pagination: PaginationData {

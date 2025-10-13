@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS event
     extrinsic_hash      BYTEA,
     phase               VARCHAR(32) NOT NULL,
     index               INTEGER NOT NULL,
-    args_json           JSONB,
+    args                JSONB NOT NULL,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT event_pk PRIMARY KEY (id, block_number),
     CONSTRAINT event_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
