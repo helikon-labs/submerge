@@ -25,7 +25,6 @@ pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<MetadataDTO>>;
-    async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool>;
     async fn get_metadata_json(&self, spec_version: u32) -> anyhow::Result<Option<JSONValue>>;
     async fn get_metadata_bytes(&self, spec_version: u32) -> anyhow::Result<Option<Vec<u8>>>;
     async fn get_metadata_pallets(
@@ -93,19 +92,6 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .collect())
     }
 
-    async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool> {
-        let count: (i64,) = sqlx::query_as(
-            r#"
-            SELECT COUNT(DISTINCT(spec_version)) FROM metadata
-            WHERE spec_version = $1
-            "#,
-        )
-        .bind(spec_version as i32)
-        .fetch_one(&self.connection_pool)
-        .await?;
-        Ok(count.0 > 0)
-    }
-
     async fn get_metadata_json(&self, spec_version: u32) -> anyhow::Result<Option<JSONValue>> {
         let row: Option<(JSONValue,)> =
             sqlx::query_as("SELECT metadata_json FROM metadata WHERE spec_version = $1")
@@ -152,7 +138,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         pallet_index: u32,
     ) -> anyhow::Result<bool> {
-        let count: (i64,) = sqlx::query_as(
+        let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(DISTINCT((spec_version, index))) FROM metadata_pallet
             WHERE spec_version = $1 AND index = $2
@@ -162,7 +148,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         .bind(pallet_index as i32)
         .fetch_one(&self.connection_pool)
         .await?;
-        Ok(count.0 > 0)
+        Ok(count > 0)
     }
 
     async fn get_metadata_calls(
@@ -172,9 +158,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<MetadataCallDTO>> {
         let rows: Vec<(i32, String, Vec<String>)> = sqlx::query_as(
             r#"
-            SELECT index, name, docs FROM metadata_call
-            WHERE spec_version = $1 AND pallet_index = $2
-            ORDER BY index ASC
+            SELECT C.index, C.name, C.docs
+            FROM metadata_call C
+            INNER JOIN metadata_pallet P ON C.pallet_id = P.id
+            WHERE P.spec_version = $1 AND P.index = $2
+            ORDER BY C.index ASC
             "#,
         )
         .bind(spec_version as i32)
@@ -198,9 +186,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<MetadataConstantDTO>> {
         let rows: Vec<PalletConstantRow> = sqlx::query_as(
             r#"
-            SELECT index, name, type_id, type_name, value, value_json, docs FROM metadata_constant
-            WHERE spec_version = $1 AND pallet_index = $2
-            ORDER BY index ASC
+            SELECT C.index, C.name, C.type_id, C.type_name, C.value, C.value_json, C.docs
+            FROM metadata_constant C
+            INNER JOIN metadata_pallet P ON C.pallet_id = P.id
+            WHERE P.spec_version = $1 AND P.index = $2
+            ORDER BY C.index ASC
             "#,
         )
         .bind(spec_version as i32)
@@ -228,9 +218,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<MetadataErrorDTO>> {
         let rows: Vec<(i32, String, Vec<String>)> = sqlx::query_as(
             r#"
-            SELECT index, name, docs FROM metadata_pallet_error
-            WHERE spec_version = $1 AND pallet_index = $2
-            ORDER BY index ASC
+            SELECT E.index, E.name, E.docs
+            FROM metadata_error E
+            INNER JOIN metadata_pallet P ON E.pallet_id = P.id
+            WHERE P.spec_version = $1 AND P.index = $2
+            ORDER BY E.index ASC
             "#,
         )
         .bind(spec_version as i32)
@@ -254,9 +246,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<MetadataEventDTO>> {
         let rows: Vec<(i32, String, Vec<String>)> = sqlx::query_as(
             r#"
-            SELECT index, name, docs FROM metadata_pallet_event
-            WHERE spec_version = $1 AND pallet_index = $2
-            ORDER BY index ASC
+            SELECT E.index, E.name, E.docs
+            FROM metadata_event E
+            INNER JOIN metadata_pallet P ON E.pallet_id = P.id
+            WHERE P.spec_version = $1 AND P.index = $2
+            ORDER BY E.index ASC
             "#,
         )
         .bind(spec_version as i32)
@@ -280,9 +274,11 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<MetadataStorageItemDTO>> {
         let rows: Vec<(i32, String, String, Vec<String>)> = sqlx::query_as(
             r#"
-            SELECT index, name, key, docs FROM metadata_pallet_storage_item
-            WHERE spec_version = $1 AND pallet_index = $2
-            ORDER BY index ASC
+            SELECT S.index, S.name, S.key, S.docs
+            FROM metadata_storage_item S
+            INNER JOIN metadata_pallet P ON S.pallet_id = P.id
+            WHERE P.spec_version = $1 AND P.index = $2
+            ORDER BY S.index ASC
             "#,
         )
         .bind(spec_version as i32)

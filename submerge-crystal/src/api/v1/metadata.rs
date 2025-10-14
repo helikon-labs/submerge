@@ -8,6 +8,7 @@ use axum::{
 use crate::{
     api::ServiceState,
     persistence::api::metadata::CrystalMetadataAPIPostgreSQLStorage as _,
+    persistence::CrystalPostgreSQLStorage as _,
     types::api::{
         dto::{
             metadata::{
