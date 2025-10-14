@@ -20,6 +20,8 @@ pub struct BlockRow {
 
 #[derive(Debug, FromRow)]
 pub struct EventRow {
+    #[allow(dead_code)]
+    pub id: i64,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub block_timestamp: Option<i64>,
@@ -53,6 +55,7 @@ impl EventRow {
             frame_system::Phase::Initialization => ("Initialization", None),
         };
         Self {
+            id: 0,
             block_hash: block_hash.into(),
             block_number: block_number as i64,
             block_timestamp: block_timestamp.map(|timestamp| timestamp as i64),
@@ -67,6 +70,27 @@ impl EventRow {
             args: event.args.clone(),
         }
     }
+}
+
+#[derive(Debug, FromRow)]
+pub struct EventCompositeRow {
+    #[allow(dead_code)]
+    pub id: i64,
+    pub block_hash: Vec<u8>,
+    pub block_number: i64,
+    pub block_timestamp: Option<i64>,
+    pub spec_version: i32,
+    pub block_status: BlockStatus,
+    pub trace_index: Option<i32>,
+    pub pallet_index: i32,
+    pub pallet_name: String,
+    pub pallet_event_index: i32,
+    pub pallet_event_name: String,
+    pub extrinsic_index: Option<i32>,
+    pub extrinsic_hash: Option<[u8; 32]>,
+    pub phase: String,
+    pub index: i32,
+    pub args: JSONValue,
 }
 
 #[derive(Debug, FromRow)]

@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 
-use crate::types::{api::dto::pagination::PaginationQuery, persistence::EventRow, BlockStatus};
+use crate::types::{
+    api::dto::pagination::PaginationQuery, persistence::EventCompositeRow, BlockStatus,
+};
 
 /*
 #[derive(Debug, Deserialize)]
@@ -25,8 +27,8 @@ pub struct EventQuery {
 pub struct BlockEventQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
-    pub _pallet_name: Option<String>,
-    pub _pallet_event_name: Option<String>,
+    pub pallet_name: Option<String>,
+    pub event_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -49,8 +51,8 @@ pub struct EventDTO {
     pub args: JSONValue,
 }
 
-impl From<&EventRow> for EventDTO {
-    fn from(row: &EventRow) -> Self {
+impl From<&EventCompositeRow> for EventDTO {
+    fn from(row: &EventCompositeRow) -> Self {
         Self {
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),
             block_number: row.block_number as u64,
@@ -58,10 +60,10 @@ impl From<&EventRow> for EventDTO {
             spec_version: row.spec_version as u32,
             block_status: row.block_status,
             trace_index: row.trace_index.map(|i| i as u32),
-            pallet_index: 0,
-            pallet_name: "asd".to_string(),
-            pallet_event_index: 1,
-            pallet_event_name: "dsa".to_string(),
+            pallet_index: row.pallet_index as u32,
+            pallet_name: row.pallet_name.clone(),
+            pallet_event_index: row.pallet_event_index as u32,
+            pallet_event_name: row.pallet_event_name.clone(),
             extrinsic_index: row.extrinsic_index.map(|i| i as u32),
             extrinsic_hash: row
                 .extrinsic_hash
