@@ -48,50 +48,47 @@ fn push_extrinsic_query_params<'a>(
 
 pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
     async fn get_extrinsic_count(&self, query: &ExtrinsicQuery) -> anyhow::Result<u64>;
-    async fn get_extrinsic_rows(
+    async fn get_extrinsics(
         &self,
         page: u64,
         page_size: u64,
         query: &ExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
-    async fn get_extrinsic_row_count_by_block_hash(
+    async fn get_extrinsic_count_by_block_hash(
         &self,
         block_hash: &[u8],
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<u64>;
-    async fn get_extrinsic_rows_by_block_hash(
+    async fn get_extrinsics_by_block_hash(
         &self,
         page: u64,
         page_size: u64,
         block_hash: &[u8],
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
-    async fn get_extrinsic_row_count_by_block_number(
+    async fn get_extrinsic_count_by_block_number(
         &self,
         block_number: u64,
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<u64>;
-    async fn get_extrinsic_rows_by_block_number(
+    async fn get_extrinsics_by_block_number(
         &self,
         page: u64,
         page_size: u64,
         block_number: u64,
         query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
-    async fn get_extrinsic_rows_by_block_number_and_index(
+    async fn get_extrinsics_by_block_number_and_index(
         &self,
         block_number: u64,
         index: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
-    async fn get_extrinsic_row_by_block_hash_and_index(
+    async fn get_extrinsic_by_block_hash_and_index(
         &self,
         block_hash: &[u8],
         index: u32,
     ) -> anyhow::Result<Option<ExtrinsicRow>>;
-    async fn get_extrinsic_row_by_extrinsic_hash(
-        &self,
-        hash: &[u8],
-    ) -> anyhow::Result<Option<ExtrinsicRow>>;
+    async fn get_extrinsic_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<ExtrinsicRow>>;
 }
 
 impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -111,7 +108,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(count.0 as u64)
     }
 
-    async fn get_extrinsic_rows(
+    async fn get_extrinsics(
         &self,
         page: u64,
         page_size: u64,
@@ -138,7 +135,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(rows)
     }
 
-    async fn get_extrinsic_row_count_by_block_hash(
+    async fn get_extrinsic_count_by_block_hash(
         &self,
         block_hash: &[u8],
         query: &BlockExtrinsicQuery,
@@ -163,7 +160,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(count.0 as u64)
     }
 
-    async fn get_extrinsic_rows_by_block_hash(
+    async fn get_extrinsics_by_block_hash(
         &self,
         page: u64,
         page_size: u64,
@@ -196,7 +193,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(rows)
     }
 
-    async fn get_extrinsic_row_count_by_block_number(
+    async fn get_extrinsic_count_by_block_number(
         &self,
         block_number: u64,
         query: &BlockExtrinsicQuery,
@@ -221,7 +218,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(count.0 as u64)
     }
 
-    async fn get_extrinsic_rows_by_block_number(
+    async fn get_extrinsics_by_block_number(
         &self,
         page: u64,
         page_size: u64,
@@ -254,7 +251,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(rows)
     }
 
-    async fn get_extrinsic_rows_by_block_number_and_index(
+    async fn get_extrinsics_by_block_number_and_index(
         &self,
         block_number: u64,
         index: u32,
@@ -273,7 +270,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(rows)
     }
 
-    async fn get_extrinsic_row_by_block_hash_and_index(
+    async fn get_extrinsic_by_block_hash_and_index(
         &self,
         block_hash: &[u8],
         index: u32,
@@ -292,10 +289,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(row)
     }
 
-    async fn get_extrinsic_row_by_extrinsic_hash(
-        &self,
-        hash: &[u8],
-    ) -> anyhow::Result<Option<ExtrinsicRow>> {
+    async fn get_extrinsic_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<ExtrinsicRow>> {
         let row: Option<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful

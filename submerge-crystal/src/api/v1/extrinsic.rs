@@ -29,7 +29,7 @@ pub(crate) async fn get_extrinsics(
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_extrinsic_count(&query),
-        state.postgres.get_extrinsic_rows(page, page_size, &query),
+        state.postgres.get_extrinsics(page, page_size, &query),
     )?;
     let mut data = Vec::new();
     for row in rows.iter() {
@@ -63,8 +63,8 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             let (total_count, rows) = tokio::try_join!(
                 state
                     .postgres
-                    .get_extrinsic_row_count_by_block_number(block_number, &query),
-                state.postgres.get_extrinsic_rows_by_block_number(
+                    .get_extrinsic_count_by_block_number(block_number, &query),
+                state.postgres.get_extrinsics_by_block_number(
                     page,
                     page_size,
                     block_number,
@@ -92,13 +92,10 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             let (total_count, rows) = tokio::try_join!(
                 state
                     .postgres
-                    .get_extrinsic_row_count_by_block_hash(&block_hash, &query),
-                state.postgres.get_extrinsic_rows_by_block_hash(
-                    page,
-                    page_size,
-                    &block_hash,
-                    &query
-                ),
+                    .get_extrinsic_count_by_block_hash(&block_hash, &query),
+                state
+                    .postgres
+                    .get_extrinsics_by_block_hash(page, page_size, &block_hash, &query),
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
@@ -129,7 +126,7 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
             }
             let rows = state
                 .postgres
-                .get_extrinsic_rows_by_block_number_and_index(block_number, index)
+                .get_extrinsics_by_block_number_and_index(block_number, index)
                 .await?;
             let mut data = Vec::new();
             for row in rows.iter() {
@@ -143,7 +140,7 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
             }
             let response = if let Some(row) = &state
                 .postgres
-                .get_extrinsic_row_by_block_hash_and_index(&block_hash, index)
+                .get_extrinsic_by_block_hash_and_index(&block_hash, index)
                 .await?
             {
                 vec![row.try_into()?]
@@ -166,7 +163,7 @@ pub(crate) async fn get_extrinsic_by_hash(
     };
     if let Some(row) = &state
         .postgres
-        .get_extrinsic_row_by_extrinsic_hash(&extrinsic_hash)
+        .get_extrinsic_by_hash(&extrinsic_hash)
         .await?
     {
         Ok(Json(row.try_into()?))

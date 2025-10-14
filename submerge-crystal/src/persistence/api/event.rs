@@ -27,6 +27,16 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         block_number: u64,
         query: &BlockEventQuery,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
+    async fn get_events_by_block_number_and_index(
+        &self,
+        block_number: u64,
+        index: u32,
+    ) -> anyhow::Result<Vec<EventCompositeRow>>;
+    async fn get_event_by_block_hash_and_index(
+        &self,
+        block_hash: &[u8],
+        index: u32,
+    ) -> anyhow::Result<Option<EventCompositeRow>>;
 }
 
 impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -35,23 +45,21 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         query: &BlockEventQuery,
     ) -> anyhow::Result<u64> {
+        let pallet_name: &str = query.pallet_name.as_deref().unwrap_or("");
+        let pallet_event_name = query.pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
-            WITH matching_event_ids AS (
-                SELECT ME.id
-                FROM metadata_event ME
-                INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-                WHERE MP.name ILIKE $1
-                AND ME.name ILIKE $2
-            )
-            SELECT COUNT(E.*)
+            SELECT COUNT(*)
             FROM event E
-            WHERE E.block_hash = $3
-            AND E.metadata_event_id IN (SELECT id FROM matching_event_ids)
+            JOIN metadata_event ME ON E.metadata_event_id = ME.id
+            JOIN metadata_pallet MP ON ME.pallet_id = MP.id
+            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+                AND E.block_hash = $3
             "#,
         )
-        .bind(format!("%{}%", query.pallet_name.as_deref().unwrap_or("")))
-        .bind(format!("%{}%", query.event_name.as_deref().unwrap_or("")))
+        .bind(pallet_name)
+        .bind(pallet_event_name)
         .bind(block_hash)
         .fetch_one(&self.connection_pool)
         .await?;
@@ -66,30 +74,32 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         query: &BlockEventQuery,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
+        let pallet_name: &str = query.pallet_name.as_deref().unwrap_or("");
+        let pallet_event_name = query.pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
-            WITH matching_event_ids AS (
-                SELECT ME.id, MP.name AS pallet_name, MP.index AS pallet_index, ME.index AS pallet_event_index, ME.name AS pallet_event_name
-                FROM metadata_event ME
-                INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-                WHERE MP.name ILIKE $1
-                AND ME.name ILIKE $2
-            )
-            SELECT E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status, E.trace_index, M.pallet_index, M.pallet_name, M.pallet_event_index, M.pallet_event_name, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args
+            SELECT
+                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                ME.index AS pallet_event_index, ME.name AS pallet_event_name
             FROM event E
-            INNER JOIN matching_event_ids M ON E.metadata_event_id = M.id
-            WHERE block_hash = $3
+            INNER JOIN metadata_event ME ON E.metadata_event_id = ME.id
+            INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
+            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+                AND E.block_hash = $3
             ORDER BY E.index ASC
             LIMIT $4 OFFSET $5
             "#,
         )
-            .bind(format!("%{}%", query.pallet_name.as_deref().unwrap_or("")))
-        .bind(format!("%{}%", query.event_name.as_deref().unwrap_or("")))
-            .bind(block_hash)
-            .bind(page_size as i64)
-            .bind(offset as i64)
-            .fetch_all(&self.connection_pool)
-            .await?;
+        .bind(pallet_name)
+        .bind(pallet_event_name)
+        .bind(block_hash)
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
         Ok(event_rows)
     }
 
@@ -98,23 +108,21 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         query: &BlockEventQuery,
     ) -> anyhow::Result<u64> {
+        let pallet_name: &str = query.pallet_name.as_deref().unwrap_or("");
+        let pallet_event_name = query.pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
-            WITH matching_event_ids AS (
-                SELECT ME.id
-                FROM metadata_event ME
-                INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-                WHERE MP.name ILIKE $1
-                AND ME.name ILIKE $2
-            )
-            SELECT COUNT(E.*)
+            SELECT COUNT(*)
             FROM event E
-            WHERE E.block_number = $3
-            AND E.metadata_event_id IN (SELECT id FROM matching_event_ids)
+            JOIN metadata_event ME ON E.metadata_event_id = ME.id
+            JOIN metadata_pallet MP ON ME.pallet_id = MP.id
+            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+                AND E.block_number = $3
             "#,
         )
-        .bind(format!("%{}%", query.pallet_name.as_deref().unwrap_or("")))
-        .bind(format!("%{}%", query.event_name.as_deref().unwrap_or("")))
+        .bind(pallet_name)
+        .bind(pallet_event_name)
         .bind(block_number as i64)
         .fetch_one(&self.connection_pool)
         .await?;
@@ -129,30 +137,82 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         query: &BlockEventQuery,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
+        let pallet_name: &str = query.pallet_name.as_deref().unwrap_or("");
+        let pallet_event_name = query.pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
-            WITH matching_event_ids AS (
-                SELECT ME.id, MP.name AS pallet_name, MP.index AS pallet_index, ME.index AS pallet_event_index, ME.name AS pallet_event_name
-                FROM metadata_event ME
-                INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-                WHERE MP.name ILIKE $1
-                AND ME.name ILIKE $2
-            )
-            SELECT E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status, E.trace_index, M.pallet_index, M.pallet_name, M.pallet_event_index, M.pallet_event_name, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args
+            SELECT
+                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                ME.index AS pallet_event_index, ME.name AS pallet_event_name
             FROM event E
-            INNER JOIN matching_event_ids M ON E.metadata_event_id = M.id
-            WHERE block_number = $3
+            INNER JOIN metadata_event ME ON E.metadata_event_id = ME.id
+            INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
+            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+                AND E.block_number = $3
             ORDER BY E.index ASC
             LIMIT $4 OFFSET $5
             "#,
         )
-            .bind(format!("%{}%", query.pallet_name.as_deref().unwrap_or("")))
-        .bind(format!("%{}%", query.event_name.as_deref().unwrap_or("")))
-            .bind(block_number as i64)
-            .bind(page_size as i64)
-            .bind(offset as i64)
-            .fetch_all(&self.connection_pool)
-            .await?;
+        .bind(pallet_name)
+        .bind(pallet_event_name)
+        .bind(block_number as i64)
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
         Ok(event_rows)
+    }
+
+    async fn get_events_by_block_number_and_index(
+        &self,
+        block_number: u64,
+        index: u32,
+    ) -> anyhow::Result<Vec<EventCompositeRow>> {
+        let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
+            r#"
+            SELECT
+                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                ME.index AS pallet_event_index, ME.name AS pallet_event_name
+            FROM event E
+            INNER JOIN metadata_event ME ON E.metadata_event_id = ME.id
+            INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
+            WHERE E.block_number = $1 AND E.index = $2
+            "#,
+        )
+        .bind(block_number as i64)
+        .bind(index as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
+        Ok(event_rows)
+    }
+
+    async fn get_event_by_block_hash_and_index(
+        &self,
+        block_hash: &[u8],
+        index: u32,
+    ) -> anyhow::Result<Option<EventCompositeRow>> {
+        let event_row: Option<EventCompositeRow> = sqlx::query_as(
+            r#"
+            SELECT
+                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                ME.index AS pallet_event_index, ME.name AS pallet_event_name
+            FROM event E
+            INNER JOIN metadata_event ME ON E.metadata_event_id = ME.id
+            INNER JOIN metadata_pallet MP ON ME.pallet_id = MP.id
+            WHERE E.block_hash = $1 AND E.index = $2
+            "#,
+        )
+        .bind(block_hash)
+        .bind(index as i64)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(event_row)
     }
 }

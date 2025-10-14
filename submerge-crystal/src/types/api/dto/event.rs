@@ -28,7 +28,7 @@ pub struct BlockEventQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
     pub pallet_name: Option<String>,
-    pub event_name: Option<String>,
+    pub pallet_event_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
