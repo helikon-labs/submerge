@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS extrinsic
     id              BIGSERIAL NOT NULL,
     block_hash      BYTEA NOT NULL,
     block_number    BIGINT NOT NULL,
-    block_timestamp BIGINT NOT NULL,
+    block_timestamp BIGINT,
     spec_version    INTEGER NOT NULL,
     block_status    BLOCK_STATUS NOT NULL,
     trace_index     INTEGER,

@@ -158,13 +158,13 @@ impl BlockProcessor {
             .ingest_block(
                 block_hash,
                 block_header,
-                0,
+                None,
                 status,
                 &None,
                 spec_version,
                 0,
                 0,
-                &AccountId::new([0u8; 32]),
+                &None,
                 &mut tx,
             )
             .await?;
@@ -263,30 +263,34 @@ impl BlockProcessor {
         }
         let metadata = self.get_metadata(&block_hash, spec_version).await?;
         let author_account_id = {
-            let validator_index = block_header.get_validator_index()?;
-            let session_index = self
-                .substrate_client
-                .get_current_session_index(block_hash_hex)
-                .await?;
-            let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
-            let validator_account_ids = {
-                if session_validators_cache.0 != session_index
-                    || session_validators_cache.1.is_empty()
+            if let Some(validator_index) = block_header.get_validator_index()? {
+                let session_index = self
+                    .substrate_client
+                    .get_current_session_index(block_hash_hex)
+                    .await?;
+                let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
+                let validator_account_ids = {
+                    if session_validators_cache.0 != session_index
+                        || session_validators_cache.1.is_empty()
+                    {
+                        let validator_account_ids = self
+                            .substrate_client
+                            .get_active_validator_account_ids(block_hash_hex)
+                            .await?;
+                        session_validators_cache.0 = session_index;
+                        session_validators_cache.1 = validator_account_ids;
+                    }
+                    &session_validators_cache.1
+                };
+                let validator_index = validator_index % validator_account_ids.len() as u32;
+                if let Some(author_account_id) = validator_account_ids.get(validator_index as usize)
                 {
-                    let validator_account_ids = self
-                        .substrate_client
-                        .get_active_validator_account_ids(block_hash_hex)
-                        .await?;
-                    session_validators_cache.0 = session_index;
-                    session_validators_cache.1 = validator_account_ids;
+                    Some(*author_account_id)
+                } else {
+                    anyhow::bail!("Author validator was not found at index {validator_index}.");
                 }
-                &session_validators_cache.1
-            };
-            let validator_index = validator_index % validator_account_ids.len() as u32;
-            if let Some(author_account_id) = validator_account_ids.get(validator_index as usize) {
-                *author_account_id
             } else {
-                anyhow::bail!("Author validator was not found at index {validator_index}.");
+                None
             }
         };
         let block_timestamp = self

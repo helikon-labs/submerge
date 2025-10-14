@@ -353,7 +353,7 @@ impl BlockProcessor {
         &self,
         block_hash: &[u8],
         block_header: &BlockHeader,
-        block_timestamp: u64,
+        block_timestamp: Option<u64>,
         spec_version: u32,
         block_status: BlockStatus,
         events: &[Event],

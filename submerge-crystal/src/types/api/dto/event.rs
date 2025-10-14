@@ -34,7 +34,7 @@ pub struct BlockEventQuery {
 pub struct EventDTO {
     pub block_hash: String,
     pub block_number: u64,
-    pub block_timestamp: u64,
+    pub block_timestamp: Option<u64>,
     pub spec_version: u32,
     pub block_status: BlockStatus,
     pub trace_index: Option<u32>,
@@ -54,7 +54,7 @@ impl From<&EventRow> for EventDTO {
         Self {
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),
             block_number: row.block_number as u64,
-            block_timestamp: row.block_timestamp as u64,
+            block_timestamp: row.block_timestamp.map(|timestamp| timestamp as u64),
             spec_version: row.spec_version as u32,
             block_status: row.block_status,
             trace_index: row.trace_index.map(|i| i as u32),

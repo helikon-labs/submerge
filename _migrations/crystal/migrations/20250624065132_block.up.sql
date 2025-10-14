@@ -5,13 +5,13 @@ CREATE TABLE IF NOT EXISTS block
     state_root          BYTEA NOT NULL,
     extrinsic_root      BYTEA NOT NULL,
     number              BIGINT NOT NULL,
-    timestamp           BIGINT NOT NULL,
+    timestamp           BIGINT,
     spec_version        INTEGER NOT NULL,
     status              BLOCK_STATUS NOT NULL,
     weight              JSONB,
     extrinsic_count     INTEGER NOT NULL,
     event_count         INTEGER NOT NULL,
-    author_account_id   BYTEA NOT NULL,
+    author_account_id   BYTEA,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()
 ) PARTITION BY HASH (hash);
 

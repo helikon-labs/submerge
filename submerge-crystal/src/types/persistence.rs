@@ -9,20 +9,20 @@ pub struct BlockRow {
     pub state_root: Vec<u8>,
     pub extrinsic_root: Vec<u8>,
     pub number: i64,
-    pub timestamp: i64,
+    pub timestamp: Option<i64>,
     pub spec_version: i32,
     pub status: BlockStatus,
-    pub weight: JSONValue,
+    pub weight: Option<JSONValue>,
     pub extrinsic_count: i32,
     pub event_count: i32,
-    pub author_account_id: Vec<u8>,
+    pub author_account_id: Option<Vec<u8>>,
 }
 
 #[derive(Debug, FromRow)]
 pub struct EventRow {
     pub block_hash: Vec<u8>,
     pub block_number: i64,
-    pub block_timestamp: i64,
+    pub block_timestamp: Option<i64>,
     pub spec_version: i32,
     pub block_status: BlockStatus,
     pub trace_index: Option<i32>,
@@ -38,7 +38,7 @@ impl EventRow {
     pub fn from_block_event(
         block_hash: &[u8],
         block_number: u64,
-        block_timestamp: u64,
+        block_timestamp: Option<u64>,
         spec_version: u32,
         block_status: BlockStatus,
         event: &Event,
@@ -55,7 +55,7 @@ impl EventRow {
         Self {
             block_hash: block_hash.into(),
             block_number: block_number as i64,
-            block_timestamp: block_timestamp as i64,
+            block_timestamp: block_timestamp.map(|timestamp| timestamp as i64),
             spec_version: spec_version as i32,
             block_status,
             trace_index: event.trace_index.map(|i| i as i32),
@@ -86,7 +86,7 @@ pub struct ExtrinsicRow {
     pub id: i64,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
-    pub block_timestamp: i64,
+    pub block_timestamp: Option<i64>,
     pub spec_version: i32,
     pub block_status: BlockStatus,
     pub trace_index: Option<i32>,

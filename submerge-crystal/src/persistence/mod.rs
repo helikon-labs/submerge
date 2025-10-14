@@ -32,6 +32,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_last_indexed_finalized_block_number_and_hash(
         &self,
     ) -> anyhow::Result<Option<(u64, Vec<u8>)>>;
+    async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool>;
     async fn get_metadata(
         &self,
         spec_version: u32,
@@ -82,13 +83,13 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         hash: &[u8],
         header: &BlockHeader,
-        timestamp: u64,
+        timestamp: Option<u64>,
         status: BlockStatus,
         weight: &Option<JSONValue>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
-        author_account_id: &AccountId,
+        author_account_id: &Option<AccountId>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn delete_block_and_traces_by_hash(
@@ -129,7 +130,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         block_hash: &[u8],
         block_number: u64,
-        block_timestamp: u64,
+        block_timestamp: Option<u64>,
         spec_version: u32,
         status: BlockStatus,
         extrinsics: &[Extrinsic],
@@ -145,7 +146,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         &self,
         block_hash: &[u8],
         block_number: u64,
-        block_timestamp: u64,
+        block_timestamp: Option<u64>,
         spec_version: u32,
         status: BlockStatus,
         extrinsic_id: i64,
@@ -199,6 +200,20 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         })
     }
 
+    async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(DISTINCT spec_version)
+            FROM metadata
+            WHERE spec_version = $1
+            "#,
+        )
+        .bind(spec_version as i32)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count > 0)
+    }
+
     async fn get_metadata(
         &self,
         spec_version: u32,
@@ -225,36 +240,30 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         metadata_json: &JSONValue,
         metadata: &Metadata,
     ) -> anyhow::Result<()> {
-        let record_count: (i64,) = sqlx::query_as(
-            r#"
-            SELECT COUNT(DISTINCT spec_version)
-            FROM metadata
-            WHERE spec_version = $1
-            "#,
-        )
-        .bind(spec_version as i32)
-        .fetch_one(&self.connection_pool)
-        .await?;
-        if record_count.0 > 0 {
+        if self.metadata_exists(spec_version).await? {
             return Ok(());
         }
-
         let mut tx = self.connection_pool.begin().await?;
-        sqlx::query(
+        if sqlx::query_scalar::<_, i32>(
             r#"
             INSERT INTO metadata (spec_version, metadata_version, metadata_bytes, metadata_json)
             VALUES ($1, $2, $3, $4)
+            ON CONFLICT (spec_version) DO NOTHING
+            RETURNING spec_version
             "#,
         )
         .bind(spec_version as i32)
         .bind(metadata_version as i32)
         .bind(metadata_bytes)
         .bind(metadata_json)
-        .execute(&mut *tx)
-        .await?;
-        for pallet in metadata.pallets.iter() {
-            self.ingest_metadata_pallet(spec_version, pallet, &mut tx)
-                .await?;
+        .fetch_optional(&mut *tx)
+        .await?
+        .is_some()
+        {
+            for pallet in metadata.pallets.iter() {
+                self.ingest_metadata_pallet(spec_version, pallet, &mut tx)
+                    .await?;
+            }
         }
         tx.commit().await?;
         Ok(())
@@ -525,17 +534,16 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         hash: &[u8],
         header: &BlockHeader,
-        timestamp: u64,
+        timestamp: Option<u64>,
         status: BlockStatus,
         weight: &Option<JSONValue>,
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
-        author_account_id: &AccountId,
+        author_account_id: &Option<AccountId>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let header = DecodedBlockHeader::try_from(header)?;
-        let author_account_id: &[u8; 32] = author_account_id.as_ref();
         sqlx::query(
             r#"
                 INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id)
@@ -548,13 +556,13 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(&header.state_root)
             .bind(&header.extrinsic_root)
             .bind(header.number as i64)
-            .bind(timestamp as i64)
+            .bind(timestamp.map(|t| t as i64))
             .bind(spec_version as i32)
             .bind(status)
             .bind(weight)
             .bind(extrinsic_count as i32)
             .bind(event_count as i32)
-            .bind(author_account_id)
+            .bind(author_account_id.map(|account_id| account_id.bytes()))
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -742,7 +750,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_hash: &[u8],
         block_number: u64,
-        block_timestamp: u64,
+        block_timestamp: Option<u64>,
         spec_version: u32,
         block_status: BlockStatus,
         extrinsics: &[Extrinsic],
@@ -764,7 +772,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     id: 0,
                     block_hash: block_hash.into(),
                     block_number: block_number as i64,
-                    block_timestamp: block_timestamp as i64,
+                    block_timestamp: block_timestamp.map(|timestamp| timestamp as i64),
                     spec_version: spec_version as i32,
                     block_status,
                     trace_index: extrinsic.trace_index.map(|i| i as i32),
@@ -841,7 +849,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_hash: &[u8],
         block_number: u64,
-        block_timestamp: u64,
+        block_timestamp: Option<u64>,
         spec_version: u32,
         block_status: BlockStatus,
         extrinsic_id: i64,
@@ -863,7 +871,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         )
             .bind(block_hash)
             .bind(block_number as i64)
-            .bind(block_timestamp as i64)
+            .bind(block_timestamp.map(|timestamp| timestamp as i64))
             .bind(spec_version as i32)
             .bind(block_status)
             .bind(extrinsic_id)
@@ -887,10 +895,7 @@ mod tests {
         types::BlockStatus,
     };
     use std::fs;
-    use submerge_base::{
-        args::PostgreSQLArgs,
-        types::substrate::{account_id::AccountId, chainspec::Chainspec},
-    };
+    use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::Chainspec};
     use submerge_substrate_client::{RPCConfig, SubstrateClient};
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
@@ -946,7 +951,7 @@ mod tests {
                     last_runtime_upgrade.spec_version,
                     0,
                     0,
-                    &AccountId::new(Default::default()),
+                    &None,
                     &mut tx,
                 )
                 .await?;

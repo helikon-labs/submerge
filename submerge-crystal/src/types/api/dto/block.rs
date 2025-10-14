@@ -46,13 +46,13 @@ pub struct BlockDTO {
     pub state_root: String,
     pub extrinsic_root: String,
     pub number: u64,
-    pub timestamp: u64,
+    pub timestamp: Option<u64>,
     pub spec_version: u32,
     pub status: BlockStatus,
-    pub weight: JSONValue,
+    pub weight: Option<JSONValue>,
     pub extrinsic_count: u32,
     pub event_count: u32,
-    pub author_account_id: String,
+    pub author_account_id: Option<String>,
 }
 
 impl From<&BlockRow> for BlockDTO {
@@ -63,13 +63,16 @@ impl From<&BlockRow> for BlockDTO {
             state_root: format!("0x{}", hex::encode(&row.state_root)),
             extrinsic_root: format!("0x{}", hex::encode(&row.extrinsic_root)),
             number: row.number as u64,
-            timestamp: row.timestamp as u64,
+            timestamp: row.timestamp.map(|timestamp| timestamp as u64),
             spec_version: row.spec_version as u32,
             status: row.status,
             weight: row.weight.clone(),
             extrinsic_count: row.extrinsic_count as u32,
             event_count: row.event_count as u32,
-            author_account_id: format!("0x{}", hex::encode(&row.author_account_id)),
+            author_account_id: row
+                .author_account_id
+                .as_ref()
+                .map(|account_id| format!("0x{}", hex::encode(account_id))),
         }
     }
 }

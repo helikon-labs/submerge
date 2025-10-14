@@ -79,15 +79,19 @@ impl SubstrateClient {
         Ok(hash.trim_start_matches("0x").to_string())
     }
 
-    pub async fn get_block_timestamp(&self, block_hash: &str) -> anyhow::Result<u64> {
-        let hex_string: String = self
+    pub async fn get_block_timestamp(&self, block_hash: &str) -> anyhow::Result<Option<u64>> {
+        let maybe_hex_string: Option<String> = self
             .ws_client
             .request(
                 "state_getStorage",
                 get_rpc_storage_plain_params("Timestamp", "Now", Some(block_hash))?,
             )
             .await?;
-        decode_hex_string(hex_string.as_str())
+        if let Some(hex_string) = maybe_hex_string {
+            Ok(Some(decode_hex_string(hex_string.as_str())?))
+        } else {
+            Ok(None)
+        }
     }
 
     pub async fn get_system_health(&self) -> anyhow::Result<SystemHealth> {

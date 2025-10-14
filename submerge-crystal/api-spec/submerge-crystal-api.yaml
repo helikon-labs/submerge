@@ -453,7 +453,6 @@ components:
         - stateRoot
         - extrinsicRoot
         - number
-        - timestamp
         - specVersion
         - status
         - weight
@@ -640,7 +639,6 @@ components:
         - id
         - blockHash
         - blockNumber
-        - blockTimestamp
         - specVersion
         - blockStatus
         - extrinsicId
@@ -740,7 +738,6 @@ components:
       required:
         - blockHash
         - blockNumber
-        - blockTimestamp
         - specVersion
         - blockStatus
         - palletIndex
@@ -829,7 +826,6 @@ components:
         - id
         - blockHash
         - blockNumber
-        - blockTimestamp
         - specVersion
         - blockStatus
         - hash

@@ -91,8 +91,7 @@ impl BlockHeader {
         }
     }
 
-    pub fn get_validator_index(&self) -> anyhow::Result<u32> {
-        let mut validator_index: Option<u32> = None;
+    pub fn get_validator_index(&self) -> anyhow::Result<Option<u32>> {
         for log_string in &self.digest.logs {
             let log_hex_string = log_string.trim_start_matches("0x");
             let log_bytes_vec = hex::decode(log_hex_string)?;
@@ -101,19 +100,17 @@ impl BlockHeader {
             match digest_item {
                 DigestItem::PreRuntime(consensus_engine_id, bytes) => {
                     let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
-                    validator_index = Some(BlockHeader::authority_index_from_log_bytes(
+                    return Ok(Some(BlockHeader::authority_index_from_log_bytes(
                         consensus_engine,
                         &bytes,
-                    )?);
+                    )?));
                 }
                 DigestItem::Consensus(consensus_engine_id, bytes) => {
-                    if validator_index.is_none() {
-                        let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
-                        validator_index = Some(BlockHeader::authority_index_from_log_bytes(
-                            consensus_engine,
-                            &bytes,
-                        )?);
-                    }
+                    let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
+                    return Ok(Some(BlockHeader::authority_index_from_log_bytes(
+                        consensus_engine,
+                        &bytes,
+                    )?));
                 }
                 DigestItem::Seal(_, _) => {
                     // Skipped: Seal does not contain validator index.
@@ -127,11 +124,8 @@ impl BlockHeader {
                     log::warn!("Unknown log type. Cannot get author validator index.");
                 }
             }
-            if let Some(validator_index) = validator_index {
-                return Ok(validator_index);
-            }
         }
-        anyhow::bail!("Author validator index not found.");
+        Ok(None)
     }
 }
 

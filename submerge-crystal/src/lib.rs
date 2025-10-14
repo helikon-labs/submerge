@@ -94,6 +94,7 @@ impl BaseService for Crystal {
         self.process_genesis(&chainspec).await?;
 
         let recovery_duration = Duration::from_secs(self.args.service.recovery_sleep_seconds);
+
         self.worker_manager
             .spawn(
                 WorkerType::SubscribeNewBlocks,
@@ -101,8 +102,8 @@ impl BaseService for Crystal {
                     chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
-                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
-                        //rpc_url: "wss://rpc.helikon.io/polkadot".to_string(),
+                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        rpc_url: "wss://asset-hub-kusama.dotters.network".to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
@@ -121,8 +122,8 @@ impl BaseService for Crystal {
                     chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
-                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
-                        //rpc_url: "wss://rpc.helikon.io/polkadot".to_string(),
+                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        rpc_url: "wss://asset-hub-kusama.dotters.network".to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
@@ -137,8 +138,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(100000),
-                    maybe_end_block_number: Some(100250),
+                    maybe_start_block_number: None,
+                    maybe_end_block_number: Some(1000),
                     scan: true,
                     reindex: false,
                 },
@@ -146,8 +147,8 @@ impl BaseService for Crystal {
                     chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
-                        rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
-                        //rpc_url: "wss://rpc.helikon.io/polkadot".to_string(),
+                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
+                        rpc_url: "wss://asset-hub-kusama.dotters.network".to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
