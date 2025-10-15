@@ -55,6 +55,38 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    async fn get_call_count_by_block_hash_and_extrinsic_index(
+        &self,
+        block_hash: &[u8],
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+    ) -> anyhow::Result<u64>;
+    async fn get_calls_by_block_hash_and_extrinsic_index(
+        &self,
+        block_hash: &[u8],
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+        page: u64,
+        page_size: u64,
+    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    async fn get_call_count_by_block_number_and_extrinsic_index(
+        &self,
+        block_number: u64,
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+    ) -> anyhow::Result<u64>;
+    async fn get_calls_by_block_number_and_extrinsic_index(
+        &self,
+        block_number: u64,
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+        page: u64,
+        page_size: u64,
+    ) -> anyhow::Result<Vec<CallCompositeRow>>;
 }
 
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -271,6 +303,142 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             "#,
         )
         .bind(block_number as i64)
+        .bind(pallet_name)
+        .bind(pallet_call_name)
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
+        Ok(call_rows)
+    }
+
+    async fn get_call_count_by_block_hash_and_extrinsic_index(
+        &self,
+        block_hash: &[u8],
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+    ) -> anyhow::Result<u64> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE
+                C.block_hash = $1 AND C.extrinsic_index = $2
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
+            "#,
+        )
+        .bind(block_hash)
+        .bind(extrinsic_index as i32)
+        .bind(pallet_name)
+        .bind(pallet_call_name)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count as u64)
+    }
+
+    async fn get_calls_by_block_hash_and_extrinsic_index(
+        &self,
+        block_hash: &[u8],
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+        page: u64,
+        page_size: u64,
+    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+        let offset = (page - 1) * page_size;
+        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+            r#"
+            SELECT
+                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
+                C.parent_call_id, C.nesting_index, C.is_successful, C.args,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                MC.index AS pallet_call_index, MC.name AS pallet_call_name
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE
+                C.block_hash = $1 AND C.extrinsic_index = $2
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
+            ORDER BY C.extrinsic_index ASC
+            LIMIT $5 OFFSET $6
+            "#,
+        )
+        .bind(block_hash)
+        .bind(extrinsic_index as i32)
+        .bind(pallet_name)
+        .bind(pallet_call_name)
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
+        Ok(call_rows)
+    }
+
+    async fn get_call_count_by_block_number_and_extrinsic_index(
+        &self,
+        block_number: u64,
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+    ) -> anyhow::Result<u64> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE
+                C.block_number = $1 AND C.extrinsic_index = $2
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
+            "#,
+        )
+        .bind(block_number as i64)
+        .bind(extrinsic_index as i32)
+        .bind(pallet_name)
+        .bind(pallet_call_name)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count as u64)
+    }
+
+    async fn get_calls_by_block_number_and_extrinsic_index(
+        &self,
+        block_number: u64,
+        extrinsic_index: u32,
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+        page: u64,
+        page_size: u64,
+    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+        let offset = (page - 1) * page_size;
+        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+            r#"
+            SELECT
+                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
+                C.parent_call_id, C.nesting_index, C.is_successful, C.args,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                MC.index AS pallet_call_index, MC.name AS pallet_call_name
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE
+                C.block_number = $1 AND C.extrinsic_index = $2
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
+            ORDER BY C.extrinsic_index ASC
+            LIMIT $5 OFFSET $6
+            "#,
+        )
+        .bind(block_number as i64)
+        .bind(extrinsic_index as i32)
         .bind(pallet_name)
         .bind(pallet_call_name)
         .bind(page_size as i64)
