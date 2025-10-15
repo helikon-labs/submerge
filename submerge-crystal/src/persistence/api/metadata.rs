@@ -160,7 +160,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT C.index, C.name, C.docs
             FROM metadata_call C
-            INNER JOIN metadata_pallet P ON C.pallet_id = P.id
+            JOIN metadata_pallet P ON C.pallet_id = P.id
             WHERE P.spec_version = $1 AND P.index = $2
             ORDER BY C.index ASC
             "#,
@@ -188,7 +188,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT C.index, C.name, C.type_id, C.type_name, C.value, C.value_json, C.docs
             FROM metadata_constant C
-            INNER JOIN metadata_pallet P ON C.pallet_id = P.id
+            JOIN metadata_pallet P ON C.pallet_id = P.id
             WHERE P.spec_version = $1 AND P.index = $2
             ORDER BY C.index ASC
             "#,
@@ -220,7 +220,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT E.index, E.name, E.docs
             FROM metadata_error E
-            INNER JOIN metadata_pallet P ON E.pallet_id = P.id
+            JOIN metadata_pallet P ON E.pallet_id = P.id
             WHERE P.spec_version = $1 AND P.index = $2
             ORDER BY E.index ASC
             "#,
@@ -248,7 +248,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT E.index, E.name, E.docs
             FROM metadata_event E
-            INNER JOIN metadata_pallet P ON E.pallet_id = P.id
+            JOIN metadata_pallet P ON E.pallet_id = P.id
             WHERE P.spec_version = $1 AND P.index = $2
             ORDER BY E.index ASC
             "#,
@@ -276,7 +276,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT S.index, S.name, S.key, S.docs
             FROM metadata_storage_item S
-            INNER JOIN metadata_pallet P ON S.pallet_id = P.id
+            JOIN metadata_pallet P ON S.pallet_id = P.id
             WHERE P.spec_version = $1 AND P.index = $2
             ORDER BY S.index ASC
             "#,

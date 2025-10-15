@@ -222,3 +222,55 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
         Err(message) => Err(APIError::BadRequest(message)),
     }
 }
+
+pub(crate) async fn get_events_by_extrinsic_hash(
+    State(state): State<ServiceState>,
+    Path(extrinsic_hash): Path<String>,
+    Query(query): Query<BlockEventQuery>,
+) -> Result<Json<PagedResponse<EventDTO>>, APIError> {
+    let extrinsic_hash = if let Ok(extrinsic_hash) =
+        hex::decode(extrinsic_hash.trim_start_matches("0x"))
+    {
+        extrinsic_hash
+    } else {
+        return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hex string (with or without 0x prefix, case-insensitive).".to_string()));
+    };
+    if !state
+        .postgres
+        .extrinsic_exists_by_hash(&extrinsic_hash)
+        .await?
+    {
+        return Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash));
+    }
+    let page = query.pagination.get_page()?;
+    let page_size = query
+        .pagination
+        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_event_count_by_extrinsic_hash(
+            &extrinsic_hash,
+            &query.pallet_name,
+            &query.pallet_event_name,
+        ),
+        state.postgres.get_events_by_extrinsic_hash(
+            &extrinsic_hash,
+            &query.pallet_name,
+            &query.pallet_event_name,
+            page,
+            page_size,
+        ),
+    )?;
+    let mut data = Vec::new();
+    for row in rows.iter() {
+        data.push(row.into());
+    }
+    let response = PagedResponse {
+        pagination: PaginationData {
+            page,
+            page_size,
+            total: total_count,
+        },
+        data,
+    };
+    Ok(Json(response))
+}

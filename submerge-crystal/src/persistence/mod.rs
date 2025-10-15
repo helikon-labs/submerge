@@ -126,6 +126,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         header: &BlockHeader,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
+    async fn extrinsic_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
     async fn ingest_extrinsics(
         &self,
         block_hash: &[u8],
@@ -159,7 +160,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
-
     async fn ingest_genesis_item(
         key: &str,
         value: &str,
@@ -598,11 +598,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     }
 
     async fn block_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
-        let exists: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM block WHERE hash = $1)")
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM block WHERE hash = $1)")
             .bind(hash)
             .fetch_one(&self.connection_pool)
             .await?;
-        Ok(exists.0)
+        Ok(exists)
     }
 
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>> {
@@ -620,12 +620,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     }
 
     async fn block_exists_by_number(&self, number: u64) -> anyhow::Result<bool> {
-        let exists: (bool,) =
-            sqlx::query_as("SELECT EXISTS(SELECT 1 FROM block WHERE number = $1)")
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM block WHERE number = $1)")
                 .bind(number as i64)
                 .fetch_one(&self.connection_pool)
                 .await?;
-        Ok(exists.0)
+        Ok(exists)
     }
 
     async fn get_blocks_by_number(&self, number: u64) -> anyhow::Result<Vec<BlockRow>> {
@@ -744,6 +744,15 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             query.execute(&mut **tx).await?;
         }
         Ok(())
+    }
+
+    async fn extrinsic_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM extrinsic WHERE hash = $1)")
+                .bind(hash)
+                .fetch_one(&self.connection_pool)
+                .await?;
+        Ok(exists)
     }
 
     async fn ingest_extrinsics(
