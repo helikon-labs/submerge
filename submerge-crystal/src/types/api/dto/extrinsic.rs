@@ -14,8 +14,8 @@ pub struct ExtrinsicQuery {
     pub max_block_number: Option<u64>,
     pub min_block_timestamp: Option<u64>,
     pub max_block_timestamp: Option<u64>,
-    pub min_spec_version: Option<u64>,
-    pub max_spec_version: Option<u64>,
+    pub min_spec_version: Option<u32>,
+    pub max_spec_version: Option<u32>,
     pub is_signed: Option<bool>,
     pub signer: Option<AccountId>,
 }

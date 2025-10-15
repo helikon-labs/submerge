@@ -5,7 +5,6 @@ use crate::types::{
     api::dto::pagination::PaginationQuery, persistence::EventCompositeRow, BlockStatus,
 };
 
-/*
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EventQuery {
@@ -15,12 +14,11 @@ pub struct EventQuery {
     pub max_block_number: Option<u64>,
     pub min_block_timestamp: Option<u64>,
     pub max_block_timestamp: Option<u64>,
-    pub min_spec_version: Option<u64>,
-    pub max_spec_version: Option<u64>,
+    pub min_spec_version: Option<u32>,
+    pub max_spec_version: Option<u32>,
     pub pallet_name: Option<String>,
     pub pallet_event_name: Option<String>,
 }
-*/
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
