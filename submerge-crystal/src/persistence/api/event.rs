@@ -124,8 +124,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
@@ -139,8 +137,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
                 AND ($4 IS NULL OR E.block_timestamp <= $4)
                 AND ($5 IS NULL OR E.spec_version >= $5)
                 AND ($6 IS NULL OR E.spec_version <= $6)
-                AND ($7 = '' OR MP.name ILIKE '%' || $7 || '%')
-                AND ($8 = '' OR ME.name ILIKE '%' || $8 || '%')
+                AND ($7 IS NULL OR MP.name ILIKE '%' || $7 || '%')
+                AND ($8 IS NULL OR ME.name ILIKE '%' || $8 || '%')
             "#,
         )
         .bind(min_block_number.map(|n| n as i64))
@@ -170,8 +168,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
-        let pallet_name = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
@@ -189,8 +185,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
                 AND ($4 IS NULL OR E.block_timestamp <= $4)
                 AND ($5 IS NULL OR E.spec_version >= $5)
                 AND ($6 IS NULL OR E.spec_version <= $6)
-                AND ($7 = '' OR MP.name ILIKE '%' || $7 || '%')
-                AND ($8 = '' OR ME.name ILIKE '%' || $8 || '%')
+                AND ($7 IS NULL OR MP.name ILIKE '%' || $7 || '%')
+                AND ($8 IS NULL OR ME.name ILIKE '%' || $8 || '%')
             ORDER BY E.block_number DESC, E.index ASC
             LIMIT $9 OFFSET $10
             "#,
@@ -216,16 +212,15 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let pallet_name = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
             FROM event E
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
-                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+            WHERE
+                ($1 IS NULL OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 IS NULL OR ME.name ILIKE '%' || $2 || '%')
                 AND E.block_hash = $3
             "#,
         )
@@ -246,8 +241,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
-        let pallet_name = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
@@ -258,8 +251,9 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM event E
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
-                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+            WHERE
+                ($1 IS NULL OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 IS NULL OR ME.name ILIKE '%' || $2 || '%')
                 AND E.block_hash = $3
             ORDER BY E.index ASC
             LIMIT $4 OFFSET $5
@@ -281,16 +275,15 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
             FROM event E
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
-                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+            WHERE
+                ($1 IS NULL OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 IS NULL OR ME.name ILIKE '%' || $2 || '%')
                 AND E.block_number = $3
             "#,
         )
@@ -311,8 +304,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
@@ -323,8 +314,9 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM event E
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
-            WHERE ($1 = '' OR MP.name ILIKE '%' || $1 || '%')
-                AND ($2 = '' OR ME.name ILIKE '%' || $2 || '%')
+            WHERE
+                ($1 IS NULL OR MP.name ILIKE '%' || $1 || '%')
+                AND ($2 IS NULL OR ME.name ILIKE '%' || $2 || '%')
                 AND E.block_number = $3
             ORDER BY E.index ASC
             LIMIT $4 OFFSET $5
@@ -397,8 +389,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
@@ -406,8 +396,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
             WHERE E.block_number = $1 AND E.extrinsic_index = $2
-                AND ($3 = '' OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 = '' OR ME.name ILIKE '%' || $4 || '%')
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR ME.name ILIKE '%' || $4 || '%')
             "#,
         )
         .bind(block_number as i64)
@@ -429,8 +419,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
@@ -442,8 +430,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
             WHERE E.block_number = $1 AND E.extrinsic_index = $2
-                AND ($3 = '' OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 = '' OR ME.name ILIKE '%' || $4 || '%')
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR ME.name ILIKE '%' || $4 || '%')
             ORDER BY E.index ASC
             LIMIT $5 OFFSET $6
             "#,
@@ -466,8 +454,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
@@ -475,8 +461,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
             WHERE E.block_hash = $1 AND E.extrinsic_index = $2
-                AND ($3 = '' OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 = '' OR ME.name ILIKE '%' || $4 || '%')
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR ME.name ILIKE '%' || $4 || '%')
             "#,
         )
         .bind(block_hash)
@@ -498,8 +484,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
@@ -511,8 +495,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
             WHERE E.block_hash = $1 AND E.extrinsic_index = $2
-                AND ($3 = '' OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 = '' OR ME.name ILIKE '%' || $4 || '%')
+                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
+                AND ($4 IS NULL OR ME.name ILIKE '%' || $4 || '%')
             ORDER BY E.index ASC
             LIMIT $5 OFFSET $6
             "#,
@@ -534,8 +518,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
@@ -543,8 +525,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
             WHERE E.extrinsic_hash = $1
-                AND ($2 = '' OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 = '' OR ME.name ILIKE '%' || $3 || '%')
+                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
+                AND ($3 IS NULL OR ME.name ILIKE '%' || $3 || '%')
             "#,
         )
         .bind(extrinsic_hash)
@@ -564,8 +546,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
-        let pallet_name: &str = pallet_name.as_deref().unwrap_or("");
-        let pallet_event_name = pallet_event_name.as_deref().unwrap_or("");
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
@@ -577,8 +557,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_event ME ON E.metadata_event_id = ME.id
             JOIN metadata_pallet MP ON ME.pallet_id = MP.id
             WHERE E.extrinsic_hash = $1
-                AND ($2 = '' OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 = '' OR ME.name ILIKE '%' || $3 || '%')
+                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
+                AND ($3 IS NULL OR ME.name ILIKE '%' || $3 || '%')
             ORDER BY E.index ASC
             LIMIT $4 OFFSET $5
             "#,

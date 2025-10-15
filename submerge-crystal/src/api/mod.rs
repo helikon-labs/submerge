@@ -1,3 +1,4 @@
+use crate::api::v1::call::get_calls;
 use crate::api::v1::event::{
     get_events, get_events_by_block_reference, get_events_by_block_reference_and_extrinsic_index,
     get_events_by_block_reference_and_index, get_events_by_extrinsic_hash,
@@ -190,6 +191,8 @@ fn build_api_routes() -> Router<ServiceState> {
         .route("/extrinsics/{extrinsic_hash}", get(get_extrinsic_by_hash))
         // genesis
         .route("/genesis", get(get_genesis_records))
+        // calls
+        .route("/calls", get(get_calls))
 }
 
 async fn shutdown_signal() {

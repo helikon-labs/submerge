@@ -140,7 +140,7 @@ impl BaseService for Crystal {
                 WorkerType::ProcessFinalizedRange {
                     maybe_start_block_number: None,
                     maybe_end_block_number: Some(1000),
-                    scan: true,
+                    scan: false,
                     reindex: false,
                 },
                 WorkerConfig::new(

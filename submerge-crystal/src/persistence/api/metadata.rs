@@ -140,7 +140,8 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<bool> {
         let count: i64 = sqlx::query_scalar(
             r#"
-            SELECT COUNT(DISTINCT((spec_version, index))) FROM metadata_pallet
+            SELECT COUNT(DISTINCT((spec_version, index)))
+            FROM metadata_pallet
             WHERE spec_version = $1 AND index = $2
             "#,
         )
