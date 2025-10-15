@@ -20,6 +20,15 @@ pub struct CallQuery {
     pub pallet_call_name: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BlockCallQuery {
+    #[serde(flatten)]
+    pub pagination: PaginationQuery,
+    pub pallet_name: Option<String>,
+    pub pallet_call_name: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CallDTO {
