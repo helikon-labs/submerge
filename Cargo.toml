@@ -36,8 +36,8 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["env", "derive"] }
 convert_case = "0.8"
 frame-metadata = { version = "23.0", default-features = true, features = ["legacy"] }
-frame-system = "42.0"
-frame-support = "42.0"
+frame-system = "43.0"
+frame-support = "44.0"
 futures-util = "0.3"
 env_logger = "0.11"
 hex = "0.4"
@@ -59,9 +59,9 @@ scale-type-resolver = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_repr = "0.1"
-sp-consensus-babe = "0.44"
+sp-consensus-babe = "0.45"
 sp-core = "38.0"
-sp-runtime = "43.0"
+sp-runtime = "44.0"
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "chrono", "macros", "runtime-tokio-native-tls"] }
 strum = "0.27"
 strum_macros = "0.27"
@@ -70,5 +70,7 @@ thiserror = "2.0"
 tokio = { version = "1.48", features = ["full"] }
 tokio-util = "0.7"
 tower-http = { version = "0.6", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
 uuid = { version = "1.18", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
