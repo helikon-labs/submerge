@@ -27,8 +27,28 @@ pub(crate) async fn get_blocks(
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_block_count(&query),
-        state.postgres.get_block_rows(page, page_size, &query),
+        state.postgres.get_block_count(
+            query.status,
+            query.min_block_number,
+            query.max_block_number,
+            query.min_block_timestamp,
+            query.max_block_timestamp,
+            query.min_spec_version,
+            query.max_spec_version,
+            query.author,
+        ),
+        state.postgres.get_block_rows(
+            query.status,
+            query.min_block_number,
+            query.max_block_number,
+            query.min_block_timestamp,
+            query.max_block_timestamp,
+            query.min_spec_version,
+            query.max_spec_version,
+            query.author,
+            page,
+            page_size,
+        ),
     )?;
     let response = PagedResponse {
         pagination: PaginationData {
