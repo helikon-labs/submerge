@@ -1,82 +1,61 @@
 use parity_scale_codec::Encode;
-use sqlx::{Postgres, QueryBuilder};
-use submerge_base::types::substrate::multi_address::MultiAddress;
+use submerge_base::types::substrate::{account_id::AccountId, multi_address::MultiAddress};
 use submerge_persistence::postgres::PostgreSQLStorage;
 
-use crate::types::{
-    api::dto::extrinsic::{BlockExtrinsicQuery, ExtrinsicQuery},
-    persistence::ExtrinsicRow,
-};
-
-fn push_extrinsic_query_params<'a>(
-    query: &'a ExtrinsicQuery,
-    query_builder: &mut QueryBuilder<'a, Postgres>,
-) {
-    if let Some(min_block_number) = query.min_block_number {
-        query_builder.push(" AND block_number >= ");
-        query_builder.push_bind(min_block_number as i64);
-    }
-    if let Some(max_block_number) = query.max_block_number {
-        query_builder.push(" AND block_number <= ");
-        query_builder.push_bind(max_block_number as i64);
-    }
-    if let Some(min_block_timestamp) = query.min_block_timestamp {
-        query_builder.push(" AND block_timestamp >= ");
-        query_builder.push_bind(min_block_timestamp as i64);
-    }
-    if let Some(max_block_timestamp) = query.max_block_timestamp {
-        query_builder.push(" AND block_timestamp <= ");
-        query_builder.push_bind(max_block_timestamp as i64);
-    }
-    if let Some(min_spec_version) = query.min_spec_version {
-        query_builder.push(" AND spec_version >= ");
-        query_builder.push_bind(min_spec_version as i64);
-    }
-    if let Some(max_spec_version) = query.max_spec_version {
-        query_builder.push(" AND spec_version <= ");
-        query_builder.push_bind(max_spec_version as i64);
-    }
-    if query.is_signed.unwrap_or(false) {
-        query_builder.push(" AND signature IS NOT NULL ");
-    }
-    if let Some(signer) = query.signer {
-        let signer: MultiAddress = MultiAddress::Id(signer);
-        query_builder.push(" AND signer = ");
-        query_builder.push_bind(signer.encode());
-    }
-}
+use crate::types::persistence::ExtrinsicRow;
 
 pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
-    async fn get_extrinsic_count(&self, query: &ExtrinsicQuery) -> anyhow::Result<u64>;
+    async fn get_extrinsic_count(
+        &self,
+        min_block_number: Option<u64>,
+        max_block_number: Option<u64>,
+        min_block_timestamp: Option<u64>,
+        max_block_timestamp: Option<u64>,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
+    ) -> anyhow::Result<u64>;
     async fn get_extrinsics(
         &self,
+        min_block_number: Option<u64>,
+        max_block_number: Option<u64>,
+        min_block_timestamp: Option<u64>,
+        max_block_timestamp: Option<u64>,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
         page: u64,
         page_size: u64,
-        query: &ExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
     async fn get_extrinsic_count_by_block_hash(
         &self,
         block_hash: &[u8],
-        query: &BlockExtrinsicQuery,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
     ) -> anyhow::Result<u64>;
     async fn get_extrinsics_by_block_hash(
         &self,
+        block_hash: &[u8],
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
         page: u64,
         page_size: u64,
-        block_hash: &[u8],
-        query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
     async fn get_extrinsic_count_by_block_number(
         &self,
         block_number: u64,
-        query: &BlockExtrinsicQuery,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
     ) -> anyhow::Result<u64>;
     async fn get_extrinsics_by_block_number(
         &self,
+        block_number: u64,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
         page: u64,
         page_size: u64,
-        block_number: u64,
-        query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
     async fn get_extrinsics_by_block_number_and_index(
         &self,
@@ -92,162 +71,216 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
 }
 
 impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
-    async fn get_extrinsic_count(&self, query: &ExtrinsicQuery) -> anyhow::Result<u64> {
-        let mut query_builder = QueryBuilder::<Postgres>::new(
+    async fn get_extrinsic_count(
+        &self,
+        min_block_number: Option<u64>,
+        max_block_number: Option<u64>,
+        min_block_timestamp: Option<u64>,
+        max_block_timestamp: Option<u64>,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
+    ) -> anyhow::Result<u64> {
+        let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
-            FROM extrinsic WHERE 1=1
+            FROM extrinsic
+            WHERE
+                ($1 IS NULL OR block_number >= $1)
+                AND ($2 IS NULL OR block_number <= $2)
+                AND ($3 IS NULL OR block_timestamp >= $3)
+                AND ($4 IS NULL OR block_timestamp <= $4)
+                AND ($5 IS NULL OR spec_version >= $5)
+                AND ($6 IS NULL OR spec_version <= $6)
+                AND ($7 IS NULL OR (($7 AND signature IS NOT NULL) OR (NOT $7 AND signature IS NULL)))
+                AND ($8 IS NULL OR signer = $8)
             "#,
-        );
-        push_extrinsic_query_params(query, &mut query_builder);
-
-        let count: (i64,) = query_builder
-            .build_query_as()
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(count.0 as u64)
+        )
+        .bind(min_block_number.map(|n| n as i64))
+        .bind(max_block_number.map(|n| n as i64))
+        .bind(min_block_timestamp.map(|n| n as i64))
+        .bind(max_block_timestamp.map(|n| n as i64))
+        .bind(min_spec_version.map(|n| n as i32))
+        .bind(max_spec_version.map(|n| n as i32))
+        .bind(is_signed)
+        .bind(signer.map(|signer| {
+            let signer: MultiAddress = MultiAddress::Id(signer);
+            signer.encode()
+        }))
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count as u64)
     }
 
     async fn get_extrinsics(
         &self,
+        min_block_number: Option<u64>,
+        max_block_number: Option<u64>,
+        min_block_timestamp: Option<u64>,
+        max_block_timestamp: Option<u64>,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
         page: u64,
         page_size: u64,
-        query: &ExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder = QueryBuilder::<Postgres>::new(
+        let rows: Vec<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
-            FROM extrinsic WHERE 1=1
+            FROM extrinsic
+            WHERE
+                ($1 IS NULL OR block_number >= $1)
+                AND ($2 IS NULL OR block_number <= $2)
+                AND ($3 IS NULL OR block_timestamp >= $3)
+                AND ($4 IS NULL OR block_timestamp <= $4)
+                AND ($5 IS NULL OR spec_version >= $5)
+                AND ($6 IS NULL OR spec_version <= $6)
+                AND ($7 IS NULL OR (($7 AND signature IS NOT NULL) OR (NOT $7 AND signature IS NULL)))
+                AND ($8 IS NULL OR signer = $8)
+            ORDER BY block_number DESC, index ASC
+            LIMIT $9 OFFSET $10
             "#,
-        );
-        push_extrinsic_query_params(query, &mut query_builder);
-
-        query_builder.push(" ORDER BY block_number DESC, index ASC LIMIT ");
-        query_builder.push_bind(page_size as i64);
-        query_builder.push(" OFFSET ");
-        query_builder.push_bind(offset as i64);
-
-        let rows: Vec<ExtrinsicRow> = query_builder
-            .build_query_as()
-            .fetch_all(&self.connection_pool)
-            .await?;
+        )
+        .bind(min_block_number.map(|n| n as i64))
+        .bind(max_block_number.map(|n| n as i64))
+        .bind(min_block_timestamp.map(|n| n as i64))
+        .bind(max_block_timestamp.map(|n| n as i64))
+        .bind(min_spec_version.map(|n| n as i32))
+        .bind(max_spec_version.map(|n| n as i32))
+        .bind(is_signed)
+        .bind(signer.map(|signer| {
+            let signer: MultiAddress = MultiAddress::Id(signer);
+            signer.encode()
+        }))
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
         Ok(rows)
     }
 
     async fn get_extrinsic_count_by_block_hash(
         &self,
         block_hash: &[u8],
-        query: &BlockExtrinsicQuery,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder = QueryBuilder::<Postgres>::new(
+        let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
             FROM extrinsic
-            WHERE 1=1
+            WHERE
+                block_hash = $1
+                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($3 IS NULL OR signer = $3)
             "#,
-        );
-        query_builder.push(" AND block_hash = ");
-        query_builder.push_bind(block_hash);
-        if query.is_signed.unwrap_or(false) {
-            query_builder.push(" AND signature IS NOT NULL ");
-        }
-
-        let count: (i64,) = query_builder
-            .build_query_as()
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(count.0 as u64)
+        )
+        .bind(block_hash)
+        .bind(is_signed)
+        .bind(signer.map(|signer| {
+            let signer: MultiAddress = MultiAddress::Id(signer);
+            signer.encode()
+        }))
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count as u64)
     }
 
     async fn get_extrinsics_by_block_hash(
         &self,
+        block_hash: &[u8],
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
         page: u64,
         page_size: u64,
-        block_hash: &[u8],
-        query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder = QueryBuilder::<Postgres>::new(
+        let rows: Vec<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
             FROM extrinsic
-            WHERE 1=1
+            WHERE
+                block_hash = $1
+                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($3 IS NULL OR signer = $3)
+            ORDER BY block_number DESC, index ASC
+            LIMIT $4 OFFSET $5
             "#,
-        );
-        query_builder.push(" AND block_hash = ");
-        query_builder.push_bind(block_hash);
-        if query.is_signed.unwrap_or(false) {
-            query_builder.push(" AND signature IS NOT NULL ");
-        }
-
-        query_builder.push(" ORDER BY block_number DESC, index ASC LIMIT ");
-        query_builder.push_bind(page_size as i64);
-        query_builder.push(" OFFSET ");
-        query_builder.push_bind(offset as i64);
-
-        let rows: Vec<ExtrinsicRow> = query_builder
-            .build_query_as()
-            .fetch_all(&self.connection_pool)
-            .await?;
+        )
+        .bind(block_hash)
+        .bind(is_signed)
+        .bind(signer.map(|signer| {
+            let signer: MultiAddress = MultiAddress::Id(signer);
+            signer.encode()
+        }))
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
         Ok(rows)
     }
 
     async fn get_extrinsic_count_by_block_number(
         &self,
         block_number: u64,
-        query: &BlockExtrinsicQuery,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder = QueryBuilder::<Postgres>::new(
+        let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*)
             FROM extrinsic
-            WHERE 1=1
+            WHERE
+                block_number = $1
+                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($3 IS NULL OR signer = $3)
             "#,
-        );
-        query_builder.push(" AND block_number = ");
-        query_builder.push_bind(block_number as i64);
-        if query.is_signed.unwrap_or(false) {
-            query_builder.push(" AND signature IS NOT NULL ");
-        }
-
-        let count: (i64,) = query_builder
-            .build_query_as()
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(count.0 as u64)
+        )
+        .bind(block_number as i64)
+        .bind(is_signed)
+        .bind(signer.map(|signer| {
+            let signer: MultiAddress = MultiAddress::Id(signer);
+            signer.encode()
+        }))
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count as u64)
     }
 
     async fn get_extrinsics_by_block_number(
         &self,
+        block_number: u64,
+        is_signed: Option<bool>,
+        signer: Option<AccountId>,
         page: u64,
         page_size: u64,
-        block_number: u64,
-        query: &BlockExtrinsicQuery,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder = QueryBuilder::<Postgres>::new(
+        let rows: Vec<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful
             FROM extrinsic
-            WHERE 1=1
+            WHERE
+                block_number = $1
+                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($3 IS NULL OR signer = $3)
+            ORDER BY block_number DESC, index ASC
+            LIMIT $4 OFFSET $5
             "#,
-        );
-        query_builder.push(" AND block_number = ");
-        query_builder.push_bind(block_number as i64);
-        if query.is_signed.unwrap_or(false) {
-            query_builder.push(" AND signature IS NOT NULL ");
-        }
-
-        query_builder.push(" ORDER BY block_number DESC, index ASC LIMIT ");
-        query_builder.push_bind(page_size as i64);
-        query_builder.push(" OFFSET ");
-        query_builder.push_bind(offset as i64);
-
-        let rows: Vec<ExtrinsicRow> = query_builder
-            .build_query_as()
-            .fetch_all(&self.connection_pool)
-            .await?;
+        )
+        .bind(block_number as i64)
+        .bind(is_signed)
+        .bind(signer.map(|signer| {
+            let signer: MultiAddress = MultiAddress::Id(signer);
+            signer.encode()
+        }))
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
         Ok(rows)
     }
 

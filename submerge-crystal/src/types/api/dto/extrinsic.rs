@@ -26,6 +26,7 @@ pub struct BlockExtrinsicQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
     pub is_signed: Option<bool>,
+    pub signer: Option<AccountId>,
 }
 
 #[derive(Debug, Serialize)]

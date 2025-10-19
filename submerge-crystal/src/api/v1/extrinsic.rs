@@ -28,8 +28,28 @@ pub(crate) async fn get_extrinsics(
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_extrinsic_count(&query),
-        state.postgres.get_extrinsics(page, page_size, &query),
+        state.postgres.get_extrinsic_count(
+            query.min_block_number,
+            query.max_block_number,
+            query.min_block_timestamp,
+            query.max_block_timestamp,
+            query.min_spec_version,
+            query.max_spec_version,
+            query.is_signed,
+            query.signer,
+        ),
+        state.postgres.get_extrinsics(
+            query.min_block_number,
+            query.max_block_number,
+            query.min_block_timestamp,
+            query.max_block_timestamp,
+            query.min_spec_version,
+            query.max_spec_version,
+            query.is_signed,
+            query.signer,
+            page,
+            page_size,
+        ),
     )?;
     let mut data = Vec::new();
     for row in rows.iter() {
@@ -61,14 +81,17 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                 return Err(APIError::BlockNotFoundWithNumber(block_number));
             }
             let (total_count, rows) = tokio::try_join!(
-                state
-                    .postgres
-                    .get_extrinsic_count_by_block_number(block_number, &query),
+                state.postgres.get_extrinsic_count_by_block_number(
+                    block_number,
+                    query.is_signed,
+                    query.signer,
+                ),
                 state.postgres.get_extrinsics_by_block_number(
+                    block_number,
+                    query.is_signed,
+                    query.signer,
                     page,
                     page_size,
-                    block_number,
-                    &query
                 ),
             )?;
             let mut data = Vec::new();
@@ -90,12 +113,18 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                 return Err(APIError::BlockNotFoundWithHash(block_hash));
             }
             let (total_count, rows) = tokio::try_join!(
-                state
-                    .postgres
-                    .get_extrinsic_count_by_block_hash(&block_hash, &query),
-                state
-                    .postgres
-                    .get_extrinsics_by_block_hash(page, page_size, &block_hash, &query),
+                state.postgres.get_extrinsic_count_by_block_hash(
+                    &block_hash,
+                    query.is_signed,
+                    query.signer,
+                ),
+                state.postgres.get_extrinsics_by_block_hash(
+                    &block_hash,
+                    query.is_signed,
+                    query.signer,
+                    page,
+                    page_size,
+                ),
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
