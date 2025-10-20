@@ -323,7 +323,7 @@ impl BlockProcessor {
             None
         };
         let block_hash_hex = hex::encode(block_hash);
-        let extrinsic_data_root_key = get_storage_plain_key("System", "ExtrinsicData");
+        let extrinsic_data_root_key = hex::encode(get_storage_plain_key("System", "ExtrinsicData"));
         let mut raw_extrinsics = Vec::new();
         let mut trace_extrinsic_index: u32 = 0;
         for (trace_index, trace) in trace.events.iter().enumerate() {

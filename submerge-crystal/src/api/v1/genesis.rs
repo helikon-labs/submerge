@@ -38,8 +38,9 @@ pub(crate) async fn get_genesis_records(
             .iter()
             .map(|row| GenesisRecordDTO {
                 id: row.id as u64,
-                key: format!("0x{}", row.key),
-                value: format!("0x{}", row.value),
+                key: format!("0x{}", hex::encode(&row.key)),
+                key_prefix: format!("0x{}", hex::encode(&row.key_prefix)),
+                value: format!("0x{}", hex::encode(&row.value)),
             })
             .collect(),
     };

@@ -109,7 +109,7 @@ pub struct BlockTrace {
 
 impl BlockTrace {
     pub fn get_event_count(&self) -> anyhow::Result<u32> {
-        let event_count_key = get_storage_plain_key("System", "EventCount");
+        let event_count_key = hex::encode(get_storage_plain_key("System", "EventCount"));
         let mut event_count: u32 = 0;
         for trace in self.events.iter() {
             let trace_data = &trace.data_wrapper.data;
@@ -126,7 +126,7 @@ impl BlockTrace {
     }
 
     pub fn get_extrinsic_count(&self) -> anyhow::Result<u32> {
-        let extrinsic_count_key = get_storage_plain_key("System", "ExtrinsicCount");
+        let extrinsic_count_key = hex::encode(get_storage_plain_key("System", "ExtrinsicCount"));
         let mut extrinsic_count: u32 = 0;
         for trace in self.events.iter() {
             let trace_data = &trace.data_wrapper.data;

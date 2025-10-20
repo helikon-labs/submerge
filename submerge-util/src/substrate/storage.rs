@@ -22,14 +22,14 @@ pub fn hash(hasher: &StorageHasher, bytes: &[u8]) -> Vec<u8> {
     }
 }
 
-pub fn get_storage_plain_key(module_name: &str, storage_name: &str) -> String {
+pub fn get_storage_plain_key(module_name: &str, storage_name: &str) -> Vec<u8> {
     let hasher = StorageHasher::Twox128;
     let mut storage_hash: Vec<u8> = Vec::new();
     let mut module_name_hash = hash(&hasher, module_name.as_bytes());
     storage_hash.append(&mut module_name_hash);
     let mut storage_name_hash = hash(&hasher, storage_name.as_bytes());
     storage_hash.append(&mut storage_name_hash);
-    hex::encode(storage_hash)
+    storage_hash
 }
 
 pub fn get_rpc_storage_plain_params<'a>(
@@ -39,7 +39,7 @@ pub fn get_rpc_storage_plain_params<'a>(
 ) -> anyhow::Result<ArrayParams> {
     //let mut params: Vec<JsonValue> = vec![.into()];
     let mut params = ArrayParams::new();
-    params.insert(get_storage_plain_key(module, name))?;
+    params.insert(hex::encode(get_storage_plain_key(module, name)))?;
     if let Some(block_hash) = block_hash {
         params.insert(block_hash)?;
     }

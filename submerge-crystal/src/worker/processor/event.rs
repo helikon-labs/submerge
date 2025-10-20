@@ -178,7 +178,7 @@ impl BlockProcessor {
     ) -> anyhow::Result<Vec<Event>> {
         let mut events = Vec::new();
         let metadata_version = get_metadata_version(metadata);
-        let events_key = get_storage_plain_key("System", "Events");
+        let events_key = hex::encode(get_storage_plain_key("System", "Events"));
         let mut processed_events_hex = String::new();
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;

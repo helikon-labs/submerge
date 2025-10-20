@@ -5,5 +5,6 @@ use serde::Serialize;
 pub struct GenesisRecordDTO {
     pub id: u64,
     pub key: String,
+    pub key_prefix: String,
     pub value: String,
 }

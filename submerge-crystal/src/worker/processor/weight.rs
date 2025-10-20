@@ -70,7 +70,7 @@ impl BlockProcessor {
         metadata: &RuntimeMetadata,
         trace: &BlockTrace,
     ) -> anyhow::Result<Option<JSONValue>> {
-        let block_weight_key = get_storage_plain_key("System", "BlockWeight");
+        let block_weight_key = hex::encode(get_storage_plain_key("System", "BlockWeight"));
         let mut maybe_trace_index_value: Option<(usize, String)> = None;
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;

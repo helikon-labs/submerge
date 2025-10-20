@@ -160,8 +160,8 @@ pub(crate) trait CrystalPostgreSQLStorage {
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
     async fn ingest_genesis_item(
-        key: &str,
-        value: &str,
+        key: &[u8],
+        value: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         sqlx::query("INSERT INTO genesis (key, value) VALUES ($1, $2) ON CONFLICT(key) DO NOTHING")
@@ -337,7 +337,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             let key = get_storage_plain_key(&pallet.name, &storage_item.name);
             sqlx::query(
                 r#"
-                INSERT INTO metadata_storage_item (pallet_id, index, name, key, docs)
+                INSERT INTO metadata_storage_item (pallet_id, index, name, key_prefix, docs)
                 VALUES ($1, $2, $3, $4, $5)
                 "#,
             )
@@ -438,8 +438,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         let mut tx = self.connection_pool.begin().await?;
         for (key, value) in chainspec.genesis.raw.top.iter() {
             Self::ingest_genesis_item(
-                key.trim_start_matches("0x"),
-                value.trim_start_matches("0x"),
+                &hex::decode(key.trim_start_matches("0x"))?,
+                &hex::decode(value.trim_start_matches("0x"))?,
                 &mut tx,
             )
             .await?;

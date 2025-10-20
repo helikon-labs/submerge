@@ -273,9 +273,9 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         pallet_index: u32,
     ) -> anyhow::Result<Vec<MetadataStorageItemDTO>> {
-        let rows: Vec<(i32, String, String, Vec<String>)> = sqlx::query_as(
+        let rows: Vec<(i32, String, Vec<u8>, Vec<String>)> = sqlx::query_as(
             r#"
-            SELECT S.index, S.name, S.key, S.docs
+            SELECT S.index, S.name, S.key_prefix, S.docs
             FROM metadata_storage_item S
             JOIN metadata_pallet P ON S.pallet_id = P.id
             WHERE P.spec_version = $1 AND P.index = $2
@@ -291,11 +291,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .map(|row| MetadataStorageItemDTO {
                 index: row.0 as u32,
                 name: row.1.clone(),
-                key: if row.2.starts_with("0x") {
-                    row.2.clone()
-                } else {
-                    format!("0x{}", row.2)
-                },
+                key_prefix: format!("0x{}", hex::encode(&row.2)),
                 docs: row.3.clone(),
             })
             .collect())

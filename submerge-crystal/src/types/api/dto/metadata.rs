@@ -56,6 +56,6 @@ pub struct MetadataEventDTO {
 pub struct MetadataStorageItemDTO {
     pub index: u32,
     pub name: String,
-    pub key: String,
+    pub key_prefix: String,
     pub docs: Vec<String>,
 }

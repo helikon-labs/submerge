@@ -4,8 +4,9 @@ use submerge_persistence::postgres::PostgreSQLStorage;
 #[derive(Clone, Debug, FromRow)]
 pub struct GenesisRecordRow {
     pub id: i32,
-    pub key: String,
-    pub value: String,
+    pub key: Vec<u8>,
+    pub key_prefix: Vec<u8>,
+    pub value: Vec<u8>,
 }
 
 pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
@@ -23,12 +24,13 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<GenesisRecordRow>> {
         let offset = (page - 1) * page_size;
-        let rows: Vec<GenesisRecordRow> =
-            sqlx::query_as("SELECT id, key, value FROM genesis ORDER BY id ASC LIMIT $1 OFFSET $2")
-                .bind(page_size as i64)
-                .bind(offset as i64)
-                .fetch_all(&self.connection_pool)
-                .await?;
+        let rows: Vec<GenesisRecordRow> = sqlx::query_as(
+            "SELECT id, key, key_prefix, value FROM genesis ORDER BY id ASC LIMIT $1 OFFSET $2",
+        )
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
         Ok(rows)
     }
 }
