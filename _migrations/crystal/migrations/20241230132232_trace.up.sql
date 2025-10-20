@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS trace
     block_number        BIGINT NOT NULL,
     spec_version        INT NOT NULL,
     index               INT NOT NULL,
-    key                 TEXT NOT NULL,
+    key                 BYTEA NOT NULL,
+    key_prefix          BYTEA GENERATED ALWAYS AS (substr(key, 1, 32)) STORED,
     value               TEXT NOT NULL,
     ext_id              TEXT NOT NULL,
     method              VARCHAR(64) NOT NULL,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS trace
 CREATE INDEX IF NOT EXISTS trace_idx_block_number ON trace (block_number);
 CREATE INDEX IF NOT EXISTS trace_idx_block_hash ON trace (block_hash);
 CREATE INDEX IF NOT EXISTS trace_idx_key ON trace (key);
+CREATE INDEX IF NOT EXISTS trace_idx_key_prefix ON trace (key_prefix);
 
 CREATE TABLE trace_0_500000 PARTITION OF trace FOR VALUES FROM (0) TO (500000);
 CREATE TABLE trace_500000_1000000 PARTITION OF trace FOR VALUES FROM (500000) TO (1000000);

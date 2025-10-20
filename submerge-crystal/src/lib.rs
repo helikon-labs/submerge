@@ -20,6 +20,9 @@ mod persistence;
 mod types;
 mod worker;
 
+const RPC_URL: &str = "ws://104.247.178.13:5141";
+// const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
+
 pub struct Crystal {
     args: Args,
     postgres: Arc<PostgreSQLStorage>,
@@ -102,15 +105,14 @@ impl BaseService for Crystal {
                     chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
-                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
-                        rpc_url: "wss://asset-hub-kusama.dotters.network".to_string(),
+                        rpc_url: RPC_URL.to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    true,
+                    false,
                     false,
                 ),
             )
@@ -122,15 +124,14 @@ impl BaseService for Crystal {
                     chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
-                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
-                        rpc_url: "wss://asset-hub-kusama.dotters.network".to_string(),
+                        rpc_url: RPC_URL.to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    true,
+                    false,
                     false,
                 ),
             )
@@ -138,24 +139,23 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: None,
-                    maybe_end_block_number: Some(1000),
-                    scan: false,
-                    reindex: false,
+                    maybe_start_block_number: Some(15_100_000),
+                    maybe_end_block_number: Some(15_100_500),
+                    scan: true,
+                    reindex: true,
                 },
                 WorkerConfig::new(
                     chainspec.properties.clone(),
                     self.postgres.clone(),
                     RPCConfig {
-                        //rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),
-                        rpc_url: "wss://asset-hub-kusama.dotters.network".to_string(),
+                        rpc_url: RPC_URL.to_string(),
                         rpc_connection_timeout_secs: 30,
                         rpc_request_timeout_secs: 30,
                         rpc_subscription_timeout_secs: 60,
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    true,
+                    false,
                     true,
                 ),
             )

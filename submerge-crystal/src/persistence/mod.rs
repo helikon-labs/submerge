@@ -1,3 +1,4 @@
+use anyhow::Context as _;
 use frame_metadata::RuntimeMetadataPrefixed;
 use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
@@ -669,6 +670,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<()> {
         let header = DecodedBlockHeader::try_from(header)?;
         for (trace_index, event) in trace.events.iter().enumerate() {
+            let key = hex::decode(event.data_wrapper.data.key.trim_start_matches("0x")).context(
+                format!(
+                    "Cannot decode key for trace #{} in block #{}.",
+                    trace_index, header.number
+                ),
+            )?;
             sqlx::query(
                 r#"
                 INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
@@ -681,7 +688,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 .bind(header.number as i64)
                 .bind(spec_version as i32)
                 .bind(trace_index as i32)
-                .bind(&event.data_wrapper.data.key)
+                .bind(&key)
                 .bind(&event.data_wrapper.data.value)
                 .bind(&event.data_wrapper.data.ext_id)
                 .bind(event.data_wrapper.data.method.to_string())
