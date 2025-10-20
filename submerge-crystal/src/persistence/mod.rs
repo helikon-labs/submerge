@@ -702,13 +702,12 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             };
             sqlx::query(
                 r#"
-                INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                INSERT INTO trace (block_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 ON CONFLICT (block_hash, block_number, index) DO NOTHING
                 "#,
             )
                 .bind(hash)
-                .bind(&header.parent_hash)
                 .bind(header.number as i64)
                 .bind(spec_version as i32)
                 .bind(trace_index as i32)

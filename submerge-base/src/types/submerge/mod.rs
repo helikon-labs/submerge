@@ -10,12 +10,3 @@ pub struct BlockTrace {
     pub method: StorageMethod,
     pub parent_id: Option<String>,
 }
-
-#[derive(Clone, Debug, Serialize)]
-pub struct BlockTraces {
-    pub block_hash: String,
-    pub block_parent_hash: String,
-    pub block_number: u64,
-    pub spec_version: u32,
-    pub traces: Vec<BlockTrace>,
-}

@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS trace
 (
     id                  BIGSERIAL NOT NULL,
     block_hash          BYTEA NOT NULL,
-    block_parent_hash   BYTEA NOT NULL,
     block_number        BIGINT NOT NULL,
     spec_version        INT NOT NULL,
     index               INT NOT NULL,

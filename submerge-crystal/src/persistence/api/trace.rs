@@ -50,7 +50,7 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         let rows: Vec<TraceRow> = sqlx::query_as(
             r#"
             SELECT
-                T.id, T.block_hash, T.block_parent_hash, T.block_number, T.spec_version, T.index,
+                T.id, T.block_hash, T.block_number, T.spec_version, T.index,
                 T.key, T.key_prefix, T.value, T.ext_id, T.method, T.parent_id
             FROM trace T
             WHERE
