@@ -161,3 +161,20 @@ pub struct CallCompositeRow {
     pub pallet_call_name: String,
     pub args: JSONValue,
 }
+
+#[derive(Debug, FromRow)]
+pub struct TraceRow {
+    #[allow(dead_code)]
+    pub id: i64,
+    pub block_hash: Vec<u8>,
+    pub block_parent_hash: Vec<u8>,
+    pub block_number: i64,
+    pub spec_version: i32,
+    pub index: i32,
+    pub key: Vec<u8>,
+    pub key_prefix: Vec<u8>,
+    pub value: Option<Vec<u8>>,
+    pub ext_id: Vec<u8>,
+    pub method: String,
+    pub parent_id: Option<String>,
+}

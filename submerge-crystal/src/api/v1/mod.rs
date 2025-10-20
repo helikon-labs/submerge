@@ -5,3 +5,4 @@ pub(crate) mod extrinsic;
 pub(crate) mod genesis;
 pub(crate) mod metadata;
 pub(crate) mod system;
+pub(crate) mod trace;

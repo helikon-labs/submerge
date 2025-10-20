@@ -13,7 +13,7 @@ pub struct APIErrorBody {
     pub message: String,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub enum APIError {
     NotFound,
     SerializationError,
@@ -24,6 +24,7 @@ pub enum APIError {
     BlockNotFoundWithNumber(u64),
     BlockNotFoundWithHash(Vec<u8>),
     ExtrinsicNotFoundWithHash(Vec<u8>),
+    InvalidHex(hex::FromHexError),
 }
 
 impl APIError {
@@ -44,10 +45,13 @@ impl APIError {
                 format!("Block with number {} not found.", number,)
             }
             APIError::BlockNotFoundWithHash(hash) => {
-                format!("Block with hash 0x{} not found.", hex::encode(hash),)
+                format!("Block with hash 0x{} not found.", hex::encode(hash))
             }
             APIError::ExtrinsicNotFoundWithHash(hash) => {
-                format!("Extrinsic with hash 0x{} not found.", hex::encode(hash),)
+                format!("Extrinsic with hash 0x{} not found.", hex::encode(hash))
+            }
+            APIError::InvalidHex(error) => {
+                format!("{}", error)
             }
         }
     }
@@ -63,6 +67,7 @@ impl APIError {
             APIError::BlockNotFoundWithNumber(_) => StatusCode::NOT_FOUND,
             APIError::BlockNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::ExtrinsicNotFoundWithHash(_) => StatusCode::NOT_FOUND,
+            APIError::InvalidHex(_) => StatusCode::BAD_REQUEST,
         }
     }
 }
@@ -79,6 +84,13 @@ impl From<anyhow::Error> for APIError {
     fn from(error: anyhow::Error) -> Self {
         log::error!("API internal server error: {}", error);
         APIError::InternalServerError("Internal server error.".to_string())
+    }
+}
+
+impl From<hex::FromHexError> for APIError {
+    fn from(error: hex::FromHexError) -> Self {
+        log::error!("Hexadecimal decode error: {}", error);
+        APIError::InvalidHex(error)
     }
 }
 

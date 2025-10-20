@@ -139,10 +139,10 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(0),
-                    maybe_end_block_number: Some(1_000),
+                    maybe_start_block_number: Some(10_000_000),
+                    maybe_end_block_number: Some(10_000_100),
                     scan: true,
-                    reindex: true,
+                    reindex: false,
                 },
                 WorkerConfig::new(
                     chainspec.properties.clone(),

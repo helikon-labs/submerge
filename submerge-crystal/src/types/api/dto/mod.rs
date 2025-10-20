@@ -5,3 +5,4 @@ pub mod extrinsic;
 pub mod genesis;
 pub mod metadata;
 pub mod pagination;
+pub mod trace;
