@@ -676,6 +676,30 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     trace_index, header.number
                 ),
             )?;
+            let ext_id = hex::decode(event.data_wrapper.data.ext_id.trim_start_matches("0x"))
+                .context(format!(
+                    "Cannot decode ext id for trace #{} in block #{}.",
+                    trace_index, header.number
+                ))?;
+            let value = if event.data_wrapper.data.value.is_empty()
+                || event.data_wrapper.data.value.to_lowercase() == "none"
+            {
+                None
+            } else if let Some(inner) = event
+                .data_wrapper
+                .data
+                .value
+                .to_lowercase()
+                .strip_prefix("some(")
+                .and_then(|s| s.strip_suffix(')'))
+            {
+                Some(hex::decode(inner).context("Cannot decode trace value hex string.")?)
+            } else {
+                Some(
+                    hex::decode(&event.data_wrapper.data.value)
+                        .context("Cannot decode trace value hex string.")?,
+                )
+            };
             sqlx::query(
                 r#"
                 INSERT INTO trace (block_hash, block_parent_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
@@ -689,8 +713,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 .bind(spec_version as i32)
                 .bind(trace_index as i32)
                 .bind(&key)
-                .bind(&event.data_wrapper.data.value)
-                .bind(&event.data_wrapper.data.ext_id)
+                .bind(value)
+                .bind(ext_id)
                 .bind(event.data_wrapper.data.method.to_string())
                 .bind(&event.parent_id)
                 .execute(&mut **tx)
