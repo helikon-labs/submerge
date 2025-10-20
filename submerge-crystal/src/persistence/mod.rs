@@ -165,11 +165,18 @@ pub(crate) trait CrystalPostgreSQLStorage {
         value: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        sqlx::query("INSERT INTO genesis (key, value) VALUES ($1, $2) ON CONFLICT(key) DO NOTHING")
-            .bind(key)
-            .bind(value)
-            .execute(&mut **tx)
-            .await?;
+        sqlx::query(
+            r#"
+            INSERT INTO genesis (key, value)
+            VALUES ($1, $2)
+            ON CONFLICT(key) DO UPDATE SET
+                value = EXCLUDED.value
+                "#,
+        )
+        .bind(key)
+        .bind(value)
+        .execute(&mut **tx)
+        .await?;
         Ok(())
     }
 }
@@ -180,20 +187,31 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         number: u64,
         hash: &[u8],
     ) -> anyhow::Result<()> {
-        sqlx::query("UPDATE crystal_state SET last_indexed_finalized_block_number = $1, last_indexed_finalized_block_hash = $2 WHERE id = 1")
-            .bind(number as i64)
-            .bind(hash)
-            .execute(&self.connection_pool)
-            .await?;
+        sqlx::query(
+            r#"
+            UPDATE crystal_state
+            SET last_indexed_finalized_block_number = $1, last_indexed_finalized_block_hash = $2
+            WHERE id = 1
+            "#,
+        )
+        .bind(number as i64)
+        .bind(hash)
+        .execute(&self.connection_pool)
+        .await?;
         Ok(())
     }
     async fn get_last_indexed_finalized_block_number_and_hash(
         &self,
     ) -> anyhow::Result<Option<(u64, Vec<u8>)>> {
-        let row: (Option<i64>, Option<Vec<u8>>) =
-            sqlx::query_as("SELECT last_indexed_finalized_block_number, last_indexed_finalized_block_hash FROM crystal_state WHERE id = 1")
-                .fetch_one(&self.connection_pool)
-                .await?;
+        let row: (Option<i64>, Option<Vec<u8>>) = sqlx::query_as(
+            r#"
+            SELECT last_indexed_finalized_block_number, last_indexed_finalized_block_hash
+            FROM crystal_state
+            WHERE id = 1
+            "#,
+        )
+        .fetch_one(&self.connection_pool)
+        .await?;
         Ok(match (row.0, row.1) {
             (Some(number), Some(hash)) => Some((number as u64, hash)),
             _ => None,
@@ -202,11 +220,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool> {
         let count: i64 = sqlx::query_scalar(
-            r#"
-            SELECT COUNT(DISTINCT spec_version)
+            r#"SELECT COUNT(DISTINCT spec_version)
             FROM metadata
-            WHERE spec_version = $1
-            "#,
+            WHERE spec_version = $1"#,
         )
         .bind(spec_version as i32)
         .fetch_one(&self.connection_pool)
@@ -248,7 +264,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             r#"
             INSERT INTO metadata (spec_version, metadata_version, metadata_bytes, metadata_json)
             VALUES ($1, $2, $3, $4)
-            ON CONFLICT (spec_version) DO NOTHING
+            ON CONFLICT (spec_version) DO UPDATE SET
+                metadata_version = EXCLUDED.metadata_version, metadata_bytes = EXCLUDED.metadata_bytes,
+                metadata_json = EXCLUDED.metadata_json
             RETURNING spec_version
             "#,
         )
@@ -489,9 +507,10 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             r#"
             INSERT INTO error (block_hash, block_number, block_status, description)
             VALUES ($1, $2, $3, $4)
-            ON CONFLICT(block_hash) DO UPDATE
-            SET block_status = EXCLUDED.block_status, description = EXCLUDED.description, created_at = now()
-        "#,
+            ON CONFLICT(block_hash) DO UPDATE SET
+                block_number = EXCLUDED.block_number, block_status = EXCLUDED.block_status,
+                description = EXCLUDED.description, created_at = now()
+            "#,
         )
         .bind(block_hash)
         .bind(block_number as i64)
@@ -548,7 +567,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             r#"
                 INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                ON CONFLICT (hash) DO NOTHING
+                ON CONFLICT (hash) DO UPDATE SET
+                    parent_hash = EXCLUDED.parent_hash, state_root = EXCLUDED.state_root, extrinsic_root = EXCLUDED.extrinsic_root,
+                    number = EXCLUDED.number, timestamp = EXCLUDED.timestamp, spec_version = EXCLUDED.spec_version, status = EXCLUDED.status,
+                    weight = EXCLUDED.weight, extrinsic_count = EXCLUDED.extrinsic_count, event_count = EXCLUDED.event_count,
+                    author_account_id = EXCLUDED.author_account_id
                 "#,
         )
             .bind(hash)
@@ -704,7 +727,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 r#"
                 INSERT INTO trace (block_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (block_hash, block_number, index) DO NOTHING
+                ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
+                    spec_version = EXCLUDED.spec_version, key = EXCLUDED.key, value = EXCLUDED.value,
+                    ext_id = EXCLUDED.ext_id, method = EXCLUDED.method, parent_id = EXCLUDED.parent_id
                 "#,
             )
                 .bind(hash)
@@ -768,7 +793,13 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(&log.engine)
                     .push_bind(&log.data);
             });
-            query_builder.push(" ON CONFLICT (block_hash, index) DO NOTHING");
+            query_builder.push(
+                r#"
+                ON CONFLICT (block_hash, index) DO UPDATE SET 
+                    block_number = EXCLUDED.block_number, type = EXCLUDED.type,
+                    engine = EXCLUDED.engine, data = EXCLUDED.data
+                "#,
+            );
             let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
                 query_builder.build();
             query.execute(&mut **tx).await?;
@@ -846,7 +877,16 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(&extrinsic.extra)
                     .push_bind(extrinsic.is_successful);
             });
-            query_builder.push(" RETURNING id, index");
+            query_builder.push(
+                r#"
+                ON CONFLICT (block_hash, block_number, index) DO UPDATE SET 
+                    block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version,
+                    block_status = EXCLUDED.block_status, trace_index = EXCLUDED.trace_index, hash = EXCLUDED.hash,
+                    index = EXCLUDED.index, version = EXCLUDED.version, signer = EXCLUDED.signer,
+                    signature = EXCLUDED.signature, extra = EXCLUDED.extra, is_successful = EXCLUDED.is_successful
+                RETURNING id, index
+                "#
+            );
             let rows: Vec<(i64, i32)> = query_builder.build_query_as().fetch_all(&mut **tx).await?;
             ids_to_indices.extend(rows);
         }
@@ -877,7 +917,14 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(event.index)
                     .push_bind(&event.args);
             });
-            query_builder.push(" ON CONFLICT (block_hash, block_number, index) DO NOTHING");
+            query_builder.push(
+                r#"
+                ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
+                    block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
+                    trace_index = EXCLUDED.trace_index, metadata_event_id = EXCLUDED.metadata_event_id,
+                    extrinsic_index = EXCLUDED.extrinsic_index, extrinsic_hash = EXCLUDED.extrinsic_hash, phase = EXCLUDED.phase,
+                    index = EXCLUDED.index, args = EXCLUDED.args
+                "#);
             let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
                 query_builder.build();
             query.execute(&mut **tx).await?;
@@ -905,6 +952,10 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             r#"
             INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, args)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            ON CONFLICT (block_hash, block_number, extrinsic_index, nesting_index) DO UPDATE SET
+                block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
+                extrinsic_id = EXCLUDED.extrinsic_id, extrinsic_hash = EXCLUDED.extrinsic_hash, parent_call_id = EXCLUDED.parent_call_id,
+                metadata_call_id = EXCLUDED.metadata_call_id, args = EXCLUDED.args
             RETURNING id
             "#,
         )
