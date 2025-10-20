@@ -768,6 +768,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(&log.engine)
                     .push_bind(&log.data);
             });
+            query_builder.push(" ON CONFLICT (block_hash, index) DO NOTHING");
             let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
                 query_builder.build();
             query.execute(&mut **tx).await?;
@@ -876,6 +877,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(event.index)
                     .push_bind(&event.args);
             });
+            query_builder.push(" ON CONFLICT (block_hash, block_number, index) DO NOTHING");
             let query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> =
                 query_builder.build();
             query.execute(&mut **tx).await?;

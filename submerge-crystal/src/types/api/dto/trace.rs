@@ -45,3 +45,10 @@ impl From<&TraceRow> for TraceDTO {
         }
     }
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BlockTraceQuery {
+    #[serde(flatten)]
+    pub pagination: PaginationQuery,
+}

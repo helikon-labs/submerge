@@ -543,7 +543,7 @@ impl BlockProcessor {
                     }
                 })
                 .ok_or(anyhow::anyhow!(
-                    "Database for extrinsic index {} is not found after batch ingestion.",
+                    "Database id for extrinsic index {} is not found after batch ingestion.",
                     extrinsic.index
                 ))?;
             self.process_extrinsic_arg(
