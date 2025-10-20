@@ -609,7 +609,6 @@ impl BlockProcessor {
                         parent_call_id,
                         nesting_index,
                         pallet_call.id,
-                        true,
                         &call.args.clone().into(),
                         tx,
                     )

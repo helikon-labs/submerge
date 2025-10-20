@@ -156,7 +156,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
         metadata_call_id: u32,
-        is_successful: bool,
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
@@ -867,14 +866,13 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
         metadata_call_id: u32,
-        is_successful: bool,
         args: &JSONValue,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64> {
         let row: (i64,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, is_successful, args)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, args)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING id
             "#,
         )
@@ -889,7 +887,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(parent_call_id)
             .bind(nesting_index)
             .bind(metadata_call_id as i32)
-            .bind(is_successful)
             .bind(args)
             .fetch_one(&mut **tx)
             .await?;

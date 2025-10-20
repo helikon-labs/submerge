@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS call
     parent_call_id      INTEGER,
     nesting_index       VARCHAR(128),
     metadata_call_id    INTEGER NOT NULL,
-    is_successful       BOOLEAN NOT NULL,
     args                JSONB NOT NULL,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (id, block_number),
