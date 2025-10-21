@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS call
     nesting_index       VARCHAR(128),
     metadata_call_id    INTEGER NOT NULL,
     args                JSONB NOT NULL,
+    is_successful       BOOLEAN NOT NULL,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (id, block_number),
     CONSTRAINT call_u_block_hash_block_number_index UNIQUE (block_hash, block_number, extrinsic_index, nesting_index),

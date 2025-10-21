@@ -158,6 +158,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         nesting_index: Option<&str>,
         metadata_call_id: u32,
         args: &JSONValue,
+        is_successful: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64>;
     async fn ingest_genesis_item(
@@ -297,6 +298,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             r#"
             INSERT INTO metadata_pallet (spec_version, index, name)
             VALUES ($1, $2, $3)
+            ON CONFLICT (spec_version, index) DO UPDATE SET
+                name = EXCLUDED.name
             RETURNING id
             "#,
         )
@@ -311,6 +314,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 r#"
                 INSERT INTO metadata_event (pallet_id, index, name, docs)
                 VALUES ($1, $2, $3, $4)
+                ON CONFLICT (pallet_id, index) DO UPDATE SET
+                    name = EXCLUDED.name, docs = EXCLUDED.docs
                 "#,
             )
             .bind(pallet_id)
@@ -325,6 +330,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 r#"
                 INSERT INTO metadata_constant (pallet_id, index, name, type_id, type_name, value, value_json, docs)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                ON CONFLICT (pallet_id, index) DO UPDATE SET
+                    name = EXCLUDED.name, type_id = EXCLUDED.type_id, type_name = EXCLUDED.type_name, 
+                    value = EXCLUDED.value, value_json = EXCLUDED.value_json, docs = EXCLUDED.docs
                 "#,
             )
             .bind(pallet_id)
@@ -343,6 +351,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 r#"
                 INSERT INTO metadata_call (pallet_id, index, name, docs)
                 VALUES ($1, $2, $3, $4)
+                ON CONFLICT (pallet_id, index) DO UPDATE SET
+                    name = EXCLUDED.name, docs = EXCLUDED.docs
                 "#,
             )
             .bind(pallet_id)
@@ -358,6 +368,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 r#"
                 INSERT INTO metadata_storage_item (pallet_id, index, name, key_prefix, docs)
                 VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (pallet_id, index) DO UPDATE SET
+                    name = EXCLUDED.name, key_prefix = EXCLUDED.key_prefix, docs = EXCLUDED.docs
                 "#,
             )
             .bind(pallet_id)
@@ -373,6 +385,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 r#"
                 INSERT INTO metadata_error (pallet_id, index, name, docs)
                 VALUES ($1, $2, $3, $4)
+                ON CONFLICT (pallet_id, index) DO UPDATE SET
+                    name = EXCLUDED.name, docs = EXCLUDED.docs
                 "#,
             )
             .bind(pallet_id)
@@ -946,16 +960,17 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         nesting_index: Option<&str>,
         metadata_call_id: u32,
         args: &JSONValue,
+        is_successful: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<i64> {
         let row: (i64,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, args)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, args, is_successful)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ON CONFLICT (block_hash, block_number, extrinsic_index, nesting_index) DO UPDATE SET
                 block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
                 extrinsic_id = EXCLUDED.extrinsic_id, extrinsic_hash = EXCLUDED.extrinsic_hash, parent_call_id = EXCLUDED.parent_call_id,
-                metadata_call_id = EXCLUDED.metadata_call_id, args = EXCLUDED.args
+                metadata_call_id = EXCLUDED.metadata_call_id, args = EXCLUDED.args, is_successful = EXCLUDED.is_successful
             RETURNING id
             "#,
         )
@@ -971,6 +986,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(nesting_index)
             .bind(metadata_call_id as i32)
             .bind(args)
+            .bind(is_successful)
             .fetch_one(&mut **tx)
             .await?;
         Ok(row.0)

@@ -45,6 +45,7 @@ pub struct CallDTO {
     pub pallet_call_index: u32,
     pub pallet_call_name: String,
     pub args: JSONValue,
+    pub is_successful: bool,
 }
 
 impl From<&CallCompositeRow> for CallDTO {
@@ -63,6 +64,7 @@ impl From<&CallCompositeRow> for CallDTO {
             pallet_call_index: row.pallet_call_index as u32,
             pallet_call_name: row.pallet_call_name.clone(),
             args: row.args.clone(),
+            is_successful: row.is_successful,
         }
     }
 }

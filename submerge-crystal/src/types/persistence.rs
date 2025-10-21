@@ -138,6 +138,7 @@ pub struct CallRow {
     pub nesting_index: Option<String>,
     pub metadata_call_id: i32,
     pub args: JSONValue,
+    pub is_successful: bool,
 }
 
 #[allow(dead_code)]
@@ -160,6 +161,7 @@ pub struct CallCompositeRow {
     pub pallet_call_index: i32,
     pub pallet_call_name: String,
     pub args: JSONValue,
+    pub is_successful: bool,
 }
 
 #[derive(Debug, FromRow)]

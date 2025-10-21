@@ -554,6 +554,7 @@ impl BlockProcessor {
                 block_status,
                 extrinsic_id,
                 extrinsic,
+                extrinsic.is_successful,
                 None,
                 None,
                 &Value::Call(Box::new(extrinsic.call.clone())),
@@ -565,6 +566,7 @@ impl BlockProcessor {
     }
 
     #[async_recursion]
+    #[allow(clippy::too_many_arguments)]
     pub async fn process_extrinsic_arg(
         &self,
         block_hash: &[u8],
@@ -574,6 +576,7 @@ impl BlockProcessor {
         block_status: BlockStatus,
         extrinsic_id: i64,
         extrinsic: &Extrinsic,
+        extrinsic_is_successful: bool,
         parent_call_id: Option<i64>,
         nesting_index: Option<&str>,
         arg: &Value,
@@ -613,6 +616,7 @@ impl BlockProcessor {
                         nesting_index,
                         pallet_call.id,
                         &call.args.clone().into(),
+                        extrinsic_is_successful,
                         tx,
                     )
                     .await?;
@@ -624,6 +628,7 @@ impl BlockProcessor {
                     block_status,
                     extrinsic_id,
                     extrinsic,
+                    extrinsic_is_successful,
                     Some(call_id),
                     nesting_index,
                     &call.args,
@@ -646,6 +651,7 @@ impl BlockProcessor {
                         block_status,
                         extrinsic_id,
                         extrinsic,
+                        extrinsic_is_successful,
                         parent_call_id,
                         Some(&nesting_index),
                         value,
@@ -669,6 +675,7 @@ impl BlockProcessor {
                         block_status,
                         extrinsic_id,
                         extrinsic,
+                        extrinsic_is_successful,
                         parent_call_id,
                         Some(&nesting_index),
                         value,
