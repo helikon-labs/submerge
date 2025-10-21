@@ -18,8 +18,9 @@ use crate::{
         extrinsic::{get_extrinsics, get_extrinsics_by_block_reference},
         genesis::get_genesis_records,
         metadata::{
-            get_metadata_hex, get_metadata_json, get_metadata_list, get_metadata_pallet_calls,
-            get_metadata_pallet_constants, get_metadata_pallet_errors, get_metadata_pallet_events,
+            get_metadata, get_metadata_hex, get_metadata_json, get_metadata_list,
+            get_metadata_pallet, get_metadata_pallet_calls, get_metadata_pallet_constants,
+            get_metadata_pallet_errors, get_metadata_pallet_events,
             get_metadata_pallet_storage_items, get_metadata_pallets,
         },
         system::{cancel_all_workers, get_worker_ids, spawn_worker},
@@ -135,11 +136,16 @@ fn build_api_routes() -> Router<ServiceState> {
         )
         // metadata
         .route("/metadata", get(get_metadata_list))
+        .route("/metadata/{spec_version}", get(get_metadata))
         .route("/metadata/{spec_version}/json", get(get_metadata_json))
         .route("/metadata/{spec_version}/hex", get(get_metadata_hex))
         .route(
             "/metadata/{spec_version}/pallets",
             get(get_metadata_pallets),
+        )
+        .route(
+            "/metadata/{spec_version}/pallets/{pallet_index}",
+            get(get_metadata_pallet),
         )
         .route(
             "/metadata/{spec_version}/pallets/{pallet_index}/calls",

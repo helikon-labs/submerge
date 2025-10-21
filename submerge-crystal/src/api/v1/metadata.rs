@@ -7,13 +7,15 @@ use axum::{
 
 use crate::{
     api::ServiceState,
-    persistence::api::metadata::CrystalMetadataAPIPostgreSQLStorage as _,
-    persistence::CrystalPostgreSQLStorage as _,
+    persistence::{
+        api::metadata::CrystalMetadataAPIPostgreSQLStorage as _, CrystalPostgreSQLStorage as _,
+    },
     types::api::{
         dto::{
             metadata::{
                 MetadataCallDTO, MetadataConstantDTO, MetadataDTO, MetadataErrorDTO,
-                MetadataEventDTO, MetadataPalletDTO, MetadataStorageItemDTO,
+                MetadataEventDTO, MetadataFullDTO, MetadataPalletDTO, MetadataPalletFullDTO,
+                MetadataStorageItemDTO,
             },
             pagination::{PagedResponse, PaginationData, PaginationQuery},
         },
@@ -43,6 +45,53 @@ pub(crate) async fn get_metadata_list(
         },
         data: rows,
     }))
+}
+
+pub(crate) async fn get_metadata(
+    State(state): State<ServiceState>,
+    Path(spec_version): Path<u32>,
+) -> Result<Json<MetadataFullDTO>, APIError> {
+    let Some(metadata) = state.postgres.get_metadata_dto(spec_version).await? else {
+        return Err(APIError::MetadataNotFound(spec_version));
+    };
+    let mut metadata = MetadataFullDTO {
+        spec_version,
+        metadata_version: metadata.metadata_version,
+        pallets: Vec::new(),
+    };
+    for pallet in state
+        .postgres
+        .get_metadata_pallets(spec_version)
+        .await?
+        .iter()
+    {
+        let pallet_full = MetadataPalletFullDTO {
+            index: pallet.index,
+            name: pallet.name.clone(),
+            calls: state
+                .postgres
+                .get_metadata_calls(spec_version, pallet.index)
+                .await?,
+            constants: state
+                .postgres
+                .get_metadata_constants(spec_version, pallet.index)
+                .await?,
+            errors: state
+                .postgres
+                .get_metadata_errors(spec_version, pallet.index)
+                .await?,
+            events: state
+                .postgres
+                .get_metadata_events(spec_version, pallet.index)
+                .await?,
+            storage_items: state
+                .postgres
+                .get_metadata_storage_items(spec_version, pallet.index)
+                .await?,
+        };
+        metadata.pallets.push(pallet_full);
+    }
+    Ok(Json(metadata))
 }
 
 pub(crate) async fn get_metadata_json(
@@ -79,6 +128,46 @@ pub(crate) async fn get_metadata_pallets(
     } else {
         Err(APIError::MetadataNotFound(spec_version))
     }
+}
+
+pub(crate) async fn get_metadata_pallet(
+    State(state): State<ServiceState>,
+    Path((spec_version, pallet_index)): Path<(u32, u32)>,
+) -> Result<Json<MetadataPalletFullDTO>, APIError> {
+    if !state.postgres.metadata_exists(spec_version).await? {
+        return Err(APIError::MetadataNotFound(spec_version));
+    }
+    let Some(pallet) = state
+        .postgres
+        .get_metadata_pallet_dto(spec_version, pallet_index)
+        .await?
+    else {
+        return Err(APIError::MetadataPalletNotFound(spec_version, pallet_index));
+    };
+    Ok(Json(MetadataPalletFullDTO {
+        index: pallet.index,
+        name: pallet.name,
+        calls: state
+            .postgres
+            .get_metadata_calls(spec_version, pallet_index)
+            .await?,
+        constants: state
+            .postgres
+            .get_metadata_constants(spec_version, pallet_index)
+            .await?,
+        errors: state
+            .postgres
+            .get_metadata_errors(spec_version, pallet_index)
+            .await?,
+        events: state
+            .postgres
+            .get_metadata_events(spec_version, pallet_index)
+            .await?,
+        storage_items: state
+            .postgres
+            .get_metadata_storage_items(spec_version, pallet_index)
+            .await?,
+    }))
 }
 
 pub(crate) async fn get_metadata_pallet_calls(

@@ -582,19 +582,22 @@ impl BlockProcessor {
         match arg {
             Value::Call(call) => {
                 let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
-                let pallet_call = metadata
-                    .get_pallet_by_index(call.pallet_index)
-                    .ok_or(anyhow::anyhow!(
-                        "Pallet {} with index {} not found in database.",
-                        call.pallet_name,
-                        call.pallet_index
-                    ))?
-                    .get_call_by_index(call.pallet_call_index)
-                    .ok_or(anyhow::anyhow!(
-                        "Call {} with index {} not found in database.",
-                        call.pallet_call_name,
-                        call.pallet_call_index
-                    ))?;
+                let pallet =
+                    metadata
+                        .get_pallet_by_index(call.pallet_index)
+                        .ok_or(anyhow::anyhow!(
+                            "Pallet {} with index {} not found in database.",
+                            call.pallet_name,
+                            call.pallet_index
+                        ))?;
+                let pallet_call =
+                    pallet
+                        .get_call_by_index(call.pallet_call_index)
+                        .ok_or(anyhow::anyhow!(
+                            "Call {} with index {} not found in database.",
+                            call.pallet_call_name,
+                            call.pallet_call_index
+                        ))?;
                 let call_id = self
                     .postgres
                     .ingest_call(

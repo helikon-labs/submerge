@@ -25,12 +25,18 @@ pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<MetadataDTO>>;
+    async fn get_metadata_dto(&self, spec_version: u32) -> anyhow::Result<Option<MetadataDTO>>;
     async fn get_metadata_json(&self, spec_version: u32) -> anyhow::Result<Option<JSONValue>>;
     async fn get_metadata_bytes(&self, spec_version: u32) -> anyhow::Result<Option<Vec<u8>>>;
     async fn get_metadata_pallets(
         &self,
         spec_version: u32,
     ) -> anyhow::Result<Vec<MetadataPalletDTO>>;
+    async fn get_metadata_pallet_dto(
+        &self,
+        spec_version: u32,
+        pallet_index: u32,
+    ) -> anyhow::Result<Option<MetadataPalletDTO>>;
     async fn metadata_pallet_exists(
         &self,
         spec_version: u32,
@@ -92,6 +98,19 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
             .collect())
     }
 
+    async fn get_metadata_dto(&self, spec_version: u32) -> anyhow::Result<Option<MetadataDTO>> {
+        let row: Option<(i32, i32)> = sqlx::query_as(
+            "SELECT spec_version, metadata_version FROM metadata WHERE spec_version = $1",
+        )
+        .bind(spec_version as i32)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(row.map(|row| MetadataDTO {
+            spec_version,
+            metadata_version: row.1 as u32,
+        }))
+    }
+
     async fn get_metadata_json(&self, spec_version: u32) -> anyhow::Result<Option<JSONValue>> {
         let row: Option<(JSONValue,)> =
             sqlx::query_as("SELECT metadata_json FROM metadata WHERE spec_version = $1")
@@ -131,6 +150,27 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
                 name: row.1.clone(),
             })
             .collect())
+    }
+
+    async fn get_metadata_pallet_dto(
+        &self,
+        spec_version: u32,
+        pallet_index: u32,
+    ) -> anyhow::Result<Option<MetadataPalletDTO>> {
+        let row: Option<(i32, String)> = sqlx::query_as(
+            r#"
+            SELECT index, name FROM metadata_pallet
+            WHERE spec_version = $1 AND index = $2
+            "#,
+        )
+        .bind(spec_version as i32)
+        .bind(pallet_index as i32)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(row.map(|row| MetadataPalletDTO {
+            index: row.0 as u32,
+            name: row.1.clone(),
+        }))
     }
 
     async fn metadata_pallet_exists(
