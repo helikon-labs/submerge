@@ -26,6 +26,18 @@ curl -o ./polkadot/para/hyperbridge-nexus.json https://raw.githubusercontent.com
 # kusama
 mkdir -p kusama
 curl -o ./kusama/kusama.json https://raw.githubusercontent.com/paritytech/polkadot-sdk/refs/heads/master/polkadot/node/service/chain-specs/kusama.json
+tmp=$(mktemp) \
+    && jq \
+        'if (.genesis.raw|type)=="array"
+            and (.genesis.raw|length)==2
+        then .genesis.raw = {
+            top: .genesis.raw[0],
+            childrenDefault: .genesis.raw[1]
+        }
+        else .
+        end' \
+    ./kusama/kusama.json > "$tmp" \
+    && mv "$tmp" ./kusama/kusama.json
 # kusama system chains
 mkdir -p kusama/sys
 curl -o ./kusama/sys/asset-hub-kusama.json https://raw.githubusercontent.com/paritytech/polkadot-sdk/refs/heads/master/cumulus/parachains/chain-specs/asset-hub-kusama.json
