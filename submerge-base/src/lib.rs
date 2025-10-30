@@ -1,11 +1,14 @@
 #![warn(clippy::disallowed_types)]
 
+use anyhow::Context as _;
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Notify;
 use tokio::time::sleep;
 use tokio::{select, signal};
+use tracing::{span, Level};
+use tracing_subscriber::FmtSubscriber;
 
 pub mod args;
 pub mod types;
@@ -41,6 +44,35 @@ impl<S: BaseService> Supervisor<S> {
     }
 
     pub async fn start(self) -> anyhow::Result<()> {
+        let mut filter = tracing_subscriber::EnvFilter::from_default_env();
+        for directive in &[
+            "submerge_api=trace",
+            "submerge_auth3=trace",
+            "submerge_base=trace",
+            "submerge_bloom=trace",
+            "submerge_cli=trace",
+            "submerge_cortex=trace",
+            "submerge_crystal=trace",
+            "submerge_fractal=trace",
+            "submerge_logging=trace",
+            "submerge_metrics=trace",
+            "submerge_persistence=trace",
+            "submerge_reflex=trace",
+            "submerge_sentinel=trace",
+            "submerge_substrate_client=trace",
+            "submerge_util=trace",
+        ] {
+            filter = filter.add_directive(directive.parse().unwrap());
+        }
+        let tracing_subscriber = FmtSubscriber::builder()
+            .with_max_level(Level::DEBUG)
+            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ACTIVE)
+            .with_target(true)
+            .with_env_filter(filter)
+            .finish();
+        tracing::subscriber::set_global_default(tracing_subscriber)
+            .context("Setting global default tracing subscriber failed.")?;
+        let _tracing_span = span!(Level::TRACE, "Submerge Supervisor");
         let (host, port) = self.service.get_metrics_server_addr();
         tokio::spawn(async move {
             submerge_metrics::server::start((host, port)).await;
@@ -63,7 +95,7 @@ Supervisor started for {} v{} • © Helikon 2025"#,
         let shutdown_signal = async {
             select! {
                 _ = signal::ctrl_c() => {
-                    log::warn!("⛔ Received Ctrl+C.");
+                    tracing::warn!("⛔ Received Ctrl+C.");
                 },
                 _ = async {
                     if let Some(n) = &shutdown_notify {
@@ -72,7 +104,7 @@ Supervisor started for {} v{} • © Helikon 2025"#,
                         std::future::pending::<()>().await;
                     }
                 } => {
-                    log::warn!("⛔ Received internal shutdown notification.");
+                    tracing::warn!("⛔ Received internal shutdown notification.");
                 }
             }
         };
@@ -80,12 +112,12 @@ Supervisor started for {} v{} • © Helikon 2025"#,
             loop {
                 match service.run().await {
                     Ok(_) => {
-                        log::info!("`{}` exited successfully.", service.get_name());
+                        tracing::info!("`{}` exited successfully.", service.get_name());
                         break Ok(());
                     }
                     Err(e) => {
-                        log::error!("`{}` failed: {e:?}", service.get_name());
-                        log::warn!("Retrying `{}` after {:?}", service.get_name(), retry_delay);
+                        tracing::error!("`{}` failed: {e:?}", service.get_name());
+                        tracing::warn!("Retrying `{}` after {:?}", service.get_name(), retry_delay);
                         sleep(retry_delay).await;
                     }
                 }
@@ -98,7 +130,7 @@ Supervisor started for {} v{} • © Helikon 2025"#,
                 result
             }
             _ = shutdown_signal => {
-                log::info!("⛔ Shutting down service `{}`...", service.get_name());
+                tracing::info!("⛔ Shutting down service `{}`...", service.get_name());
                 service.shutdown().await?;
                 Ok(())
             }

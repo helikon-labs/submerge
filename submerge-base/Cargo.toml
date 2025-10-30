@@ -14,7 +14,6 @@ async-trait = { workspace = true }
 clap = { workspace = true }
 convert_case = { workspace = true }
 hex = { workspace = true }
-log = { workspace = true }
 parity-scale-codec = { workspace = true }
 rust-embed = { workspace = true }
 rustc-hash = { workspace = true }
@@ -25,9 +24,9 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
-submerge-logging = { path = "../submerge-logging" }
 submerge-metrics = { path = "../submerge-metrics" }
 submerge-util = { path = "../submerge-util" }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

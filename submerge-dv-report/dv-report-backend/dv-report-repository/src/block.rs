@@ -43,7 +43,6 @@ impl Repository {
         self.postgres.commit_tx(tx).await
     }
 
-    #[allow(clippy::cognitive_complexity)]
     pub async fn save_block_with_details(
         &self,
         network_id: u32,

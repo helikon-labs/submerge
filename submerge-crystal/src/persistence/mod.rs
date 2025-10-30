@@ -1016,7 +1016,7 @@ mod tests {
         PostgreSQLStorage::new(&args).await
     }
 
-    #[test_log::test(tokio::test)]
+    #[tokio::test]
     async fn test_genesis_ingestion() -> Result<(), Box<dyn std::error::Error>> {
         let chainspec_path = "../_chainspecs/westend/sys/coretime-westend.json";
         let chainspec_json = fs::read_to_string(chainspec_path)?;
@@ -1026,7 +1026,7 @@ mod tests {
         Ok(())
     }
 
-    #[test_log::test(tokio::test)]
+    #[tokio::test]
     async fn test_ingest_blocks() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let rpc_config = RPCConfig {
@@ -1076,7 +1076,7 @@ mod tests {
         Ok(())
     }
 
-    #[test_log::test(tokio::test)]
+    #[tokio::test]
     async fn test_trace_error() -> Result<(), Box<dyn std::error::Error>> {
         let postgres = get_test_postgres().await?;
         let block_number = 100;

@@ -82,14 +82,14 @@ impl std::error::Error for APIError {}
 
 impl From<anyhow::Error> for APIError {
     fn from(error: anyhow::Error) -> Self {
-        log::error!("API internal server error: {}", error);
+        tracing::error!("API internal server error: {}", error);
         APIError::InternalServerError("Internal server error.".to_string())
     }
 }
 
 impl From<hex::FromHexError> for APIError {
     fn from(error: hex::FromHexError) -> Self {
-        log::error!("Hexadecimal decode error: {}", error);
+        tracing::error!("Hexadecimal decode error: {}", error);
         APIError::InvalidHex(error)
     }
 }

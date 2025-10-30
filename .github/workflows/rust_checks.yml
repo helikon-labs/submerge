@@ -76,7 +76,7 @@ jobs:
         with:
           toolchain: nightly #-2025-08-01 # toolchain
           command: clippy
-          args: --all-targets -- -D warnings -W clippy::cognitive_complexity
+          args: --all-targets -- -D warnings -W clippy::too_many_lines -W clippy::excessive_nesting
       - name: Make the chainspec init script executable
         run: chmod +x ./_chainspecs/init.sh
       - name: Init chainspecs

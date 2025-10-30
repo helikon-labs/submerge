@@ -22,7 +22,7 @@ async fn on_finalized_block(
     crate::metrics::target_finalized_block_number()
         .with_label_values(&[&worker_id])
         .set(finalized_block_number as i64);
-    log::info!(
+    tracing::info!(
         "🟦 New finalized block [{finalized_block_number}][0x{}].",
         truncate_hash(&finalized_block_hash_hex)
     );
@@ -34,11 +34,11 @@ async fn on_finalized_block(
         let gap = finalized_block_number.saturating_sub(last_finalized_number);
         if gap > 1 {
             start_block_number = last_finalized_number + 1;
-            log::info!(
+            tracing::info!(
                 "🟦 Process finalized block range {start_block_number}-{finalized_block_number}."
             );
         } else {
-            log::info!("🟦 Process finalized block {finalized_block_number}.");
+            tracing::info!("🟦 Process finalized block {finalized_block_number}.");
         }
     }
 
@@ -91,7 +91,7 @@ async fn on_proposed_block(
     crate::metrics::target_best_block_number()
         .with_label_values(&[&worker_id])
         .set(number as i64);
-    log::info!(
+    tracing::info!(
         "🟦 New proposed block [{number}][0x{}].",
         truncate_hash(&hash_hex)
     );
@@ -134,14 +134,14 @@ impl super::Worker {
         {
             Ok(block_processor) => Arc::new(block_processor),
             Err(error) => {
-                log::error!("🔴 Error while constructing the block processor for new block subscription: {error:?}");
+                tracing::error!("🔴 Error while constructing the block processor for new block subscription: {error:?}");
                 return Err(error);
             }
         };
         let substrate_client = match SubstrateClient::new(&self.config.rpc_config).await {
             Ok(substrate_client) => substrate_client,
             Err(error) => {
-                log::error!("🔴 Error while constructing the Substrate client for new block subscription: {error:?}");
+                tracing::error!("🔴 Error while constructing the Substrate client for new block subscription: {error:?}");
                 return Err(error);
             }
         };
@@ -180,15 +180,15 @@ impl super::Worker {
                             let last_error = last_error.clone();
                             async move {
                                 if let Some(err) = last_error.lock().await.take() {
-                                    log::error!("⚠️ Previous finalized block processing failed, returning error.");
+                                    tracing::error!("⚠️ Previous finalized block processing failed, returning error.");
                                     return Err(err);
                                 }
                                 let permit = match gate.try_acquire_owned() {
                                     Ok(p) => p,
                                     Err(_) => {
                                         match header.get_number() {
-                                            Ok(n) => log::warn!("⚠️ Skipping finalized block {n} - previous still processing."),
-                                            Err(e) => log::warn!("⚠️ Skipping finalized block (unknown number: {e}) - previous still processing."),
+                                            Ok(n) => tracing::warn!("⚠️ Skipping finalized block {n} - previous still processing."),
+                                            Err(e) => tracing::warn!("⚠️ Skipping finalized block (unknown number: {e}) - previous still processing."),
                                         }
                                         return Ok(());
                                     }
@@ -208,7 +208,7 @@ impl super::Worker {
                                     )
                                     .await;
                                     if let Err(e) = result {
-                                        log::error!("Error processing finalized block: {e:?}");
+                                        tracing::error!("Error processing finalized block: {e:?}");
                                         *last_error.lock().await = Some(e);
                                     }
                                     // _permit_guard drops here, releasing the semaphore

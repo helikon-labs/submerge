@@ -38,7 +38,7 @@ impl Crystal {
     }
 
     fn print_summary(&self, chainspec: &Chainspec) {
-        log::info!(
+        tracing::info!(
             r#"
 ┌─────────────────────────────────────────────────────────────────────
 │ Chain:    {}
@@ -59,15 +59,15 @@ impl Crystal {
     }
 
     async fn process_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
-        log::info!("🔽 Processing genesis from chainspec file.");
+        tracing::info!("🔽 Processing genesis from chainspec file.");
         if self.postgres.get_genesis_record_count().await? > 0 {
-            log::info!("🔁 Genesis had already been processed.");
+            tracing::info!("🔁 Genesis had already been processed.");
             return Ok(());
         }
         self.postgres.ingest_genesis(chainspec).await?;
-        log::info!(
+        tracing::info!(
             "✅ Processed {} storage items from the chainspec file.",
-            chainspec.genesis.raw.top.len()
+            chainspec.genesis.raw.top.len(),
         );
         Ok(())
     }

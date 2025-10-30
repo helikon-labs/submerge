@@ -34,7 +34,7 @@ impl ChainalysisClient {
         if !status_code.is_success() {
             let error_message =
                 format!("Error while checking Chainalysis sanction status for address {address}.");
-            log::error!("⚠️ {error_message}");
+            tracing::error!("⚠️ {error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: SanctionStatus = serde_json::from_str(&response_text)?;

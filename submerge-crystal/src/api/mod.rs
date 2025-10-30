@@ -56,7 +56,7 @@ pub struct ServiceState {
 }
 
 pub(crate) async fn on_server_ready(host: &str, port: u16) {
-    log::info!("🌐 HTTP API started on {host}:{port}.");
+    tracing::info!("🌐 HTTP API started on {host}:{port}.");
 }
 
 async fn metrics_middleware(request: Request, next: Next) -> Response {
@@ -245,7 +245,7 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
-    log::info!("🛑 Shutdown signal received, starting graceful shutdown.");
+    tracing::info!("🛑 Shutdown signal received, starting graceful shutdown.");
 }
 
 pub(crate) async fn run_api(

@@ -11,6 +11,6 @@ where
 {
     match result {
         Ok(metric) => f(&metric),
-        Err(e) => log::warn!("Metric error: {}", e),
+        Err(e) => tracing::warn!("Metric error: {}", e),
     }
 }

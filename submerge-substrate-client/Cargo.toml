@@ -13,10 +13,10 @@ frame-metadata = { workspace = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true }
 jsonrpsee-core = { workspace = true }
-log = { workspace = true }
 parity-scale-codec = { workspace = true }
 sp-runtime = { workspace = true }
 submerge-base = { path = "../submerge-base" }
 submerge-util = { path = "../submerge-util" }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
+tracing = { workspace = true }

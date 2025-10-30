@@ -92,7 +92,7 @@ mod tests {
     fn test_get_chainspec_by_chain_name() {
         let chainspec = Chainspec::from_chain_name_or_file_path("coretime-westend")
             .expect("Failed to get the chainspec for Coretime Westend.");
-        log::info!("Chain name: {}", chainspec.name);
+        tracing::info!("Chain name: {}", chainspec.name);
         assert_eq!(chainspec.name, "Westend Coretime");
         assert_eq!(chainspec.id, "coretime-westend");
         assert!(chainspec
@@ -116,7 +116,7 @@ mod tests {
         let file_path = "../_chainspecs/westend/sys/coretime-westend.json";
         let chainspec = Chainspec::from_chain_name_or_file_path(file_path)
             .expect("Failed to get the chainspec for Coretime Westend.");
-        log::info!("Chain name: {}", chainspec.name);
+        tracing::info!("Chain name: {}", chainspec.name);
         assert_eq!(chainspec.name, "Westend Coretime");
         assert_eq!(chainspec.id, "coretime-westend");
         assert!(chainspec

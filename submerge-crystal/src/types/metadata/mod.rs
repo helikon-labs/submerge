@@ -260,7 +260,6 @@ macro_rules! from_metadata_version {
 macro_rules! from_legacy_metadata {
     ($a:ty) => {
         impl From<&$a> for Metadata {
-            #[allow(clippy::cognitive_complexity)]
             fn from(value: &$a) -> Self {
                 let mut metadata = Metadata::default();
                 match &value.modules {

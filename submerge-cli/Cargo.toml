@@ -14,8 +14,6 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-log = { workspace = true }
 submerge-base = { path = "../submerge-base" }
 submerge-crystal = { path = "../submerge-crystal" }
-submerge-logging = { path = "../submerge-logging" }
 tokio = { workspace = true }

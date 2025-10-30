@@ -1,3 +1,4 @@
 disallowed-types = ["std::collections::HashMap", "std::collections::HashSet"]
-cognitive-complexity-threshold = 22
 too-many-arguments-threshold = 12
+excessive-nesting-threshold = 8
+too-many-lines-threshold = 400

@@ -46,7 +46,7 @@ impl MerkleScienceClient {
         if !status_code.is_success() {
             let error_message =
                 format!("Error while fetching supported blockchains: {response_text}");
-            log::error!("⚠️ {error_message}");
+            tracing::error!("⚠️ {error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: BlockchainListResponse = serde_json::from_str(&response_text)?;
@@ -88,7 +88,7 @@ impl MerkleScienceClient {
                 "Error while fetching supported digital assets for {}.",
                 blockchain.name,
             );
-            log::error!("⚠️ {error_message}");
+            tracing::error!("⚠️ {error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: SupportedDigitalAssetListResponse = serde_json::from_str(&response_text)?;
@@ -110,7 +110,7 @@ impl MerkleScienceClient {
         let response_text = response.text().await?;
         if !status_code.is_success() {
             let error_message = "Error while fetching aggregate service status.";
-            log::error!("⚠️ {error_message}");
+            tracing::error!("⚠️ {error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: AggregateServiceStatusResponse = serde_json::from_str(&response_text)?;
@@ -140,7 +140,7 @@ impl MerkleScienceClient {
             show_alerts: None,
             custom_tags: None,
         };
-        log::info!(
+        tracing::info!(
             "Screening {} on {}.",
             truncate_address(address),
             blockchain.name
@@ -157,7 +157,7 @@ impl MerkleScienceClient {
         let response = match response_result {
             Ok(response) => response,
             Err(error) => {
-                log::error!("⚠️ Error while screening address: {error}");
+                tracing::error!("⚠️ Error while screening address: {error}");
                 return Err(error.into());
             }
         };
@@ -165,11 +165,11 @@ impl MerkleScienceClient {
         let response_text = response.text().await?;
         if !status_code.is_success() {
             let error_message = format!("Error response from the API: {response_text}");
-            log::error!("⚠️ {error_message}");
+            tracing::error!("⚠️ {error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: AddressScreening = serde_json::from_str(&response_text)?;
-        log::info!(
+        tracing::info!(
             "Screening completed for {} on {}.",
             truncate_address(address),
             blockchain.name,
@@ -190,7 +190,7 @@ impl MerkleScienceClient {
             transfer_type: None,
             show_alerts: None,
         };
-        log::info!("Screening {} transaction: {identifier}", blockchain.name);
+        tracing::info!("Screening {} transaction: {identifier}", blockchain.name);
         let response_result = self
             .http_client
             .post("https://api.merklescience.com/api/v4.2/transactions/")
@@ -203,7 +203,7 @@ impl MerkleScienceClient {
         let response = match response_result {
             Ok(response) => response,
             Err(error) => {
-                log::error!("⚠️ Error while screening address: {error}");
+                tracing::error!("⚠️ Error while screening address: {error}");
                 return Err(error.into());
             }
         };
@@ -211,11 +211,11 @@ impl MerkleScienceClient {
         let response_text = response.text().await?;
         if !status_code.is_success() {
             let error_message = format!("Error response from the API: {response_text}");
-            log::error!("⚠️ {error_message}");
+            tracing::error!("⚠️ {error_message}");
             return Err(anyhow::Error::msg(error_message));
         }
         let response: TransactionScreening = serde_json::from_str(&response_text)?;
-        log::info!(
+        tracing::info!(
             "Screening completed for transaction {identifier} on {}.",
             blockchain.name,
         );

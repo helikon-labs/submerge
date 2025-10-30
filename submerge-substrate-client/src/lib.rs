@@ -42,14 +42,14 @@ impl SubstrateClient {
         connection_timeout_secs: u64,
         request_timeout_secs: u64,
     ) -> anyhow::Result<Self> {
-        log::info!("⚙️ Constructing Substrate client.");
+        tracing::info!("⚙️ Constructing Substrate client.");
         let ws_client = WsClientBuilder::default()
             .max_response_size(1024 * 1024 * 1024)
             .connection_timeout(std::time::Duration::from_secs(connection_timeout_secs))
             .request_timeout(std::time::Duration::from_secs(request_timeout_secs))
             .build(rpc_url)
             .await?;
-        log::info!("✅ Substrate client constructed.");
+        tracing::info!("✅ Substrate client constructed.");
         Ok(SubstrateClient { ws_client })
     }
 }
@@ -181,7 +181,7 @@ impl SubstrateClient {
             .await
             .map_err(|error| {
                 let message = format!("⚠️ Error while subscribing to blocks: {error:?}");
-                log::error!("{message}");
+                tracing::error!("{message}");
                 anyhow::anyhow!(message)
             })?;
 
@@ -189,7 +189,7 @@ impl SubstrateClient {
             let next_item = timeout(subscription_timeout, subscription.next());
             tokio::select! {
                 _ = cancellation_token.cancelled() => {
-                    log::info!("🚫 Block subscription cancelled.");
+                    tracing::info!("🚫 Block subscription cancelled.");
                     return Ok(());
                 }
                 result = next_item => {
@@ -197,13 +197,13 @@ impl SubstrateClient {
                         Ok(Some(Ok(block_header))) => {
                             if let Err(error) = callback(block_header).await {
                                 let message = format!("⚠️ Error in callback: {error:?}");
-                                log::error!("{message}");
+                                tracing::error!("{message}");
                                 return Err(anyhow::anyhow!(error)).context(message);
                             }
                         }
                         Ok(Some(Err(error))) => {
                             let message = format!("⚠️ Error while receiving block header: {error:?}");
-                            log::error!("{message}");
+                            tracing::error!("{message}");
                             return Err(anyhow::anyhow!(error)).context(message);
                         }
                         Ok(None) => {

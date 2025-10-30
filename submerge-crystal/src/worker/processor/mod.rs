@@ -104,11 +104,11 @@ impl BlockProcessor {
                 scan,
             )
             .await?;
-        log::info!("⚙️ Process finalized blocks {start_block_number}-{end_block_number}.");
+        tracing::info!("⚙️ Process finalized blocks {start_block_number}-{end_block_number}.");
         for number in start_block_number..=end_block_number {
             let hash_hex = self.substrate_client.get_block_hash(number).await?;
             let hash = hex::decode(&hash_hex)?;
-            log::info!(
+            tracing::info!(
                 "🔧 Processing finalized block [{number}][0x{}]. Target {end_block_number}.",
                 truncate_hash(&hash_hex),
             );
@@ -126,7 +126,9 @@ impl BlockProcessor {
                     .with_label_values(&[&self.worker_id.to_string()])
                     .set(number as i64),
                 Err(error) => {
-                    log::error!("❌ Error while processing finalized block {number}: {error:?}");
+                    tracing::error!(
+                        "❌ Error while processing finalized block {number}: {error:?}"
+                    );
                     self.save_block_error(
                         &hash,
                         number,
@@ -140,7 +142,7 @@ impl BlockProcessor {
                 }
             }
         }
-        log::info!(
+        tracing::info!(
             "✅ Completed processing finalized blocks {start_block_number}-{end_block_number}."
         );
         Ok(())
@@ -184,7 +186,7 @@ impl BlockProcessor {
             .await?;
         for block in blocks.iter() {
             if block.hash != block_hash {
-                log::info!(
+                tracing::info!(
                     "✂️ Prune block [{block_number}][0x{}].",
                     truncate_hash(&hex::encode(&block.hash)),
                 );
@@ -200,7 +202,6 @@ impl BlockProcessor {
         self.substrate_client.get_block_hash(block_number).await
     }
 
-    #[allow(clippy::cognitive_complexity)]
     pub async fn process_block(
         &self,
         skip_traces: bool,
@@ -212,12 +213,12 @@ impl BlockProcessor {
         let block_hash = hex::decode(block_hash_hex)?;
         let mut tx = self.postgres.connection_pool.begin().await?;
         if let Some(block_row) = self.postgres.get_block_by_hash(&block_hash).await? {
-            log::info!(
+            tracing::info!(
                 "👍 Block [{block_number}][{}] had already been processed.",
                 truncate_hash(block_hash_hex)
             );
             if reindex {
-                log::info!(
+                tracing::info!(
                     "🗑️  Deleting block [{block_number}][{}] and its traces for reindexing.",
                     truncate_hash(block_hash_hex)
                 );
@@ -227,7 +228,7 @@ impl BlockProcessor {
             } else {
                 if block_row.status != status && status == BlockStatus::Finalized {
                     let start_time = std::time::Instant::now();
-                    log::info!(
+                    tracing::info!(
                         "🔁 Update block [{block_number}][0x{}] status: {} ➡️ {status}",
                         truncate_hash(block_hash_hex),
                         block_row.status,
@@ -346,8 +347,8 @@ impl BlockProcessor {
                 .await?;
             (events, extrinsics, weight)
         };
-        log::info!("Decoded {} events.", events.len());
-        log::info!("Decoded {} extrinsics.", extrinsics.len());
+        tracing::info!(block_number, "Decoded {} events.", events.len());
+        tracing::info!(block_number, "Decoded {} extrinsics.", extrinsics.len());
 
         // persist block, events, and extrinsics
         if status == BlockStatus::Finalized {
@@ -371,7 +372,7 @@ impl BlockProcessor {
         self.postgres
             .ingest_block_logs(&block_hash, &block_header, &mut tx)
             .await?;
-        log::info!("Persisted block and logs.");
+        tracing::info!("Persisted block and logs.");
         self.process_events(
             &block_hash,
             &block_header,
@@ -383,7 +384,7 @@ impl BlockProcessor {
             &mut tx,
         )
         .await?;
-        log::info!("Persisted {} events.", events.len());
+        tracing::info!("Persisted {} events.", events.len());
         self.process_extrinsics(
             &block_hash,
             &block_header,
@@ -394,7 +395,7 @@ impl BlockProcessor {
             &mut tx,
         )
         .await?;
-        log::info!("Persisted {} extrinsics.", extrinsics.len());
+        tracing::info!("Persisted {} extrinsics.", extrinsics.len());
         self.postgres.delete_error(&block_hash, &mut tx).await?;
         tx.commit().await?;
 
@@ -407,7 +408,7 @@ impl BlockProcessor {
         crate::metrics::block_processing_time_ms()
             .with_label_values(&[&self.worker_id.to_string()])
             .observe(elapsed_time_ms as f64);
-        log::info!(
+        tracing::info!(
             "{log_emoji} Processed {status} block [{block_number}][0x{}] in {elapsed_time_ms} ms.",
             truncate_hash(block_hash_hex),
         );

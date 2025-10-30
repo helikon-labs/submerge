@@ -118,7 +118,7 @@ impl Worker {
                 .await
             {
                 Ok(()) => {
-                    log::info!("{block_status} block subscription cancelled.");
+                    tracing::info!("{block_status} block subscription cancelled.");
                     self.set_status(WorkerStatus::Cancelled {
                         last_processed_block_number: None,
                     })
@@ -126,7 +126,9 @@ impl Worker {
                     break;
                 }
                 Err(error) => {
-                    log::error!("🔴 {block_status} block subscription exited with error: {error}");
+                    tracing::error!(
+                        "🔴 {block_status} block subscription exited with error: {error}"
+                    );
                     self.set_status(WorkerStatus::Error {
                         last_processed_block_number: None,
                         error: Arc::new(error),
@@ -135,7 +137,7 @@ impl Worker {
                     if self.config.stop_on_error {
                         break;
                     }
-                    log::error!(
+                    tracing::error!(
                         "🔄 {block_status} block subscription will retry after {} seconds.",
                         self.config.retry_delay.as_secs()
                     );
@@ -146,7 +148,7 @@ impl Worker {
     }
 
     async fn check_rpc_compatibility(&self) -> anyhow::Result<()> {
-        log::info!("🤖🔍 Check RPC endpoint compatibility.");
+        tracing::info!("🤖🔍 Check RPC endpoint compatibility.");
         let substrate_client = SubstrateClient::new(&self.config.rpc_config).await?;
         let health = substrate_client.get_system_health().await?;
         if health.is_syncing {
@@ -175,15 +177,15 @@ impl Worker {
                 );
             }
         }
-        log::info!("🤖✅ RPC endpoint is compatible with worker configuration.");
+        tracing::info!("🤖✅ RPC endpoint is compatible with worker configuration.");
         Ok(())
     }
 
     pub async fn start(&self) {
-        log::info!("Start worker {}.", self.id);
+        tracing::info!("Start worker {}.", self.id);
         if let Err(error) = self.check_rpc_compatibility().await {
-            log::error!("{error}");
-            log::error!("🔴 RPC endpoint is incompatible. Worker is exiting.");
+            tracing::error!("{error}");
+            tracing::error!("🔴 RPC endpoint is incompatible. Worker is exiting.");
             self.set_status(WorkerStatus::Error {
                 last_processed_block_number: None,
                 error: error.into(),
@@ -214,11 +216,11 @@ impl Worker {
                 {
                     Ok(block_processor) => Arc::new(block_processor),
                     Err(error) => {
-                        log::error!("🔴 Error while constructing the block processor for new block subscription: {error:?}");
+                        tracing::error!("🔴 Error while constructing the block processor for new block subscription: {error:?}");
                         if self.config.stop_on_error {
                             break;
                         }
-                        log::error!(
+                        tracing::error!(
                             "🔄 Will retry after {} seconds.",
                             self.config.retry_delay.as_secs()
                         );
@@ -239,11 +241,11 @@ impl Worker {
                 {
                     Ok(()) => break,
                     Err(error) => {
-                        log::error!("🔴 Error while processing finalized blocks {maybe_start_block_number:?}-{maybe_end_block_number:?}: {error:?}");
+                        tracing::error!("🔴 Error while processing finalized blocks {maybe_start_block_number:?}-{maybe_end_block_number:?}: {error:?}");
                         if self.config.stop_on_error {
                             break;
                         }
-                        log::error!(
+                        tracing::error!(
                             "🔄 Will retry after {} seconds.",
                             self.config.retry_delay.as_secs()
                         );
@@ -318,7 +320,7 @@ impl WorkerManager {
         let workers = self.workers.read().await;
         for worker in workers.values() {
             if worker.get_status().await.is_running() {
-                log::info!("Stop worker {}.", worker.id);
+                tracing::info!("Stop worker {}.", worker.id);
                 worker.cancel();
             }
         }

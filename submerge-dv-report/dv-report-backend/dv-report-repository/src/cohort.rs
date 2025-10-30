@@ -65,7 +65,6 @@ impl Repository {
         Ok(delegates)
     }
 
-    #[allow(clippy::cognitive_complexity)]
     pub async fn init_cohort(
         &self,
         network: &Network,

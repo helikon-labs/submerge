@@ -498,7 +498,6 @@ fn get_account_id_from_multi(
     Ok(signer)
 }
 
-#[allow(clippy::cognitive_complexity)]
 pub(super) async fn get_vote_calls_in_block(
     network_id: u32,
     block: &Block,

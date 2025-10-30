@@ -116,12 +116,12 @@ impl BlockHeader {
                     // Skipped: Seal does not contain validator index.
                 }
                 DigestItem::RuntimeEnvironmentUpdated => {
-                    log::warn!(
+                    tracing::warn!(
                         "Log type: RuntimeEnvironmentUpdated. Cannot get author validator index."
                     );
                 }
                 DigestItem::Other(_) => {
-                    log::warn!("Unknown log type. Cannot get author validator index.");
+                    tracing::warn!("Unknown log type. Cannot get author validator index.");
                 }
             }
         }
