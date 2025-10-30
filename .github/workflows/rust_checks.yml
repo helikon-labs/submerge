@@ -41,8 +41,8 @@ jobs:
           components: clippy, rustfmt
           override: true
       - run: rustup update
-      - run: rustup update nightly-2025-08-01 # toolchain
-      - run: rustup default nightly-2025-08-01 # toolchain
+      - run: rustup update nightly #-2025-08-01 # toolchain
+      - run: rustup default nightly #-2025-08-01 # toolchain
       - run: rustup target add wasm32-unknown-unknown --toolchain nightly #-2025-08-01 # toolchain
       - run: rustup default stable
       - name: Reset test DB
