@@ -2,13 +2,13 @@
 
 use anyhow::Context as _;
 use async_trait::async_trait;
+use cargo_metadata::MetadataCommand;
+use convert_case::{Case, Casing};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::Notify;
-use tokio::time::sleep;
-use tokio::{select, signal};
+use tokio::{select, signal, sync::Notify, time::sleep};
 use tracing::{span, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
 pub mod args;
 pub mod types;
@@ -20,6 +20,24 @@ pub trait BaseService {
     async fn run(&self) -> anyhow::Result<()>;
     async fn shutdown(&self) -> anyhow::Result<()> {
         Ok(())
+    }
+    fn get_native_log_level(&self) -> &str;
+    fn get_external_log_level(&self) -> &str;
+    fn get_log_env_filter(&self) -> anyhow::Result<EnvFilter> {
+        let metadata = MetadataCommand::new().no_deps().exec()?;
+        let mut filter = EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new(self.get_external_log_level()));
+        let native_log_level = self.get_native_log_level();
+        for package in metadata.workspace_packages() {
+            let directive = format!("{}={}", package.name.to_case(Case::Snake), native_log_level,);
+            filter = filter.add_directive(directive.parse()?);
+        }
+        // additional configuration
+        /*
+        filter = filter
+            .add_directive("sqlx=debug".parse()?);
+        */
+        Ok(filter)
     }
 }
 
@@ -44,31 +62,12 @@ impl<S: BaseService> Supervisor<S> {
     }
 
     pub async fn start(self) -> anyhow::Result<()> {
-        let mut filter = tracing_subscriber::EnvFilter::from_default_env();
-        for directive in &[
-            "submerge_api=trace",
-            "submerge_auth3=trace",
-            "submerge_base=trace",
-            "submerge_bloom=trace",
-            "submerge_cli=trace",
-            "submerge_cortex=trace",
-            "submerge_crystal=trace",
-            "submerge_fractal=trace",
-            "submerge_logging=trace",
-            "submerge_metrics=trace",
-            "submerge_persistence=trace",
-            "submerge_reflex=trace",
-            "submerge_sentinel=trace",
-            "submerge_substrate_client=trace",
-            "submerge_util=trace",
-        ] {
-            filter = filter.add_directive(directive.parse().unwrap());
-        }
+        let log_filter = self.service.get_log_env_filter()?;
         let tracing_subscriber = FmtSubscriber::builder()
-            .with_max_level(Level::DEBUG)
-            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ACTIVE)
+            .with_max_level(Level::TRACE)
+            .with_span_events(FmtSpan::ACTIVE)
             .with_target(true)
-            .with_env_filter(filter)
+            .with_env_filter(log_filter)
             .finish();
         tracing::subscriber::set_global_default(tracing_subscriber)
             .context("Setting global default tracing subscriber failed.")?;

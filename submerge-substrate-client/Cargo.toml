@@ -14,7 +14,6 @@ hex = { workspace = true }
 jsonrpsee = { workspace = true }
 jsonrpsee-core = { workspace = true }
 parity-scale-codec = { workspace = true }
-sp-runtime = { workspace = true }
 submerge-base = { path = "../submerge-base" }
 submerge-util = { path = "../submerge-util" }
 tokio = { workspace = true }

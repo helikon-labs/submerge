@@ -1,5 +1,5 @@
 use clap::Parser;
-use submerge_base::args::{HTTPAPIArgs, MetricsArgs, PostgreSQLArgs, ServiceArgs};
+use submerge_base::args::{HTTPAPIArgs, LoggingArgs, MetricsArgs, PostgreSQLArgs, ServiceArgs};
 
 #[derive(Parser, Clone, Debug)]
 pub struct Args {
@@ -21,4 +21,7 @@ pub struct Args {
 
     #[clap(flatten)]
     pub service: ServiceArgs,
+
+    #[clap(flatten)]
+    pub logging: LoggingArgs,
 }

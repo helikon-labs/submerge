@@ -59,3 +59,12 @@ pub struct MetricsArgs {
     /// Prometheus server listen port
     pub metrics_port: u16,
 }
+
+#[derive(Parser, Clone, Debug)]
+pub struct LoggingArgs {
+    #[arg(long, default_value = "debug")]
+    pub native_log_level: String,
+
+    #[arg(long, default_value = "warn")]
+    pub external_log_level: String,
+}

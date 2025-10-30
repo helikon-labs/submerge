@@ -86,6 +86,14 @@ impl BaseService for Crystal {
         )
     }
 
+    fn get_external_log_level(&self) -> &str {
+        &self.args.logging.external_log_level
+    }
+
+    fn get_native_log_level(&self) -> &str {
+        &self.args.logging.native_log_level
+    }
+
     async fn run(&self) -> anyhow::Result<()> {
         let chainspec = Chainspec::from_chain_name_or_file_path(&self.args.chain)?;
         self.print_summary(&chainspec);
