@@ -4,8 +4,8 @@ use submerge_base::args::{HTTPAPIArgs, MetricsArgs, PostgreSQLArgs, ServiceArgs}
 #[derive(Parser, Clone, Debug)]
 pub struct Args {
     #[arg(short = 'c', long)]
-    /// Path of the chain specification file
-    pub chainspec_path: String,
+    /// Name of the chain, or path of the chain specification file
+    pub chain: String,
 
     #[arg(long)]
     pub legacy_decode_api_url: Option<String>,

@@ -3,9 +3,7 @@
 use crate::args::Args;
 use crate::persistence::CrystalPostgreSQLStorage as _;
 use crate::worker::{WorkerConfig, WorkerManager, WorkerType};
-use anyhow::Context as _;
 use async_trait::async_trait;
-use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 use submerge_base::types::substrate::chainspec::{ChainProperties, Chainspec};
@@ -89,10 +87,7 @@ impl BaseService for Crystal {
     }
 
     async fn run(&self) -> anyhow::Result<()> {
-        let chainspec_json = fs::read_to_string(&self.args.chainspec_path)
-            .context("🔴 Failed to read the chainspec file.")?;
-        let chainspec: Chainspec =
-            serde_json::from_str(&chainspec_json).context("🔴 Failed to parse chainspec JSON.")?;
+        let chainspec = Chainspec::from_chain_name_or_file_path(&self.args.chain)?;
         self.print_summary(&chainspec);
         self.process_genesis(&chainspec).await?;
 
@@ -139,8 +134,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(10_000_000),
-                    maybe_end_block_number: Some(10_000_100),
+                    maybe_start_block_number: Some(0),
+                    maybe_end_block_number: Some(1000),
                     scan: true,
                     reindex: false,
                 },

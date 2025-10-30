@@ -1,6 +1,7 @@
 pub mod account_id;
 pub mod block;
 pub mod block_trace;
+pub mod chain;
 pub mod chainspec;
 pub mod multi_address;
 pub mod runtime;
