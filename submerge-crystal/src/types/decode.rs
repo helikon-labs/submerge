@@ -234,7 +234,11 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
             field_map.insert(field_name.to_case(Case::Camel), Box::new(field_value));
         }
         if field_map.len() == 1 && field_map.keys().all(|field| field.is_empty()) {
-            Ok(*field_map.get("").unwrap().clone())
+            if let Some(val) = field_map.get("") {
+                Ok(*val.clone())
+            } else {
+                Ok(Value::Object(field_map))
+            }
         } else {
             Ok(Value::Object(field_map))
         }
@@ -324,7 +328,10 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
             result.insert(
                 "value".to_string(),
                 if values.len() == 1 {
-                    values.into_iter().next().unwrap()
+                    match values.into_iter().next() {
+                        Some(v) => v,
+                        None => Box::new(Value::Null),
+                    }
                 } else {
                     Box::new(Value::Array(values.iter().map(|v| *v.clone()).collect()))
                 },

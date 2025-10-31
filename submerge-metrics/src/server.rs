@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use std::{convert::Infallible, net::ToSocketAddrs, string::FromUtf8Error};
 use tokio::{task, task::JoinError};
-use warp::http::Response;
+use warp::http::{Error as HTTPError, Response};
 use warp::{reject::Reject, Filter, Rejection, Reply};
 
 #[derive(Debug, thiserror::Error)]
@@ -15,6 +15,8 @@ enum Error {
     FromUtf8(#[from] FromUtf8Error),
     #[error("Failed to spawn blocking thread: {0}")]
     BlockingThreadFailed(#[from] JoinError),
+    #[error("Failed to build response: {0}")]
+    Http(#[from] HTTPError),
 }
 
 pub async fn start<T: ToSocketAddrs + Debug>(address: T) {
@@ -41,8 +43,7 @@ async fn metrics_text_handler(registry: Arc<Registry>) -> Result<impl Reply, Rej
         Ok::<_, Error>(
             Response::builder()
                 .header("Content-Type", encoder.format_type())
-                .body(encoded)
-                .unwrap(),
+                .body(encoded)?,
         )
     })
     .await

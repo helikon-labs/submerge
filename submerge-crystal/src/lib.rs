@@ -18,7 +18,8 @@ mod persistence;
 mod types;
 mod worker;
 
-const RPC_URL: &str = "ws://104.247.178.13:5141";
+const RPC_URL: &str = "wss://rpc.helikon.io/hydration";
+//const RPC_URL: &str = "ws://104.247.178.13:5141";
 // const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
 
 pub struct Crystal {
@@ -115,7 +116,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    false,
+                    true,
                     false,
                 ),
             )
@@ -134,7 +135,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    false,
+                    true,
                     false,
                 ),
             )
@@ -142,8 +143,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(0),
-                    maybe_end_block_number: Some(1000),
+                    maybe_start_block_number: Some(9865000),
+                    maybe_end_block_number: Some(9865001),
                     scan: true,
                     reindex: false,
                 },
@@ -158,7 +159,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    false,
+                    true,
                     true,
                 ),
             )

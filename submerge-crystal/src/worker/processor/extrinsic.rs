@@ -154,6 +154,7 @@ impl BlockProcessor {
         let block_hash_hex = hex::encode(block_hash);
         let mut raw_extrinsics = Vec::new();
         let block = self.substrate_client.get_block(&block_hash_hex).await?;
+        let block_number = block.header.get_number()?;
         block
             .extrinsics
             .iter()
@@ -227,7 +228,11 @@ impl BlockProcessor {
             let is_signed = (signed_version & sign_mask) == sign_mask;
             let version = signed_version & version_mask;
             let signature = if is_signed {
-                let signer = MultiAddress::decode(&mut bytes)?;
+                tracing::info!("DECODE {} EXT #{}", block_number, extrinsics.len());
+                // let signer = MultiAddress::decode(&mut bytes)?;
+                let signer =
+                    submerge_base::types::substrate::account_id::AccountId::decode(&mut bytes)?;
+
                 let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
                 let mut extra = None;
                 if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
@@ -268,7 +273,7 @@ impl BlockProcessor {
                     }
                 }
                 let signature = Signature {
-                    signer,
+                    signer: MultiAddress::Id(signer),
                     signature,
                     extra,
                 };
@@ -435,7 +440,10 @@ impl BlockProcessor {
                 if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
                     match metadata {
                         RuntimeMetadata::V14(metadata_v14) => {
-                            let visitor = ValueVisitor::new(call_type.unwrap().id, None);
+                            let call_type = call_type.ok_or_else(|| {
+                                anyhow::Error::msg("Missing call_type for metadata V14+.")
+                            })?;
+                            let visitor = ValueVisitor::new(call_type.id, None);
                             let extra_json_array = scale_decode::visitor::decode_with_visitor(
                                 &mut bytes,
                                 extra_type.id,
@@ -479,7 +487,8 @@ impl BlockProcessor {
                 None
             };
 
-            let call_type = get_runtime_call_type(metadata)?;
+            let call_type = call_type
+                .ok_or_else(|| anyhow::Error::msg("Missing call_type for metadata V14+."))?;
             let visitor = ValueVisitor::new(call_type.id, None);
             let call = match metadata {
                 RuntimeMetadata::V14(metadata_v14) => {

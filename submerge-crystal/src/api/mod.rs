@@ -60,7 +60,7 @@ pub(crate) async fn on_server_ready(host: &str, port: u16) {
 }
 
 async fn metrics_middleware(request: Request, next: Next) -> Response {
-    metrics::api_requests_total().inc();
+    use_metric(metrics::api_requests_total(), |m| m.inc());
     use_metric(metrics::api_active_connections(), |m| m.inc());
 
     let start = std::time::Instant::now();
@@ -68,12 +68,11 @@ async fn metrics_middleware(request: Request, next: Next) -> Response {
     let elapsed = start.elapsed().as_secs_f64() * 1000.0;
     let status_code = response.status();
 
-    metrics::api_response_time_ms().observe(elapsed);
-    metrics::api_response_status_code_counter()
-        .with_label_values(&[status_code.as_str()])
-        .inc();
+    use_metric(metrics::api_response_time_ms(), |m| m.observe(elapsed));
+    use_metric(metrics::api_response_status_code_counter(), |m| {
+        m.with_label_values(&[status_code.as_str()]).inc();
+    });
     use_metric(metrics::api_active_connections(), |m| m.dec());
-
     response
 }
 

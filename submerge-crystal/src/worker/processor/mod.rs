@@ -122,7 +122,7 @@ impl BlockProcessor {
                 )
                 .await
             {
-                Ok(_) => crate::metrics::processed_finalized_block_number()
+                Ok(_) => crate::metrics::processed_finalized_block_number()?
                     .with_label_values(&[&self.worker_id.to_string()])
                     .set(number as i64),
                 Err(error) => {
@@ -239,7 +239,7 @@ impl BlockProcessor {
                     self.prune_other_blocks(block_number, &block_hash, &mut tx)
                         .await?;
                     let elapsed_time_ms = start_time.elapsed().as_millis();
-                    crate::metrics::block_status_update_time_ms()
+                    crate::metrics::block_status_update_time_ms()?
                         .with_label_values(&[&self.worker_id.to_string()])
                         .observe(elapsed_time_ms as f64);
                 }
@@ -405,7 +405,7 @@ impl BlockProcessor {
             BlockStatus::Finalized => "🟩",
         };
         let elapsed_time_ms = start_time.elapsed().as_millis();
-        crate::metrics::block_processing_time_ms()
+        crate::metrics::block_processing_time_ms()?
             .with_label_values(&[&self.worker_id.to_string()])
             .observe(elapsed_time_ms as f64);
         tracing::info!(

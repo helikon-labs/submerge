@@ -13,7 +13,8 @@ use std::sync::{Arc, LazyLock};
 use submerge_util::serde::strip_nuls;
 use tokio::sync::RwLock;
 
-const METADATA_CACHE_SIZE: NonZeroUsize = NonZeroUsize::new(10).unwrap();
+const METADATA_CACHE_SIZE: NonZeroUsize =
+    NonZeroUsize::new(10).expect("Metadata cache size is non-zero");
 
 static PARSED_METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<Metadata>>>> =
     LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));

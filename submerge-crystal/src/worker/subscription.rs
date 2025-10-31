@@ -19,7 +19,7 @@ async fn on_finalized_block(
     let finalized_block_hash_bytes = header.get_hash_bytes()?;
     let finalized_block_hash_hex = hex::encode(finalized_block_hash_bytes);
     let finalized_block_number = header.get_number()?;
-    crate::metrics::target_finalized_block_number()
+    crate::metrics::target_finalized_block_number()?
         .with_label_values(&[&worker_id])
         .set(finalized_block_number as i64);
     tracing::info!(
@@ -59,7 +59,7 @@ async fn on_finalized_block(
                 postgres
                     .set_last_indexed_finalized_block_number_and_hash(block_number, &hash_bytes)
                     .await?;
-                crate::metrics::processed_finalized_block_number()
+                crate::metrics::processed_finalized_block_number()?
                     .with_label_values(&[&worker_id])
                     .set(block_number as i64);
             }
@@ -88,7 +88,7 @@ async fn on_proposed_block(
     let hash_bytes = header.get_hash_bytes()?;
     let hash_hex = hex::encode(hash_bytes);
     let number = header.get_number()?;
-    crate::metrics::target_best_block_number()
+    crate::metrics::target_best_block_number()?
         .with_label_values(&[&worker_id])
         .set(number as i64);
     tracing::info!(
@@ -100,7 +100,7 @@ async fn on_proposed_block(
         .process_block(skip_traces, false, &hash_hex, number, BlockStatus::Proposed)
         .await
     {
-        Ok(_) => crate::metrics::processed_best_block_number()
+        Ok(_) => crate::metrics::processed_best_block_number()?
             .with_label_values(&[&worker_id])
             .set(number as i64),
         Err(error) => {

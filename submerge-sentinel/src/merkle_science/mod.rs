@@ -256,7 +256,7 @@ mod tests {
         assert_eq!(screening.identifier, address);
         assert_eq!(screening.risk.level, RiskLevel::NoRisk);
         assert!(screening.tags.owner.is_some());
-        assert_eq!(screening.tags.owner.unwrap().tag_type, "Exchange");
+        assert_eq!(screening.tags.owner?.tag_type, "Exchange");
         Ok(())
     }
 
@@ -287,7 +287,7 @@ mod tests {
             .get_blockchain_supported_digital_assets(&chain)
             .await?;
         assert!(!assets.is_empty());
-        assert_eq!(assets.first().unwrap().symbol, "DOT");
+        assert_eq!(assets.first()?.symbol, "DOT");
         Ok(())
     }
 
