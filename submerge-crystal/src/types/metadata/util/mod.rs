@@ -48,11 +48,10 @@ pub fn get_extrinsic_extra_type(
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => {
             let extrinsic_type = v14::get_extrinsic_type(metadata_v14)?;
-            if let Some(ty) = extrinsic_type
-                .ty
-                .type_params
-                .iter()
-                .find(|p| p.name.to_lowercase() == "extra")
+            if let Some(ty) =
+                extrinsic_type.ty.type_params.iter().find(|p| {
+                    p.name.to_lowercase() == "extra" || p.name.to_lowercase() == "extension"
+                })
             {
                 if let Some(ty) = ty.ty {
                     Ok(v14::get_metadata_type_by_id(metadata_v14, ty.id))

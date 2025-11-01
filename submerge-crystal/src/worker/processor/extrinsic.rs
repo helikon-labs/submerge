@@ -25,6 +25,11 @@ use crate::{
     },
 };
 
+const SIGN_MASK: u8 = 0b10000000;
+const VERSION_MASK: u8 = 0b00000100;
+const SYSTEM_PALLET_NAME: &str = "system";
+const EXTRINSIC_SUCCESS_EVENT: &str = "extrinsicsuccess";
+
 impl BlockProcessor {
     #[async_recursion]
     async fn legacy_json_value_to_value(
@@ -124,7 +129,7 @@ impl BlockProcessor {
         let pallet_call = pallet
             .calls
             .iter()
-            .find(|event| event.name.to_lowercase() == pallet_call_name.to_lowercase())
+            .find(|call| call.name.to_lowercase() == pallet_call_name.to_lowercase())
             .ok_or(anyhow::Error::msg(format!(
                 "Event {pallet_call_name} not found in pallet {pallet_name} in metadata database."
             )))?;
@@ -171,8 +176,8 @@ impl BlockProcessor {
                 .iter()
                 .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
                 .any(|e| {
-                    e.pallet_name.to_lowercase() == "system"
-                        && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
+                    e.pallet_name.to_lowercase() == SYSTEM_PALLET_NAME
+                        && e.pallet_event_name.to_lowercase() == EXTRINSIC_SUCCESS_EVENT
                 });
             if metadata_version < 14 {
                 let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client
@@ -439,10 +444,8 @@ impl BlockProcessor {
             let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
             let mut bytes: &[u8] = &bytes_vector;
             let signed_version = bytes.read_byte()?;
-            let sign_mask = 0b10000000;
-            let version_mask = 0b00000100;
-            let is_signed = (signed_version & sign_mask) == sign_mask;
-            let version = signed_version & version_mask;
+            let is_signed = (signed_version & SIGN_MASK) == SIGN_MASK;
+            let version = signed_version & VERSION_MASK;
             let signature = if is_signed {
                 let signer = MultiAddress::decode(&mut bytes)?;
                 let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
