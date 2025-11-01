@@ -6,7 +6,8 @@ use rustc_hash::FxHashMap as HashMap;
 use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
-    block::BlockHeader, block_trace::BlockTrace, multi_address::MultiAddress, signature::Signature,
+    account_id::AccountId, block::BlockHeader, block_trace::BlockTrace,
+    multi_address::MultiAddress, signature::Signature,
 };
 use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
@@ -17,8 +18,8 @@ use crate::{
         decode::{Value, ValueVisitor},
         legacy::LegacyCall,
         metadata::util::{
-            get_extrinsic_extra_type, get_metadata_version, get_runtime_call_type,
-            get_signed_extensions,
+            get_extrinsic_extra_type, get_extrinsic_signer_address_type, get_metadata_version,
+            get_runtime_call_type, get_signed_extensions,
         },
         BlockStatus, Call, Event, Extrinsic,
     },
@@ -149,12 +150,16 @@ impl BlockProcessor {
         metadata: &RuntimeMetadata,
         events: &[Event],
     ) -> anyhow::Result<Vec<Extrinsic>> {
+        let signer_address_type_path = get_extrinsic_signer_address_type(metadata)?
+            .ty
+            .path
+            .segments
+            .join("::");
         let mut extrinsics = Vec::new();
         let metadata_version = get_metadata_version(metadata);
         let block_hash_hex = hex::encode(block_hash);
         let mut raw_extrinsics = Vec::new();
         let block = self.substrate_client.get_block(&block_hash_hex).await?;
-        let block_number = block.header.get_number()?;
         block
             .extrinsics
             .iter()
@@ -228,11 +233,16 @@ impl BlockProcessor {
             let is_signed = (signed_version & sign_mask) == sign_mask;
             let version = signed_version & version_mask;
             let signature = if is_signed {
-                tracing::info!("DECODE {} EXT #{}", block_number, extrinsics.len());
-                // let signer = MultiAddress::decode(&mut bytes)?;
-                let signer =
-                    submerge_base::types::substrate::account_id::AccountId::decode(&mut bytes)?;
-
+                let signer = match signer_address_type_path.as_str() {
+                    "sp_core::crypto::AccountId32" => {
+                        let signer = AccountId::decode(&mut bytes)?;
+                        MultiAddress::Id(signer)
+                    },
+                    "sp_runtime::multiaddress::MultiAddress" => {
+                        MultiAddress::decode(&mut bytes)?
+                    }
+                    _ => anyhow::bail!("Unsupported signer address type in metadata extrinsic signed extensions: {signer_address_type_path}"),
+                };
                 let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
                 let mut extra = None;
                 if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
@@ -273,7 +283,7 @@ impl BlockProcessor {
                     }
                 }
                 let signature = Signature {
-                    signer: MultiAddress::Id(signer),
+                    signer,
                     signature,
                     extra,
                 };

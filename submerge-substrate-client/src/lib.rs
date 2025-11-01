@@ -110,6 +110,14 @@ impl SubstrateClient {
         Ok(system_health)
     }
 
+    pub async fn get_chain_name(&self) -> anyhow::Result<String> {
+        let name: String = self
+            .ws_client
+            .request("system_chain", rpc_params!())
+            .await?;
+        Ok(name)
+    }
+
     pub async fn get_block_header(&self, block_hash: &str) -> anyhow::Result<BlockHeader> {
         let mut header: BlockHeader = self
             .ws_client

@@ -36,7 +36,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use std::sync::Arc;
-use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::ChainProperties};
+use submerge_base::args::PostgreSQLArgs;
 use submerge_metrics::use_metric;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use tokio::net::TcpListener;
@@ -50,7 +50,7 @@ const MAX_RESPONSE_MESSAGE_BYTES: usize = 64 * 1024;
 
 #[derive(Clone)]
 pub struct ServiceState {
-    pub chain_properties: ChainProperties,
+    pub chain_name: String,
     pub postgres: Arc<PostgreSQLStorage>,
     pub worker_manager: Arc<WorkerManager>,
 }
@@ -248,7 +248,7 @@ async fn shutdown_signal() {
 }
 
 pub(crate) async fn run_api(
-    chain_properties: ChainProperties,
+    chain_name: String,
     postgres_args: &PostgreSQLArgs,
     worker_manager: &Arc<WorkerManager>,
     host: &str,
@@ -256,7 +256,7 @@ pub(crate) async fn run_api(
 ) -> anyhow::Result<()> {
     let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
     let service_state = ServiceState {
-        chain_properties,
+        chain_name,
         postgres: postgres.clone(),
         worker_manager: worker_manager.clone(),
     };

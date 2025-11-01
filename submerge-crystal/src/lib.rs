@@ -6,7 +6,7 @@ use crate::worker::{WorkerConfig, WorkerManager, WorkerType};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;
-use submerge_base::types::substrate::chainspec::{ChainProperties, Chainspec};
+use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
@@ -18,7 +18,9 @@ mod persistence;
 mod types;
 mod worker;
 
-const RPC_URL: &str = "wss://rpc.helikon.io/hydration";
+const RPC_URL: &str = "wss://bifrost-polkadot.dotters.network";
+//const RPC_URL: &str = "wss://rpc.helikon.io/polkadot";
+//const RPC_URL: &str = "wss://rpc.helikon.io/hydration";
 //const RPC_URL: &str = "ws://104.247.178.13:5141";
 // const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
 
@@ -48,9 +50,9 @@ impl Crystal {
         );
     }
 
-    async fn launch_api(&self, chain_properties: ChainProperties) -> anyhow::Result<()> {
+    async fn launch_api(&self, chain_name: &str) -> anyhow::Result<()> {
         api::run_api(
-            chain_properties,
+            chain_name.to_string(),
             &self.args.postgres,
             &self.worker_manager,
             &self.args.api.api_host,
@@ -106,7 +108,7 @@ impl BaseService for Crystal {
             .spawn(
                 WorkerType::SubscribeNewBlocks,
                 WorkerConfig::new(
-                    chainspec.properties.clone(),
+                    chainspec.name.clone(),
                     self.postgres.clone(),
                     RPCConfig {
                         rpc_url: RPC_URL.to_string(),
@@ -125,7 +127,7 @@ impl BaseService for Crystal {
             .spawn(
                 WorkerType::SubscribeFinalizedBlocks,
                 WorkerConfig::new(
-                    chainspec.properties.clone(),
+                    chainspec.name.clone(),
                     self.postgres.clone(),
                     RPCConfig {
                         rpc_url: RPC_URL.to_string(),
@@ -143,13 +145,13 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(9865000),
-                    maybe_end_block_number: Some(9865001),
+                    maybe_start_block_number: Some(1000),
+                    maybe_end_block_number: Some(2000),
                     scan: true,
                     reindex: false,
                 },
                 WorkerConfig::new(
-                    chainspec.properties.clone(),
+                    chainspec.name.clone(),
                     self.postgres.clone(),
                     RPCConfig {
                         rpc_url: RPC_URL.to_string(),
@@ -164,7 +166,7 @@ impl BaseService for Crystal {
                 ),
             )
             .await;
-        self.launch_api(chainspec.properties.clone()).await?;
+        self.launch_api(&chainspec.name).await?;
         Ok(())
     }
 }

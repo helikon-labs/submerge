@@ -29,6 +29,19 @@ pub fn get_decode_different_string(value: &DecodeDifferentStr) -> String {
     }
 }
 
+pub fn get_extrinsic_signer_address_type(
+    metadata: &RuntimeMetadata,
+) -> anyhow::Result<&PortableType> {
+    match metadata {
+        RuntimeMetadata::V14(metadata_v14) => v14::get_extrinsic_signer_address_type(metadata_v14),
+        RuntimeMetadata::V15(metadata_v15) => v15::get_extrinsic_signer_address_type(metadata_v15),
+        _ => anyhow::bail!(format!(
+            "Unsupported metadata version: {}",
+            get_metadata_version(metadata)
+        )),
+    }
+}
+
 pub fn get_extrinsic_extra_type(
     metadata: &RuntimeMetadata,
 ) -> anyhow::Result<Option<&PortableType>> {

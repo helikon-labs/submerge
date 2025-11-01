@@ -1,5 +1,4 @@
 use std::{sync::Arc, time::Duration};
-use submerge_base::types::substrate::chainspec::ChainProperties;
 use submerge_substrate_client::{RPCConfig, SubstrateClient};
 use tokio::sync::RwLock;
 
@@ -25,7 +24,7 @@ pub enum WorkerType {
 }
 
 pub struct WorkerConfig {
-    chain_properties: ChainProperties,
+    chain_name: String,
     postgres: Arc<PostgreSQLStorage>,
     rpc_config: RPCConfig,
     legacy_decode_api_url: Option<String>,
@@ -36,7 +35,7 @@ pub struct WorkerConfig {
 
 impl WorkerConfig {
     pub fn new(
-        chain_properties: ChainProperties,
+        chain_name: String,
         postgres: Arc<PostgreSQLStorage>,
         rpc_config: RPCConfig,
         legacy_decode_api_url: Option<String>,
@@ -45,7 +44,7 @@ impl WorkerConfig {
         stop_on_error: bool,
     ) -> Self {
         Self {
-            chain_properties,
+            chain_name,
             postgres,
             rpc_config,
             legacy_decode_api_url,
@@ -157,11 +156,13 @@ impl Worker {
                 &self.config.rpc_config.rpc_url
             );
         }
-        let chain_properties = substrate_client.get_chain_properties().await?;
-        if chain_properties != self.config.chain_properties {
+        let chain_name = substrate_client.get_chain_name().await?;
+        if chain_name != self.config.chain_name {
             anyhow::bail!(
-                "🔴 RPC endpoint at {} is not compatible with the chain spec.",
-                &self.config.rpc_config.rpc_url
+                "🔴 RPC endpoint at {} is not compatible with the chain spec. Chain name mismatch: expected {}, got {}.",
+                &self.config.rpc_config.rpc_url,
+                &self.config.chain_name,
+                chain_name,
             );
         }
         if !self.config.skip_traces {

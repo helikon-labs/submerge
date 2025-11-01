@@ -24,7 +24,7 @@ pub(crate) async fn spawn_worker(State(state): State<ServiceState>) {
         .spawn(
             WorkerType::SubscribeNewBlocks,
             WorkerConfig::new(
-                state.chain_properties.clone(),
+                state.chain_name.clone(),
                 state.postgres.clone(),
                 RPCConfig {
                     rpc_url: "wss://public-rpc.mainnet.aventus.io".to_string(),

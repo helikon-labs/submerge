@@ -144,7 +144,6 @@ pub struct CallRow {
 #[allow(dead_code)]
 #[derive(Debug, FromRow)]
 pub struct CallCompositeRow {
-    #[allow(dead_code)]
     pub id: i64,
     pub block_hash: Vec<u8>,
     pub block_number: i64,

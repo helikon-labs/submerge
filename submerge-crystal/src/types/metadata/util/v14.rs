@@ -13,6 +13,26 @@ pub fn get_extrinsic_type(metadata_v14: &RuntimeMetadataV14) -> anyhow::Result<&
         .ok_or(anyhow::Error::msg("Extrinsic type not found in metadata."))
 }
 
+pub fn get_extrinsic_signer_address_type(
+    metadata_v14: &RuntimeMetadataV14,
+) -> anyhow::Result<&PortableType> {
+    let address_type_id = get_extrinsic_type(metadata_v14)?
+        .ty
+        .type_params
+        .iter()
+        .find(|p| p.name.to_lowercase() == "address")
+        .ok_or(anyhow::Error::msg(
+            "Address type not found in extrinsic type params.",
+        ))?
+        .ty
+        .ok_or(anyhow::Error::msg(
+            "Address type is null in extrinsic type params.",
+        ))?
+        .id;
+    get_metadata_type_by_id(metadata_v14, address_type_id)
+        .ok_or(anyhow::Error::msg("Address type not found in metadata."))
+}
+
 pub fn get_pallet_metadata(
     metadata_v14: &RuntimeMetadataV14,
     pallet_index: u8,
