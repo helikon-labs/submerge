@@ -131,7 +131,7 @@ impl BlockProcessor {
             .iter()
             .find(|call| call.name.to_lowercase() == pallet_call_name.to_lowercase())
             .ok_or(anyhow::Error::msg(format!(
-                "Event {pallet_call_name} not found in pallet {pallet_name} in metadata database."
+                "Call {pallet_call_name} not found in pallet {pallet_name} in metadata database."
             )))?;
         Ok(Call {
             pallet_index: pallet.index,
@@ -155,11 +155,6 @@ impl BlockProcessor {
         metadata: &RuntimeMetadata,
         events: &[Event],
     ) -> anyhow::Result<Vec<Extrinsic>> {
-        let signer_address_type_path = get_extrinsic_signer_address_type(metadata)?
-            .ty
-            .path
-            .segments
-            .join("::");
         let mut extrinsics = Vec::new();
         let metadata_version = get_metadata_version(metadata);
         let block_hash_hex = hex::encode(block_hash);
@@ -229,14 +224,17 @@ impl BlockProcessor {
                 });
                 continue;
             }
+            let signer_address_type_path = get_extrinsic_signer_address_type(metadata)?
+                .ty
+                .path
+                .segments
+                .join("::");
             let call_type = get_runtime_call_type(metadata)?;
             let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
             let mut bytes: &[u8] = &bytes_vector;
             let signed_version = bytes.read_byte()?;
-            let sign_mask = 0b10000000;
-            let version_mask = 0b00000100;
-            let is_signed = (signed_version & sign_mask) == sign_mask;
-            let version = signed_version & version_mask;
+            let is_signed = (signed_version & SIGN_MASK) == SIGN_MASK;
+            let version = signed_version & VERSION_MASK;
             let signature = if is_signed {
                 let signer = match signer_address_type_path.as_str() {
                     "sp_core::crypto::AccountId32" => {
@@ -388,8 +386,8 @@ impl BlockProcessor {
                 .iter()
                 .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsics.len() as u32))
                 .any(|e| {
-                    e.pallet_name.to_lowercase() == "system"
-                        && e.pallet_event_name.to_lowercase() == "extrinsicsuccess"
+                    e.pallet_name.to_lowercase() == SYSTEM_PALLET_NAME
+                        && e.pallet_event_name.to_lowercase() == EXTRINSIC_SUCCESS_EVENT
                 });
             if metadata_version < 14 {
                 let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client

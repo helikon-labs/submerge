@@ -1,6 +1,9 @@
 use frame_metadata::v14::{PalletMetadata as PalletMetadataV14, RuntimeMetadataV14};
 use scale_info::{form::PortableForm, PortableType, Variant};
 
+const UNCHECKED_EXTRINSIC_TYPE_PATH: &str =
+    "sp_runtime::generic::unchecked_extrinsic::UncheckedExtrinsic";
+
 pub fn get_metadata_type_by_id(
     metadata_v14: &RuntimeMetadataV14,
     type_id: u32,
@@ -9,8 +12,14 @@ pub fn get_metadata_type_by_id(
 }
 
 pub fn get_extrinsic_type(metadata_v14: &RuntimeMetadataV14) -> anyhow::Result<&PortableType> {
-    get_metadata_type_by_id(metadata_v14, metadata_v14.extrinsic.ty.id)
-        .ok_or(anyhow::Error::msg("Extrinsic type not found in metadata."))
+    let extrinsic_type = metadata_v14.types.types
+        .iter()
+        .find(|ty| ty.ty.path.segments.join("::") == UNCHECKED_EXTRINSIC_TYPE_PATH)
+        .ok_or(anyhow::Error::msg(format!("Extrinsic type with path {UNCHECKED_EXTRINSIC_TYPE_PATH} not found in metadata type registry.")))?;
+    get_metadata_type_by_id(metadata_v14, extrinsic_type.id).ok_or(anyhow::Error::msg(format!(
+        "Extrinsic type with id {} not found in metadata.",
+        extrinsic_type.id
+    )))
 }
 
 pub fn get_extrinsic_signer_address_type(
