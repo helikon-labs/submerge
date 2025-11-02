@@ -16,16 +16,11 @@ async fn on_finalized_block(
     header: BlockHeader,
     skip_traces: bool,
 ) -> anyhow::Result<()> {
-    let finalized_block_hash_bytes = header.get_hash_bytes()?;
-    let finalized_block_hash_hex = hex::encode(finalized_block_hash_bytes);
     let finalized_block_number = header.get_number()?;
     crate::metrics::target_finalized_block_number()?
         .with_label_values(&[&worker_id])
         .set(finalized_block_number as i64);
-    tracing::info!(
-        "🟦 New finalized block [{finalized_block_number}][0x{}].",
-        truncate_hash(&finalized_block_hash_hex)
-    );
+    tracing::info!("🟦 New finalized block [{finalized_block_number}].");
     let mut start_block_number = finalized_block_number;
     if let Some((last_finalized_number, _)) = postgres
         .get_last_indexed_finalized_block_number_and_hash()
@@ -43,7 +38,7 @@ async fn on_finalized_block(
     }
 
     for block_number in start_block_number..=finalized_block_number {
-        let hash_hex = processor.get_finalized_block_hash_hex(block_number).await?;
+        let hash_hex = processor.get_block_hash_hex(block_number).await?;
         let hash_bytes = hex::decode(&hash_hex)?;
         match processor
             .process_block(
@@ -85,15 +80,15 @@ async fn on_proposed_block(
     header: BlockHeader,
     skip_traces: bool,
 ) -> anyhow::Result<()> {
-    let hash_bytes = header.get_hash_bytes()?;
-    let hash_hex = hex::encode(hash_bytes);
     let number = header.get_number()?;
+    let hash_hex = processor.get_block_hash_hex(number).await?;
+    let hash_bytes = hex::decode(&hash_hex)?;
     crate::metrics::target_best_block_number()?
         .with_label_values(&[&worker_id])
         .set(number as i64);
     tracing::info!(
         "🟦 New proposed block [{number}][0x{}].",
-        truncate_hash(&hash_hex)
+        truncate_hash(&hash_hex),
     );
 
     match processor

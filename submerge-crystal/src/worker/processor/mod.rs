@@ -198,7 +198,7 @@ impl BlockProcessor {
         Ok(())
     }
 
-    pub async fn get_finalized_block_hash_hex(&self, block_number: u64) -> anyhow::Result<String> {
+    pub async fn get_block_hash_hex(&self, block_number: u64) -> anyhow::Result<String> {
         self.substrate_client.get_block_hash(block_number).await
     }
 

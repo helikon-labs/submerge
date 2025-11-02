@@ -18,7 +18,8 @@ mod persistence;
 mod types;
 mod worker;
 
-const RPC_URL: &str = "wss://astar-rpc.n.dwellir.com";
+const RPC_URL: &str = "wss://nexus.dotters.network";
+//const RPC_URL: &str = "wss://astar-rpc.n.dwellir.com";
 //const RPC_URL: &str = "wss://bifrost-polkadot.dotters.network";
 //const RPC_URL: &str = "wss://acala.dotters.network";
 //const RPC_URL: &str = "wss://rpc.helikon.io/asset-hub-kusama";
