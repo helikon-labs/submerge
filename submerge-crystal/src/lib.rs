@@ -18,12 +18,17 @@ mod persistence;
 mod types;
 mod worker;
 
-const RPC_URL: &str = "wss://nexus.dotters.network";
+//const RPC_URL: &str = "wss://acala.dotters.network";
 //const RPC_URL: &str = "wss://astar-rpc.n.dwellir.com";
 //const RPC_URL: &str = "wss://bifrost-polkadot.dotters.network";
-//const RPC_URL: &str = "wss://acala.dotters.network";
-//const RPC_URL: &str = "wss://rpc.helikon.io/asset-hub-kusama";
-//const RPC_URL: &str = "wss://rpc.helikon.io/hydration";
+//const RPC_URL: &str = "wss://rpc-centrifuge.luckyfriday.io";
+//const RPC_URL: &str = "wss://hydration.dotters.network";
+//const RPC_URL: &str = "wss://nexus.dotters.network";
+//const RPC_URL: &str = "wss://moonbeam.dotters.network";
+//const RPC_URL: &str = "wss://mythos.dotters.network";
+
+const RPC_URL: &str = "wss://mythos.dotters.network";
+
 //const RPC_URL: &str = "ws://104.247.178.13:5141";
 //const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
 
@@ -148,8 +153,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(0),
-                    maybe_end_block_number: Some(1000),
+                    maybe_start_block_number: Some(3000000),
+                    maybe_end_block_number: Some(3000000),
                     scan: true,
                     reindex: false,
                 },
