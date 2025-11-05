@@ -26,11 +26,14 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub fn get_pallet_by_index(&self, index: u8) -> Option<MetadataPallet> {
+    pub fn get_pallet_by_index(&self, index: u8) -> Option<&MetadataPallet> {
+        self.pallets.iter().find(|pallet| pallet.index == index)
+    }
+
+    pub fn get_pallet_by_name(&self, name: &str) -> Option<&MetadataPallet> {
         self.pallets
             .iter()
-            .find(|pallet| pallet.index == index)
-            .cloned()
+            .find(|pallet| pallet.name.eq_ignore_ascii_case(name))
     }
 }
 
@@ -47,15 +50,24 @@ pub struct MetadataPallet {
 }
 
 impl MetadataPallet {
-    pub fn get_event_by_index(&self, index: u8) -> Option<MetadataEvent> {
-        self.events
-            .iter()
-            .find(|event| event.index == index)
-            .cloned()
+    pub fn get_event_by_index(&self, index: u8) -> Option<&MetadataEvent> {
+        self.events.iter().find(|event| event.index == index)
     }
 
-    pub fn get_call_by_index(&self, index: u8) -> Option<MetadataCall> {
-        self.calls.iter().find(|call| call.index == index).cloned()
+    pub fn get_call_by_index(&self, index: u8) -> Option<&MetadataCall> {
+        self.calls.iter().find(|call| call.index == index)
+    }
+
+    pub fn get_call_by_name(&self, name: &str) -> Option<&MetadataCall> {
+        self.calls
+            .iter()
+            .find(|call| call.name.eq_ignore_ascii_case(name))
+    }
+
+    pub fn get_event_by_name(&self, name: &str) -> Option<&MetadataEvent> {
+        self.events
+            .iter()
+            .find(|event| event.name.eq_ignore_ascii_case(name))
     }
 }
 
@@ -259,6 +271,7 @@ macro_rules! from_metadata_version {
 
 macro_rules! from_legacy_metadata {
     ($a:ty) => {
+        #[allow(clippy::too_many_lines)]
         impl From<&$a> for Metadata {
             fn from(value: &$a) -> Self {
                 let mut metadata = Metadata::default();

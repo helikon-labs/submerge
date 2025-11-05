@@ -26,11 +26,11 @@ mod worker;
 //const RPC_URL: &str = "wss://nexus.dotters.network";
 //const RPC_URL: &str = "wss://moonbeam.dotters.network";
 //const RPC_URL: &str = "wss://mythos.dotters.network";
-
-const RPC_URL: &str = "wss://mythos.dotters.network";
-
-//const RPC_URL: &str = "ws://104.247.178.13:5141";
+//const RPC_URL: &str = "wss://mythos.dotters.network";
 //const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
+
+//const RPC_URL: &str = "wss://kusama.dotters.network";
+const RPC_URL: &str = "ws://104.247.178.13:5141";
 
 pub struct Crystal {
     args: Args,
@@ -126,7 +126,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    true,
+                    false,
                     false,
                 ),
             )
@@ -145,7 +145,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    true,
+                    false,
                     false,
                 ),
             )
@@ -153,8 +153,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(3000000),
-                    maybe_end_block_number: Some(3000000),
+                    maybe_start_block_number: Some(1_500_000),
+                    maybe_end_block_number: Some(1_500_500),
                     scan: true,
                     reindex: false,
                 },
@@ -169,8 +169,8 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    true,
-                    true,
+                    false,
+                    false,
                 ),
             )
             .await;

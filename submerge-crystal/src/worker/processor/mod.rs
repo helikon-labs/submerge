@@ -211,16 +211,15 @@ impl BlockProcessor {
         status: BlockStatus,
     ) -> anyhow::Result<()> {
         let block_hash = hex::decode(block_hash_hex)?;
+        let truncated_block_hash = truncate_hash(block_hash_hex);
         let mut tx = self.postgres.connection_pool.begin().await?;
         if let Some(block_row) = self.postgres.get_block_by_hash(&block_hash).await? {
             tracing::info!(
-                "👍 Block [{block_number}][{}] had already been processed.",
-                truncate_hash(block_hash_hex)
+                "👍 Block [{block_number}][{truncated_block_hash}] had already been processed."
             );
             if reindex {
                 tracing::info!(
-                    "🗑️  Deleting block [{block_number}][{}] and its traces for reindexing.",
-                    truncate_hash(block_hash_hex)
+                    "🗑️  Deleting block [{block_number}][{truncated_block_hash}] and its traces for reindexing.",
                 );
                 self.postgres
                     .delete_block_and_traces_by_hash(&block_hash, &mut tx)
@@ -229,8 +228,7 @@ impl BlockProcessor {
                 if block_row.status != status && status == BlockStatus::Finalized {
                     let start_time = std::time::Instant::now();
                     tracing::info!(
-                        "🔁 Update block [{block_number}][0x{}] status: {} ➡️ {status}",
-                        truncate_hash(block_hash_hex),
+                        "🔁 Update block [{block_number}][0x{truncated_block_hash}] status: {} ➡️ {status}",
                         block_row.status,
                     );
                     self.postgres

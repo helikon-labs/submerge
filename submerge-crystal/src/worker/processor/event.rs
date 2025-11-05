@@ -237,17 +237,13 @@ impl BlockProcessor {
                 let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
                 let pallet_name = &event.event.pallet;
                 let pallet = metadata
-                    .pallets
-                    .iter()
-                    .find(|pallet| pallet.name.to_lowercase() == pallet_name.to_lowercase())
+                    .get_pallet_by_name(pallet_name)
                     .ok_or(anyhow::Error::msg(format!(
                         "Pallet {pallet_name} not found in metadata database."
                     )))?;
                 let pallet_event_name = &event.event.name;
                 let pallet_event = pallet
-                    .events
-                    .iter()
-                    .find(|event| event.name.to_lowercase() == pallet_event_name.to_lowercase())
+                    .get_event_by_name(pallet_event_name)
                     .ok_or(anyhow::Error::msg(format!(
                         "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
                     )))?;

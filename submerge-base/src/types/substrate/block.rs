@@ -111,6 +111,16 @@ pub struct Block {
     pub extrinsics: Vec<String>,
 }
 
+impl Block {
+    pub fn get_raw_extrinsic_bytes(&self) -> anyhow::Result<Vec<Vec<u8>>> {
+        let mut raw_extrinsics = Vec::new();
+        for extrinsic in self.extrinsics.iter() {
+            raw_extrinsics.push(hex::decode(extrinsic.trim_start_matches("0x"))?);
+        }
+        Ok(raw_extrinsics)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct DecodedBlockHeader {
     pub parent_hash: Vec<u8>,
