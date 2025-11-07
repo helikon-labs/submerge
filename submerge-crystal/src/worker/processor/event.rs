@@ -1,7 +1,8 @@
 use convert_case::{Case, Casing};
-use frame_metadata::RuntimeMetadata;
+use frame_metadata::{v14::RuntimeMetadataV14, v15::RuntimeMetadataV15, RuntimeMetadata};
 use frame_system::Phase;
 use parity_scale_codec::{Compact, Decode};
+use scale_info::{form::PortableForm, PortableRegistry, Variant};
 use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
@@ -11,9 +12,11 @@ use submerge_base::types::substrate::{
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
+    api::legacy::LegacyDecodeAPIClient,
     persistence::CrystalPostgreSQLStorage,
     types::{
         decode::{Value, ValueVisitor},
+        legacy::{LegacyEventPhase, LegacyEventWrapper},
         metadata::util::{get_metadata_version, get_runtime_call_type, v14, v15},
         persistence::EventRow,
         BlockStatus, Event, Extrinsic,
@@ -21,73 +24,194 @@ use crate::{
     worker::processor::BlockProcessor,
 };
 
+const METADATA_VERSION_LEGACY_THRESHOLD: u32 = 14;
+
+fn decode_event(
+    types: &PortableRegistry,
+    call_type_id: u32,
+    trace_index: Option<u32>,
+    pallet_index: u8,
+    pallet_name: &str,
+    pallet_event_index: u8,
+    pallet_event_name: &str,
+    event_variant: &Variant<PortableForm>,
+    phase: Phase,
+    index: u32,
+    bytes: &mut &[u8],
+) -> anyhow::Result<Event> {
+    let mut map = serde_json::Map::new();
+    for event_field in event_variant.fields.iter() {
+        let visitor = ValueVisitor::new(call_type_id, None);
+        let value: Value =
+            scale_decode::visitor::decode_with_visitor(bytes, event_field.ty.id, types, visitor)?;
+        if let Some(field_name) = &event_field.name {
+            map.insert(field_name.to_case(Case::Camel), value.into());
+        } else if let Some(type_name) = &event_field.type_name {
+            map.insert(type_name.clone(), value.into());
+        } else {
+            map.insert("unnamed".to_string(), value.into());
+        }
+    }
+    let args = JSONValue::Object(map);
+    Ok(Event {
+        trace_index,
+        pallet_index,
+        pallet_name: pallet_name.to_string(),
+        pallet_event_index,
+        pallet_event_name: pallet_event_name.to_string(),
+        index,
+        phase,
+        args,
+    })
+}
+
+fn decode_metadata_v14_event(
+    metadata_v14: &RuntimeMetadataV14,
+    call_type_id: u32,
+    trace_index: Option<u32>,
+    pallet_index: u8,
+    pallet_event_index: u8,
+    phase: Phase,
+    index: u32,
+    bytes: &mut &[u8],
+) -> anyhow::Result<Event> {
+    let pallet_metadata = v14::get_pallet_metadata(metadata_v14, pallet_index)
+        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
+    let pallet_name = pallet_metadata.name.to_case(Case::UpperCamel);
+    let event_variant = v14::get_event_variant(metadata_v14, pallet_metadata, pallet_event_index)?
+        .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
+    let pallet_event_name = event_variant.name.to_case(Case::UpperCamel);
+
+    decode_event(
+        &metadata_v14.types,
+        call_type_id,
+        trace_index,
+        pallet_index,
+        &pallet_name,
+        pallet_event_index,
+        &pallet_event_name,
+        event_variant,
+        phase,
+        index,
+        bytes,
+    )
+}
+
+fn decode_metadata_v15_event(
+    metadata_v15: &RuntimeMetadataV15,
+    call_type_id: u32,
+    trace_index: Option<u32>,
+    pallet_index: u8,
+    pallet_event_index: u8,
+    phase: Phase,
+    index: u32,
+    bytes: &mut &[u8],
+) -> anyhow::Result<Event> {
+    let pallet_metadata = v15::get_pallet_metadata(metadata_v15, pallet_index)
+        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
+    let pallet_name = pallet_metadata.name.to_case(Case::UpperCamel);
+    let event_variant = v15::get_event_variant(metadata_v15, pallet_metadata, pallet_event_index)?
+        .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
+    let pallet_event_name = event_variant.name.to_case(Case::UpperCamel);
+    decode_event(
+        &metadata_v15.types,
+        call_type_id,
+        trace_index,
+        pallet_index,
+        &pallet_name,
+        pallet_event_index,
+        &pallet_event_name,
+        event_variant,
+        phase,
+        index,
+        bytes,
+    )
+}
+
+fn parse_legacy_phase(legacy_phase: &LegacyEventPhase) -> anyhow::Result<Phase> {
+    match legacy_phase.ty.to_lowercase().as_str() {
+        "initialization" => Ok(Phase::Initialization),
+        "finalization" => Ok(Phase::Finalization),
+        "applyextrinsic" => {
+            let extrinsic_index = legacy_phase
+                .value
+                .as_str()
+                .ok_or_else(|| {
+                    anyhow::Error::msg(format!(
+                        "Expected string for ApplyExtrinsic phase, got: {:?}",
+                        legacy_phase.value
+                    ))
+                })?
+                .parse()?;
+            Ok(Phase::ApplyExtrinsic(extrinsic_index))
+        }
+        _ => anyhow::bail!(
+            "Unexpected phase type: {} with value: {:?}",
+            legacy_phase.ty,
+            legacy_phase.value
+        ),
+    }
+}
+
 impl BlockProcessor {
+    fn get_legacy_decode_client(&self) -> anyhow::Result<&LegacyDecodeAPIClient> {
+        self.legacy_decode_api_client.as_ref().ok_or_else(|| {
+            anyhow::Error::msg(
+                "Legacy decode API client is not set. legacy_decode_api_url parameter not set.",
+            )
+        })
+    }
+
+    async fn decode_legacy_event(
+        &self,
+        block_hash: &[u8],
+        spec_version: u32,
+        event: &LegacyEventWrapper,
+        index: u32,
+    ) -> anyhow::Result<Event> {
+        let phase = parse_legacy_phase(&event.get_phase()?)?;
+        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+        let pallet_name = &event.event.pallet;
+        let pallet = metadata
+            .get_pallet_by_name(pallet_name)
+            .ok_or(anyhow::Error::msg(format!(
+                "Pallet {pallet_name} not found in metadata database."
+            )))?;
+        let pallet_event_name = &event.event.name;
+        let pallet_event =
+            pallet
+                .get_event_by_name(pallet_event_name)
+                .ok_or(anyhow::Error::msg(format!(
+                "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
+            )))?;
+        Ok(Event {
+            trace_index: None,
+            pallet_index: pallet.index,
+            pallet_name: pallet_name.clone(),
+            pallet_event_index: pallet_event.index,
+            pallet_event_name: pallet_event_name.clone(),
+            index,
+            phase,
+            args: event.event.data.clone(),
+        })
+    }
+
     async fn get_legacy_events_from_bytes(
         &self,
         block_hash: &[u8],
         spec_version: u32,
         bytes: &mut &[u8],
     ) -> anyhow::Result<Vec<Event>> {
-        let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client {
-            client
-        } else {
-            anyhow::bail!(
-                "Legacy decode API client is not set. legacy_decode_api_url parameter not set."
-            );
-        };
+        let legacy_decode_api_client = self.get_legacy_decode_client()?;
         let legacy_events = legacy_decode_api_client
             .decode_events(block_hash, spec_version, bytes)
             .await?;
         let mut events = Vec::new();
         for event in legacy_events.iter() {
-            let legacy_phase = event.get_phase()?;
-            let phase = match legacy_phase.ty.to_lowercase().as_str() {
-                "initialization" => Phase::Initialization,
-                "finalization" => Phase::Finalization,
-                "applyextrinsic" => {
-                    if let JSONValue::String(extrinsic_index) = legacy_phase.value {
-                        let extrinsic_index: u32 = extrinsic_index.parse()?;
-                        Phase::ApplyExtrinsic(extrinsic_index)
-                    } else {
-                        anyhow::bail!(
-                            "Unexpected value for ApplyExtrinsic phase: {:?}",
-                            legacy_phase.value
-                        );
-                    }
-                }
-                _ => anyhow::bail!(
-                    "Unexpected phase :: {} {:?}",
-                    legacy_phase.ty,
-                    legacy_phase.value
-                ),
-            };
-            let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
-            let pallet_name = &event.event.pallet;
-            let pallet = metadata
-                .pallets
-                .iter()
-                .find(|pallet| pallet.name.to_lowercase() == pallet_name.to_lowercase())
-                .ok_or(anyhow::Error::msg(format!(
-                    "Pallet {pallet_name} not found in metadata database."
-                )))?;
-            let pallet_event_name = &event.event.name;
-            let pallet_event = pallet
-                .events
-                .iter()
-                .find(|event| event.name.to_lowercase() == pallet_event_name.to_lowercase())
-                .ok_or(anyhow::Error::msg(format!(
-                    "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
-                )))?;
-            events.push(Event {
-                trace_index: None,
-                pallet_index: pallet.index,
-                pallet_name: pallet_name.clone(),
-                pallet_event_index: pallet_event.index,
-                pallet_event_name: pallet_event_name.clone(),
-                index: events.len() as u32,
-                phase,
-                args: event.event.data.clone(),
-            });
+            events.push(
+                self.decode_legacy_event(block_hash, spec_version, event, events.len() as u32)
+                    .await?,
+            );
         }
         Ok(events)
     }
@@ -106,43 +230,29 @@ impl BlockProcessor {
             let pallet_event_index: u8 = Decode::decode(bytes)?;
             match &metadata {
                 RuntimeMetadata::V14(metadata_v14) => {
-                    let pallet_metadata = v14::get_pallet_metadata(metadata_v14, pallet_index)
-                        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
-                    let pallet_name = pallet_metadata.name.to_case(Case::UpperCamel);
-                    let event_variant =
-                        v14::get_event_variant(metadata_v14, pallet_metadata, pallet_event_index)?
-                            .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
-                    let pallet_event_name = event_variant.name.to_case(Case::UpperCamel);
-
-                    let mut map = serde_json::Map::new();
-                    for event_field in event_variant.fields.iter() {
-                        let visitor = ValueVisitor::new(call_type.id, None);
-                        let value: Value = scale_decode::visitor::decode_with_visitor(
-                            bytes,
-                            event_field.ty.id,
-                            &metadata_v14.types,
-                            visitor,
-                        )?;
-                        if let Some(field_name) = &event_field.name {
-                            map.insert(field_name.to_case(Case::Camel), value.into());
-                        } else if let Some(type_name) = &event_field.type_name {
-                            map.insert(type_name.clone(), value.into());
-                        } else {
-                            map.insert("unnamed".to_string(), value.into());
-                        }
-                    }
-                    let args = JSONValue::Object(map);
-                    let event = Event {
-                        trace_index: None,
+                    events.push(decode_metadata_v14_event(
+                        metadata_v14,
+                        call_type.id,
+                        None,
                         pallet_index,
-                        pallet_name,
                         pallet_event_index,
-                        pallet_event_name,
-                        index: events.len() as u32,
                         phase,
-                        args,
-                    };
-                    events.push(event);
+                        events.len() as u32,
+                        bytes,
+                    )?);
+                    let _topics = Vec::<sp_core::H256>::decode(bytes)?;
+                }
+                RuntimeMetadata::V15(metadata_v15) => {
+                    events.push(decode_metadata_v15_event(
+                        metadata_v15,
+                        call_type.id,
+                        None,
+                        pallet_index,
+                        pallet_event_index,
+                        phase,
+                        events.len() as u32,
+                        bytes,
+                    )?);
                     let _topics = Vec::<sp_core::H256>::decode(bytes)?;
                 }
                 _ => anyhow::bail!("Unsupported runtime metadata version."),
@@ -160,7 +270,7 @@ impl BlockProcessor {
     ) -> anyhow::Result<Vec<Event>> {
         let metadata_version = get_metadata_version(metadata);
         let mut bytes: &[u8] = &bytes;
-        let events = if metadata_version < 14 {
+        let events = if metadata_version < METADATA_VERSION_LEGACY_THRESHOLD {
             self.get_legacy_events_from_bytes(block_hash, spec_version, &mut bytes)
                 .await?
         } else {
@@ -181,6 +291,7 @@ impl BlockProcessor {
         let events_key = hex::encode(get_storage_plain_key("System", "Events"));
         let mut processed_events_hex = String::new();
         for (trace_index, trace) in trace.events.iter().enumerate() {
+            let trace_index = trace_index as u32;
             let trace_data = &trace.data_wrapper.data;
             if trace_data.key != events_key || trace_data.value.to_lowercase() == "none" {
                 continue;
@@ -202,61 +313,15 @@ impl BlockProcessor {
                 _ => value.to_string(),
             };
             let mut bytes: &[u8] = &hex::decode(&value)?;
-            if metadata_version < 14 {
-                let legacy_decode_api_client = if let Some(client) = &self.legacy_decode_api_client
-                {
-                    client
-                } else {
-                    anyhow::bail!("Legacy decode API client is not set. legacy_decode_api_url parameter not set.");
-                };
+            if metadata_version < METADATA_VERSION_LEGACY_THRESHOLD {
+                let legacy_decode_api_client = self.get_legacy_decode_client()?;
                 let event = legacy_decode_api_client
                     .decode_event(block_hash, spec_version, bytes)
                     .await?;
-                let legacy_phase = event.get_phase()?;
-                let phase = match legacy_phase.ty.to_lowercase().as_str() {
-                    "initialization" => Phase::Initialization,
-                    "finalization" => Phase::Finalization,
-                    "applyextrinsic" => {
-                        if let JSONValue::String(extrinsic_index) = legacy_phase.value {
-                            let extrinsic_index: u32 = extrinsic_index.parse()?;
-                            Phase::ApplyExtrinsic(extrinsic_index)
-                        } else {
-                            anyhow::bail!(
-                                "Unexpected value for ApplyExtrinsic phase: {:?}",
-                                legacy_phase.value
-                            );
-                        }
-                    }
-                    _ => anyhow::bail!(
-                        "Unexpected phase :: {} {:?}",
-                        legacy_phase.ty,
-                        legacy_phase.value
-                    ),
-                };
-
-                let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
-                let pallet_name = &event.event.pallet;
-                let pallet = metadata
-                    .get_pallet_by_name(pallet_name)
-                    .ok_or(anyhow::Error::msg(format!(
-                        "Pallet {pallet_name} not found in metadata database."
-                    )))?;
-                let pallet_event_name = &event.event.name;
-                let pallet_event = pallet
-                    .get_event_by_name(pallet_event_name)
-                    .ok_or(anyhow::Error::msg(format!(
-                        "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
-                    )))?;
-                events.push(Event {
-                    trace_index: Some(trace_index as u32),
-                    pallet_index: pallet.index,
-                    pallet_name: pallet.name.clone(),
-                    pallet_event_index: pallet_event.index,
-                    pallet_event_name: pallet_event.name.clone(),
-                    index: events.len() as u32,
-                    phase,
-                    args: event.event.data,
-                });
+                events.push(
+                    self.decode_legacy_event(block_hash, spec_version, &event, events.len() as u32)
+                        .await?,
+                );
                 continue;
             }
             let call_type = get_runtime_call_type(metadata)?;
@@ -265,76 +330,28 @@ impl BlockProcessor {
             let pallet_event_index: u8 = Decode::decode(&mut bytes)?;
             match &metadata {
                 RuntimeMetadata::V14(metadata_v14) => {
-                    let pallet_metadata = v14::get_pallet_metadata(metadata_v14, pallet_index)
-                        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
-                    let event_variant =
-                        v14::get_event_variant(metadata_v14, pallet_metadata, pallet_event_index)?
-                            .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
-                    let mut map = serde_json::Map::new();
-
-                    for event_field in event_variant.fields.iter() {
-                        let visitor = ValueVisitor::new(call_type.id, None);
-                        let value: Value = scale_decode::visitor::decode_with_visitor(
-                            &mut bytes,
-                            event_field.ty.id,
-                            &metadata_v14.types,
-                            visitor,
-                        )?;
-                        if let Some(field_name) = &event_field.name {
-                            map.insert(field_name.to_case(Case::Camel), value.into());
-                        } else if let Some(type_name) = &event_field.type_name {
-                            map.insert(type_name.clone(), value.into());
-                        } else {
-                            map.insert("unnamed".to_string(), value.into());
-                        }
-                    }
-                    let args = JSONValue::Object(map);
-                    events.push(Event {
-                        trace_index: Some(trace_index as u32),
+                    events.push(decode_metadata_v14_event(
+                        metadata_v14,
+                        call_type.id,
+                        Some(trace_index),
                         pallet_index,
-                        pallet_name: pallet_metadata.name.to_case(Case::UpperCamel),
                         pallet_event_index,
-                        pallet_event_name: event_variant.name.to_case(Case::UpperCamel),
-                        index: events.len() as u32,
                         phase,
-                        args,
-                    });
+                        events.len() as u32,
+                        &mut bytes,
+                    )?);
                 }
                 RuntimeMetadata::V15(metadata_v15) => {
-                    let pallet_metadata = v15::get_pallet_metadata(metadata_v15, pallet_index)
-                        .ok_or(anyhow::Error::msg("Pallet not found in metadata."))?;
-                    let event_variant =
-                        v15::get_event_variant(metadata_v15, pallet_metadata, pallet_event_index)?
-                            .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
-                    let mut map = serde_json::Map::new();
-
-                    for event_field in event_variant.fields.iter() {
-                        let visitor = ValueVisitor::new(call_type.id, None);
-                        let value: Value = scale_decode::visitor::decode_with_visitor(
-                            &mut bytes,
-                            event_field.ty.id,
-                            &metadata_v15.types,
-                            visitor,
-                        )?;
-                        if let Some(field_name) = &event_field.name {
-                            map.insert(field_name.to_case(Case::Camel), value.into());
-                        } else if let Some(type_name) = &event_field.type_name {
-                            map.insert(type_name.clone(), value.into());
-                        } else {
-                            map.insert("unnamed".to_string(), value.into());
-                        }
-                    }
-                    let args = JSONValue::Object(map);
-                    events.push(Event {
-                        trace_index: Some(trace_index as u32),
+                    events.push(decode_metadata_v15_event(
+                        metadata_v15,
+                        call_type.id,
+                        Some(trace_index),
                         pallet_index,
-                        pallet_name: pallet_metadata.name.to_case(Case::UpperCamel),
                         pallet_event_index,
-                        pallet_event_name: event_variant.name.to_case(Case::UpperCamel),
-                        index: events.len() as u32,
                         phase,
-                        args,
-                    });
+                        events.len() as u32,
+                        &mut bytes,
+                    )?);
                 }
                 _ => anyhow::bail!("Unsupported runtime metadata version."),
             }
