@@ -324,7 +324,8 @@ impl BlockProcessor {
             if trace_data.key != events_key || trace_data.value.eq_ignore_ascii_case(NONE_VALUE) {
                 continue;
             }
-            let value = extract_trace_value(&trace_data.value, &trace_data.method, &processed_events_hex)?;
+            let value =
+                extract_trace_value(&trace_data.value, &trace_data.method, &processed_events_hex)?;
             let mut bytes: &[u8] = &hex::decode(&value)?;
             if metadata_version < METADATA_VERSION_LEGACY_THRESHOLD {
                 let legacy_decode_api_client = self.get_legacy_decode_client()?;
