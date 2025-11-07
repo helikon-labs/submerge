@@ -126,7 +126,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    false,
+                    true,
                     false,
                 ),
             )
@@ -145,7 +145,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    false,
+                    true,
                     false,
                 ),
             )
@@ -153,8 +153,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(1_500_000),
-                    maybe_end_block_number: Some(1_500_500),
+                    maybe_start_block_number: Some(10_500_000),
+                    maybe_end_block_number: Some(10_500_500),
                     scan: true,
                     reindex: false,
                 },
@@ -169,7 +169,7 @@ impl BaseService for Crystal {
                     },
                     self.args.legacy_decode_api_url.clone(),
                     recovery_duration,
-                    false,
+                    true,
                     false,
                 ),
             )

@@ -24,6 +24,11 @@ use crate::{
     worker::processor::BlockProcessor,
 };
 
+const SYSTEM_PALLET_NAME: &str = "System";
+const EVENTS_STORAGE_KEY: &str = "Events";
+const SOME_PREFIX: &str = "Some(";
+const SOME_SUFFIX: &str = ")";
+const NONE_VALUE: &str = "none";
 const METADATA_VERSION_LEGACY_THRESHOLD: u32 = 14;
 
 fn decode_event(
@@ -44,13 +49,13 @@ fn decode_event(
         let visitor = ValueVisitor::new(call_type_id, None);
         let value: Value =
             scale_decode::visitor::decode_with_visitor(bytes, event_field.ty.id, types, visitor)?;
-        if let Some(field_name) = &event_field.name {
-            map.insert(field_name.to_case(Case::Camel), value.into());
-        } else if let Some(type_name) = &event_field.type_name {
-            map.insert(type_name.clone(), value.into());
-        } else {
-            map.insert("unnamed".to_string(), value.into());
-        }
+        let field_key = event_field
+            .name
+            .as_ref()
+            .map(|name| name.to_case(Case::Camel))
+            .or_else(|| event_field.type_name.clone())
+            .unwrap_or_else(|| format!("unnamed_{}", map.len()));
+        map.insert(field_key, value.into());
     }
     let args = JSONValue::Object(map);
     Ok(Event {
@@ -150,6 +155,26 @@ fn parse_legacy_phase(legacy_phase: &LegacyEventPhase) -> anyhow::Result<Phase> 
             legacy_phase.ty,
             legacy_phase.value
         ),
+    }
+}
+
+fn extract_trace_value(
+    value: &str,
+    method: &StorageMethod,
+    processed_events_hex: &str,
+) -> anyhow::Result<String> {
+    let trimmed = value
+        .trim_start_matches(SOME_PREFIX)
+        .trim_end_matches(SOME_SUFFIX);
+    match method {
+        StorageMethod::Put => {
+            let mut bytes: &[u8] = &hex::decode(trimmed)?;
+            let _event_count = <Compact<u32>>::decode(&mut bytes)?.0;
+            Ok(hex::encode(bytes)
+                .trim_start_matches(processed_events_hex)
+                .to_string())
+        }
+        _ => Ok(trimmed.to_string()),
     }
 }
 
@@ -288,30 +313,18 @@ impl BlockProcessor {
     ) -> anyhow::Result<Vec<Event>> {
         let mut events = Vec::new();
         let metadata_version = get_metadata_version(metadata);
-        let events_key = hex::encode(get_storage_plain_key("System", "Events"));
+        let events_key = hex::encode(get_storage_plain_key(
+            SYSTEM_PALLET_NAME,
+            EVENTS_STORAGE_KEY,
+        ));
         let mut processed_events_hex = String::new();
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_index = trace_index as u32;
             let trace_data = &trace.data_wrapper.data;
-            if trace_data.key != events_key || trace_data.value.to_lowercase() == "none" {
+            if trace_data.key != events_key || trace_data.value.eq_ignore_ascii_case(NONE_VALUE) {
                 continue;
             }
-            let value = trace_data
-                .value
-                .trim_start_matches("Some(")
-                .trim_end_matches(")");
-            let value = match trace_data.method {
-                StorageMethod::Put => {
-                    let mut bytes: &[u8] = &hex::decode(value)?;
-                    // skip event count
-                    let _ = <Compact<u32>>::decode(&mut bytes)?.0;
-                    // skip processed events
-                    hex::encode(bytes)
-                        .trim_start_matches(&processed_events_hex)
-                        .to_string()
-                }
-                _ => value.to_string(),
-            };
+            let value = extract_trace_value(&trace_data.value, &trace_data.method, &processed_events_hex)?;
             let mut bytes: &[u8] = &hex::decode(&value)?;
             if metadata_version < METADATA_VERSION_LEGACY_THRESHOLD {
                 let legacy_decode_api_client = self.get_legacy_decode_client()?;

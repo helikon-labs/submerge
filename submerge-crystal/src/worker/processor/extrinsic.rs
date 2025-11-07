@@ -32,6 +32,8 @@ const EXTRINSIC_SUCCESS_EVENT: &str = "ExtrinsicSuccess";
 const SIGNATURE_PREFIX: &str = "01";
 const HEX_PREFIX: &str = "0x";
 const METADATA_VERSION_LEGACY_THRESHOLD: u32 = 14;
+const SOME_PREFIX: &str = "Some(";
+const SOME_SUFFIX: &str = ")";
 
 fn is_extrinsic_successful(index: u32, events: &[Event]) -> bool {
     events
@@ -416,8 +418,8 @@ impl BlockProcessor {
             tracing::trace!("Extrinsic {trace_extrinsic_index} data @ trace {trace_index}");
             let value = trace_data
                 .value
-                .trim_start_matches("Some(")
-                .trim_end_matches(")");
+                .trim_start_matches(SOME_PREFIX)
+                .trim_end_matches(SOME_SUFFIX);
             let mut bytes: &[u8] = &hex::decode(value)?;
             let bytes_vector: Vec<u8> = Decode::decode(&mut bytes)?;
             raw_extrinsic_bytes.push((Some(trace_index as u32), bytes_vector));
