@@ -1,6 +1,9 @@
+use std::str::FromStr as _;
+
+use parity_scale_codec::Decode as _;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
-use submerge_base::types::substrate::account_id::AccountId;
+use submerge_base::types::substrate::multi_address::MultiAddress;
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::BlockRow, BlockStatus};
 
@@ -35,7 +38,18 @@ pub struct BlockQuery {
     pub max_block_timestamp: Option<u64>,
     pub min_spec_version: Option<u32>,
     pub max_spec_version: Option<u32>,
-    pub author: Option<AccountId>,
+    pub author: Option<String>,
+}
+
+impl BlockQuery {
+    pub fn get_author_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
+        let author = if let Some(author) = &self.author {
+            Some(MultiAddress::from_str(author)?)
+        } else {
+            None
+        };
+        Ok(author)
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -52,12 +66,21 @@ pub struct BlockDTO {
     pub weight: Option<JSONValue>,
     pub extrinsic_count: u32,
     pub event_count: u32,
-    pub author_account_id: Option<String>,
+    pub author: Option<MultiAddress>,
 }
 
-impl From<&BlockRow> for BlockDTO {
-    fn from(row: &BlockRow) -> Self {
-        Self {
+impl TryFrom<&BlockRow> for BlockDTO {
+    type Error = anyhow::Error;
+
+    fn try_from(row: &BlockRow) -> Result<Self, Self::Error> {
+        let author_multi_address = if let Some(bytes) = row.author_multi_address.as_ref() {
+            let mut bytes: &[u8] = &bytes.clone();
+            let multi_address = MultiAddress::decode(&mut bytes)?;
+            Some(multi_address)
+        } else {
+            None
+        };
+        Ok(Self {
             hash: format!("0x{}", hex::encode(&row.hash)),
             parent_hash: format!("0x{}", hex::encode(&row.parent_hash)),
             state_root: format!("0x{}", hex::encode(&row.state_root)),
@@ -69,10 +92,7 @@ impl From<&BlockRow> for BlockDTO {
             weight: row.weight.clone(),
             extrinsic_count: row.extrinsic_count as u32,
             event_count: row.event_count as u32,
-            author_account_id: row
-                .author_account_id
-                .as_ref()
-                .map(|account_id| format!("0x{}", hex::encode(account_id))),
-        }
+            author: author_multi_address,
+        })
     }
 }

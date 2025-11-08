@@ -1,7 +1,9 @@
+use std::str::FromStr as _;
+
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
-use submerge_base::types::substrate::{account_id::AccountId, multi_address::MultiAddress};
+use submerge_base::types::substrate::multi_address::MultiAddress;
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::ExtrinsicRow, BlockStatus};
 
@@ -17,7 +19,18 @@ pub struct ExtrinsicQuery {
     pub min_spec_version: Option<u32>,
     pub max_spec_version: Option<u32>,
     pub is_signed: Option<bool>,
-    pub signer: Option<AccountId>,
+    pub signer: Option<String>,
+}
+
+impl ExtrinsicQuery {
+    pub fn get_signer_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
+        let signer = if let Some(signer) = &self.signer {
+            Some(MultiAddress::from_str(signer)?)
+        } else {
+            None
+        };
+        Ok(signer)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,7 +39,18 @@ pub struct BlockExtrinsicQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
     pub is_signed: Option<bool>,
-    pub signer: Option<AccountId>,
+    pub signer: Option<String>,
+}
+
+impl BlockExtrinsicQuery {
+    pub fn get_signer_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
+        let signer = if let Some(signer) = &self.signer {
+            Some(MultiAddress::from_str(signer)?)
+        } else {
+            None
+        };
+        Ok(signer)
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -61,7 +85,7 @@ impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
             hash: format!("0x{}", hex::encode(row.hash)),
             index: row.index as u32,
             version: row.version as u32,
-            signer: if let Some(bytes) = &row.signer {
+            signer: if let Some(bytes) = &row.signer_multi_address {
                 let mut bytes: &[u8] = bytes;
                 Some(MultiAddress::decode(&mut bytes)?)
             } else {

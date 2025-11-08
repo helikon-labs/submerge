@@ -337,4 +337,18 @@ impl SubstrateClient {
             .await?;
         Ok(hex::decode(events_hex_string.trim_start_matches("0x"))?)
     }
+
+    pub async fn get_nimbus_block_author(
+        &self,
+        block_hash: &str,
+    ) -> anyhow::Result<Option<[u8; 20]>> {
+        let maybe_author: Option<[u8; 20]> = self
+            .ws_client
+            .request(
+                "state_getStorage",
+                get_rpc_storage_plain_params("AuthorInheren", "Author", Some(block_hash))?,
+            )
+            .await?;
+        Ok(maybe_author)
+    }
 }

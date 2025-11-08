@@ -26,6 +26,11 @@ pub(crate) async fn get_blocks(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let Ok(author_multi_address) = query.get_author_multi_address() else {
+        return Err(APIError::InvalidBlockAuthor(
+            query.author.unwrap_or("".to_string()),
+        ));
+    };
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_block_count(
             query.status,
@@ -35,7 +40,7 @@ pub(crate) async fn get_blocks(
             query.max_block_timestamp,
             query.min_spec_version,
             query.max_spec_version,
-            query.author,
+            &author_multi_address,
         ),
         state.postgres.get_block_rows(
             query.status,
@@ -45,18 +50,22 @@ pub(crate) async fn get_blocks(
             query.max_block_timestamp,
             query.min_spec_version,
             query.max_spec_version,
-            query.author,
+            &author_multi_address,
             page,
             page_size,
         ),
     )?;
+    let mut data = Vec::new();
+    for row in rows.iter() {
+        data.push(row.try_into()?);
+    }
     let response = PagedResponse {
         pagination: PaginationData {
             page,
             page_size,
             total: total_count,
         },
-        data: rows.iter().map(|row| row.into()).collect(),
+        data,
     };
     Ok(Json(response))
 }
@@ -71,11 +80,15 @@ pub(crate) async fn get_blocks_by_reference(
             if rows.is_empty() {
                 Err(APIError::BlockNotFoundWithNumber(number))
             } else {
-                Ok(Json(rows.iter().map(|row| row.into()).collect()))
+                let mut data = Vec::new();
+                for row in rows.iter() {
+                    data.push(row.try_into()?);
+                }
+                Ok(Json(data))
             }
         }
         Ok(BlockReference::Hash(hash)) => match &state.postgres.get_block_by_hash(&hash).await {
-            Ok(Some(row)) => Ok(Json(vec![row.into()])),
+            Ok(Some(row)) => Ok(Json(vec![row.try_into()?])),
             _ => Err(APIError::BlockNotFoundWithHash(hash)),
         },
         Err(message) => Err(APIError::BadRequest(message)),

@@ -27,6 +27,11 @@ pub(crate) async fn get_extrinsics(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let Ok(signer_multi_address) = query.get_signer_multi_address() else {
+        return Err(APIError::InvalidExtrinsicSigner(
+            query.signer.unwrap_or("".to_string()),
+        ));
+    };
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_extrinsic_count(
             query.min_block_number,
@@ -36,7 +41,7 @@ pub(crate) async fn get_extrinsics(
             query.min_spec_version,
             query.max_spec_version,
             query.is_signed,
-            query.signer,
+            &signer_multi_address,
         ),
         state.postgres.get_extrinsics(
             query.min_block_number,
@@ -46,7 +51,7 @@ pub(crate) async fn get_extrinsics(
             query.min_spec_version,
             query.max_spec_version,
             query.is_signed,
-            query.signer,
+            &signer_multi_address,
             page,
             page_size,
         ),
@@ -75,6 +80,11 @@ pub(crate) async fn get_extrinsics_by_block_reference(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let Ok(signer_multi_address) = query.get_signer_multi_address() else {
+        return Err(APIError::InvalidExtrinsicSigner(
+            query.signer.unwrap_or("".to_string()),
+        ));
+    };
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -84,12 +94,12 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                 state.postgres.get_extrinsic_count_by_block_number(
                     block_number,
                     query.is_signed,
-                    query.signer,
+                    &signer_multi_address,
                 ),
                 state.postgres.get_extrinsics_by_block_number(
                     block_number,
                     query.is_signed,
-                    query.signer,
+                    &signer_multi_address,
                     page,
                     page_size,
                 ),
@@ -116,12 +126,12 @@ pub(crate) async fn get_extrinsics_by_block_reference(
                 state.postgres.get_extrinsic_count_by_block_hash(
                     &block_hash,
                     query.is_signed,
-                    query.signer,
+                    &signer_multi_address,
                 ),
                 state.postgres.get_extrinsics_by_block_hash(
                     &block_hash,
                     query.is_signed,
-                    query.signer,
+                    &signer_multi_address,
                     page,
                     page_size,
                 ),

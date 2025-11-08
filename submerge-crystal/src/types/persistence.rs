@@ -15,7 +15,7 @@ pub struct BlockRow {
     pub weight: Option<JSONValue>,
     pub extrinsic_count: i32,
     pub event_count: i32,
-    pub author_account_id: Option<Vec<u8>>,
+    pub author_multi_address: Option<Vec<u8>>,
 }
 
 #[derive(Debug, FromRow)]
@@ -117,7 +117,7 @@ pub struct ExtrinsicRow {
     pub hash: [u8; 32],
     pub index: i32,
     pub version: i32,
-    pub signer: Option<Vec<u8>>,
+    pub signer_multi_address: Option<Vec<u8>>,
     pub signature: Option<Vec<u8>>,
     pub extra: Option<JSONValue>,
     pub is_successful: bool,

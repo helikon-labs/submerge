@@ -10,6 +10,9 @@ pub struct Args {
     #[arg(long)]
     pub legacy_decode_api_url: Option<String>,
 
+    #[arg(long)]
+    pub default_rpc_url: Option<String>,
+
     #[clap(flatten)]
     pub postgres: PostgreSQLArgs,
 

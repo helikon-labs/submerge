@@ -1,20 +1,20 @@
 CREATE TABLE IF NOT EXISTS extrinsic
 (
-    id              BIGSERIAL NOT NULL,
-    block_hash      BYTEA NOT NULL,
-    block_number    BIGINT NOT NULL,
-    block_timestamp BIGINT,
-    spec_version    INTEGER NOT NULL,
-    block_status    BLOCK_STATUS NOT NULL,
-    trace_index     INTEGER,
-    hash            BYTEA NOT NULL,
-    index           INTEGER NOT NULL,
-    version         INTEGER NOT NULL,
-    signer          BYTEA, -- SCALE-encoded MultiAddress
-    signature       BYTEA,
-    extra           JSONB,
-    is_successful   BOOLEAN NOT NULL,
-    created_at      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    id                      BIGSERIAL NOT NULL,
+    block_hash              BYTEA NOT NULL,
+    block_number            BIGINT NOT NULL,
+    block_timestamp         BIGINT,
+    spec_version            INTEGER NOT NULL,
+    block_status            BLOCK_STATUS NOT NULL,
+    trace_index             INTEGER,
+    hash                    BYTEA NOT NULL,
+    index                   INTEGER NOT NULL,
+    version                 INTEGER NOT NULL,
+    signer_multi_address    BYTEA, -- SCALE-encoded MultiAddress
+    signature               BYTEA,
+    extra                   JSONB,
+    is_successful           BOOLEAN NOT NULL,
+    created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT extrinsic_pk PRIMARY KEY (id, block_number),
     CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
     CONSTRAINT extrinsic_fk_block
@@ -29,15 +29,15 @@ CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash ON extrinsic (block_hash);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number ON extrinsic (block_number);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_timestamp ON extrinsic (block_timestamp);
 
-CREATE INDEX IF NOT EXISTS extrinsic_idx_signer ON extrinsic (signer);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_null ON extrinsic (signer) WHERE signer IS NULL;
+CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address ON extrinsic (signer_multi_address);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address_null ON extrinsic (signer_multi_address) WHERE signer_multi_address IS NULL;
 
 CREATE INDEX IF NOT EXISTS extrinsic_idx_filter_order
 ON extrinsic (
     block_number DESC,
     block_timestamp,
     spec_version,
-    signer
+    signer_multi_address
 );
 
 CREATE TABLE extrinsic_0_1000000 PARTITION OF extrinsic FOR VALUES FROM (0) TO (1000000);

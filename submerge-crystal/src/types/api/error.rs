@@ -25,6 +25,8 @@ pub enum APIError {
     BlockNotFoundWithHash(Vec<u8>),
     ExtrinsicNotFoundWithHash(Vec<u8>),
     InvalidHex(hex::FromHexError),
+    InvalidBlockAuthor(String),
+    InvalidExtrinsicSigner(String),
 }
 
 impl APIError {
@@ -35,14 +37,13 @@ impl APIError {
             APIError::BadRequest(message) => message.to_owned(),
             APIError::InternalServerError(message) => message.to_owned(),
             APIError::MetadataNotFound(spec_version) => {
-                format!("Metadata for spec version {} not found.", spec_version)
+                format!("Metadata for spec version {spec_version} not found.")
             }
             APIError::MetadataPalletNotFound(spec_version, index) => format!(
-                "Pallet index {} not found in metadata for spec version {}.",
-                index, spec_version,
+                "Pallet index {index} not found in metadata for spec version {spec_version}.",
             ),
             APIError::BlockNotFoundWithNumber(number) => {
-                format!("Block with number {} not found.", number,)
+                format!("Block with number {number} not found.",)
             }
             APIError::BlockNotFoundWithHash(hash) => {
                 format!("Block with hash 0x{} not found.", hex::encode(hash))
@@ -51,7 +52,13 @@ impl APIError {
                 format!("Extrinsic with hash 0x{} not found.", hex::encode(hash))
             }
             APIError::InvalidHex(error) => {
-                format!("{}", error)
+                format!("{error}")
+            }
+            APIError::InvalidBlockAuthor(author) => {
+                format!("Invalid block author: {author}. Enter valid SS58 address or hexadecimal string.")
+            }
+            APIError::InvalidExtrinsicSigner(author) => {
+                format!("Invalid extrinsic signer: {author}. Enter valid SS58 address or hexadecimal string.")
             }
         }
     }
@@ -68,6 +75,8 @@ impl APIError {
             APIError::BlockNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::ExtrinsicNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::InvalidHex(_) => StatusCode::BAD_REQUEST,
+            APIError::InvalidBlockAuthor(_) => StatusCode::BAD_REQUEST,
+            APIError::InvalidExtrinsicSigner(_) => StatusCode::BAD_REQUEST,
         }
     }
 }

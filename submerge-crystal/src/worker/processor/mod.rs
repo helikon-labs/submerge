@@ -5,8 +5,8 @@ use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::BlockStatus;
 use sqlx::{Postgres, Transaction};
-use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::BlockHeader;
+use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::{RPCConfig, SubstrateClient};
 use submerge_util::string::truncate_hash;
@@ -18,7 +18,7 @@ mod extrinsic;
 mod metadata_cache;
 mod weight;
 
-static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<AccountId>)>> =
+static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<MultiAddress>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
 
 pub struct BlockProcessor {
@@ -236,10 +236,9 @@ impl BlockProcessor {
                         .await?;
                     self.prune_other_blocks(block_number, &block_hash, &mut tx)
                         .await?;
-                    let elapsed_time_ms = start_time.elapsed().as_millis();
                     crate::metrics::block_status_update_time_ms()?
                         .with_label_values(&[&self.worker_id.to_string()])
-                        .observe(elapsed_time_ms as f64);
+                        .observe(start_time.elapsed().as_millis() as f64);
                 }
                 tx.commit().await?;
                 return Ok(());
@@ -261,30 +260,34 @@ impl BlockProcessor {
             return Ok(());
         }
         let metadata = self.get_metadata(&block_hash, spec_version).await?;
-        let author_account_id = {
+        let author_multi_address = {
             if let Some(validator_index) = block_header.get_validator_index()? {
                 let session_index = self
                     .substrate_client
                     .get_current_session_index(block_hash_hex)
                     .await?;
                 let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
-                let validator_account_ids = {
+                let validator_addresses = {
                     if session_validators_cache.0 != session_index
                         || session_validators_cache.1.is_empty()
                     {
                         let validator_account_ids = self
                             .substrate_client
                             .get_active_validator_account_ids(block_hash_hex)
-                            .await?;
+                            .await?
+                            .iter()
+                            .map(|account_id| MultiAddress::Id(*account_id))
+                            .collect();
                         session_validators_cache.0 = session_index;
                         session_validators_cache.1 = validator_account_ids;
                     }
                     &session_validators_cache.1
                 };
-                let validator_index = validator_index % validator_account_ids.len() as u32;
-                if let Some(author_account_id) = validator_account_ids.get(validator_index as usize)
+                let validator_index = validator_index % validator_addresses.len() as u32;
+                if let Some(author_multi_address) =
+                    validator_addresses.get(validator_index as usize)
                 {
-                    Some(*author_account_id)
+                    Some(author_multi_address.clone())
                 } else {
                     anyhow::bail!("Author validator was not found at index {validator_index}.");
                 }
@@ -345,9 +348,8 @@ impl BlockProcessor {
                 .await?;
             (events, extrinsics, weight)
         };
-        tracing::info!(block_number, "Decoded {} events.", events.len());
-        tracing::info!(block_number, "Decoded {} extrinsics.", extrinsics.len());
-
+        tracing::info!(block_number, "Decoded {} extrinsics.", extrinsics.len(),);
+        tracing::info!(block_number, "Decoded {} events.", events.len(),);
         // persist block, events, and extrinsics
         if status == BlockStatus::Finalized {
             self.prune_other_blocks(block_number, &block_hash, &mut tx)
@@ -363,7 +365,7 @@ impl BlockProcessor {
                 spec_version,
                 extrinsics.len() as u32,
                 events.len() as u32,
-                &author_account_id,
+                &author_multi_address,
                 &mut tx,
             )
             .await?;

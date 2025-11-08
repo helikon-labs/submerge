@@ -6,11 +6,11 @@ use serde_json::Value as JSONValue;
 use sp_runtime::DigestItem;
 use sqlx::QueryBuilder;
 use sqlx::{Postgres, Transaction};
-use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
 use submerge_base::types::substrate::block_trace::BlockTrace as SubstrateBlockTrace;
 use submerge_base::types::substrate::chainspec::Chainspec;
+use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
@@ -90,7 +90,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
-        author_account_id: &Option<AccountId>,
+        author_multi_address: &Option<MultiAddress>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn delete_block_and_traces_by_hash(
@@ -573,19 +573,19 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         spec_version: u32,
         extrinsic_count: u32,
         event_count: u32,
-        author_account_id: &Option<AccountId>,
+        author_multi_address: &Option<MultiAddress>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let header = DecodedBlockHeader::try_from(header)?;
         sqlx::query(
             r#"
-                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id)
+                INSERT INTO block (hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT (hash) DO UPDATE SET
                     parent_hash = EXCLUDED.parent_hash, state_root = EXCLUDED.state_root, extrinsic_root = EXCLUDED.extrinsic_root,
                     number = EXCLUDED.number, timestamp = EXCLUDED.timestamp, spec_version = EXCLUDED.spec_version, status = EXCLUDED.status,
                     weight = EXCLUDED.weight, extrinsic_count = EXCLUDED.extrinsic_count, event_count = EXCLUDED.event_count,
-                    author_account_id = EXCLUDED.author_account_id
+                    author_multi_address = EXCLUDED.author_multi_address
                 "#,
         )
             .bind(hash)
@@ -599,7 +599,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(weight)
             .bind(extrinsic_count as i32)
             .bind(event_count as i32)
-            .bind(author_account_id.map(|account_id| account_id.bytes()))
+            .bind(author_multi_address.as_ref().map(|multi_address| multi_address.encode()))
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -645,7 +645,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>> {
         let maybe_row: Option<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE hash = $1
             "#,
@@ -668,7 +668,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn get_blocks_by_number(&self, number: u64) -> anyhow::Result<Vec<BlockRow>> {
         let rows: Vec<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE number = $1
             "#,
@@ -686,7 +686,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<BlockRow>> {
         let rows: Vec<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_account_id
+            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE number = $1
             "#,
@@ -863,7 +863,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     hash: extrinsic.hash,
                     index: extrinsic.index as i32,
                     version: extrinsic.version as i32,
-                    signer,
+                    signer_multi_address: signer,
                     signature,
                     extra,
                     is_successful: extrinsic.is_successful,
@@ -873,7 +873,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         let mut ids_to_indices = Vec::new();
         for extrinsic_row_chunk in extrinsic_rows.chunks(INSERT_BATCH_SIZE) {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer, signature, extra, is_successful) ",
+                "INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer_multi_address, signature, extra, is_successful) ",
             );
             query_builder.push_values(extrinsic_row_chunk, |mut query, extrinsic| {
                 query
@@ -886,7 +886,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(extrinsic.hash)
                     .push_bind(extrinsic.index)
                     .push_bind(extrinsic.version)
-                    .push_bind(&extrinsic.signer)
+                    .push_bind(&extrinsic.signer_multi_address)
                     .push_bind(&extrinsic.signature)
                     .push_bind(&extrinsic.extra)
                     .push_bind(extrinsic.is_successful);
@@ -896,7 +896,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 ON CONFLICT (block_hash, block_number, index) DO UPDATE SET 
                     block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version,
                     block_status = EXCLUDED.block_status, trace_index = EXCLUDED.trace_index, hash = EXCLUDED.hash,
-                    index = EXCLUDED.index, version = EXCLUDED.version, signer = EXCLUDED.signer,
+                    index = EXCLUDED.index, version = EXCLUDED.version, signer_multi_address = EXCLUDED.signer_multi_address,
                     signature = EXCLUDED.signature, extra = EXCLUDED.extra, is_successful = EXCLUDED.is_successful
                 RETURNING id, index
                 "#
