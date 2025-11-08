@@ -83,7 +83,7 @@ fn decode_extrinsic(
                 MultiAddress::decode(&mut bytes)?
             }
             "account::AccountId20" => {
-                MultiAddress::Address20(<[u8; 20]>::decode(&mut bytes)?)
+                MultiAddress::Address20(Decode::decode(&mut bytes)?)
             }
             _ => anyhow::bail!("Unsupported signer address type in metadata extrinsic signed extensions: {signer_address_type_path}"),
         };

@@ -5,6 +5,7 @@ use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::BlockStatus;
 use sqlx::{Postgres, Transaction};
+use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
@@ -22,6 +23,7 @@ static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<MultiAddress>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
 
 pub struct BlockProcessor {
+    chain_name: String,
     worker_id: UUID,
     postgres: Arc<PostgreSQLStorage>,
     substrate_client: SubstrateClient,
@@ -30,6 +32,7 @@ pub struct BlockProcessor {
 
 impl BlockProcessor {
     pub async fn new(
+        chain_name: &str,
         worker_id: UUID,
         postgres: Arc<PostgreSQLStorage>,
         rpc_config: &RPCConfig,
@@ -42,6 +45,7 @@ impl BlockProcessor {
             None
         };
         Ok(Self {
+            chain_name: chain_name.to_string(),
             worker_id,
             postgres,
             substrate_client,
@@ -231,15 +235,25 @@ impl BlockProcessor {
                 if session_validators_cache.0 != session_index
                     || session_validators_cache.1.is_empty()
                 {
-                    let validator_account_ids = self
-                        .substrate_client
-                        .get_active_validator_account_ids(block_hash_hex)
-                        .await?
-                        .iter()
-                        .map(|account_id| MultiAddress::Id(*account_id))
-                        .collect();
+                    let validator_multi_addresses: Vec<MultiAddress> =
+                        match self.chain_name.to_lowercase().as_str() {
+                            "mythos" => self
+                                .substrate_client
+                                .get_active_validator_account_ids::<[u8; 20]>(block_hash_hex)
+                                .await?
+                                .iter()
+                                .map(|address| MultiAddress::Address20(*address))
+                                .collect(),
+                            _ => self
+                                .substrate_client
+                                .get_active_validator_account_ids::<AccountId>(block_hash_hex)
+                                .await?
+                                .iter()
+                                .map(|account_id| MultiAddress::Id(*account_id))
+                                .collect(),
+                        };
                     session_validators_cache.0 = session_index;
-                    session_validators_cache.1 = validator_account_ids;
+                    session_validators_cache.1 = validator_multi_addresses;
                 }
                 &session_validators_cache.1
             };

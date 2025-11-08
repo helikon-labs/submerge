@@ -8,7 +8,6 @@ use parity_scale_codec::Decode;
 use std::future::Future;
 use std::str::FromStr;
 use std::time::Duration;
-use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::chainspec::ChainProperties;
@@ -299,10 +298,10 @@ impl SubstrateClient {
         Ok(metadata.1)
     }
 
-    pub async fn get_active_validator_account_ids(
+    pub async fn get_active_validator_account_ids<T: Decode>(
         &self,
         block_hash: &str,
-    ) -> anyhow::Result<Vec<AccountId>> {
+    ) -> anyhow::Result<Vec<T>> {
         let hex_string: String = self
             .ws_client
             .request(
@@ -310,7 +309,7 @@ impl SubstrateClient {
                 get_rpc_storage_plain_params("Session", "Validators", Some(block_hash))?,
             )
             .await?;
-        let account_ids: Vec<AccountId> = decode_hex_string(hex_string.as_str())?;
+        let account_ids: Vec<T> = decode_hex_string(hex_string.as_str())?;
         Ok(account_ids)
     }
 

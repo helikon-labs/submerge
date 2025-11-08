@@ -124,6 +124,7 @@ impl super::Worker {
         skip_traces: bool,
     ) -> anyhow::Result<()> {
         let block_processor = match BlockProcessor::new(
+            &self.chain_name,
             self.id,
             self.config.postgres.clone(),
             &self.config.rpc_config,

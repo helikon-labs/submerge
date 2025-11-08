@@ -84,6 +84,7 @@ impl WorkerStatus {
 }
 
 pub struct Worker {
+    chain_name: String,
     id: UUID,
     ty: WorkerType,
     config: WorkerConfig,
@@ -92,8 +93,9 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(id: UUID, ty: WorkerType, config: WorkerConfig) -> Self {
+    pub fn new(chain_name: String, id: UUID, ty: WorkerType, config: WorkerConfig) -> Self {
         Self {
+            chain_name,
             id,
             ty,
             config,
@@ -210,6 +212,7 @@ impl Worker {
                 reindex,
             } => loop {
                 let block_processor = match BlockProcessor::new(
+                    &self.chain_name,
                     self.id,
                     self.config.postgres.clone(),
                     &self.config.rpc_config,
@@ -279,7 +282,12 @@ impl WorkerManager {
 
     pub async fn spawn(&self, ty: WorkerType, config: WorkerConfig) {
         let worker_id = UUID::new_v4();
-        let worker = Arc::new(Worker::new(worker_id, ty, config));
+        let worker = Arc::new(Worker::new(
+            config.chain_name.clone(),
+            worker_id,
+            ty,
+            config,
+        ));
         let worker_clone = worker.clone();
         tokio::spawn(async move {
             worker_clone.start().await;
