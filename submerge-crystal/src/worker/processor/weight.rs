@@ -75,7 +75,7 @@ impl BlockProcessor {
         for (trace_index, trace) in trace.events.iter().enumerate() {
             let trace_data = &trace.data_wrapper.data;
             if trace_data.key != block_weight_key
-                || trace_data.value.to_lowercase() == "none"
+                || trace_data.value.eq_ignore_ascii_case("none")
                 || trace_data.value.is_empty()
             {
                 continue;

@@ -14,7 +14,7 @@ pub fn get_metadata_type_by_id(
 pub fn get_extrinsic_type(metadata_v14: &RuntimeMetadataV14) -> anyhow::Result<&PortableType> {
     let extrinsic_type = metadata_v14.types.types
         .iter()
-        .find(|ty| ty.ty.path.segments.join("::") == UNCHECKED_EXTRINSIC_TYPE_PATH)
+        .find(|ty| ty.ty.path.segments.join("::").eq_ignore_ascii_case(UNCHECKED_EXTRINSIC_TYPE_PATH))
         .ok_or(anyhow::Error::msg(format!("Extrinsic type with path {UNCHECKED_EXTRINSIC_TYPE_PATH} not found in metadata type registry.")))?;
     get_metadata_type_by_id(metadata_v14, extrinsic_type.id).ok_or(anyhow::Error::msg(format!(
         "Extrinsic type with id {} not found in metadata.",
@@ -29,7 +29,7 @@ pub fn get_extrinsic_signer_address_type(
         .ty
         .type_params
         .iter()
-        .find(|p| p.name.to_lowercase() == "address")
+        .find(|p| p.name.eq_ignore_ascii_case("address"))
         .ok_or(anyhow::Error::msg(
             "Address type not found in extrinsic type params.",
         ))?
@@ -40,6 +40,26 @@ pub fn get_extrinsic_signer_address_type(
         .id;
     get_metadata_type_by_id(metadata_v14, address_type_id)
         .ok_or(anyhow::Error::msg("Address type not found in metadata."))
+}
+
+pub fn get_extrinsic_signature_type(
+    metadata_v14: &RuntimeMetadataV14,
+) -> anyhow::Result<&PortableType> {
+    let address_type_id = get_extrinsic_type(metadata_v14)?
+        .ty
+        .type_params
+        .iter()
+        .find(|p| p.name.eq_ignore_ascii_case("signature"))
+        .ok_or(anyhow::Error::msg(
+            "Signature type not found in extrinsic type params.",
+        ))?
+        .ty
+        .ok_or(anyhow::Error::msg(
+            "Signature type is null in extrinsic type params.",
+        ))?
+        .id;
+    get_metadata_type_by_id(metadata_v14, address_type_id)
+        .ok_or(anyhow::Error::msg("Signature type not found in metadata."))
 }
 
 pub fn get_pallet_metadata(

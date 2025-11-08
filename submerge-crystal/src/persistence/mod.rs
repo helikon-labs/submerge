@@ -719,7 +719,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     trace_index, header.number
                 ))?;
             let value = if event.data_wrapper.data.value.is_empty()
-                || event.data_wrapper.data.value.to_lowercase() == "none"
+                || event.data_wrapper.data.value.eq_ignore_ascii_case("none")
             {
                 None
             } else if let Some(inner) = event
@@ -1037,7 +1037,9 @@ mod tests {
         };
         let substrate_client = SubstrateClient::new(&rpc_config).await?;
         for number in 100..150 {
-            let hash = substrate_client.get_block_hash(number).await?;
+            let Some(hash) = substrate_client.get_block_hash(number).await? else {
+                return Err(anyhow::anyhow!("Block {number} not found on the RPC node.").into());
+            };
             let header = substrate_client.get_block_header(&hash).await?;
             let timestamp = substrate_client.get_block_timestamp(&hash).await?;
             let last_runtime_upgrade = substrate_client
@@ -1087,7 +1089,9 @@ mod tests {
             rpc_subscription_timeout_secs: 30,
         };
         let substrate_client = SubstrateClient::new(&rpc_config).await?;
-        let block_hash = substrate_client.get_block_hash(block_number).await?;
+        let Some(block_hash) = substrate_client.get_block_hash(block_number).await? else {
+            return Err(anyhow::anyhow!("Block {block_number} not found on the RPC node.").into());
+        };
         let block_hash = hex::decode(block_hash)?;
         let mut tx = postgres.connection_pool.begin().await?;
         postgres.delete_error(&block_hash, &mut tx).await?;

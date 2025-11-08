@@ -6,11 +6,13 @@ use jsonrpsee_core::client::{Client, ClientT, Subscription, SubscriptionClientT}
 use jsonrpsee_core::rpc_params;
 use parity_scale_codec::Decode;
 use std::future::Future;
+use std::str::FromStr;
 use std::time::Duration;
 use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
 use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::chainspec::ChainProperties;
+use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
 use submerge_base::types::substrate::system::SystemHealth;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
@@ -63,12 +65,12 @@ impl SubstrateClient {
         Ok(hash)
     }
 
-    pub async fn get_block_hash(&self, block_number: u64) -> anyhow::Result<String> {
-        let hash: String = self
+    pub async fn get_block_hash(&self, block_number: u64) -> anyhow::Result<Option<String>> {
+        let maybe_hash: Option<String> = self
             .ws_client
             .request("chain_getBlockHash", rpc_params!(block_number))
             .await?;
-        Ok(hash.trim_start_matches("0x").to_string())
+        Ok(maybe_hash.map(|hash| hash.trim_start_matches("0x").to_string()))
     }
 
     pub async fn get_finalized_block_hash(&self) -> anyhow::Result<String> {
@@ -341,14 +343,18 @@ impl SubstrateClient {
     pub async fn get_nimbus_block_author(
         &self,
         block_hash: &str,
-    ) -> anyhow::Result<Option<[u8; 20]>> {
-        let maybe_author: Option<[u8; 20]> = self
+    ) -> anyhow::Result<Option<MultiAddress>> {
+        let maybe_address_hex_string: Option<String> = self
             .ws_client
             .request(
                 "state_getStorage",
-                get_rpc_storage_plain_params("AuthorInheren", "Author", Some(block_hash))?,
+                get_rpc_storage_plain_params("AuthorInherent", "Author", Some(block_hash))?,
             )
             .await?;
-        Ok(maybe_author)
+        if let Some(address_hex_string) = maybe_address_hex_string {
+            Ok(Some(MultiAddress::from_str(&address_hex_string)?))
+        } else {
+            Ok(None)
+        }
     }
 }

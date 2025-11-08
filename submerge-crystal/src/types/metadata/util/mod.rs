@@ -42,17 +42,26 @@ pub fn get_extrinsic_signer_address_type(
     }
 }
 
+pub fn get_extrinsic_signature_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType> {
+    match metadata {
+        RuntimeMetadata::V14(metadata_v14) => v14::get_extrinsic_signature_type(metadata_v14),
+        RuntimeMetadata::V15(metadata_v15) => v15::get_extrinsic_signature_type(metadata_v15),
+        _ => anyhow::bail!(format!(
+            "Unsupported metadata version: {}",
+            get_metadata_version(metadata)
+        )),
+    }
+}
+
 pub fn get_extrinsic_extra_type(
     metadata: &RuntimeMetadata,
 ) -> anyhow::Result<Option<&PortableType>> {
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => {
             let extrinsic_type = v14::get_extrinsic_type(metadata_v14)?;
-            if let Some(ty) =
-                extrinsic_type.ty.type_params.iter().find(|p| {
-                    p.name.to_lowercase() == "extra" || p.name.to_lowercase() == "extension"
-                })
-            {
+            if let Some(ty) = extrinsic_type.ty.type_params.iter().find(|p| {
+                p.name.eq_ignore_ascii_case("extra") || p.name.eq_ignore_ascii_case("extension")
+            }) {
                 if let Some(ty) = ty.ty {
                     Ok(v14::get_metadata_type_by_id(metadata_v14, ty.id))
                 } else {
@@ -81,7 +90,7 @@ pub fn get_runtime_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&Port
                 .ty
                 .type_params
                 .iter()
-                .find(|p| p.name.to_lowercase() == "call")
+                .find(|p| p.name.eq_ignore_ascii_case("call"))
                 .ok_or(anyhow::Error::msg("Call type not found in metadata."))?
                 .ty
                 .ok_or(anyhow::Error::msg("Call type not found in metadata."))?
@@ -127,13 +136,13 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
             if let Some(pallet) = metadata_v14
                 .pallets
                 .iter()
-                .find(|p| p.name.to_lowercase() == "system")
+                .find(|p| p.name.eq_ignore_ascii_case("system"))
             {
                 if let Some(storage) = &pallet.storage {
                     if let Some(entry) = storage
                         .entries
                         .iter()
-                        .find(|s| s.name.to_lowercase() == "blockweight")
+                        .find(|s| s.name.eq_ignore_ascii_case("blockweight"))
                     {
                         match &entry.ty {
                             frame_metadata::v16::StorageEntryType::Plain(ty) => {
@@ -149,13 +158,13 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
             if let Some(pallet) = metadata_v15
                 .pallets
                 .iter()
-                .find(|p| p.name.to_lowercase() == "system")
+                .find(|p| p.name.eq_ignore_ascii_case("system"))
             {
                 if let Some(storage) = &pallet.storage {
                     if let Some(entry) = storage
                         .entries
                         .iter()
-                        .find(|s| s.name.to_lowercase() == "blockweight")
+                        .find(|s| s.name.eq_ignore_ascii_case("blockweight"))
                     {
                         match &entry.ty {
                             frame_metadata::v16::StorageEntryType::Plain(ty) => {

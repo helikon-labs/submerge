@@ -18,8 +18,9 @@ use crate::{
         decode::{Value, ValueVisitor},
         legacy::LegacyCall,
         metadata::util::{
-            get_extrinsic_extra_type, get_extrinsic_signer_address_type, get_metadata_version,
-            get_runtime_call_type, get_signed_extensions,
+            get_extrinsic_extra_type, get_extrinsic_signature_type,
+            get_extrinsic_signer_address_type, get_metadata_version, get_runtime_call_type,
+            get_signed_extensions,
         },
         BlockStatus, Call, Event, Extrinsic,
     },
@@ -60,6 +61,11 @@ fn decode_extrinsic(
         .path
         .segments
         .join("::");
+    let signature_type_path = get_extrinsic_signature_type(metadata)?
+        .ty
+        .path
+        .segments
+        .join("::");
     let call_type = get_runtime_call_type(metadata)?;
     let mut bytes_slice: &[u8] = bytes;
     let bytes_vector: Vec<u8> = Decode::decode(&mut bytes_slice)?;
@@ -76,9 +82,18 @@ fn decode_extrinsic(
             "sp_runtime::multiaddress::MultiAddress" => {
                 MultiAddress::decode(&mut bytes)?
             }
+            "account::AccountId20" => {
+                MultiAddress::Address20(<[u8; 20]>::decode(&mut bytes)?)
+            }
             _ => anyhow::bail!("Unsupported signer address type in metadata extrinsic signed extensions: {signer_address_type_path}"),
         };
-        let signature = sp_runtime::MultiSignature::decode(&mut bytes)?;
+        let signature = match signature_type_path.as_str() {
+            "account::EthereumSignature" => {
+                sp_runtime::MultiSignature::Ecdsa(<[u8; 65]>::decode(&mut bytes)?.into())
+            }
+            "sp_runtime::MultiSignature" => sp_runtime::MultiSignature::decode(&mut bytes)?,
+            _ => anyhow::bail!("Unsupported signature type: {signature_type_path}"),
+        };
         let mut extra = None;
         if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {
             match metadata {
@@ -94,11 +109,11 @@ fn decode_extrinsic(
                     extra = match &extra_json_array {
                         Value::Array(values) => {
                             if values.len() != extensions.len() {
-                                anyhow::bail!(format!(
-                                    "Signed extensions length ({}) doesn't match extrinsic extras length ({})",
-                                    extensions.len(),
+                                tracing::warn!(
+                                    "Extrinsic extras length ({}) doesn't match metadata signed extensions length ({}).",
                                     values.len(),
-                                ));
+                                    extensions.len(),
+                                );
                             }
                             let mut map = serde_json::Map::<String, JSONValue>::new();
                             for (key, value) in extensions.iter().zip(values) {
@@ -121,11 +136,11 @@ fn decode_extrinsic(
                     extra = match &extra_json_array {
                         Value::Array(values) => {
                             if values.len() != extensions.len() {
-                                anyhow::bail!(format!(
-                                    "Signed extensions length ({}) doesn't match extrinsic extras length ({})",
-                                    extensions.len(),
+                                tracing::warn!(
+                                    "Extrinsic extras length ({}) doesn't match metadata signed extensions length ({}).",
                                     values.len(),
-                                ));
+                                    extensions.len(),
+                                );
                             }
                             let mut map = serde_json::Map::<String, JSONValue>::new();
                             for (key, value) in extensions.iter().zip(values) {

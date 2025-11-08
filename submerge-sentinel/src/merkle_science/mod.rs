@@ -57,7 +57,7 @@ impl MerkleScienceClient {
         match self
             .supported_blockchains
             .iter()
-            .find(|b| b.name.to_lowercase() == name.to_lowercase())
+            .find(|b| b.name.eq_ignore_ascii_case(name))
         {
             Some(blockchain) => Ok(blockchain.clone()),
             None => Err(anyhow::Error::msg(format!(

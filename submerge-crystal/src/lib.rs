@@ -28,8 +28,9 @@ mod worker;
 //const RPC_URL: &str = "wss://mythos.dotters.network";
 //const RPC_URL: &str = "wss://mythos.dotters.network";
 //const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
+const RPC_URL: &str = "wss://polkadot.dotters.network";
 
-const RPC_URL: &str = "wss://kusama.dotters.network";
+//const RPC_URL: &str = "wss://kusama.dotters.network";
 //const RPC_URL: &str = "ws://104.247.178.13:5141";
 
 pub struct Crystal {
@@ -153,8 +154,8 @@ impl BaseService for Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(20_500_000),
-                    maybe_end_block_number: Some(20_500_500),
+                    maybe_start_block_number: Some(1_500_000),
+                    maybe_end_block_number: Some(1_500_500),
                     scan: true,
                     reindex: false,
                 },

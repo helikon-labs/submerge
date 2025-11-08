@@ -166,7 +166,9 @@ impl Worker {
             );
         }
         if !self.config.skip_traces {
-            let block_1_hash = substrate_client.get_block_hash(1).await?;
+            let Some(block_1_hash) = substrate_client.get_block_hash(1).await? else {
+                anyhow::bail!("Block 1 not found on the RPC node.");
+            };
             if substrate_client
                 .get_block_trace(&block_1_hash)
                 .await

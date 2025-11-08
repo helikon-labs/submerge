@@ -69,6 +69,12 @@ impl MetadataPallet {
             .iter()
             .find(|event| event.name.eq_ignore_ascii_case(name))
     }
+
+    pub fn get_storage_item_by_name(&self, name: &str) -> Option<&MetadataStorageItem> {
+        self.storage_items
+            .iter()
+            .find(|storage_item| storage_item.name.eq_ignore_ascii_case(name))
+    }
 }
 
 #[derive(Clone, Debug, Default)]

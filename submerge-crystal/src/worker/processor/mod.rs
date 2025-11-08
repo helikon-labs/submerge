@@ -106,7 +106,9 @@ impl BlockProcessor {
             .await?;
         tracing::info!("⚙️ Process finalized blocks {start_block_number}-{end_block_number}.");
         for number in start_block_number..=end_block_number {
-            let hash_hex = self.substrate_client.get_block_hash(number).await?;
+            let Some(hash_hex) = self.substrate_client.get_block_hash(number).await? else {
+                anyhow::bail!("Finalized block {number} not found on the RPC node.");
+            };
             let hash = hex::decode(&hash_hex)?;
             tracing::info!(
                 "🔧 Processing finalized block [{number}][0x{}]. Target {end_block_number}.",
@@ -198,8 +200,59 @@ impl BlockProcessor {
         Ok(())
     }
 
-    pub async fn get_block_hash_hex(&self, block_number: u64) -> anyhow::Result<String> {
+    pub async fn get_block_hash_hex(&self, block_number: u64) -> anyhow::Result<Option<String>> {
         self.substrate_client.get_block_hash(block_number).await
+    }
+
+    async fn get_block_author(
+        &self,
+        block_hash_hex: &str,
+        spec_version: u32,
+        block_header: &BlockHeader,
+    ) -> anyhow::Result<Option<MultiAddress>> {
+        let block_hash = hex::decode(block_hash_hex)?;
+        let is_nimbus = self
+            .get_parsed_metadata(&block_hash, spec_version)
+            .await?
+            .get_pallet_by_name("AuthorInherent")
+            .map(|pallet| pallet.get_storage_item_by_name("Author"))
+            .is_some();
+        let author_multi_address = if is_nimbus {
+            self.substrate_client
+                .get_nimbus_block_author(block_hash_hex)
+                .await?
+        } else if let Some(validator_index) = block_header.get_validator_index()? {
+            let session_index = self
+                .substrate_client
+                .get_current_session_index(block_hash_hex)
+                .await?;
+            let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
+            let validator_addresses = {
+                if session_validators_cache.0 != session_index
+                    || session_validators_cache.1.is_empty()
+                {
+                    let validator_account_ids = self
+                        .substrate_client
+                        .get_active_validator_account_ids(block_hash_hex)
+                        .await?
+                        .iter()
+                        .map(|account_id| MultiAddress::Id(*account_id))
+                        .collect();
+                    session_validators_cache.0 = session_index;
+                    session_validators_cache.1 = validator_account_ids;
+                }
+                &session_validators_cache.1
+            };
+            let validator_index = validator_index % validator_addresses.len() as u32;
+            if let Some(author_multi_address) = validator_addresses.get(validator_index as usize) {
+                Some(author_multi_address.clone())
+            } else {
+                anyhow::bail!("Author validator was not found at index {validator_index}.");
+            }
+        } else {
+            None
+        };
+        Ok(author_multi_address)
     }
 
     pub async fn process_block(
@@ -260,41 +313,9 @@ impl BlockProcessor {
             return Ok(());
         }
         let metadata = self.get_metadata(&block_hash, spec_version).await?;
-        let author_multi_address = {
-            if let Some(validator_index) = block_header.get_validator_index()? {
-                let session_index = self
-                    .substrate_client
-                    .get_current_session_index(block_hash_hex)
-                    .await?;
-                let mut session_validators_cache = SESSION_VALIDATORS_CACHE.write().await;
-                let validator_addresses = {
-                    if session_validators_cache.0 != session_index
-                        || session_validators_cache.1.is_empty()
-                    {
-                        let validator_account_ids = self
-                            .substrate_client
-                            .get_active_validator_account_ids(block_hash_hex)
-                            .await?
-                            .iter()
-                            .map(|account_id| MultiAddress::Id(*account_id))
-                            .collect();
-                        session_validators_cache.0 = session_index;
-                        session_validators_cache.1 = validator_account_ids;
-                    }
-                    &session_validators_cache.1
-                };
-                let validator_index = validator_index % validator_addresses.len() as u32;
-                if let Some(author_multi_address) =
-                    validator_addresses.get(validator_index as usize)
-                {
-                    Some(author_multi_address.clone())
-                } else {
-                    anyhow::bail!("Author validator was not found at index {validator_index}.");
-                }
-            } else {
-                None
-            }
-        };
+        let author_multi_address = self
+            .get_block_author(block_hash_hex, spec_version, &block_header)
+            .await?;
         let block_timestamp = self
             .substrate_client
             .get_block_timestamp(block_hash_hex)

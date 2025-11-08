@@ -38,7 +38,9 @@ async fn on_finalized_block(
     }
 
     for block_number in start_block_number..=finalized_block_number {
-        let hash_hex = processor.get_block_hash_hex(block_number).await?;
+        let Some(hash_hex) = processor.get_block_hash_hex(block_number).await? else {
+            anyhow::bail!("New finalized block {block_number} not found on the RPC node.");
+        };
         let hash_bytes = hex::decode(&hash_hex)?;
         match processor
             .process_block(
@@ -81,7 +83,9 @@ async fn on_proposed_block(
     skip_traces: bool,
 ) -> anyhow::Result<()> {
     let number = header.get_number()?;
-    let hash_hex = processor.get_block_hash_hex(number).await?;
+    let Some(hash_hex) = processor.get_block_hash_hex(number).await? else {
+        anyhow::bail!("Proposed block {number} not found on the RPC node.");
+    };
     let hash_bytes = hex::decode(&hash_hex)?;
     crate::metrics::target_best_block_number()?
         .with_label_values(&[&worker_id])

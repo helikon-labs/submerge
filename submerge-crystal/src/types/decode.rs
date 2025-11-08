@@ -271,7 +271,7 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
         type_id: u32,
     ) -> Result<Self::Value<'scale, 'resolver>, Self::Error> {
         let name = value.name().to_owned();
-        if name.to_lowercase() == "none" {
+        if name.eq_ignore_ascii_case("none") {
             return Ok(Value::Null);
         }
 

@@ -61,3 +61,11 @@ pub fn get_extrinsic_signer_address_type(
         anyhow::Error::msg("Extrinsic signer address type not found in metadata."),
     )
 }
+
+pub fn get_extrinsic_signature_type(
+    metadata_v15: &RuntimeMetadataV15,
+) -> anyhow::Result<&PortableType> {
+    get_metadata_type_by_id(metadata_v15, metadata_v15.extrinsic.signature_ty.id).ok_or(
+        anyhow::Error::msg("Extrinsic signature type not found in metadata."),
+    )
+}
