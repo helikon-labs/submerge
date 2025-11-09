@@ -35,6 +35,12 @@ impl Metadata {
             .iter()
             .find(|pallet| pallet.name.eq_ignore_ascii_case(name))
     }
+
+    pub fn has_storage_item(&self, pallet_name: &str, pallet_storage_item_name: &str) -> bool {
+        self.get_pallet_by_name(pallet_name)
+            .map(|pallet| pallet.get_storage_item_by_name(pallet_storage_item_name))
+            .is_some()
+    }
 }
 
 #[derive(Clone, Debug, Default)]

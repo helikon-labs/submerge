@@ -145,10 +145,10 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
                         .find(|s| s.name.eq_ignore_ascii_case("blockweight"))
                     {
                         match &entry.ty {
-                            frame_metadata::v16::StorageEntryType::Plain(ty) => {
+                            frame_metadata::v14::StorageEntryType::Plain(ty) => {
                                 return Ok(v14::get_metadata_type_by_id(metadata_v14, ty.id))
                             }
-                            frame_metadata::v16::StorageEntryType::Map { .. } => (),
+                            frame_metadata::v14::StorageEntryType::Map { .. } => (),
                         }
                     }
                 }
@@ -167,10 +167,10 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
                         .find(|s| s.name.eq_ignore_ascii_case("blockweight"))
                     {
                         match &entry.ty {
-                            frame_metadata::v16::StorageEntryType::Plain(ty) => {
+                            frame_metadata::v15::StorageEntryType::Plain(ty) => {
                                 return Ok(v15::get_metadata_type_by_id(metadata_v15, ty.id))
                             }
-                            frame_metadata::v16::StorageEntryType::Map { .. } => (),
+                            frame_metadata::v15::StorageEntryType::Map { .. } => (),
                         }
                     }
                 }
@@ -182,4 +182,39 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
         )),
     }
     Ok(None)
+}
+
+pub fn get_storage_item_type<'a>(
+    metadata: &'a RuntimeMetadata,
+    pallet_name: &'a str,
+    pallet_storage_item_name: &'a str,
+) -> anyhow::Result<Option<&'a PortableType>> {
+    let maybe_type = match metadata {
+        RuntimeMetadata::V14(metadata_v14) => {
+            v14::get_storage_item_type(metadata_v14, pallet_name, pallet_storage_item_name)
+        }
+        RuntimeMetadata::V15(metadata_v15) => {
+            v15::get_storage_item_type(metadata_v15, pallet_name, pallet_storage_item_name)
+        }
+        _ => anyhow::bail!(format!(
+            "Unsupported metadata version: {}",
+            get_metadata_version(metadata)
+        )),
+    };
+    Ok(maybe_type)
+}
+
+pub fn get_metadata_type_by_id(
+    metadata: &RuntimeMetadata,
+    type_id: u32,
+) -> anyhow::Result<Option<&PortableType>> {
+    let maybe_type = match metadata {
+        RuntimeMetadata::V14(metadata_v14) => v14::get_metadata_type_by_id(metadata_v14, type_id),
+        RuntimeMetadata::V15(metadata_v15) => v15::get_metadata_type_by_id(metadata_v15, type_id),
+        _ => anyhow::bail!(format!(
+            "Unsupported metadata version: {}",
+            get_metadata_version(metadata)
+        )),
+    };
+    Ok(maybe_type)
 }

@@ -82,7 +82,7 @@ fn decode_extrinsic(
             "sp_runtime::multiaddress::MultiAddress" => {
                 MultiAddress::decode(&mut bytes)?
             }
-            "account::AccountId20" => {
+            "account::AccountId20" | "primitive_types::H160" => {
                 MultiAddress::Address20(Decode::decode(&mut bytes)?)
             }
             _ => anyhow::bail!("Unsupported signer address type in metadata extrinsic signed extensions: {signer_address_type_path}"),
@@ -92,7 +92,7 @@ fn decode_extrinsic(
                 sp_runtime::MultiSignature::Ecdsa(<[u8; 65]>::decode(&mut bytes)?.into())
             }
             "sp_runtime::MultiSignature" => sp_runtime::MultiSignature::decode(&mut bytes)?,
-            _ => anyhow::bail!("Unsupported signature type: {signature_type_path}"),
+            _ => anyhow::bail!("Unsupported signature type in extrinsic: {signature_type_path}"),
         };
         let mut extra = None;
         if let Some(extra_type) = get_extrinsic_extra_type(metadata)? {

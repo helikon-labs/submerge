@@ -3,6 +3,7 @@ use std::sync::{Arc, LazyLock};
 
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
+use crate::types::metadata::util::{get_metadata_type_by_id, get_storage_item_type};
 use crate::types::BlockStatus;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::account_id::AccountId;
@@ -218,9 +219,7 @@ impl BlockProcessor {
         let is_nimbus = self
             .get_parsed_metadata(&block_hash, spec_version)
             .await?
-            .get_pallet_by_name("AuthorInherent")
-            .map(|pallet| pallet.get_storage_item_by_name("Author"))
-            .is_some();
+            .has_storage_item("AuthorInherent", "Author");
         let author_multi_address = if is_nimbus {
             self.substrate_client
                 .get_nimbus_block_author(block_hash_hex)
@@ -235,22 +234,48 @@ impl BlockProcessor {
                 if session_validators_cache.0 != session_index
                     || session_validators_cache.1.is_empty()
                 {
+                    let metadata = self.get_metadata(&block_hash, spec_version).await?;
+                    let session_validators_type =
+                        get_storage_item_type(&metadata, "Session", "Validators")?.ok_or(
+                            anyhow::Error::msg(format!(
+                                "Session.Validators storage item not found in {} metadata.",
+                                self.chain_name
+                            )),
+                        )?;
+                    let sequence_type_path = match &session_validators_type.ty.type_def {
+                        scale_info::TypeDef::Sequence(sequence_type) => {
+                            let sequence_type =
+                                get_metadata_type_by_id(&metadata, sequence_type.type_param.id)?
+                                    .ok_or(anyhow::Error::msg(format!(
+                                    "Session.Validators sequence type not found in {} metadata.",
+                                    self.chain_name
+                                )))?;
+                            sequence_type.ty.path.segments.join("::")
+                        }
+                        _ => anyhow::bail!(
+                            "Unexpected non-sequence type for Session.Validators: {:?}",
+                            session_validators_type.ty.type_def
+                        ),
+                    };
                     let validator_multi_addresses: Vec<MultiAddress> =
-                        match self.chain_name.to_lowercase().as_str() {
-                            "mythos" => self
+                        match sequence_type_path.as_str() {
+                            "account::AccountId20" => self
                                 .substrate_client
                                 .get_active_validator_account_ids::<[u8; 20]>(block_hash_hex)
                                 .await?
                                 .iter()
                                 .map(|address| MultiAddress::Address20(*address))
                                 .collect(),
-                            _ => self
+                            "sp_core::crypto::AccountId32" => self
                                 .substrate_client
                                 .get_active_validator_account_ids::<AccountId>(block_hash_hex)
                                 .await?
                                 .iter()
                                 .map(|account_id| MultiAddress::Id(*account_id))
                                 .collect(),
+                            _ => anyhow::bail!(
+                            "Unexpected sequence type for Session.Validators: {sequence_type_path}"
+                        ),
                         };
                     session_validators_cache.0 = session_index;
                     session_validators_cache.1 = validator_multi_addresses;
