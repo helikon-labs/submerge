@@ -137,6 +137,19 @@ impl BlockProcessor {
                                 strip_nuls(&mut value);
                                 constant.value_json = Some(value);
                             }
+                            RuntimeMetadata::V15(metadata_v15) => {
+                                let visitor = ValueVisitor::new(0, None);
+                                let mut value: JSONValue =
+                                    scale_decode::visitor::decode_with_visitor(
+                                        &mut bytes,
+                                        type_id,
+                                        &metadata_v15.types,
+                                        visitor,
+                                    )?
+                                    .into();
+                                strip_nuls(&mut value);
+                                constant.value_json = Some(value);
+                            }
                             _ => anyhow::bail!("Unsupported metadata version {metadata_version}."),
                         }
                     }
