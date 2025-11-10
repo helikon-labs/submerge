@@ -24,13 +24,13 @@ mod worker;
 //const RPC_URL: &str = "wss://rpc-centrifuge.luckyfriday.io";
 //const RPC_URL: &str = "wss://hydration.dotters.network";
 //const RPC_URL: &str = "wss://nexus.dotters.network";
-const RPC_URL: &str = "wss://moonbeam.dotters.network";
+//const RPC_URL: &str = "wss://moonbeam.dotters.network";
 //const RPC_URL: &str = "wss://mythos.dotters.network";
 //const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
 //const RPC_URL: &str = "wss://polkadot.dotters.network";
 
 //const RPC_URL: &str = "wss://kusama.dotters.network";
-//const RPC_URL: &str = "ws://104.247.178.13:5141";
+const RPC_URL: &str = "ws://104.247.178.13:5141";
 
 //const RPC_URL: &str = "wss://bifrost-rpc.liebi.com/ws";
 //const RPC_URL: &str = "wss:/moonriver.public.curie.radiumblock.co/ws";
@@ -114,67 +114,36 @@ impl BaseService for Crystal {
         self.process_genesis(&chainspec).await?;
 
         let recovery_duration = Duration::from_secs(self.args.service.recovery_sleep_seconds);
+        let worker_config = WorkerConfig {
+            chain_name: chainspec.name.clone(),
+            postgres: self.postgres.clone(),
+            rpc_config: RPCConfig {
+                rpc_url: RPC_URL.to_string(),
+                rpc_connection_timeout_secs: 30,
+                rpc_request_timeout_secs: 30,
+                rpc_subscription_timeout_secs: 60,
+            },
+            legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
+            retry_delay: recovery_duration,
+            skip_traces: false,
+            stop_on_error: false,
+        };
 
         self.worker_manager
-            .spawn(
-                WorkerType::SubscribeNewBlocks,
-                WorkerConfig::new(
-                    chainspec.name.clone(),
-                    self.postgres.clone(),
-                    RPCConfig {
-                        rpc_url: RPC_URL.to_string(),
-                        rpc_connection_timeout_secs: 30,
-                        rpc_request_timeout_secs: 30,
-                        rpc_subscription_timeout_secs: 60,
-                    },
-                    self.args.legacy_decode_api_url.clone(),
-                    recovery_duration,
-                    true,
-                    false,
-                ),
-            )
+            .spawn(WorkerType::SubscribeNewBlocks, worker_config.clone())
             .await;
         self.worker_manager
-            .spawn(
-                WorkerType::SubscribeFinalizedBlocks,
-                WorkerConfig::new(
-                    chainspec.name.clone(),
-                    self.postgres.clone(),
-                    RPCConfig {
-                        rpc_url: RPC_URL.to_string(),
-                        rpc_connection_timeout_secs: 30,
-                        rpc_request_timeout_secs: 30,
-                        rpc_subscription_timeout_secs: 60,
-                    },
-                    self.args.legacy_decode_api_url.clone(),
-                    recovery_duration,
-                    true,
-                    false,
-                ),
-            )
+            .spawn(WorkerType::SubscribeFinalizedBlocks, worker_config.clone())
             .await;
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(5_000_000),
-                    maybe_end_block_number: Some(5_000_500),
+                    maybe_start_block_number: Some(15_000_000),
+                    maybe_end_block_number: Some(15_000_500),
                     scan: true,
                     reindex: false,
                 },
-                WorkerConfig::new(
-                    chainspec.name.clone(),
-                    self.postgres.clone(),
-                    RPCConfig {
-                        rpc_url: RPC_URL.to_string(),
-                        rpc_connection_timeout_secs: 30,
-                        rpc_request_timeout_secs: 30,
-                        rpc_subscription_timeout_secs: 60,
-                    },
-                    self.args.legacy_decode_api_url.clone(),
-                    recovery_duration,
-                    true,
-                    false,
-                ),
+                worker_config.clone(),
             )
             .await;
         self.launch_api(&chainspec.name).await?;

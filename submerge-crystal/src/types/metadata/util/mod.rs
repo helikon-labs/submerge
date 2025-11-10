@@ -184,17 +184,17 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
     Ok(None)
 }
 
-pub fn get_storage_item_type<'a>(
+pub fn get_pallet_storage_item_type_by_name<'a>(
     metadata: &'a RuntimeMetadata,
     pallet_name: &'a str,
     pallet_storage_item_name: &'a str,
 ) -> anyhow::Result<Option<&'a PortableType>> {
     let maybe_type = match metadata {
         RuntimeMetadata::V14(metadata_v14) => {
-            v14::get_storage_item_type(metadata_v14, pallet_name, pallet_storage_item_name)
+            v14::get_storage_item_type_by_name(metadata_v14, pallet_name, pallet_storage_item_name)
         }
         RuntimeMetadata::V15(metadata_v15) => {
-            v15::get_storage_item_type(metadata_v15, pallet_name, pallet_storage_item_name)
+            v15::get_storage_item_type_by_name(metadata_v15, pallet_name, pallet_storage_item_name)
         }
         _ => anyhow::bail!(format!(
             "Unsupported metadata version: {}",

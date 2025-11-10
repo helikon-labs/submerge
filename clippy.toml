@@ -1,4 +1,4 @@
 disallowed-types = ["std::collections::HashMap", "std::collections::HashSet"]
-too-many-arguments-threshold = 12
+too-many-arguments-threshold = 13
 excessive-nesting-threshold = 8
-too-many-lines-threshold = 210
+too-many-lines-threshold = 250

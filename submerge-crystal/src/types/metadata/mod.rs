@@ -11,6 +11,7 @@ use frame_metadata::v9::RuntimeMetadataV9;
 use frame_metadata::RuntimeMetadata;
 use paste::paste;
 use serde_json::Value as JSONValue;
+use submerge_util::substrate::storage::get_storage_plain_key;
 use util::get_decode_different_string;
 
 use crate::types::metadata::util::{
@@ -116,6 +117,7 @@ pub struct MetadataStorageItem {
     pub id: u32,
     pub index: u8,
     pub name: String,
+    pub key_prefix: Vec<u8>,
     pub docs: Vec<String>,
 }
 
@@ -143,7 +145,7 @@ fn extract_module_name(name: &DecodeDifferent<&'static str, String>) -> String {
     }
 }
 
-fn create_base_pallet(id: u32, index: u8, name: String) -> MetadataPallet {
+fn create_base_pallet(id: u32, index: u8, name: &str) -> MetadataPallet {
     MetadataPallet {
         id,
         index,
@@ -167,7 +169,7 @@ macro_rules! from_metadata_version {
                 let mut metadata = Metadata::default();
                 for pallet_metadata in value.pallets.iter() {
                     let mut pallet =
-                        create_base_pallet(0, pallet_metadata.index, pallet_metadata.name.clone());
+                        create_base_pallet(0, pallet_metadata.index, &pallet_metadata.name);
                     // events
                     if let Some(events) = &pallet_metadata.event {
                         let type_id = events.ty.id;
@@ -241,10 +243,13 @@ macro_rules! from_metadata_version {
                     // storage items
                     if let Some(storage) = &pallet_metadata.storage {
                         for (index, entry) in storage.entries.iter().enumerate() {
+                            let name = entry.name.to_case(Case::UpperCamel);
+                            let key_prefix = get_storage_plain_key(&pallet_metadata.name, &name);
                             pallet.storage_items.push(MetadataStorageItem {
                                 id: 0,
                                 index: index as u8,
-                                name: entry.name.to_case(Case::UpperCamel),
+                                name,
+                                key_prefix,
                                 docs: entry.docs.clone(),
                             });
                         }
@@ -290,8 +295,9 @@ macro_rules! from_legacy_metadata {
                 match &value.modules {
                     DecodeDifferent::Decoded(modules) => {
                         for (index, module) in modules.iter().enumerate() {
-                            let name = extract_module_name(&module.name).to_case(Case::UpperCamel);
-                            let mut pallet = create_base_pallet(0, index as u8, name);
+                            let pallet_name =
+                                extract_module_name(&module.name).to_case(Case::UpperCamel);
+                            let mut pallet = create_base_pallet(0, index as u8, &pallet_name);
                             if let Some(module_events) = &module.event {
                                 match module_events {
                                     DecodeDifferent::Encode(module_events) => {
@@ -431,6 +437,8 @@ macro_rules! from_legacy_metadata {
                                                     let name =
                                                         get_decode_different_string(&entry.name)
                                                             .to_case(Case::UpperCamel);
+                                                    let key_prefix =
+                                                        get_storage_plain_key(&pallet_name, &name);
                                                     let docs: Vec<String> =
                                                         extract_docs(&entry.documentation);
                                                     pallet.storage_items.push(
@@ -438,6 +446,7 @@ macro_rules! from_legacy_metadata {
                                                             id: 0,
                                                             index: index as u8,
                                                             name,
+                                                            key_prefix,
                                                             docs,
                                                         },
                                                     );
@@ -448,6 +457,8 @@ macro_rules! from_legacy_metadata {
                                                     let name =
                                                         get_decode_different_string(&entry.name)
                                                             .to_case(Case::UpperCamel);
+                                                    let key_prefix =
+                                                        get_storage_plain_key(&pallet_name, &name);
                                                     let docs: Vec<String> =
                                                         extract_docs(&entry.documentation);
                                                     pallet.storage_items.push(
@@ -455,6 +466,7 @@ macro_rules! from_legacy_metadata {
                                                             id: 0,
                                                             index: index as u8,
                                                             name,
+                                                            key_prefix,
                                                             docs,
                                                         },
                                                     );
@@ -467,12 +479,15 @@ macro_rules! from_legacy_metadata {
                                             for (index, entry) in entries.iter().enumerate() {
                                                 let name = get_decode_different_string(&entry.name)
                                                     .to_case(Case::UpperCamel);
+                                                let key_prefix =
+                                                    get_storage_plain_key(&pallet_name, &name);
                                                 let docs: Vec<String> =
                                                     extract_docs(&entry.documentation);
                                                 pallet.storage_items.push(MetadataStorageItem {
                                                     id: 0,
                                                     index: index as u8,
                                                     name,
+                                                    key_prefix,
                                                     docs,
                                                 });
                                             }
@@ -481,12 +496,15 @@ macro_rules! from_legacy_metadata {
                                             for (index, entry) in entries.iter().enumerate() {
                                                 let name = get_decode_different_string(&entry.name)
                                                     .to_case(Case::UpperCamel);
+                                                let key_prefix =
+                                                    get_storage_plain_key(&pallet_name, &name);
                                                 let docs: Vec<String> =
                                                     extract_docs(&entry.documentation);
                                                 pallet.storage_items.push(MetadataStorageItem {
                                                     id: 0,
                                                     index: index as u8,
                                                     name,
+                                                    key_prefix,
                                                     docs,
                                                 });
                                             }

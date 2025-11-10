@@ -70,7 +70,7 @@ pub fn get_extrinsic_signature_type(
     )
 }
 
-pub fn get_storage_item_type<'a>(
+pub fn get_storage_item_type_by_name<'a>(
     metadata_v15: &'a RuntimeMetadataV15,
     pallet_name: &'a str,
     pallet_storage_item_name: &'a str,
@@ -87,8 +87,8 @@ pub fn get_storage_item_type<'a>(
         .iter()
         .find(|entry| entry.name.eq_ignore_ascii_case(pallet_storage_item_name))?;
     let type_id = match &storage_item.ty {
-        frame_metadata::v16::StorageEntryType::Plain(a) => a.id,
-        frame_metadata::v16::StorageEntryType::Map { value, .. } => value.id,
+        frame_metadata::v15::StorageEntryType::Plain(a) => a.id,
+        frame_metadata::v15::StorageEntryType::Map { value, .. } => value.id,
     };
     get_metadata_type_by_id(metadata_v15, type_id)
 }

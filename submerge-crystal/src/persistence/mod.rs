@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use frame_metadata::RuntimeMetadataPrefixed;
 use parity_scale_codec::Decode;
 use parity_scale_codec::Encode;
@@ -8,7 +7,6 @@ use sqlx::QueryBuilder;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
-use submerge_base::types::substrate::block_trace::BlockTrace as SubstrateBlockTrace;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
@@ -115,10 +113,17 @@ pub(crate) trait CrystalPostgreSQLStorage {
     ) -> anyhow::Result<Vec<BlockRow>>;
     async fn ingest_block_trace(
         &self,
-        hash: &[u8],
-        header: &BlockHeader,
+        block_hash: &[u8],
+        block_number: u64,
         spec_version: u32,
-        trace: &SubstrateBlockTrace,
+        trace_index: u32,
+        key: &[u8],
+        value: Option<&[u8]>,
+        ext_id: &[u8],
+        method: &str,
+        parent_id: Option<&str>,
+        metadata_storage_item_id: Option<u32>,
+        is_known_key: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn ingest_block_logs(
@@ -699,65 +704,42 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn ingest_block_trace(
         &self,
-        hash: &[u8],
-        header: &BlockHeader,
+        block_hash: &[u8],
+        block_number: u64,
         spec_version: u32,
-        trace: &SubstrateBlockTrace,
+        trace_index: u32,
+        key: &[u8],
+        value: Option<&[u8]>,
+        ext_id: &[u8],
+        method: &str,
+        parent_id: Option<&str>,
+        metadata_storage_item_id: Option<u32>,
+        is_known_key: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let header = DecodedBlockHeader::try_from(header)?;
-        for (trace_index, event) in trace.events.iter().enumerate() {
-            let key = hex::decode(event.data_wrapper.data.key.trim_start_matches("0x")).context(
-                format!(
-                    "Cannot decode key for trace #{} in block #{}.",
-                    trace_index, header.number
-                ),
-            )?;
-            let ext_id = hex::decode(event.data_wrapper.data.ext_id.trim_start_matches("0x"))
-                .context(format!(
-                    "Cannot decode ext id for trace #{} in block #{}.",
-                    trace_index, header.number
-                ))?;
-            let value = if event.data_wrapper.data.value.is_empty()
-                || event.data_wrapper.data.value.eq_ignore_ascii_case("none")
-            {
-                None
-            } else if let Some(inner) = event
-                .data_wrapper
-                .data
-                .value
-                .to_lowercase()
-                .strip_prefix("some(")
-                .and_then(|s| s.strip_suffix(')'))
-            {
-                Some(hex::decode(inner).context("Cannot decode trace value hex string.")?)
-            } else {
-                Some(
-                    hex::decode(&event.data_wrapper.data.value)
-                        .context("Cannot decode trace value hex string.")?,
-                )
-            };
-            sqlx::query(
-                r#"
-                INSERT INTO trace (block_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
-                    spec_version = EXCLUDED.spec_version, key = EXCLUDED.key, value = EXCLUDED.value,
-                    ext_id = EXCLUDED.ext_id, method = EXCLUDED.method, parent_id = EXCLUDED.parent_id
-                "#,
-            )
-                .bind(hash)
-                .bind(header.number as i64)
-                .bind(spec_version as i32)
-                .bind(trace_index as i32)
-                .bind(&key)
-                .bind(value)
-                .bind(ext_id)
-                .bind(event.data_wrapper.data.method.to_string())
-                .bind(&event.parent_id)
-                .execute(&mut **tx)
-                .await?;
-        }
+        sqlx::query(
+            r#"
+            INSERT INTO trace (block_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id, metadata_storage_item_id, is_known_key)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
+                spec_version = EXCLUDED.spec_version, key = EXCLUDED.key, value = EXCLUDED.value,
+                ext_id = EXCLUDED.ext_id, method = EXCLUDED.method, parent_id = EXCLUDED.parent_id,
+                metadata_storage_item_id = EXCLUDED.metadata_storage_item_id
+            "#,
+        )
+            .bind(block_hash)
+            .bind(block_number as i64)
+            .bind(spec_version as i32)
+            .bind(trace_index as i32)
+            .bind(key)
+            .bind(value)
+            .bind(ext_id)
+            .bind(method)
+            .bind(parent_id)
+            .bind(metadata_storage_item_id.map(|id| id as i32))
+            .bind(is_known_key)
+            .execute(&mut **tx)
+            .await?;
         Ok(())
     }
 
@@ -999,6 +981,7 @@ mod tests {
         persistence::{CrystalPostgreSQLStorage, PostgreSQLStorage},
         types::BlockStatus,
     };
+    use anyhow::Context as _;
     use std::fs;
     use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::Chainspec};
     use submerge_substrate_client::{RPCConfig, SubstrateClient};
@@ -1037,20 +1020,21 @@ mod tests {
         };
         let substrate_client = SubstrateClient::new(&rpc_config).await?;
         for number in 100..150 {
-            let Some(hash) = substrate_client.get_block_hash(number).await? else {
+            let Some(block_hash) = substrate_client.get_block_hash(number).await? else {
                 return Err(anyhow::anyhow!("Block {number} not found on the RPC node.").into());
             };
-            let header = substrate_client.get_block_header(&hash).await?;
-            let timestamp = substrate_client.get_block_timestamp(&hash).await?;
+            let header = substrate_client.get_block_header(&block_hash).await?;
+            let block_number = header.get_number()?;
+            let timestamp = substrate_client.get_block_timestamp(&block_hash).await?;
             let last_runtime_upgrade = substrate_client
-                .get_last_runtime_upgrade_info(&hash)
+                .get_last_runtime_upgrade_info(&block_hash)
                 .await?;
-            let trace = substrate_client.get_block_trace(&hash).await?;
-            let hash = hex::decode(hash)?;
+            let trace = substrate_client.get_block_trace(&block_hash).await?;
+            let block_hash = hex::decode(block_hash)?;
             let mut tx = postgres.connection_pool.begin().await?;
             postgres
                 .ingest_block(
-                    &hash,
+                    &block_hash,
                     &header,
                     timestamp,
                     BlockStatus::Proposed,
@@ -1062,17 +1046,57 @@ mod tests {
                     &mut tx,
                 )
                 .await?;
-            postgres.ingest_block_logs(&hash, &header, &mut tx).await?;
             postgres
-                .ingest_block_trace(
-                    &hash,
-                    &header,
-                    last_runtime_upgrade.spec_version,
-                    &trace,
-                    &mut tx,
-                )
+                .ingest_block_logs(&block_hash, &header, &mut tx)
                 .await?;
-            postgres.delete_error(&hash, &mut tx).await?;
+            for (trace_index, event) in trace.events.iter().enumerate() {
+                let key = hex::decode(event.data_wrapper.data.key.trim_start_matches("0x"))
+                    .context(format!(
+                        "Cannot decode key for trace #{} in block #{}.",
+                        trace_index, block_number,
+                    ))?;
+                let ext_id = hex::decode(event.data_wrapper.data.ext_id.trim_start_matches("0x"))
+                    .context(format!(
+                    "Cannot decode ext id for trace #{} in block #{}.",
+                    trace_index, block_number,
+                ))?;
+                let value = if event.data_wrapper.data.value.is_empty()
+                    || event.data_wrapper.data.value.eq_ignore_ascii_case("none")
+                {
+                    None
+                } else if let Some(inner) = event
+                    .data_wrapper
+                    .data
+                    .value
+                    .to_lowercase()
+                    .strip_prefix("some(")
+                    .and_then(|s| s.strip_suffix(')'))
+                {
+                    Some(hex::decode(inner).context("Cannot decode trace value hex string.")?)
+                } else {
+                    Some(
+                        hex::decode(&event.data_wrapper.data.value)
+                            .context("Cannot decode trace value hex string.")?,
+                    )
+                };
+                postgres
+                    .ingest_block_trace(
+                        &block_hash,
+                        block_number,
+                        last_runtime_upgrade.spec_version,
+                        trace_index as u32,
+                        &key,
+                        value.as_deref(),
+                        &ext_id,
+                        &event.data_wrapper.data.method.to_string(),
+                        event.parent_id.as_deref(),
+                        None,
+                        false,
+                        &mut tx,
+                    )
+                    .await?;
+            }
+            postgres.delete_error(&block_hash, &mut tx).await?;
             tx.commit().await?;
         }
         Ok(())

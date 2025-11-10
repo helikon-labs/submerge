@@ -23,36 +23,15 @@ pub enum WorkerType {
     SubscribeNewBlocks,
 }
 
+#[derive(Clone)]
 pub struct WorkerConfig {
-    chain_name: String,
-    postgres: Arc<PostgreSQLStorage>,
-    rpc_config: RPCConfig,
-    legacy_decode_api_url: Option<String>,
-    retry_delay: Duration,
-    skip_traces: bool,
-    stop_on_error: bool,
-}
-
-impl WorkerConfig {
-    pub fn new(
-        chain_name: String,
-        postgres: Arc<PostgreSQLStorage>,
-        rpc_config: RPCConfig,
-        legacy_decode_api_url: Option<String>,
-        retry_delay: Duration,
-        skip_traces: bool,
-        stop_on_error: bool,
-    ) -> Self {
-        Self {
-            chain_name,
-            postgres,
-            rpc_config,
-            legacy_decode_api_url,
-            retry_delay,
-            skip_traces,
-            stop_on_error,
-        }
-    }
+    pub chain_name: String,
+    pub postgres: Arc<PostgreSQLStorage>,
+    pub rpc_config: RPCConfig,
+    pub legacy_decode_api_url: Option<String>,
+    pub retry_delay: Duration,
+    pub skip_traces: bool,
+    pub stop_on_error: bool,
 }
 
 #[allow(dead_code)]

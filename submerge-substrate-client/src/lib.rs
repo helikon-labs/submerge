@@ -17,6 +17,7 @@ use submerge_base::types::substrate::system::SystemHealth;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 use tokio_util::sync::CancellationToken;
 
+#[derive(Clone)]
 pub struct RPCConfig {
     pub rpc_url: String,
     pub rpc_connection_timeout_secs: u64,

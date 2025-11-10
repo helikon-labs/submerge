@@ -5303,6 +5303,7 @@ dependencies = [
  "serde_json",
  "sp-core",
  "sp-runtime",
+ "sp-storage",
  "sqlx",
  "submerge-base",
  "submerge-metrics",

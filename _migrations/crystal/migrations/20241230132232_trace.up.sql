@@ -1,25 +1,34 @@
 CREATE TABLE IF NOT EXISTS trace
 (
-    id                  BIGSERIAL NOT NULL,
-    block_hash          BYTEA NOT NULL,
-    block_number        BIGINT NOT NULL,
-    spec_version        INT NOT NULL,
-    index               INT NOT NULL,
-    key                 BYTEA NOT NULL,
-    key_prefix          BYTEA GENERATED ALWAYS AS (substr(key, 1, 32)) STORED,
-    value               BYTEA,
-    ext_id              BYTEA NOT NULL,
-    method              VARCHAR(64) NOT NULL,
-    parent_id           TEXT,
-    created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    id                          BIGSERIAL NOT NULL,
+    block_hash                  BYTEA NOT NULL,
+    block_number                BIGINT NOT NULL,
+    spec_version                INT NOT NULL,
+    index                       INT NOT NULL,
+    key                         BYTEA NOT NULL,
+    key_prefix                  BYTEA GENERATED ALWAYS AS (substr(key, 1, 32)) STORED,
+    key_params                  BYTEA GENERATED ALWAYS AS (CASE WHEN length(key) > 32 THEN substr(key, 33) ELSE NULL END) STORED,
+    value                       BYTEA,
+    ext_id                      BYTEA NOT NULL,
+    method                      VARCHAR(64) NOT NULL,
+    parent_id                   TEXT,
+    metadata_storage_item_id    INTEGER,
+    is_known_key                BOOLEAN NOT NULL,
+    created_at                  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT trace_pk PRIMARY KEY (id, block_number),
-    CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
+    CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
+    CONSTRAINT trace_fk_metadata_storage_item_id
+        FOREIGN KEY (metadata_storage_item_id)
+            REFERENCES metadata_storage_item (id)
+            ON DELETE RESTRICT
+            ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX IF NOT EXISTS trace_idx_block_number ON trace (block_number);
 CREATE INDEX IF NOT EXISTS trace_idx_block_hash ON trace (block_hash);
 CREATE INDEX IF NOT EXISTS trace_idx_key ON trace (key);
 CREATE INDEX IF NOT EXISTS trace_idx_key_prefix ON trace (key_prefix);
+CREATE INDEX IF NOT EXISTS trace_idx_key_prefix ON trace (key_prefix, key_params);
 
 CREATE TABLE trace_0_500000 PARTITION OF trace FOR VALUES FROM (0) TO (500000);
 CREATE TABLE trace_500000_1000000 PARTITION OF trace FOR VALUES FROM (500000) TO (1000000);

@@ -113,7 +113,7 @@ impl BlockTrace {
         let mut event_count: u32 = 0;
         for trace in self.events.iter() {
             let trace_data = &trace.data_wrapper.data;
-            if trace_data.key == event_count_key && trace_data.value.eq_ignore_ascii_case("none") {
+            if trace_data.key == event_count_key && !trace_data.value.eq_ignore_ascii_case("none") {
                 let value = trace_data
                     .value
                     .trim_start_matches("Some(")
@@ -131,7 +131,7 @@ impl BlockTrace {
         for trace in self.events.iter() {
             let trace_data = &trace.data_wrapper.data;
             if trace_data.key == extrinsic_count_key
-                && trace_data.value.eq_ignore_ascii_case("none")
+                && !trace_data.value.eq_ignore_ascii_case("none")
             {
                 let value = trace_data
                     .value

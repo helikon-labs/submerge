@@ -3,8 +3,11 @@ use std::sync::{Arc, LazyLock};
 
 use crate::api::legacy::LegacyDecodeAPIClient;
 use crate::persistence::CrystalPostgreSQLStorage;
-use crate::types::metadata::util::{get_metadata_type_by_id, get_storage_item_type};
+use crate::types::metadata::util::{
+    get_metadata_type_by_id, get_metadata_version, get_pallet_storage_item_type_by_name,
+};
 use crate::types::BlockStatus;
+use anyhow::Context as _;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::account_id::AccountId;
 use submerge_base::types::substrate::block::BlockHeader;
@@ -19,6 +22,15 @@ mod event;
 mod extrinsic;
 mod metadata_cache;
 mod weight;
+
+const TRANSACTION_LEVEL_KEY: &[u8] = b":transaction_level:";
+const METADATA_VERSION_LEGACY_THRESHOLD: u32 = 14;
+const ACCOUNT_ID_32_TYPE_PATH: &str = "sp_core::crypto::AccountId32";
+const ACCOUNT_ID_20_TYPE_PATH: &str = "account::AccountId20";
+const AUTHOR_INHERENT_PALLET_NAME: &str = "AuthorInherent";
+const AUTHOR_STORAGE_ITEM_NAME: &str = "Author";
+const SESSION_PALLET_NAME: &str = "Session";
+const VALIDATORS_STORAGE_ITEM_NAME: &str = "Validators";
 
 static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<MultiAddress>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
@@ -181,7 +193,7 @@ impl BlockProcessor {
         Ok(())
     }
 
-    async fn prune_other_blocks(
+    async fn prune_other_blocks_with_number(
         &self,
         block_number: u64,
         block_hash: &[u8],
@@ -219,7 +231,7 @@ impl BlockProcessor {
         let is_nimbus = self
             .get_parsed_metadata(&block_hash, spec_version)
             .await?
-            .has_storage_item("AuthorInherent", "Author");
+            .has_storage_item(AUTHOR_INHERENT_PALLET_NAME, AUTHOR_STORAGE_ITEM_NAME);
         let author_multi_address = if is_nimbus {
             self.substrate_client
                 .get_nimbus_block_author(block_hash_hex)
@@ -235,38 +247,47 @@ impl BlockProcessor {
                     || session_validators_cache.1.is_empty()
                 {
                     let metadata = self.get_metadata(&block_hash, spec_version).await?;
-                    let session_validators_type =
-                        get_storage_item_type(&metadata, "Session", "Validators")?.ok_or(
-                            anyhow::Error::msg(format!(
+                    let sequence_type_path =
+                        if get_metadata_version(&metadata) < METADATA_VERSION_LEGACY_THRESHOLD {
+                            ACCOUNT_ID_32_TYPE_PATH.to_string()
+                        } else {
+                            let session_validators_type = get_pallet_storage_item_type_by_name(
+                                &metadata,
+                                SESSION_PALLET_NAME,
+                                VALIDATORS_STORAGE_ITEM_NAME,
+                            )?
+                            .ok_or(anyhow::Error::msg(format!(
                                 "Session.Validators storage item not found in {} metadata.",
                                 self.chain_name
-                            )),
-                        )?;
-                    let sequence_type_path = match &session_validators_type.ty.type_def {
-                        scale_info::TypeDef::Sequence(sequence_type) => {
-                            let sequence_type =
-                                get_metadata_type_by_id(&metadata, sequence_type.type_param.id)?
+                            )))?;
+                            match &session_validators_type.ty.type_def {
+                                scale_info::TypeDef::Sequence(sequence_type) => {
+                                    let sequence_type = get_metadata_type_by_id(
+                                        &metadata,
+                                        sequence_type.type_param.id,
+                                    )?
                                     .ok_or(anyhow::Error::msg(format!(
                                     "Session.Validators sequence type not found in {} metadata.",
                                     self.chain_name
                                 )))?;
-                            sequence_type.ty.path.segments.join("::")
-                        }
-                        _ => anyhow::bail!(
-                            "Unexpected non-sequence type for Session.Validators: {:?}",
-                            session_validators_type.ty.type_def
-                        ),
-                    };
+                                    sequence_type.ty.path.segments.join("::")
+                                }
+                                _ => anyhow::bail!(
+                                    "Unexpected non-sequence type for Session.Validators: {:?}",
+                                    session_validators_type.ty.type_def
+                                ),
+                            }
+                        };
                     let validator_multi_addresses: Vec<MultiAddress> =
                         match sequence_type_path.as_str() {
-                            "account::AccountId20" => self
+                            ACCOUNT_ID_20_TYPE_PATH => self
                                 .substrate_client
                                 .get_active_validator_account_ids::<[u8; 20]>(block_hash_hex)
                                 .await?
                                 .iter()
                                 .map(|address| MultiAddress::Address20(*address))
                                 .collect(),
-                            "sp_core::crypto::AccountId32" => self
+                            ACCOUNT_ID_32_TYPE_PATH => self
                                 .substrate_client
                                 .get_active_validator_account_ids::<AccountId>(block_hash_hex)
                                 .await?
@@ -326,7 +347,7 @@ impl BlockProcessor {
                     self.postgres
                         .update_block_status(&block_hash, status, &mut tx)
                         .await?;
-                    self.prune_other_blocks(block_number, &block_hash, &mut tx)
+                    self.prune_other_blocks_with_number(block_number, &block_hash, &mut tx)
                         .await?;
                     crate::metrics::block_status_update_time_ms()?
                         .with_label_values(&[&self.worker_id.to_string()])
@@ -352,6 +373,7 @@ impl BlockProcessor {
             return Ok(());
         }
         let metadata = self.get_metadata(&block_hash, spec_version).await?;
+        let parsed_metadata = self.get_parsed_metadata(&block_hash, spec_version).await?;
         let author_multi_address = self
             .get_block_author(block_hash_hex, spec_version, &block_header)
             .await?;
@@ -379,9 +401,80 @@ impl BlockProcessor {
                 .substrate_client
                 .get_block_trace(block_hash_hex)
                 .await?;
-            self.postgres
-                .ingest_block_trace(&block_hash, &block_header, spec_version, &trace, &mut tx)
-                .await?;
+
+            for (trace_index, event) in trace.events.iter().enumerate() {
+                let key = hex::decode(event.data_wrapper.data.key.trim_start_matches("0x"))
+                    .context(format!(
+                        "Cannot decode key for trace #{} in block #{}.",
+                        trace_index, block_number,
+                    ))?;
+                let ext_id = hex::decode(event.data_wrapper.data.ext_id.trim_start_matches("0x"))
+                    .context(format!(
+                    "Cannot decode ext id for trace #{} in block #{}.",
+                    trace_index, block_number,
+                ))?;
+                let value = if event.data_wrapper.data.value.is_empty()
+                    || event.data_wrapper.data.value.eq_ignore_ascii_case("none")
+                {
+                    None
+                } else if let Some(inner) = event
+                    .data_wrapper
+                    .data
+                    .value
+                    .to_lowercase()
+                    .strip_prefix("some(")
+                    .and_then(|s| s.strip_suffix(')'))
+                {
+                    Some(hex::decode(inner).context("Cannot decode trace value hex string.")?)
+                } else {
+                    Some(
+                        hex::decode(&event.data_wrapper.data.value)
+                            .context("Cannot decode trace value hex string.")?,
+                    )
+                };
+                // find storage item
+                let storage_item = parsed_metadata
+                    .pallets
+                    .iter()
+                    .flat_map(|pallet| &pallet.storage_items)
+                    .find(|item| key.starts_with(&item.key_prefix));
+                // check for known key
+                let is_known_key = matches!(
+                    key.as_slice(),
+                    sp_storage::well_known_keys::CHILD_STORAGE_KEY_PREFIX
+                        | sp_storage::well_known_keys::CODE
+                        | sp_storage::well_known_keys::DEFAULT_CHILD_STORAGE_KEY_PREFIX
+                        | sp_storage::well_known_keys::EXTRINSIC_INDEX
+                        | sp_storage::well_known_keys::HEAP_PAGES
+                        | sp_storage::well_known_keys::INTRABLOCK_ENTROPY
+                        | TRANSACTION_LEVEL_KEY
+                );
+                if storage_item.is_none() && !is_known_key {
+                    tracing::warn!(
+                        "Trace {trace_index} of block [{block_number}][0x{}] has unknown key: 0x{}",
+                        truncate_hash(block_hash_hex),
+                        event.data_wrapper.data.key
+                    );
+                }
+                // ingest
+                self.postgres
+                    .ingest_block_trace(
+                        &block_hash,
+                        block_number,
+                        spec_version,
+                        trace_index as u32,
+                        &key,
+                        value.as_deref(),
+                        &ext_id,
+                        &event.data_wrapper.data.method.to_string(),
+                        event.parent_id.as_deref(),
+                        storage_item.map(|storage_item| storage_item.id),
+                        is_known_key,
+                        &mut tx,
+                    )
+                    .await?;
+            }
+
             let event_count = trace.get_event_count()?;
             let events = self
                 .get_events_from_trace(&block_hash, spec_version, &metadata, &trace)
@@ -406,13 +499,18 @@ impl BlockProcessor {
             let weight = self
                 .get_block_weight_from_trace(&block_hash, spec_version, &metadata, &trace)
                 .await?;
+            tracing::info!(
+                block_number,
+                "Processed and persisted {} traces.",
+                trace.events.len()
+            );
             (events, extrinsics, weight)
         };
         tracing::info!(block_number, "Decoded {} extrinsics.", extrinsics.len(),);
         tracing::info!(block_number, "Decoded {} events.", events.len(),);
         // persist block, events, and extrinsics
         if status == BlockStatus::Finalized {
-            self.prune_other_blocks(block_number, &block_hash, &mut tx)
+            self.prune_other_blocks_with_number(block_number, &block_hash, &mut tx)
                 .await?;
         }
         self.postgres
