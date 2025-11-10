@@ -401,7 +401,6 @@ impl BlockProcessor {
                 .substrate_client
                 .get_block_trace(block_hash_hex)
                 .await?;
-
             for (trace_index, event) in trace.events.iter().enumerate() {
                 let key = hex::decode(event.data_wrapper.data.key.trim_start_matches("0x"))
                     .context(format!(
@@ -447,7 +446,7 @@ impl BlockProcessor {
                         | sp_storage::well_known_keys::EXTRINSIC_INDEX
                         | sp_storage::well_known_keys::HEAP_PAGES
                         | sp_storage::well_known_keys::INTRABLOCK_ENTROPY
-                        | TRANSACTION_LEVEL_KEY
+                        | TRANSACTION_LEVEL_KEY,
                 );
                 if storage_item.is_none() && !is_known_key {
                     tracing::warn!(
@@ -456,6 +455,19 @@ impl BlockProcessor {
                         event.data_wrapper.data.key
                     );
                 }
+
+                let (key_prefix, key_params) = if let Some(storage_item) = storage_item {
+                    (
+                        storage_item.key_prefix.as_slice(),
+                        if key.len() > storage_item.key_prefix.len() {
+                            key.get(storage_item.key_prefix.len()..)
+                        } else {
+                            None
+                        },
+                    )
+                } else {
+                    (key.as_slice(), None)
+                };
                 // ingest
                 self.postgres
                     .ingest_block_trace(
@@ -463,7 +475,8 @@ impl BlockProcessor {
                         block_number,
                         spec_version,
                         trace_index as u32,
-                        &key,
+                        key_prefix,
+                        key_params,
                         value.as_deref(),
                         &ext_id,
                         &event.data_wrapper.data.method.to_string(),

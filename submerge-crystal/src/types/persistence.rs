@@ -171,10 +171,12 @@ pub struct TraceRow {
     pub block_number: i64,
     pub spec_version: i32,
     pub index: i32,
-    pub key: Vec<u8>,
     pub key_prefix: Vec<u8>,
+    pub key_params: Option<Vec<u8>>,
     pub value: Option<Vec<u8>>,
     pub ext_id: Vec<u8>,
     pub method: String,
     pub parent_id: Option<String>,
+    pub metadata_storage_item_id: Option<i32>,
+    pub is_known_key: bool,
 }

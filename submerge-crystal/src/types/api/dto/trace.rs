@@ -2,13 +2,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::TraceRow};
 
+#[derive(Debug, Serialize)]
+pub enum TraceType {
+    StorageItem,
+    KnownKey,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TraceQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
-    pub key: Option<String>,
+    pub min_block_number: Option<u64>,
+    pub max_block_number: Option<u64>,
     pub key_prefix: Option<String>,
+    pub key_params: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -18,12 +26,14 @@ pub struct TraceDTO {
     pub block_number: u64,
     pub spec_version: u32,
     pub index: u32,
-    pub key: String,
     pub key_prefix: String,
+    pub key_params: Option<String>,
     pub value: Option<String>,
     pub ext_id: String,
     pub method: String,
     pub parent_id: Option<String>,
+    #[serde(rename = "type")]
+    pub trace_type: Option<TraceType>,
 }
 
 impl From<&TraceRow> for TraceDTO {
@@ -33,8 +43,11 @@ impl From<&TraceRow> for TraceDTO {
             block_number: row.block_number as u64,
             spec_version: row.spec_version as u32,
             index: row.index as u32,
-            key: format!("0x{}", hex::encode(&row.key)),
             key_prefix: format!("0x{}", hex::encode(&row.key_prefix)),
+            key_params: row
+                .key_params
+                .as_ref()
+                .map(|key_params| format!("0x{}", hex::encode(key_params))),
             value: row
                 .value
                 .as_ref()
@@ -42,6 +55,13 @@ impl From<&TraceRow> for TraceDTO {
             ext_id: format!("0x{}", hex::encode(&row.ext_id)),
             method: row.method.clone(),
             parent_id: row.parent_id.clone(),
+            trace_type: if row.metadata_storage_item_id.is_some() {
+                Some(TraceType::StorageItem)
+            } else if row.is_known_key {
+                Some(TraceType::KnownKey)
+            } else {
+                None
+            },
         }
     }
 }

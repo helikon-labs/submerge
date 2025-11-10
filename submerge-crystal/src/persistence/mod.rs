@@ -117,7 +117,8 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_number: u64,
         spec_version: u32,
         trace_index: u32,
-        key: &[u8],
+        key_prefix: &[u8],
+        key_params: Option<&[u8]>,
         value: Option<&[u8]>,
         ext_id: &[u8],
         method: &str,
@@ -708,7 +709,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         spec_version: u32,
         trace_index: u32,
-        key: &[u8],
+        key_prefix: &[u8],
+        key_params: Option<&[u8]>,
         value: Option<&[u8]>,
         ext_id: &[u8],
         method: &str,
@@ -719,19 +721,20 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
-            INSERT INTO trace (block_hash, block_number, spec_version, index, key, value, ext_id, method, parent_id, metadata_storage_item_id, is_known_key)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO trace (block_hash, block_number, spec_version, index, key_prefix, key_params, value, ext_id, method, parent_id, metadata_storage_item_id, is_known_key)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
-                spec_version = EXCLUDED.spec_version, key = EXCLUDED.key, value = EXCLUDED.value,
-                ext_id = EXCLUDED.ext_id, method = EXCLUDED.method, parent_id = EXCLUDED.parent_id,
-                metadata_storage_item_id = EXCLUDED.metadata_storage_item_id
+                spec_version = EXCLUDED.spec_version, key_prefix = EXCLUDED.key_prefix, key_params = EXCLUDED.key_params,
+                value = EXCLUDED.value, ext_id = EXCLUDED.ext_id, method = EXCLUDED.method, parent_id = EXCLUDED.parent_id,
+                metadata_storage_item_id = EXCLUDED.metadata_storage_item_id, is_known_key = EXCLUDED.is_known_key
             "#,
         )
             .bind(block_hash)
             .bind(block_number as i64)
             .bind(spec_version as i32)
             .bind(trace_index as i32)
-            .bind(key)
+            .bind(key_prefix)
+            .bind(key_params)
             .bind(value)
             .bind(ext_id)
             .bind(method)
@@ -982,7 +985,7 @@ mod tests {
         types::BlockStatus,
     };
     use anyhow::Context as _;
-    use std::fs;
+    use std::{cmp::min, fs};
     use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::Chainspec};
     use submerge_substrate_client::{RPCConfig, SubstrateClient};
 
@@ -1079,13 +1082,16 @@ mod tests {
                             .context("Cannot decode trace value hex string.")?,
                     )
                 };
+                let key_prefix = &key[..min(key.len(), 32)];
+                let key_params = key.get(32..);
                 postgres
                     .ingest_block_trace(
                         &block_hash,
                         block_number,
                         last_runtime_upgrade.spec_version,
                         trace_index as u32,
-                        &key,
+                        key_prefix,
+                        key_params,
                         value.as_deref(),
                         &ext_id,
                         &event.data_wrapper.data.method.to_string(),

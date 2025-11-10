@@ -27,23 +27,31 @@ pub(crate) async fn get_traces(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
-    let key = if let Some(key) = query.key.as_deref() {
-        Some(hex::decode(key.trim_start_matches("0x"))?)
-    } else {
-        None
-    };
     let key_prefix = if let Some(key_prefix) = query.key_prefix.as_deref() {
         Some(hex::decode(key_prefix.trim_start_matches("0x"))?)
     } else {
         None
     };
+    let key_params = if let Some(key_params) = query.key_params.as_deref() {
+        Some(hex::decode(key_params.trim_start_matches("0x"))?)
+    } else {
+        None
+    };
     let (total_count, rows) = tokio::try_join!(
-        state
-            .postgres
-            .get_trace_count(key.as_deref(), key_prefix.as_deref(),),
-        state
-            .postgres
-            .get_traces(key.as_deref(), key_prefix.as_deref(), page, page_size,),
+        state.postgres.get_trace_count(
+            query.min_block_number,
+            query.max_block_number,
+            key_prefix.as_deref(),
+            key_params.as_deref(),
+        ),
+        state.postgres.get_traces(
+            query.min_block_number,
+            query.max_block_number,
+            key_prefix.as_deref(),
+            key_params.as_deref(),
+            page,
+            page_size,
+        ),
     )?;
     let mut data = Vec::new();
     for row in rows.iter() {
