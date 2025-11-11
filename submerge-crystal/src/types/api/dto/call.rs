@@ -39,7 +39,7 @@ pub struct CallDTO {
     pub extrinsic_index: u32,
     pub extrinsic_hash: String,
     pub parent_call_hash: Option<String>,
-    pub nesting_index: Option<String>,
+    pub call_path: String,
     pub pallet_index: u32,
     pub pallet_name: String,
     pub pallet_call_index: u32,
@@ -63,7 +63,7 @@ impl From<&CallRow> for CallDTO {
                 .parent_call_hash
                 .as_deref()
                 .map(|parent_call_hash| format!("0x{}", hex::encode(parent_call_hash))),
-            nesting_index: row.nesting_index.clone(),
+            call_path: row.call_path.clone(),
             pallet_index: row.pallet_index as u32,
             pallet_name: row.pallet_name.clone(),
             pallet_call_index: row.pallet_call_index as u32,

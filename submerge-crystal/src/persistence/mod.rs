@@ -161,7 +161,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         extrinsic_index: u32,
         extrinsic_hash: &[u8],
         parent_call_hash: Option<&[u8]>,
-        nesting_index: Option<&str>,
+        call_path: &str,
         metadata_call_id: u32,
         args: &JSONValue,
         extrinsic_is_successful: bool,
@@ -942,7 +942,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
         extrinsic_hash: &[u8],
         parent_call_hash: Option<&[u8]>,
-        nesting_index: Option<&str>,
+        call_path: &str,
         metadata_call_id: u32,
         args: &JSONValue,
         extrinsic_is_successful: bool,
@@ -950,7 +950,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<u8>> {
         let row: (Vec<u8>,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_hash, nesting_index, metadata_call_id, args, extrinsic_is_successful)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_hash, call_path, metadata_call_id, args, extrinsic_is_successful)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ON CONFLICT (block_number, hash) DO UPDATE SET
                 block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
@@ -968,7 +968,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(extrinsic_index as i32)
             .bind(extrinsic_hash)
             .bind(parent_call_hash)
-            .bind(nesting_index)
+            .bind(call_path)
             .bind(metadata_call_id as i32)
             .bind(args)
             .bind(extrinsic_is_successful)

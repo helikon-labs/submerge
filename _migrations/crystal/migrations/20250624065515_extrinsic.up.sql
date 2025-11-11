@@ -10,10 +10,10 @@ CREATE TABLE IF NOT EXISTS extrinsic
     hash                    BYTEA NOT NULL,
     index                   INTEGER NOT NULL,
     version                 INTEGER NOT NULL,
-    signer_multi_address    BYTEA, -- SCALE-encoded MultiAddress
+    signer_multi_address    BYTEA,
     signature               BYTEA,
-    extra                   JSONB,
     is_successful           BOOLEAN NOT NULL,
+    extra                   JSONB,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT extrinsic_pk PRIMARY KEY (id, block_number),
     CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),

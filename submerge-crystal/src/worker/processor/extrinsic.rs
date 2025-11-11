@@ -528,7 +528,7 @@ impl BlockProcessor {
                 extrinsic,
                 extrinsic.is_successful,
                 None,
-                None,
+                "root",
                 &Value::Call(Box::new(extrinsic.call.clone())),
                 tx,
             )
@@ -550,7 +550,7 @@ impl BlockProcessor {
         extrinsic: &Extrinsic,
         extrinsic_is_successful: bool,
         parent_call_hash: Option<&[u8]>,
-        nesting_index: Option<&str>,
+        call_path: &str,
         arg: &Value,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
@@ -585,7 +585,7 @@ impl BlockProcessor {
                         extrinsic.index,
                         &extrinsic.hash,
                         parent_call_hash,
-                        nesting_index,
+                        call_path,
                         pallet_call.id,
                         &call.args.clone().into(),
                         extrinsic_is_successful,
@@ -602,7 +602,7 @@ impl BlockProcessor {
                     extrinsic,
                     extrinsic_is_successful,
                     Some(call_hash.as_slice()),
-                    nesting_index,
+                    call_path,
                     &call.args,
                     tx,
                 )
@@ -610,11 +610,7 @@ impl BlockProcessor {
             }
             Value::Array(values) => {
                 for (i, value) in values.iter().enumerate() {
-                    let nesting_index = if let Some(nesting_index) = nesting_index {
-                        format!("{nesting_index}::{i}")
-                    } else {
-                        i.to_string()
-                    };
+                    let call_path = format!("{call_path}::{i}");
                     self.process_extrinsic_arg(
                         block_hash,
                         block_number,
@@ -625,7 +621,7 @@ impl BlockProcessor {
                         extrinsic,
                         extrinsic_is_successful,
                         parent_call_hash,
-                        Some(&nesting_index),
+                        &call_path,
                         value,
                         tx,
                     )
@@ -634,11 +630,7 @@ impl BlockProcessor {
             }
             Value::Object(hash_map) => {
                 for (key, value) in hash_map.iter() {
-                    let nesting_index = if let Some(nesting_index) = nesting_index {
-                        format!("{nesting_index}::{key}")
-                    } else {
-                        key.to_owned()
-                    };
+                    let call_path = format!("{call_path}::{key}");
                     self.process_extrinsic_arg(
                         block_hash,
                         block_number,
@@ -649,7 +641,7 @@ impl BlockProcessor {
                         extrinsic,
                         extrinsic_is_successful,
                         parent_call_hash,
-                        Some(&nesting_index),
+                        &call_path,
                         value,
                         tx,
                     )
