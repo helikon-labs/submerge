@@ -1,6 +1,6 @@
 use submerge_persistence::postgres::PostgreSQLStorage;
 
-use crate::types::persistence::CallCompositeRow;
+use crate::types::persistence::CallRow;
 
 pub(crate) trait CrystalCallAPIPostgreSQLStorage {
     async fn get_call_count(
@@ -26,7 +26,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash(
         &self,
         block_hash: &[u8],
@@ -40,7 +40,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number(
         &self,
         block_number: u64,
@@ -54,7 +54,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash_and_extrinsic_index(
         &self,
         block_hash: &[u8],
@@ -70,7 +70,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number_and_extrinsic_index(
         &self,
         block_number: u64,
@@ -86,7 +86,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_extrinsic_hash(
         &self,
         extrinsic_hash: &[u8],
@@ -100,7 +100,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>>;
+    ) -> anyhow::Result<Vec<CallRow>>;
 }
 
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -157,12 +157,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+    ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+        let call_rows: Vec<CallRow> = sqlx::query_as(
             r#"
             SELECT
-                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
                 C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
                 C.parent_call_id, C.nesting_index, C.args, C.is_successful,
                 MP.index AS pallet_index, MP.name AS pallet_name,
@@ -231,12 +231,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+    ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+        let call_rows: Vec<CallRow> = sqlx::query_as(
             r#"
             SELECT
-                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
                 C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
                 C.parent_call_id, C.nesting_index, C.args, C.is_successful,
                 MP.index AS pallet_index, MP.name AS pallet_name,
@@ -295,12 +295,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+    ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+        let call_rows: Vec<CallRow> = sqlx::query_as(
             r#"
             SELECT
-                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
                 C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
                 C.parent_call_id, C.nesting_index, C.args, C.is_successful,
                 MP.index AS pallet_index, MP.name AS pallet_name,
@@ -362,12 +362,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+    ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+        let call_rows: Vec<CallRow> = sqlx::query_as(
             r#"
             SELECT
-                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
                 C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
                 C.parent_call_id, C.nesting_index, C.args, C.is_successful,
                 MP.index AS pallet_index, MP.name AS pallet_name,
@@ -430,12 +430,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+    ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+        let call_rows: Vec<CallRow> = sqlx::query_as(
             r#"
             SELECT
-                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
                 C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
                 C.parent_call_id, C.nesting_index, C.args, C.is_successful,
                 MP.index AS pallet_index, MP.name AS pallet_name,
@@ -495,12 +495,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
-    ) -> anyhow::Result<Vec<CallCompositeRow>> {
+    ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallCompositeRow> = sqlx::query_as(
+        let call_rows: Vec<CallRow> = sqlx::query_as(
             r#"
             SELECT
-                C.id, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
                 C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
                 C.parent_call_id, C.nesting_index, C.args, C.is_successful,
                 MP.index AS pallet_index, MP.name AS pallet_name,

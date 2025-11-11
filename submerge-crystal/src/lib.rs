@@ -29,8 +29,8 @@ mod worker;
 //const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
 //const RPC_URL: &str = "wss://polkadot.dotters.network";
 
-//const RPC_URL: &str = "wss://kusama.dotters.network";
-const RPC_URL: &str = "ws://104.247.178.13:5141";
+const RPC_URL: &str = "wss://kusama.dotters.network";
+//const RPC_URL: &str = "ws://104.247.178.13:5141";
 
 //const RPC_URL: &str = "wss://bifrost-rpc.liebi.com/ws";
 //const RPC_URL: &str = "wss:/moonriver.public.curie.radiumblock.co/ws";
@@ -125,7 +125,7 @@ impl BaseService for Crystal {
             },
             legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
             retry_delay: recovery_duration,
-            skip_traces: false,
+            skip_traces: true,
             stop_on_error: false,
         };
 

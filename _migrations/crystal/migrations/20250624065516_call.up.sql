@@ -11,12 +11,20 @@ CREATE TABLE IF NOT EXISTS call
     extrinsic_hash      BYTEA NOT NULL,
     parent_call_id      INTEGER,
     nesting_index       VARCHAR(128),
+    hash                BYTEA GENERATED ALWAYS AS (
+        digest(
+            block_hash ||
+            extrinsic_hash ||
+            COALESCE(nesting_index::bytea, ''::bytea),
+            'sha256'
+        )
+    ) STORED,
     metadata_call_id    INTEGER NOT NULL,
     args                JSONB NOT NULL,
     is_successful       BOOLEAN NOT NULL,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (id, block_number),
-    CONSTRAINT call_u_block_hash_block_number_index UNIQUE (block_hash, block_number, extrinsic_index, nesting_index),
+    CONSTRAINT call_u_hash UNIQUE (block_number, hash),
     CONSTRAINT call_fk_extrinsic
         FOREIGN KEY (extrinsic_id, block_number)
             REFERENCES extrinsic (id, block_number)

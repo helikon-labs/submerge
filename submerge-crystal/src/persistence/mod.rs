@@ -952,7 +952,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             r#"
             INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, args, is_successful)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            ON CONFLICT (block_hash, block_number, extrinsic_index, nesting_index) DO UPDATE SET
+            ON CONFLICT (block_number, hash) DO UPDATE SET
                 block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
                 extrinsic_id = EXCLUDED.extrinsic_id, extrinsic_hash = EXCLUDED.extrinsic_hash, parent_call_id = EXCLUDED.parent_call_id,
                 metadata_call_id = EXCLUDED.metadata_call_id, args = EXCLUDED.args, is_successful = EXCLUDED.is_successful

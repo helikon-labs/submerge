@@ -1,9 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 
-use crate::types::{
-    api::dto::pagination::PaginationQuery, persistence::CallCompositeRow, BlockStatus,
-};
+use crate::types::{api::dto::pagination::PaginationQuery, persistence::CallRow, BlockStatus};
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -32,6 +30,7 @@ pub struct BlockCallQuery {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CallDTO {
+    pub hash: String,
     pub block_hash: String,
     pub block_number: u64,
     pub block_timestamp: Option<u64>,
@@ -48,9 +47,10 @@ pub struct CallDTO {
     pub is_successful: bool,
 }
 
-impl From<&CallCompositeRow> for CallDTO {
-    fn from(row: &CallCompositeRow) -> Self {
+impl From<&CallRow> for CallDTO {
+    fn from(row: &CallRow) -> Self {
         Self {
+            hash: format!("0x{}", hex::encode(&row.hash)),
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),
             block_number: row.block_number as u64,
             block_timestamp: row.block_timestamp.map(|timestamp| timestamp as u64),
