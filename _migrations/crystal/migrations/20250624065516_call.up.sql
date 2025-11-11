@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS call
     extrinsic_id        BIGINT NOT NULL,
     extrinsic_index     INTEGER NOT NULL,
     extrinsic_hash      BYTEA NOT NULL,
-    parent_call_id      INTEGER,
+    parent_call_hash    BYTEA,
     nesting_index       VARCHAR(128),
     hash                BYTEA GENERATED ALWAYS AS (
         digest(

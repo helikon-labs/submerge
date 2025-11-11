@@ -160,13 +160,13 @@ pub(crate) trait CrystalPostgreSQLStorage {
         extrinsic_id: i64,
         extrinsic_index: u32,
         extrinsic_hash: &[u8],
-        parent_call_id: Option<i64>,
+        parent_call_hash: Option<Vec<u8>>,
         nesting_index: Option<&str>,
         metadata_call_id: u32,
         args: &JSONValue,
         is_successful: bool,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<i64>;
+    ) -> anyhow::Result<Vec<u8>>;
     async fn ingest_genesis_item(
         key: &[u8],
         value: &[u8],
@@ -941,22 +941,22 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_id: i64,
         extrinsic_index: u32,
         extrinsic_hash: &[u8],
-        parent_call_id: Option<i64>,
+        parent_call_hash: Option<Vec<u8>>,
         nesting_index: Option<&str>,
         metadata_call_id: u32,
         args: &JSONValue,
         is_successful: bool,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<i64> {
-        let row: (i64,) = sqlx::query_as(
+    ) -> anyhow::Result<Vec<u8>> {
+        let row: (Vec<u8>,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_id, nesting_index, metadata_call_id, args, is_successful)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_hash, nesting_index, metadata_call_id, args, is_successful)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ON CONFLICT (block_number, hash) DO UPDATE SET
                 block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
-                extrinsic_id = EXCLUDED.extrinsic_id, extrinsic_hash = EXCLUDED.extrinsic_hash, parent_call_id = EXCLUDED.parent_call_id,
+                extrinsic_id = EXCLUDED.extrinsic_id, extrinsic_hash = EXCLUDED.extrinsic_hash, parent_call_hash = EXCLUDED.parent_call_hash,
                 metadata_call_id = EXCLUDED.metadata_call_id, args = EXCLUDED.args, is_successful = EXCLUDED.is_successful
-            RETURNING id
+            RETURNING hash
             "#,
         )
             .bind(block_hash)
@@ -967,7 +967,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(extrinsic_id)
             .bind(extrinsic_index as i32)
             .bind(extrinsic_hash)
-            .bind(parent_call_id)
+            .bind(parent_call_hash)
             .bind(nesting_index)
             .bind(metadata_call_id as i32)
             .bind(args)

@@ -136,7 +136,7 @@ pub struct CallRow {
     pub extrinsic_id: i64,
     pub extrinsic_index: i32,
     pub extrinsic_hash: [u8; 32],
-    pub parent_call_id: Option<i32>,
+    pub parent_call_hash: Option<Vec<u8>>,
     pub nesting_index: Option<String>,
     pub pallet_index: i32,
     pub pallet_name: String,

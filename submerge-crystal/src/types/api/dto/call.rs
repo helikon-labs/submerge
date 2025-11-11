@@ -38,6 +38,7 @@ pub struct CallDTO {
     pub block_status: BlockStatus,
     pub extrinsic_index: u32,
     pub extrinsic_hash: String,
+    pub parent_call_hash: Option<String>,
     pub nesting_index: Option<String>,
     pub pallet_index: u32,
     pub pallet_name: String,
@@ -58,6 +59,10 @@ impl From<&CallRow> for CallDTO {
             block_status: row.block_status,
             extrinsic_index: row.extrinsic_index as u32,
             extrinsic_hash: format!("0x{}", hex::encode(row.extrinsic_hash)),
+            parent_call_hash: row
+                .parent_call_hash
+                .as_deref()
+                .map(|parent_call_hash| format!("0x{}", hex::encode(parent_call_hash))),
             nesting_index: row.nesting_index.clone(),
             pallet_index: row.pallet_index as u32,
             pallet_name: row.pallet_name.clone(),

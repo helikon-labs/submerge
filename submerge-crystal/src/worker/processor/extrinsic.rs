@@ -549,7 +549,7 @@ impl BlockProcessor {
         extrinsic_id: i64,
         extrinsic: &Extrinsic,
         extrinsic_is_successful: bool,
-        parent_call_id: Option<i64>,
+        parent_call_hash: Option<Vec<u8>>,
         nesting_index: Option<&str>,
         arg: &Value,
         tx: &mut Transaction<'_, Postgres>,
@@ -573,7 +573,7 @@ impl BlockProcessor {
                             call.pallet_call_name,
                             call.pallet_call_index
                         ))?;
-                let call_id = self
+                let call_hash = self
                     .postgres
                     .ingest_call(
                         block_hash,
@@ -584,7 +584,7 @@ impl BlockProcessor {
                         extrinsic_id,
                         extrinsic.index,
                         &extrinsic.hash,
-                        parent_call_id,
+                        parent_call_hash,
                         nesting_index,
                         pallet_call.id,
                         &call.args.clone().into(),
@@ -601,7 +601,7 @@ impl BlockProcessor {
                     extrinsic_id,
                     extrinsic,
                     extrinsic_is_successful,
-                    Some(call_id),
+                    Some(call_hash.clone()),
                     nesting_index,
                     &call.args,
                     tx,
@@ -624,7 +624,7 @@ impl BlockProcessor {
                         extrinsic_id,
                         extrinsic,
                         extrinsic_is_successful,
-                        parent_call_id,
+                        parent_call_hash.clone(),
                         Some(&nesting_index),
                         value,
                         tx,
@@ -648,7 +648,7 @@ impl BlockProcessor {
                         extrinsic_id,
                         extrinsic,
                         extrinsic_is_successful,
-                        parent_call_id,
+                        parent_call_hash.clone(),
                         Some(&nesting_index),
                         value,
                         tx,
