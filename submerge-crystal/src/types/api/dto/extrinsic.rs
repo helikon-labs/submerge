@@ -67,8 +67,8 @@ pub struct ExtrinsicDTO {
     pub version: u32,
     pub signer: Option<MultiAddress>,
     pub signature: Option<String>,
-    pub extra: Option<JSONValue>,
     pub is_successful: bool,
+    pub extra: Option<JSONValue>,
 }
 
 impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
@@ -95,8 +95,8 @@ impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
                 .signature
                 .as_ref()
                 .map(|signature| format!("0x{}", hex::encode(signature))),
-            extra: row.extra.clone(),
             is_successful: row.is_successful,
+            extra: row.extra.clone(),
         })
     }
 }

@@ -1,17 +1,17 @@
 CREATE TABLE IF NOT EXISTS call
 (
-    id                  BIGSERIAL NOT NULL,
-    block_hash          BYTEA NOT NULL,
-    block_number        BIGINT NOT NULL,
-    block_timestamp     BIGINT,
-    spec_version        INTEGER NOT NULL,
-    block_status        BLOCK_STATUS NOT NULL,
-    extrinsic_id        BIGINT NOT NULL,
-    extrinsic_index     INTEGER NOT NULL,
-    extrinsic_hash      BYTEA NOT NULL,
-    parent_call_hash    BYTEA,
-    nesting_index       VARCHAR(128),
-    hash                BYTEA GENERATED ALWAYS AS (
+    id                      BIGSERIAL NOT NULL,
+    block_hash              BYTEA NOT NULL,
+    block_number            BIGINT NOT NULL,
+    block_timestamp         BIGINT,
+    spec_version            INTEGER NOT NULL,
+    block_status            BLOCK_STATUS NOT NULL,
+    extrinsic_id            BIGINT NOT NULL,
+    extrinsic_index         INTEGER NOT NULL,
+    extrinsic_hash          BYTEA NOT NULL,
+    parent_call_hash        BYTEA,
+    nesting_index           VARCHAR(128),
+    hash                    BYTEA GENERATED ALWAYS AS (
         digest(
             block_hash ||
             extrinsic_hash ||
@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS call
             'sha256'
         )
     ) STORED,
-    metadata_call_id    INTEGER NOT NULL,
-    args                JSONB NOT NULL,
-    is_successful       BOOLEAN NOT NULL,
-    created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    metadata_call_id        INTEGER NOT NULL,
+    args                    JSONB NOT NULL,
+    extrinsic_is_successful BOOLEAN NOT NULL,
+    created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (id, block_number),
     CONSTRAINT call_u_hash UNIQUE (block_number, hash),
     CONSTRAINT call_fk_extrinsic

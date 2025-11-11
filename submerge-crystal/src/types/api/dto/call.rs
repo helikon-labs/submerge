@@ -44,8 +44,8 @@ pub struct CallDTO {
     pub pallet_name: String,
     pub pallet_call_index: u32,
     pub pallet_call_name: String,
+    pub extrinsic_is_successful: bool,
     pub args: JSONValue,
-    pub is_successful: bool,
 }
 
 impl From<&CallRow> for CallDTO {
@@ -68,8 +68,8 @@ impl From<&CallRow> for CallDTO {
             pallet_name: row.pallet_name.clone(),
             pallet_call_index: row.pallet_call_index as u32,
             pallet_call_name: row.pallet_call_name.clone(),
+            extrinsic_is_successful: row.extrinsic_is_successful,
             args: row.args.clone(),
-            is_successful: row.is_successful,
         }
     }
 }

@@ -143,7 +143,7 @@ pub struct CallRow {
     pub pallet_call_index: i32,
     pub pallet_call_name: String,
     pub args: JSONValue,
-    pub is_successful: bool,
+    pub extrinsic_is_successful: bool,
 }
 
 #[derive(Debug, FromRow)]
