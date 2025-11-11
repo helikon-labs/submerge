@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS call
     extrinsic_hash          BYTEA NOT NULL,
     parent_call_hash        BYTEA,
     call_path               VARCHAR(512) NOT NULL,
+    call_index              SMALLINT[],
     hash                    BYTEA GENERATED ALWAYS AS (
         digest(
             block_hash ||

@@ -529,6 +529,7 @@ impl BlockProcessor {
                 extrinsic.is_successful,
                 None,
                 "root",
+                &[0],
                 &Value::Call(Box::new(extrinsic.call.clone())),
                 tx,
             )
@@ -551,6 +552,7 @@ impl BlockProcessor {
         extrinsic_is_successful: bool,
         parent_call_hash: Option<&[u8]>,
         call_path: &str,
+        call_index: &[u16],
         arg: &Value,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
@@ -586,6 +588,7 @@ impl BlockProcessor {
                         &extrinsic.hash,
                         parent_call_hash,
                         call_path,
+                        call_index,
                         pallet_call.id,
                         &call.args.clone().into(),
                         extrinsic_is_successful,
@@ -603,6 +606,7 @@ impl BlockProcessor {
                     extrinsic_is_successful,
                     Some(call_hash.as_slice()),
                     call_path,
+                    call_index,
                     &call.args,
                     tx,
                 )
@@ -611,6 +615,8 @@ impl BlockProcessor {
             Value::Array(values) => {
                 for (i, value) in values.iter().enumerate() {
                     let call_path = format!("{call_path}::{i}");
+                    let mut call_index = call_index.to_vec();
+                    call_index.push(i as u16);
                     self.process_extrinsic_arg(
                         block_hash,
                         block_number,
@@ -622,6 +628,7 @@ impl BlockProcessor {
                         extrinsic_is_successful,
                         parent_call_hash,
                         &call_path,
+                        call_index.as_slice(),
                         value,
                         tx,
                     )
@@ -629,8 +636,10 @@ impl BlockProcessor {
                 }
             }
             Value::Object(hash_map) => {
-                for (key, value) in hash_map.iter() {
+                for (i, (key, value)) in hash_map.iter().enumerate() {
                     let call_path = format!("{call_path}::{key}");
+                    let mut call_index = call_index.to_vec();
+                    call_index.push(i as u16);
                     self.process_extrinsic_arg(
                         block_hash,
                         block_number,
@@ -642,6 +651,7 @@ impl BlockProcessor {
                         extrinsic_is_successful,
                         parent_call_hash,
                         &call_path,
+                        call_index.as_slice(),
                         value,
                         tx,
                     )

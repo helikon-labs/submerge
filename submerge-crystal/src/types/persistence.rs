@@ -138,12 +138,13 @@ pub struct CallRow {
     pub extrinsic_hash: [u8; 32],
     pub parent_call_hash: Option<Vec<u8>>,
     pub call_path: String,
+    pub call_index: Vec<i16>,
     pub pallet_index: i32,
     pub pallet_name: String,
     pub pallet_call_index: i32,
     pub pallet_call_name: String,
-    pub args: JSONValue,
     pub extrinsic_is_successful: bool,
+    pub args: JSONValue,
 }
 
 #[derive(Debug, FromRow)]
