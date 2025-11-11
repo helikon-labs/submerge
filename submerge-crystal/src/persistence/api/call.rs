@@ -101,6 +101,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>>;
+    async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
 }
 
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -524,5 +525,26 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         .fetch_all(&self.connection_pool)
         .await?;
         Ok(call_rows)
+    }
+
+    async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
+        let call_row: Option<CallRow> = sqlx::query_as(
+            r#"
+            SELECT
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
+                C.parent_call_id, C.nesting_index, C.args, C.is_successful,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                MC.index AS pallet_call_index, MC.name AS pallet_call_name
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE C.hash = $1
+            "#,
+        )
+        .bind(hash)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(call_row)
     }
 }

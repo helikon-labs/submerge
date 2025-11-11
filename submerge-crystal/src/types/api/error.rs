@@ -24,6 +24,7 @@ pub enum APIError {
     BlockNotFoundWithNumber(u64),
     BlockNotFoundWithHash(Vec<u8>),
     ExtrinsicNotFoundWithHash(Vec<u8>),
+    CallNotFoundWithHash(Vec<u8>),
     InvalidHex(hex::FromHexError),
     InvalidBlockAuthor(String),
     InvalidExtrinsicSigner(String),
@@ -51,6 +52,9 @@ impl APIError {
             APIError::ExtrinsicNotFoundWithHash(hash) => {
                 format!("Extrinsic with hash 0x{} not found.", hex::encode(hash))
             }
+            APIError::CallNotFoundWithHash(hash) => {
+                format!("Call with hash 0x{} not found.", hex::encode(hash))
+            }
             APIError::InvalidHex(error) => {
                 format!("{error}")
             }
@@ -74,6 +78,7 @@ impl APIError {
             APIError::BlockNotFoundWithNumber(_) => StatusCode::NOT_FOUND,
             APIError::BlockNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::ExtrinsicNotFoundWithHash(_) => StatusCode::NOT_FOUND,
+            APIError::CallNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::InvalidHex(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidBlockAuthor(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidExtrinsicSigner(_) => StatusCode::BAD_REQUEST,

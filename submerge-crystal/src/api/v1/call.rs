@@ -284,3 +284,18 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     };
     Ok(Json(response))
 }
+
+pub(crate) async fn get_call_by_hash(
+    State(state): State<ServiceState>,
+    Path(call_hash): Path<String>,
+) -> Result<Json<CallDTO>, APIError> {
+    let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
+    };
+    if let Some(row) = &state.postgres.get_call_by_hash(&call_hash).await? {
+        Ok(Json(row.into()))
+    } else {
+        Err(APIError::CallNotFoundWithHash(call_hash))
+    }
+}
