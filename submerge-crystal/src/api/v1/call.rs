@@ -299,3 +299,67 @@ pub(crate) async fn get_call_by_hash(
         Err(APIError::CallNotFoundWithHash(call_hash))
     }
 }
+
+pub(crate) async fn get_parent_call_by_hash(
+    State(state): State<ServiceState>,
+    Path(call_hash): Path<String>,
+) -> Result<Json<CallDTO>, APIError> {
+    let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
+    };
+    if !state.postgres.call_exists_by_hash(&call_hash).await? {
+        return Err(APIError::CallNotFoundWithHash(call_hash));
+    }
+    if let Some(row) = &state.postgres.get_parent_call_by_hash(&call_hash).await? {
+        Ok(Json(row.into()))
+    } else {
+        Err(APIError::ParentCallNotFoundForCallWithHash(call_hash))
+    }
+}
+
+pub(crate) async fn get_sub_calls_by_hash(
+    State(state): State<ServiceState>,
+    Path(call_hash): Path<String>,
+    Query(query): Query<BlockCallQuery>,
+) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
+    let call_hash = if let Ok(call_hash) = hex::decode(call_hash.trim_start_matches("0x")) {
+        call_hash
+    } else {
+        return Err(APIError::BadRequest("Invalid call hash. It should be a hex string (with or without 0x prefix, case-insensitive).".to_string()));
+    };
+    if !state.postgres.call_exists_by_hash(&call_hash).await? {
+        return Err(APIError::CallNotFoundWithHash(call_hash));
+    }
+    let page = query.pagination.get_page()?;
+    let page_size = query
+        .pagination
+        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_sub_call_count_by_hash(
+            &call_hash,
+            &query.pallet_name,
+            &query.pallet_call_name,
+        ),
+        state.postgres.get_sub_calls_by_hash(
+            &call_hash,
+            &query.pallet_name,
+            &query.pallet_call_name,
+            page,
+            page_size,
+        ),
+    )?;
+    let mut data = Vec::new();
+    for row in rows.iter() {
+        data.push(row.into());
+    }
+    let response = PagedResponse {
+        pagination: PaginationData {
+            page,
+            page_size,
+            total: total_count,
+        },
+        data,
+    };
+    Ok(Json(response))
+}

@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS call
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
+CREATE INDEX IF NOT EXISTS call_idx_hash ON call (hash);
 CREATE INDEX IF NOT EXISTS call_idx_block_hash ON call (block_hash);
 CREATE INDEX IF NOT EXISTS call_idx_block_number ON call (block_number);
 CREATE INDEX IF NOT EXISTS call_idx_extrinsic_hash ON call (extrinsic_hash);

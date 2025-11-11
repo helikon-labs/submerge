@@ -101,7 +101,23 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>>;
+    async fn call_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
     async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
+    async fn get_sub_call_count_by_hash(
+        &self,
+        hash: &[u8],
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+    ) -> anyhow::Result<u64>;
+    async fn get_sub_calls_by_hash(
+        &self,
+        hash: &[u8],
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+        page: u64,
+        page_size: u64,
+    ) -> anyhow::Result<Vec<CallRow>>;
+    async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
 }
 
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -527,6 +543,14 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(call_rows)
     }
 
+    async fn call_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM call WHERE hash = $1)")
+            .bind(hash)
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(exists)
+    }
+
     async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
         let call_row: Option<CallRow> = sqlx::query_as(
             r#"
@@ -540,6 +564,98 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
             WHERE C.hash = $1
+            "#,
+        )
+        .bind(hash)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(call_row)
+    }
+
+    async fn get_sub_call_count_by_hash(
+        &self,
+        hash: &[u8],
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+    ) -> anyhow::Result<u64> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE
+                C.parent_call_hash = $1
+                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
+                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
+            "#,
+        )
+        .bind(hash)
+        .bind(pallet_name)
+        .bind(pallet_call_name)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(count as u64)
+    }
+
+    async fn get_sub_calls_by_hash(
+        &self,
+        hash: &[u8],
+        pallet_name: &Option<String>,
+        pallet_call_name: &Option<String>,
+        page: u64,
+        page_size: u64,
+    ) -> anyhow::Result<Vec<CallRow>> {
+        let offset = (page - 1) * page_size;
+        let call_rows: Vec<CallRow> = sqlx::query_as(
+            r#"
+            SELECT
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
+                C.parent_call_hash, C.nesting_index, C.args, C.is_successful,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                MC.index AS pallet_call_index, MC.name AS pallet_call_name
+            FROM call C
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+            WHERE
+                C.parent_call_hash = $1
+                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
+                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
+            ORDER BY C.extrinsic_index ASC
+            LIMIT $4 OFFSET $5
+            "#,
+        )
+        .bind(hash)
+        .bind(pallet_name)
+        .bind(pallet_call_name)
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.connection_pool)
+        .await?;
+        Ok(call_rows)
+    }
+
+    async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
+        let call_row: Option<CallRow> = sqlx::query_as(
+            r#"
+            WITH child_info AS (
+                SELECT parent_call_hash, block_number
+                FROM call
+                WHERE hash = $1
+                LIMIT 1
+            )
+            SELECT
+                C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
+                C.parent_call_hash, C.nesting_index, C.args, C.is_successful,
+                MP.index AS pallet_index, MP.name AS pallet_name,
+                MC.index AS pallet_call_index, MC.name AS pallet_call_name
+            FROM child_info
+            JOIN call C ON C.hash = child_info.parent_call_hash
+                AND C.block_number = child_info.block_number
+            JOIN metadata_call MC ON C.metadata_call_id = MC.id
+            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
             "#,
         )
         .bind(hash)
