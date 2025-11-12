@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS event
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX IF NOT EXISTS event_idx_block_hash ON event (block_hash);
+CREATE INDEX IF NOT EXISTS event_idx_block_hash ON event USING HASH (block_hash);
 CREATE INDEX IF NOT EXISTS event_idx_block_hash_extrinsic_index ON event (block_hash, extrinsic_index) WHERE extrinsic_index IS NOT NULL;
 CREATE INDEX IF NOT EXISTS event_idx_block_number ON event (block_number);
-CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash ON event (extrinsic_hash) WHERE extrinsic_hash IS NOT NULL;
+CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash ON event USING HASH (extrinsic_hash) WHERE extrinsic_hash IS NOT NULL;
 CREATE INDEX IF NOT EXISTS event_idx_timestamp ON event (block_timestamp);
 
 CREATE INDEX IF NOT EXISTS event_idx_filter_order

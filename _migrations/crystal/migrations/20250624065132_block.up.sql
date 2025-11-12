@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS block
 ) PARTITION BY HASH (hash);
 
 CREATE INDEX IF NOT EXISTS block_idx_parent_hash
-    ON block (parent_hash);
+    ON block USING HASH (parent_hash);
 CREATE INDEX IF NOT EXISTS block_idx_number
     ON block (number);
 CREATE INDEX IF NOT EXISTS block_idx_timestamp
@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS block_idx_spec_version
 CREATE INDEX IF NOT EXISTS block_idx_number_status
     ON block (number, status);
 CREATE INDEX IF NOT EXISTS block_idx_author_multi_address
-    ON block (author_multi_address);
+    ON block USING HASH (author_multi_address);
 
 CREATE INDEX IF NOT EXISTS block_idx_filter
 ON block (

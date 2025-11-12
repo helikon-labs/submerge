@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS error
 );
 
 CREATE INDEX IF NOT EXISTS error_idx_block_hash
-    ON error (block_hash);
+    ON error USING HASH (block_hash);
 CREATE INDEX IF NOT EXISTS error_idx_block_number
     ON error (block_number);
 CREATE INDEX IF NOT EXISTS error_idx_block_status

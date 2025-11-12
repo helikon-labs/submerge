@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS extrinsic
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX IF NOT EXISTS extrinsic_idx_hash ON extrinsic (hash);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash ON extrinsic (block_hash);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_hash ON extrinsic USING HASH (hash);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash ON extrinsic USING HASH (block_hash);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number ON extrinsic (block_number);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_timestamp ON extrinsic (block_timestamp);
 
-CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address ON extrinsic (signer_multi_address);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address ON extrinsic USING HASH (signer_multi_address);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address_null ON extrinsic (signer_multi_address) WHERE signer_multi_address IS NULL;
 
 CREATE INDEX IF NOT EXISTS extrinsic_idx_filter_order
