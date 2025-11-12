@@ -4,12 +4,15 @@ use crate::args::Args;
 use crate::persistence::CrystalPostgreSQLStorage as _;
 use crate::worker::{WorkerConfig, WorkerManager, WorkerType};
 use async_trait::async_trait;
+use sqlx::migrate::Migrator;
 use std::sync::Arc;
 use std::time::Duration;
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
+
+static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations");
 
 mod api;
 pub mod args;
@@ -85,6 +88,51 @@ impl Crystal {
         );
         Ok(())
     }
+
+    async fn migrate_db(&self) -> anyhow::Result<()> {
+        tracing::info!("🧰 Run database migrations.");
+        DB_MIGRATOR.run(&self.postgres.connection_pool).await?;
+        tracing::info!("✅ Database migrations completed.");
+        Ok(())
+    }
+}
+
+impl Crystal {
+    async fn launch_dev_workers(&self, chain_name: &str) -> anyhow::Result<()> {
+        let recovery_duration = Duration::from_secs(self.args.service.recovery_sleep_seconds);
+        let worker_config = WorkerConfig {
+            chain_name: chain_name.to_string(),
+            postgres: self.postgres.clone(),
+            rpc_config: RPCConfig {
+                rpc_url: RPC_URL.to_string(),
+                rpc_connection_timeout_secs: 30,
+                rpc_request_timeout_secs: 30,
+                rpc_subscription_timeout_secs: 60,
+            },
+            legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
+            retry_delay: recovery_duration,
+            skip_traces: true,
+            stop_on_error: false,
+        };
+        self.worker_manager
+            .spawn(WorkerType::SubscribeNewBlocks, worker_config.clone())
+            .await;
+        self.worker_manager
+            .spawn(WorkerType::SubscribeFinalizedBlocks, worker_config.clone())
+            .await;
+        self.worker_manager
+            .spawn(
+                WorkerType::ProcessFinalizedRange {
+                    maybe_start_block_number: Some(30830000),
+                    maybe_end_block_number: Some(30831000),
+                    scan: true,
+                    reindex: false,
+                },
+                worker_config.clone(),
+            )
+            .await;
+        Ok(())
+    }
 }
 
 #[async_trait(?Send)]
@@ -111,41 +159,9 @@ impl BaseService for Crystal {
     async fn run(&self) -> anyhow::Result<()> {
         let chainspec = Chainspec::from_chain_name_or_file_path(&self.args.chain)?;
         self.print_summary(&chainspec);
+        self.migrate_db().await?;
         self.process_genesis(&chainspec).await?;
-
-        let recovery_duration = Duration::from_secs(self.args.service.recovery_sleep_seconds);
-        let worker_config = WorkerConfig {
-            chain_name: chainspec.name.clone(),
-            postgres: self.postgres.clone(),
-            rpc_config: RPCConfig {
-                rpc_url: RPC_URL.to_string(),
-                rpc_connection_timeout_secs: 30,
-                rpc_request_timeout_secs: 30,
-                rpc_subscription_timeout_secs: 60,
-            },
-            legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
-            retry_delay: recovery_duration,
-            skip_traces: true,
-            stop_on_error: false,
-        };
-
-        self.worker_manager
-            .spawn(WorkerType::SubscribeNewBlocks, worker_config.clone())
-            .await;
-        self.worker_manager
-            .spawn(WorkerType::SubscribeFinalizedBlocks, worker_config.clone())
-            .await;
-        self.worker_manager
-            .spawn(
-                WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(30838659),
-                    maybe_end_block_number: Some(30838659),
-                    scan: true,
-                    reindex: false,
-                },
-                worker_config.clone(),
-            )
-            .await;
+        self.launch_dev_workers(&chainspec.name).await?;
         self.launch_api(&chainspec.name).await?;
         Ok(())
     }

@@ -25,11 +25,12 @@ pub trait BaseService {
     fn get_external_log_level(&self) -> &str;
     fn get_log_env_filter(&self) -> anyhow::Result<EnvFilter> {
         let metadata = MetadataCommand::new().no_deps().exec()?;
+
         let mut filter = EnvFilter::try_from_default_env()
             .unwrap_or_else(|_| EnvFilter::new(self.get_external_log_level()));
         let native_log_level = self.get_native_log_level();
         for package in metadata.workspace_packages() {
-            let directive = format!("{}={}", package.name.to_case(Case::Snake), native_log_level,);
+            let directive = format!("{}={}", package.name.to_case(Case::Snake), native_log_level);
             filter = filter.add_directive(directive.parse()?);
         }
         // additional configuration
