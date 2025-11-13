@@ -7,6 +7,7 @@ use crate::types::metadata::util::{
     get_metadata_type_by_id, get_metadata_version, get_pallet_storage_item_type_by_name,
 };
 use crate::types::BlockStatus;
+use crate::worker::WorkerError;
 use anyhow::Context as _;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::account_id::AccountId;
@@ -34,6 +35,18 @@ const VALIDATORS_STORAGE_ITEM_NAME: &str = "Validators";
 
 static SESSION_VALIDATORS_CACHE: LazyLock<RwLock<(u32, Vec<MultiAddress>)>> =
     LazyLock::new(|| RwLock::new((0, Vec::new())));
+
+fn validate_block_range(
+    maybe_start_block_number: Option<u64>,
+    maybe_end_block_number: Option<u64>,
+) -> Result<(), WorkerError> {
+    if let Some((start, end)) = maybe_start_block_number.zip(maybe_end_block_number) {
+        if start > end {
+            return Err(WorkerError::InvalidFinalizedRange(start, end));
+        }
+    }
+    Ok(())
+}
 
 pub struct BlockProcessor {
     chain_name: String,
@@ -114,6 +127,7 @@ impl BlockProcessor {
         maybe_start_block_number: Option<u64>,
         maybe_end_block_number: Option<u64>,
     ) -> anyhow::Result<()> {
+        validate_block_range(maybe_start_block_number, maybe_end_block_number)?;
         let (start_block_number, end_block_number) = self
             .get_actual_finalized_block_range(
                 maybe_start_block_number,

@@ -41,6 +41,7 @@ submerge-metrics = { path = "../submerge-metrics" }
 submerge-persistence = { path = "../submerge-persistence" }
 submerge-substrate-client = { path = "../submerge-substrate-client" }
 submerge-util = { path = "../submerge-util" }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 tower-http = { workspace = true }

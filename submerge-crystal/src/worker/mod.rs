@@ -4,6 +4,7 @@ use tokio::sync::RwLock;
 
 use rustc_hash::FxHashMap as HashMap;
 use submerge_persistence::postgres::PostgreSQLStorage;
+use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid as UUID;
 
@@ -11,6 +12,12 @@ use crate::{types::BlockStatus, worker::processor::BlockProcessor};
 
 mod processor;
 mod subscription;
+
+#[derive(Error, Debug)]
+pub enum WorkerError {
+    #[error("Start block number {0} should be less than or equal to end block number {1}.")]
+    InvalidFinalizedRange(u64, u64),
+}
 
 pub enum WorkerType {
     ProcessFinalizedRange {
