@@ -93,7 +93,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
                 AND ($4 IS NULL OR block_timestamp <= $4)
                 AND ($5 IS NULL OR spec_version >= $5)
                 AND ($6 IS NULL OR spec_version <= $6)
-                AND ($7 IS NULL OR (($7 AND signature IS NOT NULL) OR (NOT $7 AND signature IS NULL)))
+                AND ($7 IS NULL OR (($7 AND multi_signature IS NOT NULL) OR (NOT $7 AND multi_signature IS NULL)))
                 AND ($8 IS NULL OR signer_multi_address = $8)
             "#,
         )
@@ -128,7 +128,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
-                hash, index, version, signer_multi_address, signature, extra, is_successful
+                hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE
                 ($1 IS NULL OR block_number >= $1)
@@ -137,7 +137,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
                 AND ($4 IS NULL OR block_timestamp <= $4)
                 AND ($5 IS NULL OR spec_version >= $5)
                 AND ($6 IS NULL OR spec_version <= $6)
-                AND ($7 IS NULL OR (($7 AND signature IS NOT NULL) OR (NOT $7 AND signature IS NULL)))
+                AND ($7 IS NULL OR (($7 AND multi_signature IS NOT NULL) OR (NOT $7 AND multi_signature IS NULL)))
                 AND ($8 IS NULL OR signer_multi_address = $8)
             ORDER BY block_number DESC, index ASC
             LIMIT $9 OFFSET $10
@@ -170,7 +170,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM extrinsic
             WHERE
                 block_hash = $1
-                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($2 IS NULL OR (($2 AND multi_signature IS NOT NULL) OR (NOT $2 AND multi_signature IS NULL)))
                 AND ($3 IS NULL OR signer_multi_address = $3)
             "#,
         )
@@ -195,11 +195,11 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
-                hash, index, version, signer_multi_address, signature, extra, is_successful
+                hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE
                 block_hash = $1
-                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($2 IS NULL OR (($2 AND multi_signature IS NOT NULL) OR (NOT $2 AND multi_signature IS NULL)))
                 AND ($3 IS NULL OR signer_multi_address = $3)
             ORDER BY block_number DESC, index ASC
             LIMIT $4 OFFSET $5
@@ -227,7 +227,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM extrinsic
             WHERE
                 block_number = $1
-                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($2 IS NULL OR (($2 AND multi_signature IS NOT NULL) OR (NOT $2 AND multi_signature IS NULL)))
                 AND ($3 IS NULL OR signer_multi_address = $3)
             "#,
         )
@@ -252,11 +252,11 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash,
-                index, version, signer_multi_address, signature, extra, is_successful
+                index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE
                 block_number = $1
-                AND ($2 IS NULL OR (($2 AND signature IS NOT NULL) OR (NOT $2 AND signature IS NULL)))
+                AND ($2 IS NULL OR (($2 AND multi_signature IS NOT NULL) OR (NOT $2 AND multi_signature IS NULL)))
                 AND ($3 IS NULL OR signer_multi_address = $3)
             ORDER BY block_number DESC, index ASC
             LIMIT $4 OFFSET $5
@@ -281,7 +281,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
-                hash, index, version, signer_multi_address, signature, extra, is_successful
+                hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE block_number = $1 AND index = $2
             "#,
@@ -302,7 +302,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
-                hash, index, version, signer_multi_address, signature, extra, is_successful
+                hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE block_hash = $1 AND index = $2
             "#,
@@ -319,7 +319,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
-                hash, index, version, signer_multi_address, signature, extra, is_successful
+                hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE hash = $1
             "#,

@@ -4,6 +4,7 @@ use parity_scale_codec::{Decode, Encode};
 use serde::Serialize;
 
 use crate::types::substrate::account_id::AccountId;
+use submerge_util::serde::hex_serde;
 
 #[derive(Debug, Encode, Decode, Clone, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", content = "value")]
@@ -21,17 +22,6 @@ pub enum MultiAddress {
     #[serde(rename = "address20")]
     #[serde(with = "hex_serde")]
     Address20([u8; 20]),
-}
-
-mod hex_serde {
-    use serde::Serializer;
-
-    pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&format!("0x{}", hex::encode(bytes)))
-    }
 }
 
 impl FromStr for MultiAddress {

@@ -28,11 +28,12 @@ mod worker;
 //const RPC_URL: &str = "wss://hydration.dotters.network";
 //const RPC_URL: &str = "wss://nexus.dotters.network";
 //const RPC_URL: &str = "wss://moonbeam.dotters.network";
-//const RPC_URL: &str = "wss://mythos.dotters.network";
+const RPC_URL: &str = "wss://mythos.dotters.network";
 //const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
 //const RPC_URL: &str = "wss://polkadot.dotters.network";
+//const RPC_URL: &str = "wss://asset-hub-polkadot.dotters.network";
 
-const RPC_URL: &str = "wss://kusama.dotters.network";
+//const RPC_URL: &str = "wss://kusama.dotters.network";
 //const RPC_URL: &str = "ws://104.247.178.13:5141";
 
 //const RPC_URL: &str = "wss://bifrost-rpc.liebi.com/ws";
@@ -123,8 +124,8 @@ impl Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(30830000),
-                    maybe_end_block_number: Some(30831000),
+                    maybe_start_block_number: Some(7_000_250),
+                    maybe_end_block_number: Some(7_000_000),
                     scan: true,
                     reindex: false,
                 },

@@ -65,3 +65,14 @@ pub fn strip_nuls(value: &mut JSONValue) {
         _ => {}
     }
 }
+
+pub mod hex_serde {
+    use serde::Serializer;
+
+    pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("0x{}", hex::encode(bytes)))
+    }
+}

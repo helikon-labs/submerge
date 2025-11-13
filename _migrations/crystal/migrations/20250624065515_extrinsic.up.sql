@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS extrinsic
     hash                    BYTEA NOT NULL,
     index                   INTEGER NOT NULL,
     version                 INTEGER NOT NULL,
-    signer_multi_address    BYTEA,
-    signature               BYTEA,
+    signer_multi_address    BYTEA, -- SCALE-encoded MultiAddress
+    multi_signature         BYTEA, -- SCALE-encoded MultiSignature
     is_successful           BOOLEAN NOT NULL,
     extra                   JSONB,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS extrinsic
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX IF NOT EXISTS extrinsic_idx_hash ON extrinsic USING HASH (hash);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash ON extrinsic USING HASH (block_hash);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash ON extrinsic (block_hash, index ASC);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number ON extrinsic (block_number);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_timestamp ON extrinsic (block_timestamp);
 

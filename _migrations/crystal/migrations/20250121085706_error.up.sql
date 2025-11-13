@@ -14,4 +14,4 @@ CREATE INDEX IF NOT EXISTS error_idx_block_hash
 CREATE INDEX IF NOT EXISTS error_idx_block_number
     ON error (block_number);
 CREATE INDEX IF NOT EXISTS error_idx_block_status
-    ON error (block_status);
+    ON error (block_status, block_number ASC);

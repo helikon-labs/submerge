@@ -850,7 +850,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     index: extrinsic.index as i32,
                     version: extrinsic.version as i32,
                     signer_multi_address: signer,
-                    signature,
+                    multi_signature: signature,
                     extra,
                     is_successful: extrinsic.is_successful,
                 }
@@ -859,7 +859,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         let mut ids_to_indices = Vec::new();
         for extrinsic_row_chunk in extrinsic_rows.chunks(INSERT_BATCH_SIZE) {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer_multi_address, signature, extra, is_successful) ",
+                "INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer_multi_address, multi_signature, extra, is_successful) ",
             );
             query_builder.push_values(extrinsic_row_chunk, |mut query, extrinsic| {
                 query
@@ -873,7 +873,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     .push_bind(extrinsic.index)
                     .push_bind(extrinsic.version)
                     .push_bind(&extrinsic.signer_multi_address)
-                    .push_bind(&extrinsic.signature)
+                    .push_bind(&extrinsic.multi_signature)
                     .push_bind(&extrinsic.extra)
                     .push_bind(extrinsic.is_successful);
             });
@@ -883,7 +883,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version,
                     block_status = EXCLUDED.block_status, trace_index = EXCLUDED.trace_index, hash = EXCLUDED.hash,
                     index = EXCLUDED.index, version = EXCLUDED.version, signer_multi_address = EXCLUDED.signer_multi_address,
-                    signature = EXCLUDED.signature, extra = EXCLUDED.extra, is_successful = EXCLUDED.is_successful
+                    multi_signature = EXCLUDED.multi_signature, extra = EXCLUDED.extra, is_successful = EXCLUDED.is_successful
                 RETURNING id, index
                 "#
             );

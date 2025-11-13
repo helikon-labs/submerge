@@ -3,7 +3,9 @@ use std::str::FromStr as _;
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
-use submerge_base::types::substrate::multi_address::MultiAddress;
+use submerge_base::types::substrate::{
+    multi_address::MultiAddress, multi_signature::MultiSignature,
+};
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::ExtrinsicRow, BlockStatus};
 
@@ -66,7 +68,7 @@ pub struct ExtrinsicDTO {
     pub index: u32,
     pub version: u32,
     pub signer: Option<MultiAddress>,
-    pub signature: Option<String>,
+    pub signature: Option<MultiSignature>,
     pub is_successful: bool,
     pub extra: Option<JSONValue>,
 }
@@ -91,10 +93,12 @@ impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
             } else {
                 None
             },
-            signature: row
-                .signature
-                .as_ref()
-                .map(|signature| format!("0x{}", hex::encode(signature))),
+            signature: if let Some(bytes) = &row.multi_signature {
+                let mut bytes: &[u8] = bytes;
+                Some(MultiSignature::decode(&mut bytes)?)
+            } else {
+                None
+            },
             is_successful: row.is_successful,
             extra: row.extra.clone(),
         })

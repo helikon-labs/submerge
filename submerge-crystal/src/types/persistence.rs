@@ -118,7 +118,7 @@ pub struct ExtrinsicRow {
     pub index: i32,
     pub version: i32,
     pub signer_multi_address: Option<Vec<u8>>,
-    pub signature: Option<Vec<u8>>,
+    pub multi_signature: Option<Vec<u8>>,
     pub extra: Option<JSONValue>,
     pub is_successful: bool,
 }

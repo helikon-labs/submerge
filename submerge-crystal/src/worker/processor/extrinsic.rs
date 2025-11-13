@@ -7,7 +7,7 @@ use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
     account_id::AccountId, block::BlockHeader, block_trace::BlockTrace,
-    multi_address::MultiAddress, signature::Signature,
+    multi_address::MultiAddress, multi_signature::MultiSignature, signature::Signature,
 };
 use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
@@ -89,9 +89,9 @@ fn decode_extrinsic(
         };
         let signature = match signature_type_path.as_str() {
             "account::EthereumSignature" => {
-                sp_runtime::MultiSignature::Ecdsa(<[u8; 65]>::decode(&mut bytes)?.into())
+                MultiSignature::Ecdsa(<[u8; 65]>::decode(&mut bytes)?.into())
             }
-            "sp_runtime::MultiSignature" => sp_runtime::MultiSignature::decode(&mut bytes)?,
+            "sp_runtime::MultiSignature" => sp_runtime::MultiSignature::decode(&mut bytes)?.into(),
             _ => anyhow::bail!("Unsupported signature type in extrinsic: {signature_type_path}"),
         };
         let mut extra = None;
@@ -356,9 +356,10 @@ impl BlockProcessor {
                 if let Some(era) = &extrinsic.era {
                     extra_map.insert("checkMortality".to_string(), era.clone());
                 }
+
                 Some(Signature {
                     signer: signer.try_into()?,
-                    signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?,
+                    signature: sp_runtime::MultiSignature::decode(&mut signature_bytes)?.into(),
                     extra: Some(JSONValue::Object(extra_map)),
                 })
             }
