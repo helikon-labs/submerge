@@ -36,7 +36,7 @@ static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations
 //const RPC_URL: &str = "wss://asset-hub-polkadot.dotters.network";
 
 //const RPC_URL: &str = "wss://kusama.dotters.network";
-const RPC_URL: &str = "ws://10.2.0.225:5151";
+// const RPC_URL: &str = "ws://10.2.0.225:5151";
 
 //const RPC_URL: &str = "wss://bifrost-rpc.liebi.com/ws";
 //const RPC_URL: &str = "wss:/moonriver.public.curie.radiumblock.co/ws";
@@ -111,8 +111,8 @@ impl Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: Some(11_630_000),
-                    maybe_end_block_number: Some(11_630_500),
+                    maybe_start_block_number: None,
+                    maybe_end_block_number: None,
                     scan: true,
                     reindex: false,
                 },
@@ -150,7 +150,7 @@ impl BaseService for Crystal {
             chain_name: chainspec.name.clone(),
             postgres: self.postgres.clone(),
             rpc_config: RPCConfig {
-                rpc_url: RPC_URL.to_string(),
+                rpc_url: self.args.default_rpc_url.clone(),
                 rpc_connection_timeout_secs: 30,
                 rpc_request_timeout_secs: 30,
                 rpc_subscription_timeout_secs: 60,
