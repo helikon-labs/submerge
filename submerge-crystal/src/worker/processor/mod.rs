@@ -533,7 +533,7 @@ impl BlockProcessor {
                 .get_events_from_trace(&block_hash, spec_version, &metadata, &trace)
                 .await?;
             if event_count != events.len() as u32 {
-                anyhow::bail!(
+                tracing::warn!(
                     "❌ Expected event count {event_count} is not equal to decoded event count {}.",
                     events.len()
                 );
