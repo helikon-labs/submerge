@@ -5,21 +5,11 @@ use crate::types::{
     metadata::{util::get_metadata_version, Metadata},
 };
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
-use lru::LruCache;
 use parity_scale_codec::{Decode, Encode};
 use serde_json::Value as JSONValue;
-use std::num::NonZeroUsize;
-use std::sync::{Arc, LazyLock};
+
+use std::sync::Arc;
 use submerge_util::serde::strip_nuls;
-use tokio::sync::RwLock;
-
-const METADATA_CACHE_SIZE: NonZeroUsize =
-    NonZeroUsize::new(10).expect("Metadata cache size is non-zero");
-
-static PARSED_METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<Metadata>>>> =
-    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
-static METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<RuntimeMetadata>>>> =
-    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
 
 impl BlockProcessor {
     pub async fn get_parsed_metadata(
@@ -28,7 +18,7 @@ impl BlockProcessor {
         spec_version: u32,
     ) -> anyhow::Result<Arc<Metadata>> {
         {
-            let cache = PARSED_METADATA_CACHE.read().await;
+            let cache = crate::PARSED_METADATA_CACHE.read().await;
             if let Some(metadata) = cache.peek(&spec_version) {
                 return Ok(metadata.clone());
             }
@@ -74,7 +64,7 @@ impl BlockProcessor {
         }
         let parsed_metadata_arc = Arc::new(parsed_metadata);
         {
-            let mut cache = PARSED_METADATA_CACHE.write().await;
+            let mut cache = crate::PARSED_METADATA_CACHE.write().await;
             cache.put(spec_version, parsed_metadata_arc.clone());
         }
         Ok(parsed_metadata_arc)
@@ -86,7 +76,7 @@ impl BlockProcessor {
         spec_version: u32,
     ) -> anyhow::Result<Arc<RuntimeMetadata>> {
         {
-            let cache = METADATA_CACHE.read().await;
+            let cache = crate::METADATA_CACHE.read().await;
             if let Some(metadata) = cache.peek(&spec_version) {
                 return Ok(metadata.clone());
             }
@@ -168,7 +158,7 @@ impl BlockProcessor {
         };
         let metadata_arc = Arc::new(metadata);
         {
-            let mut cache = METADATA_CACHE.write().await;
+            let mut cache = crate::METADATA_CACHE.write().await;
             cache.put(spec_version, metadata_arc.clone());
         }
         Ok(metadata_arc)

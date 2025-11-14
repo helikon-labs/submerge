@@ -11,7 +11,7 @@ use crate::types::substrate::chain::Chain;
 #[include = "*.json"]
 struct Chainspecs;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Chainspec {
     pub name: String,
     pub id: String,
@@ -57,12 +57,12 @@ pub enum TokenSymbol {
     Multiple(Vec<String>),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Genesis {
     pub raw: RawGenesis,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RawGenesis {
     pub top: HashMap<String, String>,

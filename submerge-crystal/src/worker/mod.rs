@@ -1,4 +1,5 @@
 use std::{sync::Arc, time::Duration};
+use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_substrate_client::{RPCConfig, SubstrateClient};
 use tokio::sync::RwLock;
 
@@ -8,7 +9,10 @@ use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid as UUID;
 
-use crate::{types::BlockStatus, worker::processor::BlockProcessor};
+use crate::{
+    persistence::CrystalPostgreSQLStorage as _, types::BlockStatus,
+    worker::processor::BlockProcessor,
+};
 
 mod processor;
 mod subscription;
@@ -20,6 +24,7 @@ pub enum WorkerError {
 }
 
 pub enum WorkerType {
+    GenesisProcessor(Chainspec),
     ProcessFinalizedRange {
         maybe_start_block_number: Option<u64>,
         maybe_end_block_number: Option<u64>,
@@ -96,6 +101,20 @@ impl Worker {
 
     pub async fn get_status(&self) -> WorkerStatus {
         self.status.read().await.clone()
+    }
+
+    async fn process_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
+        tracing::info!("🔽 Processing genesis from chainspec file.");
+        if self.config.postgres.get_genesis_record_count().await? > 0 {
+            tracing::info!("🔁 Genesis had already been processed.");
+            return Ok(());
+        }
+        self.config.postgres.ingest_genesis(chainspec).await?;
+        tracing::info!(
+            "✅ Processed {} storage items from the chainspec file.",
+            chainspec.genesis.raw.top.len(),
+        );
+        Ok(())
     }
 
     async fn process_subscription(&self, block_status: BlockStatus) {
@@ -184,12 +203,19 @@ impl Worker {
             .await;
             return;
         }
-        match self.ty {
+        match &self.ty {
+            WorkerType::GenesisProcessor(chainspec) => {
+                if let Err(error) = self.process_genesis(chainspec).await {
+                    tracing::error!(
+                        "🔴 Error while processing genesis records from chainspec: {error:?}"
+                    );
+                }
+            }
             WorkerType::SubscribeNewBlocks => {
-                self.process_subscription(BlockStatus::Proposed).await
+                self.process_subscription(BlockStatus::Proposed).await;
             }
             WorkerType::SubscribeFinalizedBlocks => {
-                self.process_subscription(BlockStatus::Finalized).await
+                self.process_subscription(BlockStatus::Finalized).await;
             }
             WorkerType::ProcessFinalizedRange {
                 maybe_start_block_number,
@@ -224,10 +250,10 @@ impl Worker {
                     .process_finalized_blocks_in_range(
                         self.config.stop_on_error,
                         self.config.skip_traces,
-                        scan,
-                        reindex,
-                        maybe_start_block_number,
-                        maybe_end_block_number,
+                        *scan,
+                        *reindex,
+                        *maybe_start_block_number,
+                        *maybe_end_block_number,
                     )
                     .await
                 {

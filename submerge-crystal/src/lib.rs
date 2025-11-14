@@ -1,9 +1,10 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
-use crate::persistence::CrystalPostgreSQLStorage as _;
+use crate::types::metadata::Metadata;
 use crate::worker::{WorkerConfig, WorkerManager, WorkerType};
 use async_trait::async_trait;
+use frame_metadata::RuntimeMetadata;
 use sqlx::migrate::Migrator;
 use std::sync::Arc;
 use std::time::Duration;
@@ -12,7 +13,10 @@ use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
 
-static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations");
+use lru::LruCache;
+use std::num::NonZeroUsize;
+use std::sync::LazyLock;
+use tokio::sync::RwLock;
 
 mod api;
 pub mod args;
@@ -20,6 +24,16 @@ mod metrics;
 mod persistence;
 mod types;
 mod worker;
+
+static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations");
+
+const METADATA_CACHE_SIZE: NonZeroUsize =
+    NonZeroUsize::new(10).expect("Metadata cache size is non-zero");
+
+static PARSED_METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<Metadata>>>> =
+    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
+static METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<RuntimeMetadata>>>> =
+    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
 
 //const RPC_URL: &str = "wss://acala.dotters.network";
 //const RPC_URL: &str = "wss://astar-rpc.n.dwellir.com";
@@ -76,17 +90,17 @@ impl Crystal {
         .await
     }
 
-    async fn process_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
-        tracing::info!("🔽 Processing genesis from chainspec file.");
-        if self.postgres.get_genesis_record_count().await? > 0 {
-            tracing::info!("🔁 Genesis had already been processed.");
-            return Ok(());
-        }
-        self.postgres.ingest_genesis(chainspec).await?;
-        tracing::info!(
-            "✅ Processed {} storage items from the chainspec file.",
-            chainspec.genesis.raw.top.len(),
-        );
+    async fn process_genesis(
+        &self,
+        chainspec: &Chainspec,
+        worker_config: &WorkerConfig,
+    ) -> anyhow::Result<()> {
+        self.worker_manager
+            .spawn(
+                WorkerType::GenesisProcessor(chainspec.clone()),
+                worker_config.clone(),
+            )
+            .await;
         Ok(())
     }
 
@@ -99,22 +113,7 @@ impl Crystal {
 }
 
 impl Crystal {
-    async fn launch_dev_workers(&self, chain_name: &str) -> anyhow::Result<()> {
-        let recovery_duration = Duration::from_secs(self.args.service.recovery_sleep_seconds);
-        let worker_config = WorkerConfig {
-            chain_name: chain_name.to_string(),
-            postgres: self.postgres.clone(),
-            rpc_config: RPCConfig {
-                rpc_url: RPC_URL.to_string(),
-                rpc_connection_timeout_secs: 30,
-                rpc_request_timeout_secs: 30,
-                rpc_subscription_timeout_secs: 60,
-            },
-            legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
-            retry_delay: recovery_duration,
-            skip_traces: false,
-            stop_on_error: true,
-        };
+    async fn launch_dev_workers(&self, worker_config: &WorkerConfig) -> anyhow::Result<()> {
         self.worker_manager
             .spawn(WorkerType::SubscribeNewBlocks, worker_config.clone())
             .await;
@@ -159,10 +158,24 @@ impl BaseService for Crystal {
 
     async fn run(&self) -> anyhow::Result<()> {
         let chainspec = Chainspec::from_chain_name_or_file_path(&self.args.chain)?;
+        let worker_config = WorkerConfig {
+            chain_name: chainspec.name.clone(),
+            postgres: self.postgres.clone(),
+            rpc_config: RPCConfig {
+                rpc_url: RPC_URL.to_string(),
+                rpc_connection_timeout_secs: 30,
+                rpc_request_timeout_secs: 30,
+                rpc_subscription_timeout_secs: 60,
+            },
+            legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
+            retry_delay: Duration::from_secs(self.args.service.recovery_sleep_seconds),
+            skip_traces: false,
+            stop_on_error: true,
+        };
         self.print_summary(&chainspec);
         self.migrate_db().await?;
-        self.process_genesis(&chainspec).await?;
-        self.launch_dev_workers(&chainspec.name).await?;
+        self.process_genesis(&chainspec, &worker_config).await?;
+        self.launch_dev_workers(&worker_config).await?;
         self.launch_api(&chainspec.name).await?;
         Ok(())
     }
