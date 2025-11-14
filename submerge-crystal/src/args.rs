@@ -4,16 +4,6 @@ use submerge_base::args::{HTTPAPIArgs, LoggingArgs, MetricsArgs, PostgreSQLArgs,
 #[derive(Parser, Clone, Debug)]
 #[command(version)]
 pub struct Args {
-    #[arg(short = 'c', long)]
-    /// Name of the chain, or path of the chain specification file
-    pub chain: String,
-
-    #[arg(long)]
-    pub legacy_decode_api_url: Option<String>,
-
-    #[arg(long)]
-    pub default_rpc_url: String,
-
     #[clap(flatten)]
     pub postgres: PostgreSQLArgs,
 
@@ -28,4 +18,14 @@ pub struct Args {
 
     #[clap(flatten)]
     pub logging: LoggingArgs,
+
+    #[arg(short = 'c', long)]
+    /// Name of the chain, or path of the chain specification file
+    pub chain: String,
+
+    #[arg(long)]
+    pub legacy_decode_api_url: Option<String>,
+
+    #[arg(long)]
+    pub default_rpc_url: String,
 }
