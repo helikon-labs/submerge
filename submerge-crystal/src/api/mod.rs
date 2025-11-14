@@ -287,7 +287,7 @@ pub(crate) async fn run_api(
         .allow_methods(Any)
         .allow_headers(Any);
     let app = Router::new()
-        .nest("/v1", build_api_routes())
+        .nest("/api/v1", build_api_routes())
         .fallback(|| async { APIError::NotFound })
         .with_state(service_state)
         .layer(cors)

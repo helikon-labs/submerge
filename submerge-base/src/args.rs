@@ -40,7 +40,7 @@ pub struct ServiceArgs {
 
 #[derive(Parser, Clone, Debug)]
 pub struct HTTPAPIArgs {
-    #[arg(long, default_value = "localhost")]
+    #[arg(long, default_value = "0.0.0.0")]
     /// HTTP API listen host
     pub api_host: String,
 
@@ -51,7 +51,7 @@ pub struct HTTPAPIArgs {
 
 #[derive(Parser, Clone, Debug)]
 pub struct MetricsArgs {
-    #[arg(long, default_value = "localhost")]
+    #[arg(long, default_value = "0.0.0.0")]
     /// Prometheus server listen host
     pub metrics_host: String,
 
