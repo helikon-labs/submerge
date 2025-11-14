@@ -156,7 +156,7 @@ impl BlockProcessor {
                 .await
             {
                 Ok(_) => crate::metrics::processed_finalized_block_number()?
-                    .with_label_values(&[&self.worker_id.to_string()])
+                    .with_label_values([&self.worker_id.to_string(), "finalized_range"].as_slice())
                     .set(number as i64),
                 Err(error) => {
                     tracing::error!(

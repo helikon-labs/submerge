@@ -57,7 +57,7 @@ async fn on_finalized_block(
                     .set_last_indexed_finalized_block_number_and_hash(block_number, &hash_bytes)
                     .await?;
                 crate::metrics::processed_finalized_block_number()?
-                    .with_label_values(&[&worker_id])
+                    .with_label_values([&worker_id, "finalized_subscription"].as_slice())
                     .set(block_number as i64);
             }
             Err(error) => {

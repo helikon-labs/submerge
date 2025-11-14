@@ -24,7 +24,7 @@ define_gauge_vec!(
     processed_finalized_block_number,
     "processed_finalized_block_number",
     "Number of the last processed finalized block",
-    &["worker_id"],
+    &["worker_id", "worker_type"],
 );
 define_gauge_vec!(
     METRIC_PREFIX,
