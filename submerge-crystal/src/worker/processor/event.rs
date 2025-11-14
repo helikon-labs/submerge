@@ -13,6 +13,7 @@ use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
     api::legacy::LegacyDecodeAPIClient,
+    metadata_cache::get_parsed_metadata,
     persistence::CrystalPostgreSQLStorage,
     types::{
         decode::{Value, ValueVisitor},
@@ -195,7 +196,14 @@ impl BlockProcessor {
         index: u32,
     ) -> anyhow::Result<Event> {
         let phase = parse_legacy_phase(&event.get_phase()?)?;
-        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+        let metadata = get_parsed_metadata(
+            block_hash,
+            spec_version,
+            &self.postgres,
+            &self.substrate_client,
+            &self.legacy_decode_api_client,
+        )
+        .await?;
         let pallet_name = &event.event.pallet;
         let pallet = metadata
             .get_pallet_by_name(pallet_name)
@@ -387,7 +395,14 @@ impl BlockProcessor {
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
-        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+        let metadata = get_parsed_metadata(
+            block_hash,
+            spec_version,
+            &self.postgres,
+            &self.substrate_client,
+            &self.legacy_decode_api_client,
+        )
+        .await?;
         let mut rows: Vec<EventRow> = Vec::new();
         for event in events.iter() {
             let pallet_event = metadata

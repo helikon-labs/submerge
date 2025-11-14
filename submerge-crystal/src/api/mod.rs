@@ -42,6 +42,8 @@ use submerge_metrics::use_metric;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use tokio::net::TcpListener;
 use tokio::signal;
+use tower_governor::governor::GovernorConfigBuilder;
+use tower_governor::GovernorLayer;
 use tower_http::cors::{Any, CorsLayer};
 
 pub mod legacy;
@@ -264,6 +266,19 @@ pub(crate) async fn run_api(
         postgres: postgres.clone(),
         worker_manager: worker_manager.clone(),
     };
+    let governor_conf = GovernorConfigBuilder::default()
+        .per_second(1)
+        .burst_size(5)
+        .finish()
+        .unwrap();
+    let governor_limiter = governor_conf.limiter().clone();
+    let interval = std::time::Duration::from_secs(60);
+    std::thread::spawn(move || loop {
+        std::thread::sleep(interval);
+        tracing::info!("rate limiting storage size: {}", governor_limiter.len());
+        governor_limiter.retain_recent();
+    });
+
     let cors = CorsLayer::new()
         .allow_origin([
             HeaderValue::from_static("http://localhost:3000"),
@@ -273,13 +288,17 @@ pub(crate) async fn run_api(
         .allow_headers(Any);
     let app = Router::new()
         .nest("/v1", build_api_routes())
-        .layer(middleware::from_fn(json_error_middleware))
+        .fallback(|| async { APIError::NotFound })
         .with_state(service_state)
         .layer(cors)
-        .layer(middleware::from_fn(metrics_middleware))
-        .fallback(|| async { APIError::NotFound });
+        .layer(GovernorLayer::new(governor_conf))
+        .layer(middleware::from_fn(json_error_middleware))
+        .layer(middleware::from_fn(metrics_middleware));
     let listener = TcpListener::bind((host, port)).await?;
-    let server = axum::serve(listener, app);
+    let server = axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    );
     let graceful_server = server.with_graceful_shutdown(shutdown_signal());
     let (server_result, _) = tokio::join!(graceful_server, on_server_ready(host, port));
     server_result?;

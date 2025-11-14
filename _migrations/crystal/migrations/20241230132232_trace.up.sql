@@ -18,10 +18,10 @@ CREATE TABLE IF NOT EXISTS trace
     CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX IF NOT EXISTS trace_idx_key_prefix_key_params_block_number_index
+CREATE INDEX IF NOT EXISTS trace_idx_kprefix_kparams_null_blockn_index
     ON trace (key_prefix, key_params, block_number DESC, index ASC)
     WHERE key_params IS NOT NULL;
-CREATE INDEX IF NOT EXISTS trace_idx_key_prefix_key_params_block_number_index
+CREATE INDEX IF NOT EXISTS trace_idx_kprefix_kparams_not_null_blockn_index
     ON trace (key_prefix, key_params, block_number DESC, index ASC)
     WHERE key_params IS NULL;
 CREATE INDEX IF NOT EXISTS trace_idx_block_hash_index

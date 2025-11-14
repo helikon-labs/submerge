@@ -13,6 +13,7 @@ use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
 use super::BlockProcessor;
 use crate::{
+    metadata_cache::get_parsed_metadata,
     persistence::CrystalPostgreSQLStorage,
     types::{
         decode::{Value, ValueVisitor},
@@ -239,7 +240,14 @@ impl BlockProcessor {
                         Some(JSONValue::String(method)),
                         Some(args),
                     ) => {
-                        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+                        let metadata = get_parsed_metadata(
+                            block_hash,
+                            spec_version,
+                            &self.postgres,
+                            &self.substrate_client,
+                            &self.legacy_decode_api_client,
+                        )
+                        .await?;
                         let pallet = metadata
                             .get_pallet_by_name(section)
                             .ok_or(anyhow::Error::msg(format!("Pallet {section} not found.")))?;
@@ -288,7 +296,14 @@ impl BlockProcessor {
         spec_version: u32,
         call: &LegacyCall,
     ) -> anyhow::Result<Call> {
-        let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+        let metadata = get_parsed_metadata(
+            block_hash,
+            spec_version,
+            &self.postgres,
+            &self.substrate_client,
+            &self.legacy_decode_api_client,
+        )
+        .await?;
         let pallet_name = &call.pallet_name;
         let pallet_call_name = &call.pallet_call_name;
         let pallet = metadata
@@ -559,7 +574,14 @@ impl BlockProcessor {
     ) -> anyhow::Result<()> {
         match arg {
             Value::Call(call) => {
-                let metadata = self.get_parsed_metadata(block_hash, spec_version).await?;
+                let metadata = get_parsed_metadata(
+                    block_hash,
+                    spec_version,
+                    &self.postgres,
+                    &self.substrate_client,
+                    &self.legacy_decode_api_client,
+                )
+                .await?;
                 let pallet =
                     metadata
                         .get_pallet_by_index(call.pallet_index)

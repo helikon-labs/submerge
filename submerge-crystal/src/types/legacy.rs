@@ -6,7 +6,7 @@ use submerge_base::types::substrate::multi_address::MultiAddress;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacyEventWrapper {
+pub struct LegacyEventWrapper {
     phase: JSONValue,
     pub event: LegacyEvent,
 }
@@ -29,7 +29,7 @@ impl LegacyEventWrapper {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacyEventPhase {
+pub struct LegacyEventPhase {
     #[serde(rename = "type")]
     pub ty: String,
     pub value: JSONValue,
@@ -37,7 +37,7 @@ pub(crate) struct LegacyEventPhase {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacyEvent {
+pub struct LegacyEvent {
     #[serde(rename = "method")]
     pub name: String,
     #[serde(rename = "section")]
@@ -49,7 +49,7 @@ pub(crate) struct LegacyEvent {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LegacyExtrinsicWrapper {
+pub struct LegacyExtrinsicWrapper {
     pub is_signed: bool,
     #[serde(rename = "method")]
     pub call: LegacyCall,

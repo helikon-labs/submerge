@@ -2,6 +2,7 @@ use std::cmp::min;
 use std::sync::{Arc, LazyLock};
 
 use crate::api::legacy::LegacyDecodeAPIClient;
+use crate::metadata_cache::{get_metadata, get_parsed_metadata};
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::metadata::util::{
     get_metadata_type_by_id, get_metadata_version, get_pallet_storage_item_type_by_name,
@@ -21,7 +22,6 @@ use uuid::Uuid as UUID;
 
 mod event;
 mod extrinsic;
-mod metadata_cache;
 mod weight;
 
 const TRANSACTION_LEVEL_KEY: &[u8] = b":transaction_level:";
@@ -242,10 +242,15 @@ impl BlockProcessor {
         block_header: &BlockHeader,
     ) -> anyhow::Result<Option<MultiAddress>> {
         let block_hash = hex::decode(block_hash_hex)?;
-        let is_nimbus = self
-            .get_parsed_metadata(&block_hash, spec_version)
-            .await?
-            .has_storage_item(AUTHOR_INHERENT_PALLET_NAME, AUTHOR_STORAGE_ITEM_NAME);
+        let is_nimbus = get_parsed_metadata(
+            &block_hash,
+            spec_version,
+            &self.postgres,
+            &self.substrate_client,
+            &self.legacy_decode_api_client,
+        )
+        .await?
+        .has_storage_item(AUTHOR_INHERENT_PALLET_NAME, AUTHOR_STORAGE_ITEM_NAME);
         let author_multi_address = if is_nimbus {
             self.substrate_client
                 .get_nimbus_block_author(block_hash_hex)
@@ -260,7 +265,14 @@ impl BlockProcessor {
                 if session_validators_cache.0 != session_index
                     || session_validators_cache.1.is_empty()
                 {
-                    let metadata = self.get_metadata(&block_hash, spec_version).await?;
+                    let metadata = get_metadata(
+                        &block_hash,
+                        spec_version,
+                        &self.postgres,
+                        &self.substrate_client,
+                        &self.legacy_decode_api_client,
+                    )
+                    .await?;
                     let sequence_type_path =
                         if get_metadata_version(&metadata) < METADATA_VERSION_LEGACY_THRESHOLD {
                             ACCOUNT_ID_32_TYPE_PATH.to_string()
@@ -386,8 +398,22 @@ impl BlockProcessor {
                 .await?;
             return Ok(());
         }
-        let metadata = self.get_metadata(&block_hash, spec_version).await?;
-        let parsed_metadata = self.get_parsed_metadata(&block_hash, spec_version).await?;
+        let metadata = get_metadata(
+            &block_hash,
+            spec_version,
+            &self.postgres,
+            &self.substrate_client,
+            &self.legacy_decode_api_client,
+        )
+        .await?;
+        let parsed_metadata = get_parsed_metadata(
+            &block_hash,
+            spec_version,
+            &self.postgres,
+            &self.substrate_client,
+            &self.legacy_decode_api_client,
+        )
+        .await?;
         let author_multi_address = self
             .get_block_author(block_hash_hex, spec_version, &block_header)
             .await?;

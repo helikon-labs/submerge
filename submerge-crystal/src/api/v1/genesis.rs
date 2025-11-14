@@ -10,6 +10,7 @@ use crate::{
         dto::{
             genesis::GenesisRecordDTO,
             pagination::{PagedResponse, PaginationData, PaginationQuery},
+            trace::TraceType,
         },
         error::APIError,
     },
@@ -37,10 +38,23 @@ pub(crate) async fn get_genesis_records(
         data: rows
             .iter()
             .map(|row| GenesisRecordDTO {
-                id: row.id as u64,
-                key: format!("0x{}", hex::encode(&row.key)),
                 key_prefix: format!("0x{}", hex::encode(&row.key_prefix)),
+                key_params: row
+                    .key_params
+                    .as_deref()
+                    .map(|key_params| format!("0x{}", hex::encode(key_params))),
                 value: format!("0x{}", hex::encode(&row.value)),
+                record_type: if row.metadata_storage_item_id.is_some() {
+                    Some(TraceType::StorageItem)
+                } else if row.is_known_key {
+                    Some(TraceType::KnownKey)
+                } else {
+                    None
+                },
+                pallet_index: row.pallet_index.map(|index| index as u32),
+                pallet_name: row.pallet_name.clone(),
+                pallet_storage_item_index: row.pallet_storage_item_index.map(|index| index as u32),
+                pallet_storage_item_name: row.pallet_storage_item_name.clone(),
             })
             .collect(),
     };

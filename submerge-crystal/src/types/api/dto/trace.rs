@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::TraceRow};
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub enum TraceType {
     StorageItem,
     KnownKey,

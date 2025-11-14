@@ -1,3 +1,7 @@
+use crate::{
+    api::legacy::LegacyDecodeAPIClient, metadata_cache::get_parsed_metadata, types::GenesisItem,
+};
+use anyhow::Context as _;
 use std::{sync::Arc, time::Duration};
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_substrate_client::{RPCConfig, SubstrateClient};
@@ -16,6 +20,8 @@ use crate::{
 
 mod processor;
 mod subscription;
+
+const TRANSACTION_LEVEL_KEY: &[u8] = b":transaction_level:";
 
 #[derive(Error, Debug)]
 pub enum WorkerError {
@@ -109,7 +115,88 @@ impl Worker {
             tracing::info!("🔁 Genesis had already been processed.");
             return Ok(());
         }
-        self.config.postgres.ingest_genesis(chainspec).await?;
+        let substrate_client = match SubstrateClient::new(&self.config.rpc_config).await {
+            Ok(substrate_client) => substrate_client,
+            Err(error) => {
+                tracing::error!(
+                    "🔴 Error while constructing the Substrate client for genesis processing."
+                );
+                return Err(error);
+            }
+        };
+        let Some(block_hash_hex) = substrate_client.get_block_hash(0).await? else {
+            let message = "🔴 Cannot get hash for block 0 in genesis processing.";
+            tracing::error!(message);
+            return Err(anyhow::Error::msg(message.to_string()));
+        };
+        let block_hash = hex::decode(block_hash_hex.trim_start_matches("0x"))
+            .context("🔴 Cannot decode block 0 hash hex string for genesis processing.")?;
+        let spec_version = substrate_client
+            .get_last_runtime_upgrade_info(&block_hash_hex)
+            .await?
+            .spec_version;
+        let legacy_decode_api_client = if let Some(url) = &self.config.legacy_decode_api_url {
+            Some(LegacyDecodeAPIClient::new(url)?)
+        } else {
+            None
+        };
+        let parsed_metadata = get_parsed_metadata(
+            &block_hash,
+            spec_version,
+            &self.config.postgres,
+            &substrate_client,
+            &legacy_decode_api_client,
+        )
+        .await?;
+
+        let mut genesis_items = Vec::new();
+        for (i, (key, value)) in chainspec.genesis.raw.top.iter().enumerate() {
+            let key = hex::decode(key.trim_start_matches("0x"))
+                .context(format!("Cannot decode key for genesis item #{i}."))?;
+            let value = hex::decode(value.trim_start_matches("0x"))
+                .context(format!("Cannot decode value for genesis item #{i}."))?;
+            let storage_item = parsed_metadata
+                .pallets
+                .iter()
+                .flat_map(|pallet| &pallet.storage_items)
+                .find(|item| key.starts_with(&item.key_prefix));
+            let (key_prefix, key_params) = if let Some(storage_item) = storage_item {
+                (
+                    storage_item.key_prefix.as_slice(),
+                    if key.len() > storage_item.key_prefix.len() {
+                        key.get(storage_item.key_prefix.len()..)
+                    } else {
+                        None
+                    },
+                )
+            } else {
+                (key.as_slice(), None)
+            };
+            let storage_item = parsed_metadata
+                .pallets
+                .iter()
+                .flat_map(|pallet| &pallet.storage_items)
+                .find(|item| key.starts_with(&item.key_prefix));
+            // check for known key
+            let is_known_key = matches!(
+                key.as_slice(),
+                sp_storage::well_known_keys::CHILD_STORAGE_KEY_PREFIX
+                    | sp_storage::well_known_keys::CODE
+                    | sp_storage::well_known_keys::DEFAULT_CHILD_STORAGE_KEY_PREFIX
+                    | sp_storage::well_known_keys::EXTRINSIC_INDEX
+                    | sp_storage::well_known_keys::HEAP_PAGES
+                    | sp_storage::well_known_keys::INTRABLOCK_ENTROPY
+                    | TRANSACTION_LEVEL_KEY,
+            );
+            genesis_items.push(GenesisItem {
+                key_prefix: key_prefix.to_vec(),
+                key_params: key_params.map(|key_params| key_params.to_vec()),
+                value,
+                metadata_storage_item_id: storage_item.map(|storage_item| storage_item.id),
+                is_known_key,
+            });
+        }
+        self.config.postgres.ingest_genesis(&genesis_items).await?;
         tracing::info!(
             "✅ Processed {} storage items from the chainspec file.",
             chainspec.genesis.raw.top.len(),
@@ -189,6 +276,17 @@ impl Worker {
         }
         tracing::info!("🤖✅ RPC endpoint is compatible with worker configuration.");
         Ok(())
+    }
+
+    pub async fn start_failable(&self) -> anyhow::Result<()> {
+        tracing::info!("Start failable worker {}.", self.id);
+        match &self.ty {
+            WorkerType::GenesisProcessor(chainspec) => self
+                .process_genesis(chainspec)
+                .await
+                .context("🔴 Error while processing genesis records from chainspec: {error:?}"),
+            _ => anyhow::bail!("Only genesis processor is supported in failable worker."),
+        }
     }
 
     pub async fn start(&self) {

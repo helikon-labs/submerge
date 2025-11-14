@@ -1,10 +1,9 @@
 #![warn(clippy::disallowed_types)]
 
 use crate::args::Args;
-use crate::types::metadata::Metadata;
-use crate::worker::{WorkerConfig, WorkerManager, WorkerType};
+use crate::worker::{Worker, WorkerConfig, WorkerManager, WorkerType};
 use async_trait::async_trait;
-use frame_metadata::RuntimeMetadata;
+
 use sqlx::migrate::Migrator;
 use std::sync::Arc;
 use std::time::Duration;
@@ -12,28 +11,17 @@ use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
-
-use lru::LruCache;
-use std::num::NonZeroUsize;
-use std::sync::LazyLock;
-use tokio::sync::RwLock;
+use uuid::Uuid as UUID;
 
 mod api;
 pub mod args;
+pub mod metadata_cache;
 mod metrics;
 mod persistence;
 mod types;
 mod worker;
 
 static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations");
-
-const METADATA_CACHE_SIZE: NonZeroUsize =
-    NonZeroUsize::new(10).expect("Metadata cache size is non-zero");
-
-static PARSED_METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<Metadata>>>> =
-    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
-static METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<RuntimeMetadata>>>> =
-    LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
 
 //const RPC_URL: &str = "wss://acala.dotters.network";
 //const RPC_URL: &str = "wss://astar-rpc.n.dwellir.com";
@@ -95,13 +83,13 @@ impl Crystal {
         chainspec: &Chainspec,
         worker_config: &WorkerConfig,
     ) -> anyhow::Result<()> {
-        self.worker_manager
-            .spawn(
-                WorkerType::GenesisProcessor(chainspec.clone()),
-                worker_config.clone(),
-            )
-            .await;
-        Ok(())
+        let worker = Worker::new(
+            chainspec.name.clone(),
+            UUID::new_v4(),
+            WorkerType::GenesisProcessor(chainspec.clone()),
+            worker_config.clone(),
+        );
+        worker.start_failable().await
     }
 
     async fn migrate_db(&self) -> anyhow::Result<()> {

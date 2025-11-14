@@ -12,6 +12,14 @@ pub mod legacy;
 pub mod metadata;
 pub mod persistence;
 
+pub struct GenesisItem {
+    pub key_prefix: Vec<u8>,
+    pub key_params: Option<Vec<u8>>,
+    pub value: Vec<u8>,
+    pub metadata_storage_item_id: Option<u32>,
+    pub is_known_key: bool,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Call {
     pub pallet_index: u8,

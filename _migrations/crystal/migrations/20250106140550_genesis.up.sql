@@ -1,11 +1,13 @@
 CREATE TABLE IF NOT EXISTS genesis(
-    id          SERIAL PRIMARY KEY,
-    key         BYTEA NOT NULL,
-    key_prefix  BYTEA GENERATED ALWAYS AS (substr(key, 1, 32)) STORED,
-    value       BYTEA NOT NULL,
-    created_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT genesis_u_key UNIQUE (key)
+    id                          SERIAL PRIMARY KEY,
+    key_prefix                  BYTEA NOT NULL,
+    key_params                  BYTEA,
+    value                       BYTEA NOT NULL,
+    metadata_storage_item_id    INTEGER,
+    is_known_key                BOOLEAN NOT NULL,
+    created_at                  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT genesis_u_key UNIQUE (key_prefix, key_params)
 );
 
-CREATE INDEX IF NOT EXISTS genesis_idx_key ON genesis (key);
-CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix ON genesis (key_prefix);
+CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix ON trace (key_prefix);
+CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix_key_params ON trace (key_prefix, key_params);

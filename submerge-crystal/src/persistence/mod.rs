@@ -7,7 +7,6 @@ use sqlx::QueryBuilder;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
-use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
@@ -17,6 +16,7 @@ use crate::types::metadata::MetadataPallet;
 use crate::types::persistence::{BlockRow, EventRow, ExtrinsicRow, LogRow};
 use crate::types::BlockStatus;
 use crate::types::Extrinsic;
+use crate::types::GenesisItem;
 
 pub mod api;
 
@@ -57,7 +57,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
     async fn get_metadata_error_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
     async fn get_metadata_storage_item_id(&self, pallet_id: u32, index: u8) -> anyhow::Result<u32>;
     async fn get_genesis_record_count(&self) -> anyhow::Result<u64>;
-    async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()>;
+    async fn ingest_genesis(&self, genesis_items: &[GenesisItem]) -> anyhow::Result<()>;
     async fn get_next_block_number(
         &self,
         min: u64,
@@ -169,24 +169,9 @@ pub(crate) trait CrystalPostgreSQLStorage {
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<Vec<u8>>;
     async fn ingest_genesis_item(
-        key: &[u8],
-        value: &[u8],
+        genesis_item: &GenesisItem,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()> {
-        sqlx::query(
-            r#"
-            INSERT INTO genesis (key, value)
-            VALUES ($1, $2)
-            ON CONFLICT(key) DO UPDATE SET
-                value = EXCLUDED.value
-                "#,
-        )
-        .bind(key)
-        .bind(value)
-        .execute(&mut **tx)
-        .await?;
-        Ok(())
-    }
+    ) -> anyhow::Result<()>;
 }
 
 impl CrystalPostgreSQLStorage for PostgreSQLStorage {
@@ -474,15 +459,10 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(record_count.0 as u64)
     }
 
-    async fn ingest_genesis(&self, chainspec: &Chainspec) -> anyhow::Result<()> {
+    async fn ingest_genesis(&self, genesis_items: &[GenesisItem]) -> anyhow::Result<()> {
         let mut tx = self.connection_pool.begin().await?;
-        for (key, value) in chainspec.genesis.raw.top.iter() {
-            Self::ingest_genesis_item(
-                &hex::decode(key.trim_start_matches("0x"))?,
-                &hex::decode(value.trim_start_matches("0x"))?,
-                &mut tx,
-            )
-            .await?;
+        for genesis_item in genesis_items.iter() {
+            Self::ingest_genesis_item(genesis_item, &mut tx).await?;
         }
         tx.commit().await?;
         Ok(())
@@ -981,6 +961,28 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .await?;
         Ok(row.0)
     }
+
+    async fn ingest_genesis_item(
+        genesis_item: &GenesisItem,
+        tx: &mut Transaction<'_, Postgres>,
+    ) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO genesis (key_prefix, key_params, value, metadata_storage_item_id, is_known_key)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT(key_prefix, key_params) DO UPDATE SET
+                value = EXCLUDED.value, metadata_storage_item_id = EXCLUDED.metadata_storage_item_id, is_known_key = EXCLUDED.is_known_key
+            "#,
+        )
+        .bind(genesis_item.key_prefix.as_slice())
+        .bind(genesis_item.key_params.as_deref())
+        .bind(genesis_item.value.as_slice())
+        .bind(genesis_item.metadata_storage_item_id.map(|id| id as i32))
+        .bind(genesis_item.is_known_key)
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -990,8 +992,8 @@ mod tests {
         types::BlockStatus,
     };
     use anyhow::Context as _;
-    use std::{cmp::min, fs};
-    use submerge_base::{args::PostgreSQLArgs, types::substrate::chainspec::Chainspec};
+    use std::cmp::min;
+    use submerge_base::args::PostgreSQLArgs;
     use submerge_substrate_client::{RPCConfig, SubstrateClient};
 
     async fn get_test_postgres() -> anyhow::Result<PostgreSQLStorage> {
@@ -1005,16 +1007,6 @@ mod tests {
             postgres_pool_max_connections: 100,
         };
         PostgreSQLStorage::new(&args).await
-    }
-
-    #[tokio::test]
-    async fn test_genesis_ingestion() -> Result<(), Box<dyn std::error::Error>> {
-        let chainspec_path = "../_chainspecs/westend/sys/coretime-westend.json";
-        let chainspec_json = fs::read_to_string(chainspec_path)?;
-        let chainspec: Chainspec = serde_json::from_str(&chainspec_json)?;
-        let postgres = get_test_postgres().await?;
-        postgres.ingest_genesis(&chainspec).await?;
-        Ok(())
     }
 
     #[tokio::test]
