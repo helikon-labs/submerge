@@ -2,6 +2,7 @@ use clap::Parser;
 use submerge_base::args::{HTTPAPIArgs, LoggingArgs, MetricsArgs, PostgreSQLArgs, ServiceArgs};
 
 #[derive(Parser, Clone, Debug)]
+#[command(version)]
 pub struct Args {
     #[arg(short = 'c', long)]
     /// Name of the chain, or path of the chain specification file
