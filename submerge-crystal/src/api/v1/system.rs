@@ -6,6 +6,7 @@ use crate::{
     worker::{WorkerConfig, WorkerType},
 };
 
+#[allow(dead_code)]
 pub(crate) async fn get_worker_ids(State(state): State<ServiceState>) -> Json<Vec<String>> {
     Json(
         state
@@ -18,6 +19,7 @@ pub(crate) async fn get_worker_ids(State(state): State<ServiceState>) -> Json<Ve
     )
 }
 
+#[allow(dead_code)]
 pub(crate) async fn spawn_worker(State(state): State<ServiceState>) {
     state
         .worker_manager
@@ -42,6 +44,7 @@ pub(crate) async fn spawn_worker(State(state): State<ServiceState>) {
         .await;
 }
 
+#[allow(dead_code)]
 pub(crate) async fn cancel_all_workers(State(state): State<ServiceState>) {
     state.worker_manager.cancel_all().await;
 }

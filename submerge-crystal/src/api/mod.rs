@@ -24,7 +24,7 @@ use crate::{
             get_metadata_pallet_errors, get_metadata_pallet_events,
             get_metadata_pallet_storage_items, get_metadata_pallets,
         },
-        system::{cancel_all_workers, get_worker_ids, spawn_worker},
+        // system::{cancel_all_workers, get_worker_ids, spawn_worker},
     },
     types::api::error::APIError,
 };
@@ -51,6 +51,7 @@ mod v1;
 
 const MAX_RESPONSE_MESSAGE_BYTES: usize = 64 * 1024;
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct ServiceState {
     pub chain_name: String,
@@ -130,12 +131,12 @@ async fn json_error_middleware(request: Request, next: Next) -> Response {
 fn build_api_routes() -> Router<ServiceState> {
     Router::new()
         // system
-        .route(
+        /*.route(
             "/system/workers",
             get(get_worker_ids)
                 .post(spawn_worker)
                 .delete(cancel_all_workers),
-        )
+        )*/
         // metadata
         .route("/metadata", get(get_metadata_list))
         .route("/metadata/{spec_version}", get(get_metadata))

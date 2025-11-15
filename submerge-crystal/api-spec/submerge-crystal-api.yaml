@@ -11,7 +11,6 @@ info:
     - Extrinsics
     - Genesis
     - Metadata
-    - System
     - Traces
     
     Public API is limited by 5 requests per second.
@@ -26,25 +25,25 @@ info:
     url: https://www.gnu.org/licenses/gpl-3.0.html
 
 servers:
-  - url: http://localhost:3030/v1
-    description: Local development API.
-  - url: https://{chain}.api.crystal.submerge.io/v1
-    description: Production API.
-    variables:
-      chain:
-        default: polkadot
-        enum:
-          - polkadot
-          - asset-hub-polkadot
-          - bridge-hub-polkadot
-          - collectives-polkadot
-          - coretime-polkadot
-          - people-polkadot
-          - kusama
-          - asset-hub-kusama
-          - bridge-hub-kusama
-          - coretime-kusama
-          - people-kusama
+  - url: https://coretime-polkadot.crystal.submerge.io/api/v1
+    description: API preview deployment for Polkadot Coretime.
+  #- url: https://{chain}.crystal.submerge.io/api/v1
+  #  description: Production API.
+  #  variables:
+  #    chain:
+  #      default: polkadot
+  #      enum:
+  #        - polkadot
+  #        - asset-hub-polkadot
+  #        - bridge-hub-polkadot
+  #        - collectives-polkadot
+  #        - coretime-polkadot
+  #        - people-polkadot
+  #        - kusama
+  #        - asset-hub-kusama
+  #        - bridge-hub-kusama
+  #        - coretime-kusama
+  #        - people-kusama
 
 tags:
   - name: block
@@ -61,8 +60,6 @@ tags:
     description: Endpoints related to metadata.
   - name: trace
     description: Endpoints related to block traces.
-  - name: system
-    description: System-related endpoints.
 
 components:
   headers:
@@ -100,137 +97,137 @@ components:
         - message
       example:
         message: Internal server error.
-    WorkerStatus:
-      type: object
-      description: Current status of a single indexer worker.
-      required: [id, state, from, to, current, blocksPerSec]
-      properties:
-        id:
-          type: string
-          description: Machine-assigned id of the worker.
-        state:
-          type: string
-          descriotion: Worker state.
-          enum: [idle, indexing, paused, error, stopping]
-        from:
-          type: integer
-          format: int64
-          description: Start block number.
-          minimum: 0
-        to:
-          type: integer
-          format: int64
-          description: Target block number.
-          minimum: 0
-        current:
-          type: integer
-          format: int64
-          description: Current block number being indexed.
-          minimum: 0
-        blocksPerSec:
-          type: number
-          description: Indexing speed of the worker.
-          minimum: 0
-      example:
-        id: 'crystal-worker-3'
-        state: indexing
-        from: 0
-        to: 15243769
-        current: 3102
-        blocksPerSec: 15
-    ServiceInfo:
-      type: object
-      description: Basic indexer information.
-      required: [name, version, uptimeSeconds, startedAt, chain]
-      properties:
-        name:
-          type: string
-          description: Instance name.
-          example: 'Submerge Crystal'
-        version:
-          type: string
-          description: Version of the Crystal binary.
-          example: '1.0.0'
-        uptimeSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-          example: 62
-        startedAt:
-          type: integer
-          format: int64
-          description: Start time epoch milliseconds.
-          example: 1756009805000
-        chain:
-          type: string
-          description: Blockchain name.
-          example: polkadot
-      example:
-        name: 'submerge-crystal-01'
-        version: '1.0.0'
-        uptimeSeconds: 62
-        startedAt: 1756009805000
-        chain: 'polkadot'
-    ServiceHealth:
-      type: object
-      description: Service health summary.
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [ok, degraded, error]
-        reason:
-          type:
-            - 'null'
-            - string
-          description: Short reason for non-OK states.
-      example:
-        status: ok
-    BlockSummary:
-      type: object
-      required: [number, hash, parentHash, timestamp]
-      description: Basic information about a block.
-      properties:
-        number:
-          type: integer
-          format: int64
-          minimum: 0
-        hash:
-          $ref: '#/components/schemas/Hash256Hex'
-        parentHash:
-          $ref: '#/components/schemas/Hash256Hex'
-        timestamp:
-          type: integer
-          format: int64
-          description: Block timestamp.
-          minimum: 0
-      example:
-        number: 29793989
-        hash: '0x504303740c518bbffb81efbac64974e5dbb90640e364e7606bdc2e4b5fbac1c3'
-        parentHash: '0x056c65c83840f75140aadc78d1e9fa604b73ab8b5db684f64774293434b9d6b3'
-        timestamp: 1756009805000
-    IndexerTip:
-      type: object
-      description: The last best and finalized blocks received and written/committed by Crystal.
-      required: [best, finalized, indexed]
-      properties:
-        best:
-          description: Current best block on the blockchain.
-          $ref: '#/components/schemas/BlockSummary'
-        finalized:
-          description: Current finalized block on the blockchain.
-          $ref: '#/components/schemas/BlockSummary'
-        indexed:
-          type: object
-          description: What Crystal has fully written/committed locally.
-          required: [best, finalized]
-          properties:
-            best:
-              description: Latest best block indexed by Crystal.
-              $ref: '#/components/schemas/BlockSummary'
-            finalized:
-              description: Latest finalized block indexed by Crystal.
-              $ref: '#/components/schemas/BlockSummary'
+    #WorkerStatus:
+    #  type: object
+    #  description: Current status of a single indexer worker.
+    #  required: [id, state, from, to, current, blocksPerSec]
+    #  properties:
+    #    id:
+    #      type: string
+    #      description: Machine-assigned id of the worker.
+    #    state:
+    #      type: string
+    #      descriotion: Worker state.
+    #      enum: [idle, indexing, paused, error, stopping]
+    #    from:
+    #      type: integer
+    #      format: int64
+    #      description: Start block number.
+    #      minimum: 0
+    #    to:
+    #      type: integer
+    #      format: int64
+    #      description: Target block number.
+    #      minimum: 0
+    #    current:
+    #      type: integer
+    #      format: int64
+    #      description: Current block number being indexed.
+    #      minimum: 0
+    #    blocksPerSec:
+    #      type: number
+    #      description: Indexing speed of the worker.
+    #      minimum: 0
+    #  example:
+    #    id: 'crystal-worker-3'
+    #    state: indexing
+    #    from: 0
+    #    to: 15243769
+    #    current: 3102
+    #    blocksPerSec: 15
+    #ServiceInfo:
+    #  type: object
+    #  description: Basic indexer information.
+    #  required: [name, version, uptimeSeconds, startedAt, chain]
+    #  properties:
+    #    name:
+    #      type: string
+    #      description: Instance name.
+    #      example: 'Submerge Crystal'
+    #    version:
+    #      type: string
+    #      description: Version of the Crystal binary.
+    #      example: '1.0.0'
+    #    uptimeSeconds:
+    #      type: integer
+    #      format: int64
+    #      minimum: 0
+    #      example: 62
+    #    startedAt:
+    #      type: integer
+    #      format: int64
+    #      description: Start time epoch milliseconds.
+    #      example: 1756009805000
+    #    chain:
+    #      type: string
+    #      description: Blockchain name.
+    #      example: polkadot
+    #  example:
+    #    name: 'submerge-crystal-01'
+    #    version: '1.0.0'
+    #    uptimeSeconds: 62
+    #    startedAt: 1756009805000
+    #    chain: 'polkadot'
+    #ServiceHealth:
+    #  type: object
+    #  description: Service health summary.
+    #  required: [status]
+    #  properties:
+    #    status:
+    #      type: string
+    #      enum: [ok, degraded, error]
+    #    reason:
+    #      type:
+    #        - 'null'
+    #        - string
+    #      description: Short reason for non-OK states.
+    #  example:
+    #    status: ok
+    #BlockSummary:
+    #  type: object
+    #  required: [number, hash, parentHash, timestamp]
+    #  description: Basic information about a block.
+    #  properties:
+    #    number:
+    #      type: integer
+    #      format: int64
+    #      minimum: 0
+    #    hash:
+    #      $ref: '#/components/schemas/Hash256Hex'
+    #    parentHash:
+    #      $ref: '#/components/schemas/Hash256Hex'
+    #    timestamp:
+    #      type: integer
+    #      format: int64
+    #      description: Block timestamp.
+    #      minimum: 0
+    #  example:
+    #    number: 29793989
+    #    hash: '0x504303740c518bbffb81efbac64974e5dbb90640e364e7606bdc2e4b5fbac1c3'
+    #    parentHash: '0x056c65c83840f75140aadc78d1e9fa604b73ab8b5db684f64774293434b9d6b3'
+    #    timestamp: 1756009805000
+    #IndexerTip:
+    #  type: object
+    #  description: The last best and finalized blocks received and written/committed by Crystal.
+    #  required: [best, finalized, indexed]
+    #  properties:
+    #    best:
+    #      description: Current best block on the blockchain.
+    #      $ref: '#/components/schemas/BlockSummary'
+    #    finalized:
+    #      description: Current finalized block on the blockchain.
+    #      $ref: '#/components/schemas/BlockSummary'
+    #    indexed:
+    #      type: object
+    #      description: What Crystal has fully written/committed locally.
+    #      required: [best, finalized]
+    #      properties:
+    #        best:
+    #          description: Latest best block indexed by Crystal.
+    #          $ref: '#/components/schemas/BlockSummary'
+    #        finalized:
+    #          description: Latest finalized block indexed by Crystal.
+    #          $ref: '#/components/schemas/BlockSummary'
     PaginationData:
       type: object
       description: Pagination data for paged responses.
@@ -444,9 +441,9 @@ components:
           minimum: 0
           description: Number of events in the block.
           example: 12
-        authorAccountId:
-          $ref: '#/components/schemas/AccountIdHex'
-          description: Authoring validator account id.
+        author:
+          $ref: '#/components/schemas/MultiAddress'
+          description: Authoring validator address.
       required:
         - hash
         - parentHash
@@ -458,7 +455,7 @@ components:
         - weight
         - extrinsicCount
         - eventCount
-        - authorAccountId
+        - author
       example:
         hash: '0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8'
         parentHash: '0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b'
@@ -480,7 +477,9 @@ components:
             proofSize: '0'
         extrinsicCount: 2
         eventCount: 56
-        authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
+        author:
+          type: accountId
+          value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
     Trace:
       type: object
       description: A trace record in a block.
@@ -563,12 +562,9 @@ components:
       type: object
       description: A call in an extrinsic.
       properties:
-        id:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Database id of the call record.
-          example: 1
+        hash:
+          $ref: '#/components/schemas/Hash256Hex'
+          description: Artificial call hash.
         blockHash:
           $ref: '#/components/schemas/Hash256Hex'
         blockNumber:
@@ -590,12 +586,6 @@ components:
           example: 1001
         blockStatus:
           $ref: '#/components/schemas/BlockStatus'
-        extrinsicId:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Call extrinsic database id.
-          example: 1
         extrinsicIndex:
           type: integer
           minimum: 0
@@ -603,13 +593,19 @@ components:
           example: 0
         extrinsicHash:
           $ref: '#/components/schemas/Hash256Hex'
-        parentCallId:
-          oneOf: [{ type: integer, minimum: 0, example: 175 }, { type: 'null' }]
+        parentCallHash:
+          oneOf: [ $ref: '#/components/schemas/Hash256Hex', { type: 'null' }]
           description: If a nested call, the call's parent call record id.
-        nestingIndex:
+        callPath:
           type: string
           description: A string representing the call path, using '::' as a delimiter and the index at each level.
-          example: 'calls::0'
+          example: 'root::calls::0'
+        callIndex:
+          type: array
+          items:
+            type: integer
+          description: An integer array that represents the indices of the arguments that lead to the call's position in the extrinsic argument hierarcy.
+          example: [0]
         palletIndex:
           type: integer
           minimum: 0
@@ -628,7 +624,7 @@ components:
           type: string
           description: Call's name in the pallet in the metadata - capital case.
           example: ForceTransfer
-        isSuccessful:
+        extrinsicIsSuccessful:
           type: boolean
           description: Whether the call's extrinsic was successful.
         args:
@@ -636,35 +632,37 @@ components:
           additionalProperties: true
           description: Call arguments.
       required:
-        - id
+        - hash
         - blockHash
         - blockNumber
         - specVersion
         - blockStatus
-        - extrinsicId
         - extrinsicIndex
         - extrinsicHash
+        - callPath
+        - callIndex
         - palletIndex
         - palletName
         - palletCallIndex
         - palletCallName
-        - isSuccessful
+        - extrinsicIsSuccessful
         - args
       example:
-        id: 1
+        hash: '0x28e4d435a46c1b6e59c82645620800cf06ea4b1e2979a2325f1f1fc2f232f82b'
         blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
         blockNumber: 29781585
         blockTimestamp: 1755935208000
         specVersion: 1006001
         blockStatus: finalized
-        extrinsicId: 1
+        callPath: 'root::calls::0'
+        callIndex: [0, 2, 0]
         extrinsicIndex: 0
         extrinsicHash: '0x5cffd6624df1b3447bc5aa9db09a414f7b5058ff1b7bc3c53ae564248924fa0a'
         palletIndex: 2
         palletName: 'Timestamp'
         palletCallIndex: 0
         palletCallName: 'Set'
-        isSuccessful: true
+        extrinsicIsSuccessful: true
         args:
           now: '1755935208000'
     Event:
@@ -861,17 +859,37 @@ components:
       type: object
       description: A storage item initialized at genesis.
       properties:
-        id:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Database id.
-          example: 1
-        key:
+        keyPrefix:
           $ref: '#/components/schemas/HexString'
+          description: Storage item key prefix for the genesis record
+        keyParams:
+          $ref: '#/components/schemas/HexString'
+          description: Storage item key parameter(s) for the genesis record
         value:
           $ref: '#/components/schemas/HexString'
-      required: [id, key, value]
+          description: Value of the genesis record
+        recordType:
+          type: string
+          description: Can be StorageItem, KnownKey, or Unknown.
+        palletIndex:
+          type: integer
+          minimum: 0
+          description: If the genesis record is a storage item, the storage item's pallet index in the metadata.
+          example: 0
+        palletName:
+          type: string
+          description: If the genesis record is a storage item, the storage item's pallet name in the metadata.
+          example: System
+        palletStorageItemIndex:
+          type: integer
+          minimum: 0
+          description: If the genesis record is a storage item, the storage item's index in the pallet metadata.
+          example: 0
+        palletEventName:
+          type: string
+          description: If the genesis record is a storage item, the storage item's name.
+          example: Account
+      required: [keyPrefix, value, recordType]
     MetadataItemDocs:
       type: array
       description: Documentation for a metadata item.
@@ -1231,7 +1249,9 @@ components:
                     proofSize: '0'
                 extrinsicCount: 2
                 eventCount: 56
-                authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
+                author:
+                  type: accountId
+                  value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
     PaginatedBlockList:
       description: Response with a paginated list of blocks.
       content:
@@ -1264,7 +1284,9 @@ components:
                         proofSize: '0'
                     extrinsicCount: 2
                     eventCount: 56
-                    authorAccountId: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
+                    author:
+                      type: accountId
+                      value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
               pagination:
                 $ref: '#/components/schemas/PaginationData'
             required:
@@ -1309,20 +1331,21 @@ components:
                 items:
                   $ref: '#/components/schemas/Call'
                 example:
-                  - id: 1
+                  - hash: '0x28e4d435a46c1b6e59c82645620800cf06ea4b1e2979a2325f1f1fc2f232f82b'
                     blockHash: '0x77d09455b5a5014cf8df62080f8a36aebd89f6dcec831c5acfb4444d07184b51'
                     blockNumber: 29781585
                     blockTimestamp: 1755935208000
                     specVersion: 1006001
                     blockStatus: finalized
-                    extrinsicId: 1
+                    callPath: 'root::calls::0'
+                    callIndex: [0, 0, 2]
                     extrinsicIndex: 0
                     extrinsicHash: '0x5cffd6624df1b3447bc5aa9db09a414f7b5058ff1b7bc3c53ae564248924fa0a'
                     palletIndex: 2
                     palletName: 'Timestamp'
                     palletCallIndex: 0
                     palletCallName: 'Set'
-                    isSuccessful: true
+                    extrinsicIsSuccessful: true
                     args:
                       now: '1755935208000'
               pagination:
@@ -1418,9 +1441,14 @@ components:
                 items:
                   $ref: '#/components/schemas/GenesisRecord'
                 example:
-                  - id: 392
-                    key: '0x9c5d795d0297be56027a4b2464e333979c5d795d0297be56027a4b2464e333970daec67e6a8ba64c55a539a8e14bd50a93f5188777f0d34bc7c69f77504ad823'
-                    value: '0x002acfc5745300000000000000000000'
+                  - keyPrefix: '0xcec5070d609dd3497f72bde07fc96ba0726380404683fc89e8233450c8aa1950'
+                    keyParams: '0x8f578a71d93450886175726180248dbf89d86998772b66900d78e98980ea2afc3c8fe5b93f4b38052f3018a230'
+                    value: '0x20d8c795eef2620fba2bde74dbc36461c07998ebf600ed265b746c1e05c70606'
+                    recordType: 'StorageItem'
+                    palletIndex: 22
+                    palletName: 'Session'
+                    palletStorageItemIndex: 6
+                    palletStorageItemName: 'KeyOwner'
               pagination:
                 $ref: '#/components/schemas/PaginationData'
             required:
@@ -1460,47 +1488,47 @@ components:
             maxItems: 2
             additionalItems: false
             example: [1635018093, { "V14": {}}]
-    StatusResponse:
-      description: Status information for this Crystal instance.
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              service:
-                $ref: "#/components/schemas/ServiceInfo"
-              health:
-                $ref: "#/components/schemas/ServiceHealth"
-              tip:
-                $ref: "#/components/schemas/IndexerTip"
-              workers:
-                type: array
-                description: Info for each active worker.
-                items:
-                  $ref: "#/components/schemas/WorkerStatus"
-                example:
-                  - id: 'backfill-3'
-                    state: indexing
-                    from: 0
-                    to: 15243769
-                    current: 3102
-                    blocksPerSec: 15
+    #StatusResponse:
+    #  description: Status information for this Crystal instance.
+    #  content:
+    #    application/json:
+    #      schema:
+    #        type: object
+    #        properties:
+    #          service:
+    #            $ref: "#/components/schemas/ServiceInfo"
+    #          health:
+    #            $ref: "#/components/schemas/ServiceHealth"
+    #          tip:
+    #            $ref: "#/components/schemas/IndexerTip"
+    #          workers:
+    #            type: array
+    #            description: Info for each active worker.
+    #            items:
+    #              $ref: "#/components/schemas/WorkerStatus"
+    #            example:
+    #              - id: 'backfill-3'
+    #                state: indexing
+    #                from: 0
+    #                to: 15243769
+    #                current: 3102
+    #                blocksPerSec: 15
 paths:
-  /status:
-    get:
-      summary: Crystal indexer status
-      description: >
-        Overall liveness/readiness plus chain tips and per-worker progress.
-        While backfilling, Crystal continues to index recent best/finalized blocks.
-      operationId: getStatus
-      tags: [system]
-      responses:
-        '200':
-          $ref: '#/components/responses/StatusResponse'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+  #/status:
+  #  get:
+  #    summary: Crystal indexer status
+  #    description: >
+  #      Overall liveness/readiness plus chain tips and per-worker progress.
+  #      While backfilling, Crystal continues to index recent best/finalized blocks.
+  #    operationId: getStatus
+  #    tags: [system]
+  #    responses:
+  #      '200':
+  #        $ref: '#/components/responses/StatusResponse'
+  #      '429':
+  #        $ref: '#/components/responses/TooManyRequests'
+  #      '500':
+  #        $ref: '#/components/responses/InternalServerError'
   /blocks:
     get:
       summary: Get blocks
