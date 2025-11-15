@@ -283,7 +283,7 @@ pub(crate) async fn run_api(
     let cors = CorsLayer::new()
         .allow_origin([
             HeaderValue::from_static("http://localhost:3000"),
-            //HeaderValue::from_static("https://yourdomain.com"),
+            HeaderValue::from_static("https://docs.submerge.io"),
         ])
         .allow_methods(Any)
         .allow_headers(Any);

@@ -5,7 +5,7 @@
     "scripts": {
         "docusaurus": "docusaurus",
         "start": "docusaurus start",
-        "build": "rm -rf ./docs/crystal-api && npm run gen-api-docs all && docusaurus build",
+        "build": "rm -rf ./docs/crystal-api && npm run gen-all-api-docs && docusaurus build",
         "swizzle": "docusaurus swizzle",
         "deploy": "docusaurus deploy",
         "clear": "docusaurus clear",
