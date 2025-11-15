@@ -1,3 +1,7 @@
+#![deny(missing_docs)]
+
+//! ## Submerge Substrate RPC Client
+
 use anyhow::Context;
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 use jsonrpsee::tokio::time::timeout;
@@ -17,19 +21,26 @@ use submerge_base::types::substrate::system::SystemHealth;
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 use tokio_util::sync::CancellationToken;
 
+/// RPC configuration for the Substrate RPC client
 #[derive(Clone)]
 pub struct RPCConfig {
+    /// RPC server URL
     pub rpc_url: String,
+    /// Connection timeout duration is seconds
     pub rpc_connection_timeout_secs: u64,
+    /// Request timeout duration is seconds
     pub rpc_request_timeout_secs: u64,
+    /// Subscription timeout duration is seconds
     pub rpc_subscription_timeout_secs: u64,
 }
 
+/// Submerge Substrate Client struct
 pub struct SubstrateClient {
     ws_client: Client,
 }
 
 impl SubstrateClient {
+    /// Constructs a new client instance.
     pub async fn new(config: &RPCConfig) -> anyhow::Result<Self> {
         Self::new_inner(
             &config.rpc_url,
@@ -57,6 +68,7 @@ impl SubstrateClient {
 }
 
 impl SubstrateClient {
+    /// Returns the hash best block hash in hexadecimal format.
     pub async fn get_current_block_hash(&self) -> anyhow::Result<String> {
         let hash = self
             .ws_client
@@ -65,6 +77,7 @@ impl SubstrateClient {
         Ok(hash)
     }
 
+    /// Returns the hash of a block by its number.
     pub async fn get_block_hash(&self, block_number: u64) -> anyhow::Result<Option<String>> {
         let maybe_hash: Option<String> = self
             .ws_client
@@ -73,6 +86,7 @@ impl SubstrateClient {
         Ok(maybe_hash.map(|hash| hash.trim_start_matches("0x").to_string()))
     }
 
+    /// Returns the hash of the highest finalized block.
     pub async fn get_finalized_block_hash(&self) -> anyhow::Result<String> {
         let hash: String = self
             .ws_client
@@ -81,6 +95,7 @@ impl SubstrateClient {
         Ok(hash.trim_start_matches("0x").to_string())
     }
 
+    /// Returns the timestamp of the block with the gives hash in milliseconds.
     pub async fn get_block_timestamp(&self, block_hash: &str) -> anyhow::Result<Option<u64>> {
         let maybe_hex_string: Option<String> = self
             .ws_client
@@ -96,6 +111,7 @@ impl SubstrateClient {
         }
     }
 
+    /// Gets system health data from the node.
     pub async fn get_system_health(&self) -> anyhow::Result<SystemHealth> {
         let system_health: SystemHealth = self
             .ws_client
@@ -104,6 +120,7 @@ impl SubstrateClient {
         Ok(system_health)
     }
 
+    /// Gets chain properties
     pub async fn get_chain_properties(&self) -> anyhow::Result<ChainProperties> {
         let system_health: ChainProperties = self
             .ws_client
@@ -112,6 +129,7 @@ impl SubstrateClient {
         Ok(system_health)
     }
 
+    /// Gets the name of the chain from using the relevant RPC call.
     pub async fn get_chain_name(&self) -> anyhow::Result<String> {
         let name: String = self
             .ws_client
@@ -120,6 +138,7 @@ impl SubstrateClient {
         Ok(name)
     }
 
+    /// Gets the header of a block by its hash.
     pub async fn get_block_header(&self, block_hash: &str) -> anyhow::Result<BlockHeader> {
         let mut header: BlockHeader = self
             .ws_client
@@ -131,6 +150,7 @@ impl SubstrateClient {
         Ok(header)
     }
 
+    /// Gets execution/storage trace records of a block by its hash.
     pub async fn get_block_trace(&self, block_hash: &str) -> anyhow::Result<BlockTrace> {
         let storage_method_names = StorageMethod::names().join(",");
         let trace_wrapper: BlockTraceWrapper = self
@@ -143,6 +163,7 @@ impl SubstrateClient {
         Ok(trace_wrapper.block_trace)
     }
 
+    /// Gets the content (header, extrinsics) of a block by its hash.
     pub async fn get_block(&self, block_hash: &str) -> anyhow::Result<Block> {
         let block_wrapper: BlockWrapper = self
             .ws_client
@@ -151,6 +172,7 @@ impl SubstrateClient {
         Ok(block_wrapper.block)
     }
 
+    /// Gets the weight bytes of a block by its hash.
     pub async fn get_block_weight_bytes(
         &self,
         block_hash: &str,
@@ -229,6 +251,7 @@ impl SubstrateClient {
         }
     }
 
+    /// Function to subscribe to proposed (i.e. best) blocks though websocket.
     pub async fn subscribe_to_new_blocks<F, C>(
         &self,
         subscription_timeout: Duration,
@@ -249,7 +272,7 @@ impl SubstrateClient {
         .await
     }
 
-    /// Subscribes to finalized blocks.
+    /// Function to subscribe to finalized blocks though websocket.
     pub async fn subscribe_to_finalized_blocks<F, C>(
         &self,
         subscription_timeout: Duration,
@@ -270,6 +293,7 @@ impl SubstrateClient {
         .await
     }
 
+    /// Gets the last runtime upgrade info at a block height.
     pub async fn get_last_runtime_upgrade_info(
         &self,
         block_hash: &str,
@@ -281,6 +305,7 @@ impl SubstrateClient {
         Ok(upgrade_info)
     }
 
+    /// Gets encoded runtime metadata hex string at a block.
     pub async fn get_metadata_hex_string_at_block(
         &self,
         block_hash: &str,
@@ -292,6 +317,7 @@ impl SubstrateClient {
         Ok(metadata_hex_string.trim_start_matches("0x").to_string())
     }
 
+    /// Gets decoded runtime metadata at a block.
     pub async fn get_metadata_at_block(&self, block_hash: &str) -> anyhow::Result<RuntimeMetadata> {
         let metadata_hex_string = self.get_metadata_hex_string_at_block(block_hash).await?;
         let mut metadata_hex_decoded: &[u8] = &hex::decode(metadata_hex_string)?;
@@ -299,6 +325,7 @@ impl SubstrateClient {
         Ok(metadata.1)
     }
 
+    /// Gets active validator account ids (could be 32-byte or 20-byte) for chains with the Session pallet.
     pub async fn get_active_validator_account_ids<T: Decode>(
         &self,
         block_hash: &str,
@@ -314,6 +341,7 @@ impl SubstrateClient {
         Ok(account_ids)
     }
 
+    /// Gets the session index at a given block.
     pub async fn get_current_session_index(&self, block_hash: &str) -> anyhow::Result<u32> {
         let maybe_hex_string: Option<String> = self
             .ws_client
@@ -329,6 +357,7 @@ impl SubstrateClient {
         }
     }
 
+    /// Gets the events in a block in encoded bytes.
     pub async fn get_block_event_bytes(&self, block_hash: &str) -> anyhow::Result<Vec<u8>> {
         let events_hex_string: String = self
             .ws_client
@@ -340,6 +369,12 @@ impl SubstrateClient {
         Ok(hex::decode(events_hex_string.trim_start_matches("0x"))?)
     }
 
+    /// Returns the block author for a given block hash if available.
+    /// Currently targeting Moonbeam only.
+    /// Returned value is a 20-byte Ethereum-style address.
+    ///
+    /// # Arguments
+    /// * `block_hash` Hash of the block in hexadecimal format, with or without a leading `0x`.
     pub async fn get_nimbus_block_author(
         &self,
         block_hash: &str,
