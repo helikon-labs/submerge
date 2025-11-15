@@ -16,8 +16,8 @@ use crate::{
     },
 };
 
-const MAX_PAGE_SIZE: u64 = 100;
-const DEFAULT_PAGE_SIZE: u64 = 50;
+const DEFAULT_PAGE_SIZE: u64 = 25;
+const MAX_PAGE_SIZE: u64 = 50;
 
 pub(crate) async fn get_genesis_records(
     State(state): State<ServiceState>,

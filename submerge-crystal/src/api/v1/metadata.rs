@@ -24,8 +24,8 @@ use crate::{
 };
 use serde_json::Value as JSONValue;
 
-const MAX_PAGE_SIZE: u64 = 100;
 const DEFAULT_PAGE_SIZE: u64 = 50;
+const MAX_PAGE_SIZE: u64 = 100;
 
 pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,

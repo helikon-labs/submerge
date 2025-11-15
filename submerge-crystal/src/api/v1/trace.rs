@@ -16,8 +16,8 @@ use crate::{
     },
 };
 
-const MAX_PAGE_SIZE: u64 = 25;
 const DEFAULT_PAGE_SIZE: u64 = 10;
+const MAX_PAGE_SIZE: u64 = 10;
 
 pub(crate) async fn get_traces(
     State(state): State<ServiceState>,

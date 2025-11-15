@@ -16,8 +16,8 @@ use crate::{
     },
 };
 
-const MAX_PAGE_SIZE: u64 = 100;
-const DEFAULT_PAGE_SIZE: u64 = 50;
+const DEFAULT_PAGE_SIZE: u64 = 10;
+const MAX_PAGE_SIZE: u64 = 25;
 
 pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
