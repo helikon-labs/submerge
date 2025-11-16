@@ -5371,6 +5371,7 @@ dependencies = [
  "convert_case",
  "frame-metadata",
  "frame-system",
+ "futures",
  "hex",
  "lru",
  "once_cell",
