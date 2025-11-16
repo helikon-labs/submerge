@@ -24,6 +24,8 @@ mod event;
 mod extrinsic;
 mod weight;
 
+pub mod concurrent;
+
 const TRANSACTION_LEVEL_KEY: &[u8] = b":transaction_level:";
 const METADATA_VERSION_LEGACY_THRESHOLD: u32 = 14;
 const ACCOUNT_ID_32_TYPE_PATH: &str = "sp_core::crypto::AccountId32";
@@ -52,8 +54,8 @@ pub struct BlockProcessor {
     chain_name: String,
     worker_id: UUID,
     postgres: Arc<PostgreSQLStorage>,
-    substrate_client: SubstrateClient,
-    legacy_decode_api_client: Option<LegacyDecodeAPIClient>,
+    substrate_client: Arc<SubstrateClient>,
+    legacy_decode_api_client: Option<Arc<LegacyDecodeAPIClient>>,
 }
 
 impl BlockProcessor {
@@ -64,9 +66,9 @@ impl BlockProcessor {
         rpc_config: &RPCConfig,
         legacy_decode_api_url: &Option<String>,
     ) -> anyhow::Result<Self> {
-        let substrate_client = SubstrateClient::new(rpc_config).await?;
+        let substrate_client = Arc::new(SubstrateClient::new(rpc_config).await?);
         let legacy_decode_api_client = if let Some(url) = legacy_decode_api_url {
-            Some(LegacyDecodeAPIClient::new(url)?)
+            Some(Arc::new(LegacyDecodeAPIClient::new(url)?))
         } else {
             None
         };
@@ -116,6 +118,118 @@ impl BlockProcessor {
                 .await?
         };
         Ok((start_block_number, end_block_number))
+    }
+
+    /// Concurrent block fetching with full sequential processing
+    /// Uses concurrent RPC fetching (fast) but delegates to existing process_block() for correctness
+    pub async fn process_finalized_blocks_in_range_concurrent(
+        &self,
+        stop_on_error: bool,
+        skip_traces: bool,
+        scan: bool,
+        reindex: bool,
+        maybe_start_block_number: Option<u64>,
+        maybe_end_block_number: Option<u64>,
+        max_concurrent_fetches: Option<usize>,
+    ) -> anyhow::Result<()> {
+        validate_block_range(maybe_start_block_number, maybe_end_block_number)?;
+        let (start_block_number, end_block_number) = self
+            .get_actual_finalized_block_range(
+                maybe_start_block_number,
+                maybe_end_block_number,
+                scan,
+            )
+            .await?;
+
+        let concurrency = max_concurrent_fetches.unwrap_or(100);
+
+        tracing::info!(
+            "⚙️ Process finalized blocks {start_block_number}-{end_block_number} using concurrent fetching (concurrency: {concurrency})."
+        );
+
+        // Concurrently fetch block hashes
+        let mut rx = concurrent::fetch_hashes_range(
+            &self.substrate_client,
+            start_block_number,
+            end_block_number,
+            concurrency,
+        )
+        .await;
+
+        // Process blocks as they arrive
+        let expected_count = end_block_number - start_block_number + 1;
+        let mut processed_count = 0;
+        let mut fetch_error_count = 0;
+        let mut process_error_count = 0;
+
+        while let Some(result) = rx.recv().await {
+            let block_hash = match result {
+                Ok(h) => h,
+                Err(e) => {
+                    fetch_error_count += 1;
+                    tracing::error!("❌ Fetch error: {e:?}");
+                    if stop_on_error {
+                        return Err(e);
+                    }
+                    continue;
+                }
+            };
+
+            if let Err(error) = self
+                .process_block(
+                    skip_traces,
+                    reindex,
+                    &block_hash.hash_hex,
+                    block_hash.number,
+                    BlockStatus::Finalized,
+                )
+                .await
+            {
+                process_error_count += 1;
+                let hash = hex::decode(&block_hash.hash_hex).unwrap_or_default();
+                tracing::error!("❌ Error processing block {}: {error:?}", block_hash.number);
+                self.save_block_error(&hash, block_hash.number, BlockStatus::Finalized, &error.to_string()).await?;
+                if stop_on_error {
+                    return Err(error);
+                }
+                continue;
+            }
+
+            processed_count += 1;
+            crate::metrics::processed_finalized_block_number()?
+                .with_label_values([&self.worker_id.to_string(), "concurrent_range"].as_slice())
+                .set(block_hash.number as i64);
+        }
+
+        let total_received = processed_count + fetch_error_count + process_error_count;
+
+        tracing::info!(
+            "✅ Completed: {}/{} blocks processed, {} fetch errors, {} process errors.",
+            processed_count,
+            expected_count,
+            fetch_error_count,
+            process_error_count
+        );
+
+        if total_received != expected_count {
+            let missing = expected_count - total_received;
+            return Err(anyhow::anyhow!(
+                "Block count mismatch: expected {}, received {}, missing {}",
+                expected_count,
+                total_received,
+                missing
+            ));
+        }
+
+        if fetch_error_count > 0 || process_error_count > 0 {
+            return Err(anyhow::anyhow!(
+                "Completed with errors: {} fetch errors, {} process errors",
+                fetch_error_count,
+                process_error_count
+            ));
+        }
+
+        Ok(())
     }
 
     pub async fn process_finalized_blocks_in_range(
