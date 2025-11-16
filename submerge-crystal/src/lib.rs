@@ -19,7 +19,7 @@ pub mod metadata_cache;
 mod metrics;
 mod persistence;
 mod types;
-mod worker;
+pub mod worker;
 
 static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations");
 

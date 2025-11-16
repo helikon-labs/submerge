@@ -18,7 +18,7 @@ use crate::{
     worker::processor::BlockProcessor,
 };
 
-mod processor;
+pub mod processor;
 mod subscription;
 
 const TRANSACTION_LEVEL_KEY: &[u8] = b":transaction_level:";
@@ -136,7 +136,7 @@ impl Worker {
             .await?
             .spec_version;
         let legacy_decode_api_client = if let Some(url) = &self.config.legacy_decode_api_url {
-            Some(LegacyDecodeAPIClient::new(url)?)
+            Some(Arc::new(LegacyDecodeAPIClient::new(url)?))
         } else {
             None
         };
