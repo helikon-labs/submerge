@@ -28,7 +28,7 @@ pub async fn get_parsed_metadata(
     spec_version: u32,
     postgres: &PostgreSQLStorage,
     substrate_client: &SubstrateClient,
-    legacy_decode_api_client: &Option<LegacyDecodeAPIClient>,
+    legacy_decode_api_client: &Option<Arc<LegacyDecodeAPIClient>>,
 ) -> anyhow::Result<Arc<Metadata>> {
     {
         let cache = PARSED_METADATA_CACHE.read().await;
@@ -87,7 +87,7 @@ pub async fn get_metadata(
     spec_version: u32,
     postgres: &PostgreSQLStorage,
     substrate_client: &SubstrateClient,
-    legacy_decode_api_client: &Option<LegacyDecodeAPIClient>,
+    legacy_decode_api_client: &Option<Arc<LegacyDecodeAPIClient>>,
 ) -> anyhow::Result<Arc<RuntimeMetadata>> {
     {
         let cache = METADATA_CACHE.read().await;
