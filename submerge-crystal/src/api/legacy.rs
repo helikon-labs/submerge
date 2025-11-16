@@ -24,6 +24,7 @@ impl Default for ClientConfig {
     }
 }
 
+#[derive(Clone)]
 pub struct LegacyDecodeAPIClient {
     url: String,
     http_client: reqwest::Client,
