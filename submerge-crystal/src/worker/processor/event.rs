@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use convert_case::{Case, Casing};
 use frame_metadata::{v14::RuntimeMetadataV14, v15::RuntimeMetadataV15, RuntimeMetadata};
 use frame_system::Phase;
@@ -180,7 +182,7 @@ fn extract_trace_value(
 }
 
 impl BlockProcessor {
-    fn get_legacy_decode_client(&self) -> anyhow::Result<&LegacyDecodeAPIClient> {
+    fn get_legacy_decode_client(&self) -> anyhow::Result<&Arc<LegacyDecodeAPIClient>> {
         self.legacy_decode_api_client.as_ref().ok_or_else(|| {
             anyhow::Error::msg(
                 "Legacy decode API client is not set. legacy_decode_api_url parameter not set.",
