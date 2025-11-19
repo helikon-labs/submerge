@@ -188,7 +188,13 @@ impl BlockProcessor {
                 process_error_count += 1;
                 let hash = hex::decode(&block_hash.hash_hex).unwrap_or_default();
                 tracing::error!("❌ Error processing block {}: {error:?}", block_hash.number);
-                self.save_block_error(&hash, block_hash.number, BlockStatus::Finalized, &error.to_string()).await?;
+                self.save_block_error(
+                    &hash,
+                    block_hash.number,
+                    BlockStatus::Finalized,
+                    &error.to_string(),
+                )
+                .await?;
                 if stop_on_error {
                     return Err(error);
                 }

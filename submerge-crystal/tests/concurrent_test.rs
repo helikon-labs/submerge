@@ -4,8 +4,8 @@ use std::time::Instant;
 #[tokio::test]
 #[ignore] // Run with: cargo test --test concurrent_test -- --ignored --nocapture
 async fn test_concurrent_vs_sequential() -> anyhow::Result<()> {
-    let rpc_url = std::env::var("RPC_URL")
-        .unwrap_or_else(|_| "wss://polkadot.dotters.network".to_string());
+    let rpc_url =
+        std::env::var("RPC_URL").unwrap_or_else(|_| "wss://polkadot.dotters.network".to_string());
 
     println!("\nConnecting to {}...", rpc_url);
 
@@ -47,17 +47,17 @@ async fn test_concurrent_vs_sequential() -> anyhow::Result<()> {
     let seq_time = seq_start.elapsed();
     println!("   Fetched {} blocks", seq_count);
     println!("   Time: {:?}", seq_time);
-    println!("   Rate: {:.2} blocks/sec", seq_count as f64 / seq_time.as_secs_f64());
+    println!(
+        "   Rate: {:.2} blocks/sec",
+        seq_count as f64 / seq_time.as_secs_f64()
+    );
 
     // Concurrent fetch with 100 parallel requests
     println!("\n2. Concurrent fetch (100 parallel):");
     let conc_start = Instant::now();
 
     let mut rx = submerge_crystal::worker::processor::concurrent::fetch_hashes_range(
-        &client,
-        start,
-        end,
-        100,
+        &client, start, end, 100,
     )
     .await;
 
@@ -70,7 +70,10 @@ async fn test_concurrent_vs_sequential() -> anyhow::Result<()> {
     let conc_time = conc_start.elapsed();
     println!("   Fetched {} blocks", conc_count);
     println!("   Time: {:?}", conc_time);
-    println!("   Rate: {:.2} blocks/sec", conc_count as f64 / conc_time.as_secs_f64());
+    println!(
+        "   Rate: {:.2} blocks/sec",
+        conc_count as f64 / conc_time.as_secs_f64()
+    );
 
     // Results
     let speedup = seq_time.as_secs_f64() / conc_time.as_secs_f64();
