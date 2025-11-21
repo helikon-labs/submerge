@@ -1,4 +1,5 @@
 use parity_scale_codec::Encode;
+use sqlx::{Postgres, QueryBuilder};
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
@@ -9,10 +10,6 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         &self,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
     ) -> anyhow::Result<u64>;
@@ -20,10 +17,6 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         &self,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
         page: u64,
@@ -75,38 +68,42 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM extrinsic
-            WHERE
-                ($1 IS NULL OR block_number >= $1)
-                AND ($2 IS NULL OR block_number <= $2)
-                AND ($3 IS NULL OR block_timestamp >= $3)
-                AND ($4 IS NULL OR block_timestamp <= $4)
-                AND ($5 IS NULL OR spec_version >= $5)
-                AND ($6 IS NULL OR spec_version <= $6)
-                AND ($7 IS NULL OR (($7 AND multi_signature IS NOT NULL) OR (NOT $7 AND multi_signature IS NULL)))
-                AND ($8 IS NULL OR signer_multi_address = $8)
+            WHERE 1=1
             "#,
-        )
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(min_block_timestamp.map(|n| n as i64))
-        .bind(max_block_timestamp.map(|n| n as i64))
-        .bind(min_spec_version.map(|n| n as i32))
-        .bind(max_spec_version.map(|n| n as i32))
-        .bind(is_signed)
-        .bind(signer_multi_address.as_ref().map(|signer_multi_address| signer_multi_address.encode()))
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        if let Some(min) = min_block_number {
+            query_builder
+                .push(" AND block_number >= ")
+                .push_bind(min as i64);
+        }
+        if let Some(max) = max_block_number {
+            query_builder
+                .push(" AND block_number <= ")
+                .push_bind(max as i64);
+        }
+        if let Some(is_signed) = is_signed {
+            if is_signed {
+                query_builder.push(" AND multi_signature IS NOT NULL");
+            } else {
+                query_builder.push(" AND multi_signature IS NULL");
+            }
+        }
+        if let Some(addr) = signer_multi_address {
+            query_builder
+                .push(" AND signer_multi_address = ")
+                .push_bind(addr.encode());
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -114,47 +111,51 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
-        let rows: Vec<ExtrinsicRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
                 hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
-            WHERE
-                ($1 IS NULL OR block_number >= $1)
-                AND ($2 IS NULL OR block_number <= $2)
-                AND ($3 IS NULL OR block_timestamp >= $3)
-                AND ($4 IS NULL OR block_timestamp <= $4)
-                AND ($5 IS NULL OR spec_version >= $5)
-                AND ($6 IS NULL OR spec_version <= $6)
-                AND ($7 IS NULL OR (($7 AND multi_signature IS NOT NULL) OR (NOT $7 AND multi_signature IS NULL)))
-                AND ($8 IS NULL OR signer_multi_address = $8)
-            ORDER BY block_number DESC, index ASC
-            LIMIT $9 OFFSET $10
+            WHERE 1=1
             "#,
-        )
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(min_block_timestamp.map(|n| n as i64))
-        .bind(max_block_timestamp.map(|n| n as i64))
-        .bind(min_spec_version.map(|n| n as i32))
-        .bind(max_spec_version.map(|n| n as i32))
-        .bind(is_signed)
-        .bind(signer_multi_address.as_ref().map(|signer_multi_address| signer_multi_address.encode()))
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
+        );
+        if let Some(min) = min_block_number {
+            query_builder
+                .push(" AND block_number >= ")
+                .push_bind(min as i64);
+        }
+        if let Some(max) = max_block_number {
+            query_builder
+                .push(" AND block_number <= ")
+                .push_bind(max as i64);
+        }
+        if let Some(is_signed) = is_signed {
+            if is_signed {
+                query_builder.push(" AND multi_signature IS NOT NULL");
+            } else {
+                query_builder.push(" AND multi_signature IS NULL");
+            }
+        }
+        if let Some(addr) = signer_multi_address {
+            query_builder
+                .push(" AND signer_multi_address = ")
+                .push_bind(addr.encode());
+        }
+        query_builder.push(" ORDER BY block_number DESC, index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<ExtrinsicRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
         Ok(rows)
     }
 

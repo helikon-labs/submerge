@@ -5,7 +5,13 @@ use axum::{
 
 use crate::{
     api::ServiceState,
-    persistence::{api::extrinsic::CrystalExtrinsicAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
+    persistence::{
+        api::{
+            block::CrystalBlockAPIPostgreSQLStorage,
+            extrinsic::CrystalExtrinsicAPIPostgreSQLStorage,
+        },
+        CrystalPostgreSQLStorage,
+    },
     types::api::{
         dto::{
             block::BlockReference,
@@ -32,24 +38,28 @@ pub(crate) async fn get_extrinsics(
             query.signer.unwrap_or("".to_string()),
         ));
     };
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_extrinsic_count(
+    let (min_block_number, max_block_number) = state
+        .postgres
+        .get_block_number_range(
             query.min_block_number,
             query.max_block_number,
             query.min_block_timestamp,
             query.max_block_timestamp,
             query.min_spec_version,
             query.max_spec_version,
+        )
+        .await?;
+
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_extrinsic_count(
+            min_block_number,
+            max_block_number,
             query.is_signed,
             &signer_multi_address,
         ),
         state.postgres.get_extrinsics(
-            query.min_block_number,
-            query.max_block_number,
-            query.min_block_timestamp,
-            query.max_block_timestamp,
-            query.min_spec_version,
-            query.max_spec_version,
+            min_block_number,
+            max_block_number,
             query.is_signed,
             &signer_multi_address,
             page,

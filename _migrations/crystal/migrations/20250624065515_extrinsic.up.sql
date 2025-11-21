@@ -24,21 +24,17 @@ CREATE TABLE IF NOT EXISTS extrinsic
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX IF NOT EXISTS extrinsic_idx_hash ON extrinsic (hash);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash ON extrinsic (block_hash, index ASC);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number ON extrinsic (block_number);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_timestamp ON extrinsic (block_timestamp);
-
-CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address ON extrinsic (signer_multi_address);
-CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_multi_address_null ON extrinsic (signer_multi_address) WHERE signer_multi_address IS NULL;
-
-CREATE INDEX IF NOT EXISTS extrinsic_idx_filter_order
-ON extrinsic (
-    block_number DESC,
-    block_timestamp,
-    spec_version,
-    signer_multi_address
-);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_hash
+    ON extrinsic (hash);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash
+    ON extrinsic (block_hash, index ASC);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number
+    ON extrinsic (block_number DESC, index ASC);
+CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number_signed
+    ON extrinsic (block_number DESC, index ASC)
+    WHERE multi_signature IS NOT NULL;
+CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_block
+    ON extrinsic (signer_multi_address, block_number DESC, index ASC);
 
 CREATE TABLE extrinsic_0_1000000 PARTITION OF extrinsic FOR VALUES FROM (0) TO (1000000);
 CREATE TABLE extrinsic_1000000_2000000 PARTITION OF extrinsic FOR VALUES FROM (1000000) TO (2000000);
