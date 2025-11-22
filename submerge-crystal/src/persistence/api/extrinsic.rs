@@ -8,15 +8,15 @@ use crate::types::persistence::ExtrinsicRow;
 pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
     async fn get_extrinsic_count(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
     ) -> anyhow::Result<u64>;
     async fn get_extrinsics(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
         page: u64,
@@ -66,8 +66,8 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
 impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_extrinsic_count(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
     ) -> anyhow::Result<u64> {
@@ -79,14 +79,10 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             "#,
         );
         if let Some(min) = min_block_number {
-            query_builder
-                .push(" AND block_number >= ")
-                .push_bind(min as i64);
+            query_builder.push(" AND block_number >= ").push_bind(min);
         }
         if let Some(max) = max_block_number {
-            query_builder
-                .push(" AND block_number <= ")
-                .push_bind(max as i64);
+            query_builder.push(" AND block_number <= ").push_bind(max);
         }
         if let Some(is_signed) = is_signed {
             if is_signed {
@@ -109,8 +105,8 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_extrinsics(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
         page: u64,
@@ -127,14 +123,10 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
             "#,
         );
         if let Some(min) = min_block_number {
-            query_builder
-                .push(" AND block_number >= ")
-                .push_bind(min as i64);
+            query_builder.push(" AND block_number >= ").push_bind(min);
         }
         if let Some(max) = max_block_number {
-            query_builder
-                .push(" AND block_number <= ")
-                .push_bind(max as i64);
+            query_builder.push(" AND block_number <= ").push_bind(max);
         }
         if let Some(is_signed) = is_signed {
             if is_signed {

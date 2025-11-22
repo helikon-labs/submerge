@@ -6,15 +6,15 @@ use crate::types::persistence::TraceRow;
 pub(crate) trait CrystalTraceAPIPostgreSQLStorage {
     async fn get_trace_count(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
     ) -> anyhow::Result<u64>;
     async fn get_traces(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
         page: u64,
@@ -39,8 +39,8 @@ pub(crate) trait CrystalTraceAPIPostgreSQLStorage {
 impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_trace_count(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
     ) -> anyhow::Result<u64> {
@@ -62,14 +62,10 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push_bind(key_params);
         }
         if let Some(min) = min_block_number {
-            query_builder
-                .push(" AND block_number >= ")
-                .push_bind(min as i64);
+            query_builder.push(" AND block_number >= ").push_bind(min);
         }
         if let Some(max) = max_block_number {
-            query_builder
-                .push(" AND block_number <= ")
-                .push_bind(max as i64);
+            query_builder.push(" AND block_number <= ").push_bind(max);
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -80,8 +76,8 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_traces(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
         page: u64,
@@ -109,14 +105,10 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push_bind(key_params);
         }
         if let Some(min) = min_block_number {
-            query_builder
-                .push(" AND block_number >= ")
-                .push_bind(min as i64);
+            query_builder.push(" AND block_number >= ").push_bind(min);
         }
         if let Some(max) = max_block_number {
-            query_builder
-                .push(" AND block_number <= ")
-                .push_bind(max as i64);
+            query_builder.push(" AND block_number <= ").push_bind(max);
         }
         query_builder.push(" ORDER BY block_number DESC, index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
