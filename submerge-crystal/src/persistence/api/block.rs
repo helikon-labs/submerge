@@ -1,5 +1,5 @@
 use parity_scale_codec::Encode as _;
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, QueryBuilder};
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
@@ -87,10 +87,6 @@ pub(crate) trait CrystalBlockAPIPostgreSQLStorage {
         status: Option<BlockStatus>,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         author_multi_address: &Option<MultiAddress>,
     ) -> anyhow::Result<u64>;
     async fn get_block_rows(
@@ -98,10 +94,6 @@ pub(crate) trait CrystalBlockAPIPostgreSQLStorage {
         status: Option<BlockStatus>,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         author_multi_address: &Option<MultiAddress>,
         page: u64,
         page_size: u64,
@@ -123,41 +115,33 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         status: Option<BlockStatus>,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         author_multi_address: &Option<MultiAddress>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM block
-            WHERE
-                ($1 IS NULL or status = $1)
-                AND ($2 IS NULL OR number >= $2)
-                AND ($3 IS NULL OR number <= $3)
-                AND ($4 IS NULL OR timestamp >= $4)
-                AND ($5 IS NULL OR timestamp <= $5)
-                AND ($6 IS NULL OR spec_version >= $6)
-                AND ($7 IS NULL OR spec_version <= $7)
-                AND ($8 IS NULL OR author_multi_address = $8)
+            WHERE 1=1
             "#,
-        )
-        .bind(status)
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(min_block_timestamp.map(|n| n as i64))
-        .bind(max_block_timestamp.map(|n| n as i64))
-        .bind(min_spec_version.map(|n| n as i32))
-        .bind(max_spec_version.map(|n| n as i32))
-        .bind(
-            author_multi_address
-                .as_ref()
-                .map(|multi_address| multi_address.encode()),
-        )
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        if let Some(status) = status {
+            query_builder.push(" AND status = ").push_bind(status);
+        }
+        if let Some(min) = min_block_number {
+            query_builder.push(" AND number >= ").push_bind(min as i64);
+        }
+        if let Some(max) = max_block_number {
+            query_builder.push(" AND number <= ").push_bind(max as i64);
+        }
+        if let Some(multi_address) = author_multi_address {
+            query_builder
+                .push(" AND author_multi_address = ")
+                .push_bind(multi_address.encode());
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -166,50 +150,42 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         status: Option<BlockStatus>,
         min_block_number: Option<u64>,
         max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
         author_multi_address: &Option<MultiAddress>,
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<BlockRow>> {
         let offset = (page - 1) * page_size;
-        let rows: Vec<BlockRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version,
                 status, weight, extrinsic_count, event_count, author_multi_address
             FROM block
-            WHERE
-                ($1 IS NULL or status = $1)
-                AND ($2 IS NULL OR number >= $2)
-                AND ($3 IS NULL OR number <= $3)
-                AND ($4 IS NULL OR timestamp >= $4)
-                AND ($5 IS NULL OR timestamp <= $5)
-                AND ($6 IS NULL OR spec_version >= $6)
-                AND ($7 IS NULL OR spec_version <= $7)
-                AND ($8 IS NULL OR author_multi_address = $8)
-            ORDER BY number DESC
-            LIMIT $9 OFFSET $10
+            WHERE 1=1
             "#,
-        )
-        .bind(status)
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(min_block_timestamp.map(|n| n as i64))
-        .bind(max_block_timestamp.map(|n| n as i64))
-        .bind(min_spec_version.map(|n| n as i32))
-        .bind(max_spec_version.map(|n| n as i32))
-        .bind(
-            author_multi_address
-                .as_ref()
-                .map(|multi_address| multi_address.encode()),
-        )
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
+        );
+        if let Some(status) = status {
+            query_builder.push(" AND status = ").push_bind(status);
+        }
+        if let Some(min) = min_block_number {
+            query_builder.push(" AND number >= ").push_bind(min as i64);
+        }
+        if let Some(max) = max_block_number {
+            query_builder.push(" AND number <= ").push_bind(max as i64);
+        }
+        if let Some(multi_address) = author_multi_address {
+            query_builder
+                .push(" AND author_multi_address = ")
+                .push_bind(multi_address.encode());
+        }
+        query_builder.push(" ORDER BY number DESC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<BlockRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
         Ok(rows)
     }
 
@@ -223,25 +199,34 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         max_spec_version: Option<u32>,
     ) -> anyhow::Result<(Option<u64>, Option<u64>)> {
         let min_timestamp_block_number = if let Some(min_timestamp) = min_timestamp {
-            get_min_number_after_timestamp(&self.connection_pool, min_timestamp).await?
+            get_min_number_after_timestamp(&self.connection_pool, min_timestamp)
+                .await?
+                .or(Some(u64::MAX))
         } else {
             None
         };
         let max_timestamp_block_number = if let Some(max_timestamp) = max_timestamp {
-            get_max_number_before_timestamp(&self.connection_pool, max_timestamp).await?
+            get_max_number_before_timestamp(&self.connection_pool, max_timestamp)
+                .await?
+                .or(Some(0))
         } else {
             None
         };
         let min_spec_version_block_number = if let Some(min_spec_version) = min_spec_version {
-            get_min_number_with_spec_version(&self.connection_pool, min_spec_version).await?
+            get_min_number_with_spec_version(&self.connection_pool, min_spec_version)
+                .await?
+                .or(Some(u64::MAX))
         } else {
             None
         };
         let max_spec_version_block_number = if let Some(max_spec_version) = max_spec_version {
-            get_max_number_with_spec_version(&self.connection_pool, max_spec_version).await?
+            get_max_number_with_spec_version(&self.connection_pool, max_spec_version)
+                .await?
+                .or(Some(0))
         } else {
             None
         };
+        println!("min ts {min_timestamp_block_number:?} max ts {max_timestamp_block_number:?}");
         let min = min_number
             .unwrap_or(0)
             .max(min_timestamp_block_number.unwrap_or(0))

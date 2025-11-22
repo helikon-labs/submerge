@@ -31,25 +31,29 @@ pub(crate) async fn get_blocks(
             query.author.unwrap_or("".to_string()),
         ));
     };
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_block_count(
-            query.status,
+    let (min_block_number, max_block_number) = state
+        .postgres
+        .get_block_number_range(
             query.min_block_number,
             query.max_block_number,
             query.min_block_timestamp,
             query.max_block_timestamp,
             query.min_spec_version,
             query.max_spec_version,
+        )
+        .await?;
+
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_block_count(
+            query.status,
+            min_block_number,
+            max_block_number,
             &author_multi_address,
         ),
         state.postgres.get_block_rows(
             query.status,
-            query.min_block_number,
-            query.max_block_number,
-            query.min_block_timestamp,
-            query.max_block_timestamp,
-            query.min_spec_version,
-            query.max_spec_version,
+            min_block_number,
+            max_block_number,
             &author_multi_address,
             page,
             page_size,

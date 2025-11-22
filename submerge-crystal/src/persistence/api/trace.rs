@@ -1,3 +1,4 @@
+use sqlx::{Postgres, QueryBuilder};
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 use crate::types::persistence::TraceRow;
@@ -43,23 +44,37 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM trace
-            WHERE
-                ($1 IS NULL OR block_number >= $1)
-                AND ($2 IS NULL OR block_number <= $2)
-                AND ($3 IS NULL OR key_prefix = $3)
-                AND ($4 IS NULL OR key_params = $4)
+            WHERE 1=1
             "#,
-        )
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(key_prefix)
-        .bind(key_params)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        if let Some(key_prefix) = key_prefix {
+            query_builder
+                .push(" AND key_prefix = ")
+                .push_bind(key_prefix);
+        }
+        if let Some(key_params) = key_params {
+            query_builder
+                .push(" AND key_params = ")
+                .push_bind(key_params);
+        }
+        if let Some(min) = min_block_number {
+            query_builder
+                .push(" AND block_number >= ")
+                .push_bind(min as i64);
+        }
+        if let Some(max) = max_block_number {
+            query_builder
+                .push(" AND block_number <= ")
+                .push_bind(max as i64);
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -73,30 +88,44 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<TraceRow>> {
         let offset = (page - 1) * page_size;
-        let rows: Vec<TraceRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
-                T.id, T.block_hash, T.block_number, T.spec_version, T.index,
-                T.key_prefix, T.key_params, T.value, T.ext_id, T.method, T.parent_id,
-                T.metadata_storage_item_id, T.is_known_key
-            FROM trace T
-            WHERE
-                ($1 IS NULL OR block_number >= $1)
-                AND ($2 IS NULL OR block_number <= $2)
-                AND ($3 IS NULL OR key_prefix = $3)
-                AND ($4 IS NULL OR key_params = $4)
-            ORDER BY T.block_number DESC, T.index ASC
-            LIMIT $5 OFFSET $6
+                id, block_hash, block_number, spec_version, index,
+                key_prefix, key_params, value, ext_id, method, parent_id,
+                metadata_storage_item_id, is_known_key
+            FROM trace
+            WHERE 1=1
             "#,
-        )
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(key_prefix)
-        .bind(key_params)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
+        );
+        if let Some(key_prefix) = key_prefix {
+            query_builder
+                .push(" AND key_prefix = ")
+                .push_bind(key_prefix);
+        }
+        if let Some(key_params) = key_params {
+            query_builder
+                .push(" AND key_params = ")
+                .push_bind(key_params);
+        }
+        if let Some(min) = min_block_number {
+            query_builder
+                .push(" AND block_number >= ")
+                .push_bind(min as i64);
+        }
+        if let Some(max) = max_block_number {
+            query_builder
+                .push(" AND block_number <= ")
+                .push_bind(max as i64);
+        }
+        query_builder.push(" ORDER BY block_number DESC, index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<TraceRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
         Ok(rows)
     }
 
@@ -105,8 +134,7 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT COUNT(*)
             FROM trace
-            WHERE
-                ($1 IS NULL OR block_hash = $1)
+            WHERE block_hash = $1
             "#,
         )
         .bind(block_hash)
@@ -125,13 +153,12 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         let rows: Vec<TraceRow> = sqlx::query_as(
             r#"
             SELECT
-                T.id, T.block_hash, T.block_number, T.spec_version, T.index,
-                T.key_prefix, T.key_params, T.value, T.ext_id, T.method, T.parent_id,
-                T.metadata_storage_item_id, T.is_known_key
+                id, block_hash, block_number, spec_version, index,
+                key_prefix, key_params, value, ext_id, method, parent_id,
+                metadata_storage_item_id, is_known_key
             FROM trace T
-            WHERE
-                ($1 IS NULL OR T.block_hash = $1)
-            ORDER BY T.index ASC
+            WHERE block_hash = $1
+            ORDER BY index ASC
             LIMIT $2 OFFSET $3
             "#,
         )
@@ -148,8 +175,7 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT COUNT(*)
             FROM trace
-            WHERE
-                ($1 IS NULL OR block_number = $1)
+            WHERE block_number = $1
             "#,
         )
         .bind(block_number as i64)
@@ -168,13 +194,12 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         let rows: Vec<TraceRow> = sqlx::query_as(
             r#"
             SELECT
-                T.id, T.block_hash, T.block_number, T.spec_version, T.index,
-                T.key_prefix, T.key_params, T.value, T.ext_id, T.method, T.parent_id,
-                T.metadata_storage_item_id, T.is_known_key
-            FROM trace T
-            WHERE
-                ($1 IS NULL OR T.block_number = $1)
-            ORDER BY T.index ASC
+                id, block_hash, block_number, spec_version, index,
+                key_prefix, key_params, value, ext_id, method, parent_id,
+                metadata_storage_item_id, is_known_key
+            FROM trace
+            WHERE block_number = $1
+            ORDER BY index ASC
             LIMIT $2 OFFSET $3
             "#,
         )

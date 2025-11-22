@@ -15,6 +15,10 @@ pub struct TraceQuery {
     pub pagination: PaginationQuery,
     pub min_block_number: Option<u64>,
     pub max_block_number: Option<u64>,
+    pub min_block_timestamp: Option<u64>,
+    pub max_block_timestamp: Option<u64>,
+    pub min_spec_version: Option<u32>,
+    pub max_spec_version: Option<u32>,
     pub key_prefix: Option<String>,
     pub key_params: Option<String>,
 }

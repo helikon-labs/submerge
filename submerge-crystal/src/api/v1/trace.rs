@@ -5,7 +5,12 @@ use axum::{
 
 use crate::{
     api::ServiceState,
-    persistence::{api::trace::CrystalTraceAPIPostgreSQLStorage, CrystalPostgreSQLStorage as _},
+    persistence::{
+        api::{
+            block::CrystalBlockAPIPostgreSQLStorage as _, trace::CrystalTraceAPIPostgreSQLStorage,
+        },
+        CrystalPostgreSQLStorage as _,
+    },
     types::api::{
         dto::{
             block::BlockReference,
@@ -27,6 +32,17 @@ pub(crate) async fn get_traces(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let (min_block_number, max_block_number) = state
+        .postgres
+        .get_block_number_range(
+            query.min_block_number,
+            query.max_block_number,
+            query.min_block_timestamp,
+            query.max_block_timestamp,
+            query.min_spec_version,
+            query.max_spec_version,
+        )
+        .await?;
     let key_prefix = if let Some(key_prefix) = query.key_prefix.as_deref() {
         Some(hex::decode(key_prefix.trim_start_matches("0x"))?)
     } else {
@@ -39,14 +55,14 @@ pub(crate) async fn get_traces(
     };
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_trace_count(
-            query.min_block_number,
-            query.max_block_number,
+            min_block_number,
+            max_block_number,
             key_prefix.as_deref(),
             key_params.as_deref(),
         ),
         state.postgres.get_traces(
-            query.min_block_number,
-            query.max_block_number,
+            min_block_number,
+            max_block_number,
             key_prefix.as_deref(),
             key_params.as_deref(),
             page,
