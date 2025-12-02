@@ -2,6 +2,13 @@ use sqlx::{Pool, Postgres};
 use std::time::Duration;
 use submerge_base::args::PostgreSQLArgs;
 
+pub fn escape_like_pattern(input: &str) -> String {
+    input
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
+}
+
 pub async fn new_postgres_connection_pool(
     host: &str,
     port: u16,

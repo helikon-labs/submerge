@@ -1,5 +1,5 @@
 use sqlx::{Postgres, QueryBuilder};
-use submerge_persistence::postgres::PostgreSQLStorage;
+use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
 
 use crate::types::persistence::CallRow;
 
@@ -139,12 +139,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
-                .push_bind(format!("%{pallet_name}%"));
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
         if let Some(pallet_call_name) = pallet_call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{pallet_call_name}%"));
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -186,12 +186,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
-                .push_bind(format!("%{pallet_name}%"));
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
         if let Some(pallet_call_name) = pallet_call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{pallet_call_name}%"));
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
         }
         query_builder
             .push(" ORDER BY C.block_number DESC, C.extrinsic_index ASC, C.call_index ASC");
@@ -211,23 +211,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_hash = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
             "#,
-        )
-        .bind(block_hash)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        query_builder
+            .push(" WHERE C.block_hash = ")
+            .push_bind(block_hash);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -240,7 +248,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -251,22 +259,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_hash = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC, C.call_index ASC
-            LIMIT $4 OFFSET $5
+            WHERE 1=1
             "#,
-        )
-        .bind(block_hash)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        query_builder
+            .push(" AND C.block_hash = ")
+            .push_bind(block_hash);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        query_builder.push(" ORDER BY C.extrinsic_index ASC, C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn get_call_count_by_block_number(
@@ -275,23 +292,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_number = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
             "#,
-        )
-        .bind(block_number as i64)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        query_builder
+            .push(" WHERE C.block_number = ")
+            .push_bind(block_number as i64);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -304,7 +329,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -315,22 +340,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_number = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC, C.call_index ASC
-            LIMIT $4 OFFSET $5
+            WHERE 1=1
             "#,
-        )
-        .bind(block_number as i64)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        query_builder
+            .push(" AND C.block_number = ")
+            .push_bind(block_number as i64);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        query_builder.push(" ORDER BY C.block_hash ASC, C.extrinsic_index ASC, C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn get_call_count_by_block_hash_and_extrinsic_index(
@@ -340,24 +374,34 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_hash = $1 AND C.extrinsic_index = $2
-                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
             "#,
-        )
-        .bind(block_hash)
-        .bind(extrinsic_index as i32)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        query_builder
+            .push(" WHERE C.block_hash = ")
+            .push_bind(block_hash);
+        query_builder
+            .push(" AND C.extrinsic_index = ")
+            .push_bind(extrinsic_index as i32);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -371,7 +415,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -382,23 +426,34 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_hash = $1 AND C.extrinsic_index = $2
-                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
-            ORDER BY C.extrinsic_index ASC, C.call_index ASC
-            LIMIT $5 OFFSET $6
+            WHERE 1=1
             "#,
-        )
-        .bind(block_hash)
-        .bind(extrinsic_index as i32)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        query_builder
+            .push(" AND C.block_hash = ")
+            .push_bind(block_hash);
+        query_builder
+            .push(" AND C.extrinsic_index = ")
+            .push_bind(extrinsic_index as i32);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        query_builder.push(" ORDER BY C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn get_call_count_by_block_number_and_extrinsic_index(
@@ -408,24 +463,34 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_number = $1 AND C.extrinsic_index = $2
-                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
             "#,
-        )
-        .bind(block_number as i64)
-        .bind(extrinsic_index as i32)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        query_builder
+            .push(" WHERE C.block_number = ")
+            .push_bind(block_number as i64);
+        query_builder
+            .push(" AND C.extrinsic_index = ")
+            .push_bind(extrinsic_index as i32);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -439,7 +504,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -450,23 +515,34 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.block_number = $1 AND C.extrinsic_index = $2
-                AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
-                AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
-            ORDER BY C.extrinsic_index ASC, C.call_index ASC
-            LIMIT $5 OFFSET $6
+            WHERE 1=1
             "#,
-        )
-        .bind(block_number as i64)
-        .bind(extrinsic_index as i32)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        query_builder
+            .push(" AND C.block_number = ")
+            .push_bind(block_number as i64);
+        query_builder
+            .push(" AND C.extrinsic_index = ")
+            .push_bind(extrinsic_index as i32);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        query_builder.push(" ORDER BY C.block_hash ASC, C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn get_call_count_by_extrinsic_hash(
@@ -475,23 +551,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.extrinsic_hash = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
             "#,
-        )
-        .bind(extrinsic_hash)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        query_builder
+            .push(" WHERE C.extrinsic_hash = ")
+            .push_bind(extrinsic_hash);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -504,7 +588,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -515,22 +599,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.extrinsic_hash = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.call_index ASC
-            LIMIT $4 OFFSET $5
+            WHERE 1=1
             "#,
-        )
-        .bind(extrinsic_hash)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        query_builder
+            .push(" AND C.extrinsic_hash = ")
+            .push_bind(extrinsic_hash);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        query_builder.push(" ORDER BY C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn call_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
@@ -568,23 +661,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.parent_call_hash = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
             "#,
-        )
-        .bind(hash)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        query_builder
+            .push(" WHERE C.parent_call_hash = ")
+            .push_bind(hash);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
@@ -597,7 +698,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -608,22 +709,31 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                C.parent_call_hash = $1
-                AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
-                AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC, C.call_index ASC
-            LIMIT $4 OFFSET $5
+            WHERE 1=1
             "#,
-        )
-        .bind(hash)
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        query_builder
+            .push(" AND C.parent_call_hash = ")
+            .push_bind(hash);
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+        }
+        query_builder.push(" ORDER BY C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
