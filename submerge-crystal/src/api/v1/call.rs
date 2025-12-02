@@ -5,7 +5,12 @@ use axum::{
 
 use crate::{
     api::ServiceState,
-    persistence::{api::call::CrystalCallAPIPostgreSQLStorage, CrystalPostgreSQLStorage as _},
+    persistence::{
+        api::{
+            block::CrystalBlockAPIPostgreSQLStorage as _, call::CrystalCallAPIPostgreSQLStorage,
+        },
+        CrystalPostgreSQLStorage as _,
+    },
     types::api::{
         dto::{
             block::BlockReference,
@@ -27,25 +32,28 @@ pub(crate) async fn get_calls(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
-
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_call_count(
+    let (min_block_number, max_block_number) = state
+        .postgres
+        .get_block_number_range(
             query.min_block_number,
             query.max_block_number,
             query.min_block_timestamp,
             query.max_block_timestamp,
             query.min_spec_version,
             query.max_spec_version,
+        )
+        .await?;
+
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_call_count(
+            min_block_number,
+            max_block_number,
             &query.pallet_name,
             &query.pallet_call_name,
         ),
         state.postgres.get_calls(
-            query.min_block_number,
-            query.max_block_number,
-            query.min_block_timestamp,
-            query.max_block_timestamp,
-            query.min_spec_version,
-            query.max_spec_version,
+            min_block_number,
+            max_block_number,
             &query.pallet_name,
             &query.pallet_call_name,
             page,

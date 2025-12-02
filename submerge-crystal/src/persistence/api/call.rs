@@ -1,3 +1,4 @@
+use sqlx::{Postgres, QueryBuilder};
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 use crate::types::persistence::CallRow;
@@ -5,23 +6,15 @@ use crate::types::persistence::CallRow;
 pub(crate) trait CrystalCallAPIPostgreSQLStorage {
     async fn get_call_count(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64>;
     async fn get_calls(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
         page: u64,
@@ -123,60 +116,54 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_call_count(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let count: i64 = sqlx::query_scalar(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT COUNT(*)
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                ($1 IS NULL OR C.block_number >= $1)
-                AND ($2 IS NULL OR C.block_number <= $2)
-                AND ($3 IS NULL OR C.block_timestamp >= $3)
-                AND ($4 IS NULL OR C.block_timestamp <= $4)
-                AND ($5 IS NULL OR C.spec_version >= $5)
-                AND ($6 IS NULL OR C.spec_version <= $6)
-                AND ($7 IS NULL OR MP.name ILIKE '%' || $7 || '%')
-                AND ($8 IS NULL OR MC.name ILIKE '%' || $8 || '%')
+            WHERE 1=1
             "#,
-        )
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(min_block_timestamp.map(|n| n as i64))
-        .bind(max_block_timestamp.map(|n| n as i64))
-        .bind(min_spec_version.map(|n| n as i32))
-        .bind(max_spec_version.map(|n| n as i32))
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .fetch_one(&self.connection_pool)
-        .await?;
+        );
+        if let Some(min) = min_block_number {
+            query_builder.push(" AND C.block_number >= ").push_bind(min);
+        }
+        if let Some(max) = max_block_number {
+            query_builder.push(" AND C.block_number <= ").push_bind(max);
+        }
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{pallet_name}%"));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{pallet_call_name}%"));
+        }
+        let count: i64 = query_builder
+            .build_query_scalar()
+            .fetch_one(&self.connection_pool)
+            .await?;
         Ok(count as u64)
     }
 
     async fn get_calls(
         &self,
-        min_block_number: Option<u64>,
-        max_block_number: Option<u64>,
-        min_block_timestamp: Option<u64>,
-        max_block_timestamp: Option<u64>,
-        min_spec_version: Option<u32>,
-        max_spec_version: Option<u32>,
+        min_block_number: Option<i64>,
+        max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
         page: u64,
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let call_rows: Vec<CallRow> = sqlx::query_as(
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
                 C.id, C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
@@ -187,32 +174,35 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             FROM call C
             JOIN metadata_call MC ON C.metadata_call_id = MC.id
             JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE
-                ($1 IS NULL OR C.block_number >= $1)
-                AND ($2 IS NULL OR C.block_number <= $2)
-                AND ($3 IS NULL OR C.block_timestamp >= $3)
-                AND ($4 IS NULL OR C.block_timestamp <= $4)
-                AND ($5 IS NULL OR C.spec_version >= $5)
-                AND ($6 IS NULL OR C.spec_version <= $6)
-                AND ($7 IS NULL OR MP.name ILIKE '%' || $7 || '%')
-                AND ($8 IS NULL OR MC.name ILIKE '%' || $8 || '%')
-            ORDER BY C.block_number DESC, C.extrinsic_index ASC
-            LIMIT $9 OFFSET $10
+            WHERE 1=1
             "#,
-        )
-        .bind(min_block_number.map(|n| n as i64))
-        .bind(max_block_number.map(|n| n as i64))
-        .bind(min_block_timestamp.map(|n| n as i64))
-        .bind(max_block_timestamp.map(|n| n as i64))
-        .bind(min_spec_version.map(|n| n as i32))
-        .bind(max_spec_version.map(|n| n as i32))
-        .bind(pallet_name)
-        .bind(pallet_call_name)
-        .bind(page_size as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.connection_pool)
-        .await?;
-        Ok(call_rows)
+        );
+        if let Some(min) = min_block_number {
+            query_builder.push(" AND C.block_number >= ").push_bind(min);
+        }
+        if let Some(max) = max_block_number {
+            query_builder.push(" AND C.block_number <= ").push_bind(max);
+        }
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(format!("%{pallet_name}%"));
+        }
+        if let Some(pallet_call_name) = pallet_call_name {
+            query_builder
+                .push(" AND MC.name ILIKE ")
+                .push_bind(format!("%{pallet_call_name}%"));
+        }
+        query_builder
+            .push(" ORDER BY C.block_number DESC, C.extrinsic_index ASC, C.call_index ASC");
+        query_builder.push(" LIMIT ").push_bind(page_size as i64);
+        query_builder.push(" OFFSET ").push_bind(offset as i64);
+
+        let rows: Vec<CallRow> = query_builder
+            .build_query_as()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(rows)
     }
 
     async fn get_call_count_by_block_hash(
@@ -265,7 +255,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 C.block_hash = $1
                 AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
                 AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC
+            ORDER BY C.extrinsic_index ASC, C.call_index ASC
             LIMIT $4 OFFSET $5
             "#,
         )
@@ -329,7 +319,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 C.block_number = $1
                 AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
                 AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC
+            ORDER BY C.extrinsic_index ASC, C.call_index ASC
             LIMIT $4 OFFSET $5
             "#,
         )
@@ -396,7 +386,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 C.block_hash = $1 AND C.extrinsic_index = $2
                 AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
                 AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
-            ORDER BY C.extrinsic_index ASC
+            ORDER BY C.extrinsic_index ASC, C.call_index ASC
             LIMIT $5 OFFSET $6
             "#,
         )
@@ -464,7 +454,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 C.block_number = $1 AND C.extrinsic_index = $2
                 AND ($3 IS NULL OR MP.name ILIKE '%' || $3 || '%')
                 AND ($4 IS NULL OR MC.name ILIKE '%' || $4 || '%')
-            ORDER BY C.extrinsic_index ASC
+            ORDER BY C.extrinsic_index ASC, C.call_index ASC
             LIMIT $5 OFFSET $6
             "#,
         )
@@ -529,7 +519,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 C.extrinsic_hash = $1
                 AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
                 AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC
+            ORDER BY C.call_index ASC
             LIMIT $4 OFFSET $5
             "#,
         )
@@ -622,7 +612,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 C.parent_call_hash = $1
                 AND ($2 IS NULL OR MP.name ILIKE '%' || $2 || '%')
                 AND ($3 IS NULL OR MC.name ILIKE '%' || $3 || '%')
-            ORDER BY C.extrinsic_index ASC
+            ORDER BY C.extrinsic_index ASC, C.call_index ASC
             LIMIT $4 OFFSET $5
             "#,
         )
