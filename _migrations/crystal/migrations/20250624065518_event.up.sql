@@ -33,19 +33,13 @@ CREATE TABLE IF NOT EXISTS event
             ON UPDATE CASCADE
 ) PARTITION BY RANGE (block_number);
 
-CREATE INDEX IF NOT EXISTS event_idx_block_hash ON event (block_hash);
-CREATE INDEX IF NOT EXISTS event_idx_block_hash_extrinsic_index ON event (block_hash, extrinsic_index) WHERE extrinsic_index IS NOT NULL;
-CREATE INDEX IF NOT EXISTS event_idx_block_number ON event (block_number);
-CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash ON event (extrinsic_hash) WHERE extrinsic_hash IS NOT NULL;
-CREATE INDEX IF NOT EXISTS event_idx_timestamp ON event (block_timestamp);
+CREATE INDEX IF NOT EXISTS event_idx_hash ON event (hash);
+CREATE INDEX IF NOT EXISTS event_idx_block_hash ON event (block_hash, index ASC);
+CREATE INDEX IF NOT EXISTS event_idx_block_number ON event (block_number DESC, block_hash ASC, index ASC);
+CREATE INDEX IF NOT EXISTS event_idx_metadata_event_id_block_number ON event (metadata_event_id, block_number DESC, block_hash ASC, index ASC);
+CREATE INDEX IF NOT EXISTS event_idx_metadata_event_id ON event (metadata_event_id, block_number DESC, block_hash ASC, index ASC);
+CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash ON event (extrinsic_hash, index ASC) WHERE extrinsic_hash IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS event_idx_filter_order
-ON event (
-    block_number DESC,
-    block_timestamp,
-    spec_version,
-    metadata_event_id
-);
 
 CREATE TABLE event_0_1000000 PARTITION OF event FOR VALUES FROM (0) TO (1000000);
 CREATE TABLE event_1000000_2000000 PARTITION OF event FOR VALUES FROM (1000000) TO (2000000);

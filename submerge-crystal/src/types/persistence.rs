@@ -74,6 +74,7 @@ impl EventRow {
 
 #[derive(Debug, FromRow)]
 pub struct EventCompositeRow {
+    pub hash: Vec<u8>,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub block_timestamp: Option<i64>,

@@ -5,7 +5,12 @@ use axum::{
 
 use crate::{
     api::ServiceState,
-    persistence::{api::event::CrystalEventAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
+    persistence::{
+        api::{
+            block::CrystalBlockAPIPostgreSQLStorage as _, event::CrystalEventAPIPostgreSQLStorage,
+        },
+        CrystalPostgreSQLStorage,
+    },
     types::api::{
         dto::{
             block::BlockReference,
@@ -27,25 +32,28 @@ pub(crate) async fn get_events(
     let page_size = query
         .pagination
         .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
-
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_event_count(
+    let (min_block_number, max_block_number) = state
+        .postgres
+        .get_block_number_range(
             query.min_block_number,
             query.max_block_number,
             query.min_block_timestamp,
             query.max_block_timestamp,
             query.min_spec_version,
             query.max_spec_version,
+        )
+        .await?;
+
+    let (total_count, rows) = tokio::try_join!(
+        state.postgres.get_event_count(
+            min_block_number,
+            max_block_number,
             &query.pallet_name,
             &query.pallet_event_name,
         ),
         state.postgres.get_events(
-            query.min_block_number,
-            query.max_block_number,
-            query.min_block_timestamp,
-            query.max_block_timestamp,
-            query.min_spec_version,
-            query.max_spec_version,
+            min_block_number,
+            max_block_number,
             &query.pallet_name,
             &query.pallet_event_name,
             page,
@@ -321,4 +329,19 @@ pub(crate) async fn get_events_by_extrinsic_hash(
         data,
     };
     Ok(Json(response))
+}
+
+pub(crate) async fn get_event_by_hash(
+    State(state): State<ServiceState>,
+    Path(event_hash): Path<String>,
+) -> Result<Json<EventDTO>, APIError> {
+    let event_hash = match hex::decode(event_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid event hash: {e}"))),
+    };
+    if let Some(row) = &state.postgres.get_event_by_hash(&event_hash).await? {
+        Ok(Json(row.into()))
+    } else {
+        Err(APIError::EventNotFoundWithHash(event_hash))
+    }
 }

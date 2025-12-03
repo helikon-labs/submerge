@@ -32,6 +32,7 @@ pub struct BlockEventQuery {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventDTO {
+    pub hash: String,
     pub block_hash: String,
     pub block_number: u64,
     pub block_timestamp: Option<u64>,
@@ -52,6 +53,7 @@ pub struct EventDTO {
 impl From<&EventCompositeRow> for EventDTO {
     fn from(row: &EventCompositeRow) -> Self {
         Self {
+            hash: format!("0x{}", hex::encode(&row.hash)),
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),
             block_number: row.block_number as u64,
             block_timestamp: row.block_timestamp.map(|timestamp| timestamp as u64),
