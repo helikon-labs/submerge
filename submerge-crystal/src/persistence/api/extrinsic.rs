@@ -116,7 +116,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
-                id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
+                block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
                 hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE 1=1
@@ -187,7 +187,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let rows: Vec<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT
-                id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
+                block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
                 hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE
@@ -244,7 +244,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let rows: Vec<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT
-                id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash,
+                block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash,
                 index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE
@@ -270,10 +270,10 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         index: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
-        let rows: Vec<ExtrinsicRow>  = sqlx::query_as(
+        let rows: Vec<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT
-                id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
+                block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
                 hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE block_number = $1 AND index = $2
@@ -294,7 +294,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let row: Option<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT
-                id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
+                block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
                 hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE block_hash = $1 AND index = $2
@@ -311,7 +311,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let row: Option<ExtrinsicRow> = sqlx::query_as(
             r#"
             SELECT
-                id, block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
+                block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
                 hash, index, version, signer_multi_address, multi_signature, extra, is_successful
             FROM extrinsic
             WHERE hash = $1

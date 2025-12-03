@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS extrinsic
 (
-    id                      BIGSERIAL NOT NULL,
     block_hash              BYTEA NOT NULL,
     block_number            BIGINT NOT NULL,
     block_timestamp         BIGINT,
@@ -15,7 +14,7 @@ CREATE TABLE IF NOT EXISTS extrinsic
     is_successful           BOOLEAN NOT NULL,
     extra                   JSONB,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT extrinsic_pk PRIMARY KEY (id, block_number),
+    CONSTRAINT extrinsic_pk PRIMARY KEY (block_hash, block_number, hash),
     CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
     CONSTRAINT extrinsic_fk_block
         FOREIGN KEY (block_hash)

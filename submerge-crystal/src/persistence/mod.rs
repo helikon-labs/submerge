@@ -143,7 +143,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         status: BlockStatus,
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<Vec<(i64, i32)>>;
+    ) -> anyhow::Result<()>;
     async fn ingest_events(
         &self,
         event_rows: &[EventRow],
@@ -157,7 +157,6 @@ pub(crate) trait CrystalPostgreSQLStorage {
         block_timestamp: Option<u64>,
         spec_version: u32,
         status: BlockStatus,
-        extrinsic_id: i64,
         extrinsic_index: u32,
         extrinsic_hash: &[u8],
         parent_call_hash: Option<&[u8]>,
@@ -193,6 +192,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         .await?;
         Ok(())
     }
+
     async fn get_last_indexed_finalized_block_number_and_hash(
         &self,
     ) -> anyhow::Result<Option<(u64, Vec<u8>)>> {
@@ -807,7 +807,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_status: BlockStatus,
         extrinsics: &[Extrinsic],
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<Vec<(i64, i32)>> {
+    ) -> anyhow::Result<()> {
         let extrinsic_rows: Vec<ExtrinsicRow> = extrinsics
             .iter()
             .map(|extrinsic| {
@@ -821,7 +821,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     (None, None, None)
                 };
                 ExtrinsicRow {
-                    id: 0,
                     block_hash: block_hash.into(),
                     block_number: block_number as i64,
                     block_timestamp: block_timestamp.map(|timestamp| timestamp as i64),
@@ -838,26 +837,25 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                 }
             })
             .collect();
-        let mut ids_to_indices = Vec::new();
         for extrinsic_row_chunk in extrinsic_rows.chunks(INSERT_BATCH_SIZE) {
             let mut query_builder = QueryBuilder::new(
                 "INSERT INTO extrinsic (block_hash, block_number, block_timestamp, spec_version, block_status, trace_index, hash, index, version, signer_multi_address, multi_signature, extra, is_successful) ",
             );
-            query_builder.push_values(extrinsic_row_chunk, |mut query, extrinsic| {
+            query_builder.push_values(extrinsic_row_chunk, |mut query, extrinsic_row| {
                 query
-                    .push_bind(&extrinsic.block_hash)
-                    .push_bind(extrinsic.block_number)
-                    .push_bind(extrinsic.block_timestamp)
-                    .push_bind(extrinsic.spec_version)
-                    .push_bind(extrinsic.block_status)
-                    .push_bind(extrinsic.trace_index)
-                    .push_bind(extrinsic.hash)
-                    .push_bind(extrinsic.index)
-                    .push_bind(extrinsic.version)
-                    .push_bind(&extrinsic.signer_multi_address)
-                    .push_bind(&extrinsic.multi_signature)
-                    .push_bind(&extrinsic.extra)
-                    .push_bind(extrinsic.is_successful);
+                    .push_bind(&extrinsic_row.block_hash)
+                    .push_bind(extrinsic_row.block_number)
+                    .push_bind(extrinsic_row.block_timestamp)
+                    .push_bind(extrinsic_row.spec_version)
+                    .push_bind(extrinsic_row.block_status)
+                    .push_bind(extrinsic_row.trace_index)
+                    .push_bind(extrinsic_row.hash)
+                    .push_bind(extrinsic_row.index)
+                    .push_bind(extrinsic_row.version)
+                    .push_bind(&extrinsic_row.signer_multi_address)
+                    .push_bind(&extrinsic_row.multi_signature)
+                    .push_bind(&extrinsic_row.extra)
+                    .push_bind(extrinsic_row.is_successful);
             });
             query_builder.push(
                 r#"
@@ -866,13 +864,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
                     block_status = EXCLUDED.block_status, trace_index = EXCLUDED.trace_index, hash = EXCLUDED.hash,
                     index = EXCLUDED.index, version = EXCLUDED.version, signer_multi_address = EXCLUDED.signer_multi_address,
                     multi_signature = EXCLUDED.multi_signature, extra = EXCLUDED.extra, is_successful = EXCLUDED.is_successful
-                RETURNING id, index
                 "#
             );
-            let rows: Vec<(i64, i32)> = query_builder.build_query_as().fetch_all(&mut **tx).await?;
-            ids_to_indices.extend(rows);
+            query_builder.build().execute(&mut **tx).await?;
         }
-        Ok(ids_to_indices)
+        Ok(())
     }
 
     async fn ingest_events(
@@ -921,7 +917,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         block_timestamp: Option<u64>,
         spec_version: u32,
         block_status: BlockStatus,
-        extrinsic_id: i64,
         extrinsic_index: u32,
         extrinsic_hash: &[u8],
         parent_call_hash: Option<&[u8]>,
@@ -935,11 +930,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         let call_index: Vec<i16> = call_index.iter().map(|&x| x as i16).collect();
         let row: (Vec<u8>,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_id, extrinsic_index, extrinsic_hash, parent_call_hash, call_path, call_index, metadata_call_id, extrinsic_is_successful, args)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_index, extrinsic_hash, parent_call_hash, call_path, call_index, metadata_call_id, extrinsic_is_successful, args)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             ON CONFLICT (block_number, hash) DO UPDATE SET
                 block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
-                extrinsic_id = EXCLUDED.extrinsic_id, extrinsic_index = EXCLUDED.extrinsic_index, extrinsic_hash = EXCLUDED.extrinsic_hash,
+                extrinsic_index = EXCLUDED.extrinsic_index, extrinsic_hash = EXCLUDED.extrinsic_hash,
                 parent_call_hash = EXCLUDED.parent_call_hash, call_path = EXCLUDED.call_path, call_index = EXCLUDED.call_index,
                 metadata_call_id = EXCLUDED.metadata_call_id, extrinsic_is_successful = EXCLUDED.extrinsic_is_successful, args = EXCLUDED.args
             RETURNING hash
@@ -950,7 +945,6 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(block_timestamp.map(|timestamp| timestamp as i64))
             .bind(spec_version as i32)
             .bind(block_status)
-            .bind(extrinsic_id)
             .bind(extrinsic_index as i32)
             .bind(extrinsic_hash)
             .bind(parent_call_hash)

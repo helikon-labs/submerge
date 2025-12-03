@@ -104,8 +104,6 @@ pub struct LogRow {
 
 #[derive(Debug, FromRow)]
 pub struct ExtrinsicRow {
-    #[allow(dead_code)]
-    pub id: i64,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub block_timestamp: Option<i64>,
@@ -129,8 +127,6 @@ pub struct CallRow {
     pub block_timestamp: Option<i64>,
     pub spec_version: i32,
     pub block_status: BlockStatus,
-    #[allow(dead_code)]
-    pub extrinsic_id: i64,
     pub extrinsic_index: i32,
     pub extrinsic_hash: [u8; 32],
     pub parent_call_hash: Option<Vec<u8>>,

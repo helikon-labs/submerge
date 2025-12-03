@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS call
     block_timestamp         BIGINT,
     spec_version            INTEGER NOT NULL,
     block_status            BLOCK_STATUS NOT NULL,
-    extrinsic_id            BIGINT NOT NULL,
     extrinsic_index         INTEGER NOT NULL,
     extrinsic_hash          BYTEA NOT NULL,
     parent_call_hash        BYTEA,
@@ -25,8 +24,8 @@ CREATE TABLE IF NOT EXISTS call
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (block_number, hash),
     CONSTRAINT call_fk_extrinsic
-        FOREIGN KEY (extrinsic_id, block_number)
-            REFERENCES extrinsic (id, block_number)
+        FOREIGN KEY (block_hash, block_number, extrinsic_hash)
+            REFERENCES extrinsic (block_hash, block_number, hash)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
     CONSTRAINT call_fk_metadata_call_id

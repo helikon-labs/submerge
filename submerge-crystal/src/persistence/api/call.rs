@@ -167,8 +167,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -252,8 +252,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -333,8 +333,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -419,8 +419,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -508,8 +508,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -592,8 +592,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -639,8 +639,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -702,8 +702,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM call C
@@ -747,8 +747,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             )
             SELECT
                 C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_id, C.extrinsic_index, C.extrinsic_hash,
-                C.parent_call_hash, C.call_path, C.call_index, C.extrinsic_is_successful, C.args,
+                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+                C.extrinsic_is_successful, C.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 MC.index AS pallet_call_index, MC.name AS pallet_call_name
             FROM child_info

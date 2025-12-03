@@ -514,8 +514,7 @@ impl BlockProcessor {
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let block_number = block_header.get_number()?;
-        let ids_to_indices = self
-            .postgres
+        self.postgres
             .ingest_extrinsics(
                 block_hash,
                 block_number,
@@ -527,20 +526,12 @@ impl BlockProcessor {
             )
             .await?;
         for extrinsic in extrinsics.iter() {
-            let extrinsic_id = ids_to_indices
-                .iter()
-                .find_map(|(id, index)| (*index as u32 == extrinsic.index).then_some(*id))
-                .ok_or(anyhow::anyhow!(
-                    "Database id for extrinsic index {} is not found after batch ingestion.",
-                    extrinsic.index
-                ))?;
             self.process_extrinsic_arg(
                 block_hash,
                 block_number,
                 block_timestamp,
                 spec_version,
                 block_status,
-                extrinsic_id,
                 extrinsic,
                 extrinsic.is_successful,
                 None,
@@ -563,7 +554,6 @@ impl BlockProcessor {
         block_timestamp: Option<u64>,
         spec_version: u32,
         block_status: BlockStatus,
-        extrinsic_id: i64,
         extrinsic: &Extrinsic,
         extrinsic_is_successful: bool,
         parent_call_hash: Option<&[u8]>,
@@ -606,7 +596,6 @@ impl BlockProcessor {
                         block_timestamp,
                         spec_version,
                         block_status,
-                        extrinsic_id,
                         extrinsic.index,
                         &extrinsic.hash,
                         parent_call_hash,
@@ -624,7 +613,6 @@ impl BlockProcessor {
                     block_timestamp,
                     spec_version,
                     block_status,
-                    extrinsic_id,
                     extrinsic,
                     extrinsic_is_successful,
                     Some(call_hash.as_slice()),
@@ -646,7 +634,6 @@ impl BlockProcessor {
                         block_timestamp,
                         spec_version,
                         block_status,
-                        extrinsic_id,
                         extrinsic,
                         extrinsic_is_successful,
                         parent_call_hash,
@@ -669,7 +656,6 @@ impl BlockProcessor {
                         block_timestamp,
                         spec_version,
                         block_status,
-                        extrinsic_id,
                         extrinsic,
                         extrinsic_is_successful,
                         parent_call_hash,
