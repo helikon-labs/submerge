@@ -3,6 +3,24 @@ use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
 
 use crate::types::persistence::CallRow;
 
+const COUNT: &str = r#"
+    SELECT COUNT(*)
+    FROM call C
+    JOIN metadata_call MC ON C.metadata_call_id = MC.id
+    JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+"#;
+const SELECT: &str = r#"
+    SELECT
+        C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+        C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+        C.extrinsic_is_successful, C.args,
+        MP.index AS pallet_index, MP.name AS pallet_name,
+        MC.index AS pallet_call_index, MC.name AS pallet_call_name
+    FROM call C
+    JOIN metadata_call MC ON C.metadata_call_id = MC.id
+    JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+"#;
+
 pub(crate) trait CrystalCallAPIPostgreSQLStorage {
     async fn get_call_count(
         &self,
@@ -121,15 +139,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> =
+            QueryBuilder::new(format!("{COUNT} WHERE 1=1"));
         if let Some(min) = min_block_number {
             query_builder.push(" AND C.block_number >= ").push_bind(min);
         }
@@ -163,20 +174,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> =
+            QueryBuilder::new(format!("{SELECT} WHERE 1=1"));
         if let Some(min) = min_block_number {
             query_builder.push(" AND C.block_number >= ").push_bind(min);
         }
@@ -211,14 +210,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.block_hash = ")
             .push_bind(block_hash);
@@ -248,20 +240,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
             .push(" AND C.block_hash = ")
             .push_bind(block_hash);
@@ -292,14 +271,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.block_number = ")
             .push_bind(block_number as i64);
@@ -329,20 +301,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
             .push(" AND C.block_number = ")
             .push_bind(block_number as i64);
@@ -374,14 +333,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.block_hash = ")
             .push_bind(block_hash);
@@ -415,20 +367,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
             .push(" AND C.block_hash = ")
             .push_bind(block_hash);
@@ -463,14 +402,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.block_number = ")
             .push_bind(block_number as i64);
@@ -504,20 +436,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
             .push(" AND C.block_number = ")
             .push_bind(block_number as i64);
@@ -551,14 +470,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.extrinsic_hash = ")
             .push_bind(extrinsic_hash);
@@ -588,20 +500,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
             .push(" AND C.extrinsic_hash = ")
             .push_bind(extrinsic_hash);
@@ -635,23 +534,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
     }
 
     async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
-        let call_row: Option<CallRow> = sqlx::query_as(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE C.hash = $1
-            "#,
-        )
-        .bind(hash)
-        .fetch_optional(&self.connection_pool)
-        .await?;
+        let call_row: Option<CallRow> =
+            sqlx::query_as(format!("{SELECT} WHERE C.hash = $1").as_str())
+                .bind(hash)
+                .fetch_optional(&self.connection_pool)
+                .await?;
         Ok(call_row)
     }
 
@@ -661,14 +548,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.parent_call_hash = ")
             .push_bind(hash);
@@ -698,20 +578,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT
-                C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-                C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-                C.extrinsic_is_successful, C.args,
-                MP.index AS pallet_index, MP.name AS pallet_name,
-                MC.index AS pallet_call_index, MC.name AS pallet_call_name
-            FROM call C
-            JOIN metadata_call MC ON C.metadata_call_id = MC.id
-            JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-            WHERE 1=1
-            "#,
-        );
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
             .push(" AND C.parent_call_hash = ")
             .push_bind(hash);
