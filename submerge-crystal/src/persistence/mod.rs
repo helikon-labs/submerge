@@ -213,9 +213,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
 
     async fn metadata_exists(&self, spec_version: u32) -> anyhow::Result<bool> {
         let count: i64 = sqlx::query_scalar(
-            r#"SELECT COUNT(DISTINCT spec_version)
+            r#"
+            SELECT COUNT(DISTINCT spec_version)
             FROM metadata
-            WHERE spec_version = $1"#,
+            WHERE spec_version = $1
+            "#,
         )
         .bind(spec_version as i32)
         .fetch_one(&self.connection_pool)
@@ -899,7 +901,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             });
             query_builder.push(
                 r#"
-                ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
+                ON CONFLICT (block_number, hash) DO UPDATE SET
                     block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
                     trace_index = EXCLUDED.trace_index, metadata_event_id = EXCLUDED.metadata_event_id,
                     extrinsic_index = EXCLUDED.extrinsic_index, extrinsic_hash = EXCLUDED.extrinsic_hash, phase = EXCLUDED.phase,

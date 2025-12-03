@@ -171,7 +171,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -244,7 +244,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -307,7 +307,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -340,7 +340,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -365,7 +365,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_row: Option<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -422,7 +422,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -487,7 +487,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name
@@ -549,7 +549,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         let event_rows: Vec<EventCompositeRow> = sqlx::query_as(
             r#"
             SELECT
-                E.id, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
+                E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
                 E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
                 MP.index AS pallet_index, MP.name AS pallet_name,
                 ME.index AS pallet_event_index, ME.name AS pallet_event_name

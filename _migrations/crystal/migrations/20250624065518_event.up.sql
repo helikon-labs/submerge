@@ -1,6 +1,12 @@
 CREATE TABLE IF NOT EXISTS event
 (
-    id                  BIGSERIAL NOT NULL,
+    hash                BYTEA GENERATED ALWAYS AS (
+        digest(
+            block_hash ||
+            index::bytea,
+            'sha256'
+        )
+    ) STORED,
     block_hash          BYTEA NOT NULL,
     block_number        BIGINT NOT NULL,
     block_timestamp     BIGINT,
@@ -14,8 +20,7 @@ CREATE TABLE IF NOT EXISTS event
     index               INTEGER NOT NULL,
     args                JSONB NOT NULL,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT event_pk PRIMARY KEY (id, block_number),
-    CONSTRAINT event_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
+    CONSTRAINT event_pk PRIMARY KEY (block_number, hash),
     CONSTRAINT event_fk_block
         FOREIGN KEY (block_hash)
             REFERENCES block (hash)

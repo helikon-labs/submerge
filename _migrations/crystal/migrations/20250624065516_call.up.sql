@@ -1,6 +1,13 @@
 CREATE TABLE IF NOT EXISTS call
 (
-    id                      BIGSERIAL NOT NULL,
+    hash                    BYTEA GENERATED ALWAYS AS (
+        digest(
+            block_hash ||
+            extrinsic_hash ||
+            call_path::bytea,
+            'sha256'
+        )
+    ) STORED,
     block_hash              BYTEA NOT NULL,
     block_number            BIGINT NOT NULL,
     block_timestamp         BIGINT,
@@ -12,20 +19,11 @@ CREATE TABLE IF NOT EXISTS call
     parent_call_hash        BYTEA,
     call_path               VARCHAR(512) NOT NULL,
     call_index              SMALLINT[],
-    hash                    BYTEA GENERATED ALWAYS AS (
-        digest(
-            block_hash ||
-            extrinsic_hash ||
-            call_path::bytea,
-            'sha256'
-        )
-    ) STORED,
     metadata_call_id        INTEGER NOT NULL,
     extrinsic_is_successful BOOLEAN NOT NULL,
     args                    JSONB NOT NULL,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT call_pk PRIMARY KEY (id, block_number),
-    CONSTRAINT call_u_hash UNIQUE (block_number, hash),
+    CONSTRAINT call_pk PRIMARY KEY (block_number, hash),
     CONSTRAINT call_fk_extrinsic
         FOREIGN KEY (extrinsic_id, block_number)
             REFERENCES extrinsic (id, block_number)
