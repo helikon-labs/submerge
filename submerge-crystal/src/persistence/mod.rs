@@ -634,7 +634,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>> {
         let maybe_row: Option<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address
+            SELECT
+                hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version,
+                status, weight, extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE hash = $1
             "#,
@@ -657,7 +659,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     async fn get_blocks_by_number(&self, number: u64) -> anyhow::Result<Vec<BlockRow>> {
         let rows: Vec<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address
+            SELECT
+                hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version,
+                status, weight, extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE number = $1
             "#,
@@ -675,7 +679,9 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<BlockRow>> {
         let rows: Vec<BlockRow> = sqlx::query_as(
             r#"
-            SELECT hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight, extrinsic_count, event_count, author_multi_address
+            SELECT
+                hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight,
+                extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE number = $1
             "#,
