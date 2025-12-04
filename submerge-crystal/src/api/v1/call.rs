@@ -9,6 +9,7 @@ use crate::{
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, call::CrystalCallAPIPostgreSQLStorage,
+            extrinsic::CrystalExtrinsicAPIPostgreSQLStorage,
         },
         CrystalPostgreSQLStorage as _,
     },
@@ -16,6 +17,7 @@ use crate::{
         dto::{
             block::BlockReference,
             call::{BlockCallQuery, CallDTO, CallQuery},
+            extrinsic::ExtrinsicDTO,
             pagination::{PagedResponse, PaginationData},
         },
         error::APIError,
@@ -383,4 +385,23 @@ pub(crate) async fn get_sub_calls_by_hash(
         data,
     };
     Ok(Json(response))
+}
+
+pub(crate) async fn get_call_extrinsic_by_hash(
+    State(state): State<ServiceState>,
+    Path(call_hash): Path<String>,
+) -> Result<Json<ExtrinsicDTO>, APIError> {
+    let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
+    };
+    if let Some(row) = &state
+        .postgres
+        .get_call_extrinsic_by_hash(&call_hash)
+        .await?
+    {
+        Ok(Json(row.try_into()?))
+    } else {
+        Err(APIError::CallNotFoundWithHash(call_hash))
+    }
 }

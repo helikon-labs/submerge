@@ -3,17 +3,19 @@ use sqlx::{Postgres, QueryBuilder};
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
-use crate::types::persistence::ExtrinsicRow;
+use crate::{
+    persistence::api::call::CrystalCallAPIPostgreSQLStorage, types::persistence::ExtrinsicRow,
+};
 
 const COUNT: &str = r#"
     SELECT COUNT(*)
-    FROM extrinsic
+    FROM extrinsic E
 "#;
 const SELECT: &str = r#"
     SELECT
-        block_hash, block_number, block_timestamp, spec_version, block_status, trace_index,
-        hash, index, version, signer_multi_address, multi_signature, extra, is_successful
-    FROM extrinsic
+        E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status, E.trace_index,
+        E.hash, E.index, E.version, E.signer_multi_address, E.multi_signature, E.extra, E.is_successful
+    FROM extrinsic E
 "#;
 
 pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
@@ -72,6 +74,10 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         index: u32,
     ) -> anyhow::Result<Option<ExtrinsicRow>>;
     async fn get_extrinsic_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<ExtrinsicRow>>;
+    async fn get_call_extrinsic_by_hash(
+        &self,
+        call_hash: &[u8],
+    ) -> anyhow::Result<Option<ExtrinsicRow>>;
 }
 
 impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -85,21 +91,21 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!(r"{COUNT} WHERE 1=1"));
         if let Some(min) = min_block_number {
-            query_builder.push(" AND block_number >= ").push_bind(min);
+            query_builder.push(" AND E.block_number >= ").push_bind(min);
         }
         if let Some(max) = max_block_number {
-            query_builder.push(" AND block_number <= ").push_bind(max);
+            query_builder.push(" AND E.block_number <= ").push_bind(max);
         }
         if let Some(is_signed) = is_signed {
             if is_signed {
-                query_builder.push(" AND multi_signature IS NOT NULL");
+                query_builder.push(" AND E.multi_signature IS NOT NULL");
             } else {
-                query_builder.push(" AND multi_signature IS NULL");
+                query_builder.push(" AND E.multi_signature IS NULL");
             }
         }
         if let Some(addr) = signer_multi_address {
             query_builder
-                .push(" AND signer_multi_address = ")
+                .push(" AND E.signer_multi_address = ")
                 .push_bind(addr.encode());
         }
         let count: i64 = query_builder
@@ -122,24 +128,24 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!("{SELECT} WHERE 1=1"));
         if let Some(min) = min_block_number {
-            query_builder.push(" AND block_number >= ").push_bind(min);
+            query_builder.push(" AND E.block_number >= ").push_bind(min);
         }
         if let Some(max) = max_block_number {
-            query_builder.push(" AND block_number <= ").push_bind(max);
+            query_builder.push(" AND E.block_number <= ").push_bind(max);
         }
         if let Some(is_signed) = is_signed {
             if is_signed {
-                query_builder.push(" AND multi_signature IS NOT NULL");
+                query_builder.push(" AND E.multi_signature IS NOT NULL");
             } else {
-                query_builder.push(" AND multi_signature IS NULL");
+                query_builder.push(" AND E.multi_signature IS NULL");
             }
         }
         if let Some(addr) = signer_multi_address {
             query_builder
-                .push(" AND signer_multi_address = ")
+                .push(" AND E.signer_multi_address = ")
                 .push_bind(addr.encode());
         }
-        query_builder.push(" ORDER BY block_number DESC, index ASC");
+        query_builder.push(" ORDER BY E.block_number DESC, E.index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
         query_builder.push(" OFFSET ").push_bind(offset as i64);
 
@@ -158,18 +164,18 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
-            .push(" WHERE block_hash = ")
+            .push(" WHERE E.block_hash = ")
             .push_bind(block_hash);
         if let Some(is_signed) = is_signed {
             if is_signed {
-                query_builder.push(" AND multi_signature IS NOT NULL");
+                query_builder.push(" AND E.multi_signature IS NOT NULL");
             } else {
-                query_builder.push(" AND multi_signature IS NULL");
+                query_builder.push(" AND E.multi_signature IS NULL");
             }
         }
         if let Some(addr) = signer_multi_address {
             query_builder
-                .push(" AND signer_multi_address = ")
+                .push(" AND E.signer_multi_address = ")
                 .push_bind(addr.encode());
         }
         let count: i64 = query_builder
@@ -190,21 +196,21 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
-            .push(" WHERE block_hash = ")
+            .push(" WHERE E.block_hash = ")
             .push_bind(block_hash);
         if let Some(is_signed) = is_signed {
             if is_signed {
-                query_builder.push(" AND multi_signature IS NOT NULL");
+                query_builder.push(" AND E.multi_signature IS NOT NULL");
             } else {
-                query_builder.push(" AND multi_signature IS NULL");
+                query_builder.push(" AND E.multi_signature IS NULL");
             }
         }
         if let Some(addr) = signer_multi_address {
             query_builder
-                .push(" AND signer_multi_address = ")
+                .push(" AND E.signer_multi_address = ")
                 .push_bind(addr.encode());
         }
-        query_builder.push(" ORDER BY block_number DESC, index ASC");
+        query_builder.push(" ORDER BY E.block_number DESC, E.index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
         query_builder.push(" OFFSET ").push_bind(offset as i64);
 
@@ -223,18 +229,18 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
-            .push(" WHERE block_number = ")
+            .push(" WHERE E.block_number = ")
             .push_bind(block_number as i64);
         if let Some(is_signed) = is_signed {
             if is_signed {
-                query_builder.push(" AND multi_signature IS NOT NULL");
+                query_builder.push(" AND E.multi_signature IS NOT NULL");
             } else {
-                query_builder.push(" AND multi_signature IS NULL");
+                query_builder.push(" AND E.multi_signature IS NULL");
             }
         }
         if let Some(addr) = signer_multi_address {
             query_builder
-                .push(" AND signer_multi_address = ")
+                .push(" AND E.signer_multi_address = ")
                 .push_bind(addr.encode());
         }
         let count: i64 = query_builder
@@ -255,21 +261,21 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
-            .push(" WHERE block_number = ")
+            .push(" WHERE E.block_number = ")
             .push_bind(block_number as i64);
         if let Some(is_signed) = is_signed {
             if is_signed {
-                query_builder.push(" AND multi_signature IS NOT NULL");
+                query_builder.push(" AND E.multi_signature IS NOT NULL");
             } else {
-                query_builder.push(" AND multi_signature IS NULL");
+                query_builder.push(" AND E.multi_signature IS NULL");
             }
         }
         if let Some(addr) = signer_multi_address {
             query_builder
-                .push(" AND signer_multi_address = ")
+                .push(" AND E.signer_multi_address = ")
                 .push_bind(addr.encode());
         }
-        query_builder.push(" ORDER BY block_number DESC, index ASC");
+        query_builder.push(" ORDER BY E.block_number DESC, E.index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
         query_builder.push(" OFFSET ").push_bind(offset as i64);
 
@@ -287,9 +293,11 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
-            .push(" WHERE block_number = ")
+            .push(" WHERE E.block_number = ")
             .push_bind(block_number as i64);
-        query_builder.push(" AND index = ").push_bind(index as i32);
+        query_builder
+            .push(" AND E.index = ")
+            .push_bind(index as i32);
 
         let rows: Vec<ExtrinsicRow> = query_builder
             .build_query_as()
@@ -305,9 +313,11 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Option<ExtrinsicRow>> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
         query_builder
-            .push(" WHERE block_hash = ")
+            .push(" WHERE E.block_hash = ")
             .push_bind(block_hash);
-        query_builder.push(" AND index = ").push_bind(index as i32);
+        query_builder
+            .push(" AND E.index = ")
+            .push_bind(index as i32);
 
         let row: Option<ExtrinsicRow> = query_builder
             .build_query_as()
@@ -318,8 +328,23 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
 
     async fn get_extrinsic_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<ExtrinsicRow>> {
         let row: Option<ExtrinsicRow> =
-            sqlx::query_as(format!("{SELECT} WHERE hash = $1").as_str())
+            sqlx::query_as(format!("{SELECT} WHERE E.hash = $1").as_str())
                 .bind(hash)
+                .fetch_optional(&self.connection_pool)
+                .await?;
+        Ok(row)
+    }
+
+    async fn get_call_extrinsic_by_hash(
+        &self,
+        call_hash: &[u8],
+    ) -> anyhow::Result<Option<ExtrinsicRow>> {
+        let Some(call) = self.get_call_by_hash(call_hash).await? else {
+            return Ok(None);
+        };
+        let row: Option<ExtrinsicRow> =
+            sqlx::query_as(format!("{SELECT} WHERE hash = $1").as_str())
+                .bind(call.extrinsic_hash)
                 .fetch_optional(&self.connection_pool)
                 .await?;
         Ok(row)
