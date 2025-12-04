@@ -14,5 +14,7 @@ CREATE TABLE IF NOT EXISTS metadata_call
             ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS metadata_call_idx_pallet_id ON metadata_call (pallet_id);
-CREATE INDEX IF NOT EXISTS metadata_call_idx_name ON metadata_call USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS metadata_call_idx_pallet_id
+    ON metadata_call (pallet_id);
+CREATE INDEX IF NOT EXISTS metadata_call_idx_name
+    ON metadata_call USING GIN (name gin_trgm_ops);

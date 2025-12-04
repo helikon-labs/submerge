@@ -15,5 +15,7 @@ CREATE TABLE IF NOT EXISTS metadata_storage_item
             ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS metadata_storage_item_idx_pallet_id ON metadata_storage_item (pallet_id);
-CREATE INDEX IF NOT EXISTS metadata_storage_item_idx_name ON metadata_storage_item USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS metadata_storage_item_idx_pallet_id
+    ON metadata_storage_item (pallet_id);
+CREATE INDEX IF NOT EXISTS metadata_storage_item_idx_name
+    ON metadata_storage_item USING GIN (name gin_trgm_ops);

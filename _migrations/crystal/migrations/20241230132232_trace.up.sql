@@ -28,6 +28,8 @@ CREATE INDEX IF NOT EXISTS trace_idx_block_hash_index
     ON trace (block_hash, index ASC);
 CREATE INDEX IF NOT EXISTS trace_idx_block_number_index
     ON trace (block_number DESC, index ASC);
+CREATE INDEX IF NOT EXISTS trace_idx_metadata_storage_item_id
+    ON trace (metadata_storage_item_id, block_number DESC, index ASC);
 
 CREATE TABLE trace_0_500000 PARTITION OF trace FOR VALUES FROM (0) TO (500000);
 CREATE TABLE trace_500000_1000000 PARTITION OF trace FOR VALUES FROM (500000) TO (1000000);

@@ -18,5 +18,7 @@ CREATE TABLE IF NOT EXISTS metadata_constant
             ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS metadata_constant_idx_pallet_id ON metadata_constant (pallet_id);
-CREATE INDEX IF NOT EXISTS metadata_constant_idx_name ON metadata_constant USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS metadata_constant_idx_pallet_id
+    ON metadata_constant (pallet_id);
+CREATE INDEX IF NOT EXISTS metadata_constant_idx_name
+    ON metadata_constant USING GIN (name gin_trgm_ops);

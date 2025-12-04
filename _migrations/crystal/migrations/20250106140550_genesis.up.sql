@@ -9,5 +9,7 @@ CREATE TABLE IF NOT EXISTS genesis(
     CONSTRAINT genesis_u_key UNIQUE (key_prefix, key_params)
 );
 
-CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix ON trace (key_prefix);
-CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix_key_params ON trace (key_prefix, key_params);
+CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix
+    ON genesis (key_prefix);
+CREATE INDEX IF NOT EXISTS genesis_idx_key_prefix_key_params
+    ON genesis (key_prefix, key_params);

@@ -16,5 +16,7 @@ CREATE TABLE IF NOT EXISTS log
             ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS log_idx_block_hash ON log (block_hash);
-CREATE INDEX IF NOT EXISTS log_idx_block_number ON log (block_number);
+CREATE INDEX IF NOT EXISTS log_idx_block_hash
+    ON log (block_hash);
+CREATE INDEX IF NOT EXISTS log_idx_block_number
+    ON log (block_number);

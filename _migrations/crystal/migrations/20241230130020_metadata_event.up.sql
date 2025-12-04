@@ -14,5 +14,7 @@ CREATE TABLE IF NOT EXISTS metadata_event
             ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS metadata_event_idx_pallet_id ON metadata_event (pallet_id);
-CREATE INDEX IF NOT EXISTS metadata_event_idx_name ON metadata_event USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS metadata_event_idx_pallet_id
+    ON metadata_event (pallet_id);
+CREATE INDEX IF NOT EXISTS metadata_event_idx_name
+    ON metadata_event USING GIN (name gin_trgm_ops);

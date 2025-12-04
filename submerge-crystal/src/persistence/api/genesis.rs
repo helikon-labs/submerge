@@ -8,7 +8,6 @@ pub struct GenesisRecordRow {
     pub key_prefix: Vec<u8>,
     pub key_params: Option<Vec<u8>>,
     pub value: Vec<u8>,
-    pub metadata_storage_item_id: Option<i32>,
     pub is_known_key: bool,
     pub pallet_index: Option<i32>,
     pub pallet_name: Option<String>,
@@ -34,8 +33,7 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         let rows: Vec<GenesisRecordRow> = sqlx::query_as(
             r#"
             SELECT
-                G.id, G.key_prefix, G.key_params, G.value,
-	            G.metadata_storage_item_id, G.is_known_key,
+                G.id, G.key_prefix, G.key_params, G.value, G.is_known_key,
 	            MP.index AS pallet_index, MP.name AS pallet_name,
                 MPSI.index AS pallet_storage_item_index, MPSI.name AS pallet_storage_item_name
             FROM genesis G

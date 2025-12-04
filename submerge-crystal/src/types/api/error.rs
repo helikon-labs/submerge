@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, string};
 
 use serde::Serialize;
 
@@ -28,6 +28,7 @@ pub enum APIError {
     EventNotFoundWithHash(Vec<u8>),
     ParentCallNotFoundForCallWithHash(Vec<u8>),
     InvalidHex(hex::FromHexError),
+    InvalidUTF8(string::FromUtf8Error),
     InvalidBlockAuthor(String),
     InvalidExtrinsicSigner(String),
 }
@@ -69,6 +70,9 @@ impl APIError {
             APIError::InvalidHex(error) => {
                 format!("{error}")
             }
+            APIError::InvalidUTF8(error) => {
+                format!("{error}")
+            }
             APIError::InvalidBlockAuthor(author) => {
                 format!("Invalid block author: {author}. Enter valid SS58 address or hexadecimal string.")
             }
@@ -93,6 +97,7 @@ impl APIError {
             APIError::EventNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::ParentCallNotFoundForCallWithHash(_) => StatusCode::NOT_FOUND,
             APIError::InvalidHex(_) => StatusCode::BAD_REQUEST,
+            APIError::InvalidUTF8(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidBlockAuthor(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidExtrinsicSigner(_) => StatusCode::BAD_REQUEST,
         }
@@ -118,6 +123,13 @@ impl From<hex::FromHexError> for APIError {
     fn from(error: hex::FromHexError) -> Self {
         tracing::error!("Hexadecimal decode error: {}", error);
         APIError::InvalidHex(error)
+    }
+}
+
+impl From<string::FromUtf8Error> for APIError {
+    fn from(error: string::FromUtf8Error) -> Self {
+        tracing::error!("UTF-8 conversion error: {}", error);
+        APIError::InvalidUTF8(error)
     }
 }
 

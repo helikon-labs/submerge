@@ -1,12 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::string;
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::TraceRow};
-
-#[derive(Clone, Debug, Serialize)]
-pub enum TraceType {
-    StorageItem,
-    KnownKey,
-}
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -36,13 +31,23 @@ pub struct TraceDTO {
     pub ext_id: String,
     pub method: String,
     pub parent_id: Option<String>,
-    #[serde(rename = "type")]
-    pub trace_type: Option<TraceType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub known_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pallet_index: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pallet_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pallet_storage_item_index: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pallet_storage_item_name: Option<String>,
 }
 
-impl From<&TraceRow> for TraceDTO {
-    fn from(row: &TraceRow) -> Self {
-        Self {
+impl TryFrom<&TraceRow> for TraceDTO {
+    type Error = string::FromUtf8Error;
+
+    fn try_from(row: &TraceRow) -> Result<Self, Self::Error> {
+        Ok(Self {
             block_hash: format!("0x{}", hex::encode(&row.block_hash)),
             block_number: row.block_number as u64,
             spec_version: row.spec_version as u32,
@@ -59,14 +64,16 @@ impl From<&TraceRow> for TraceDTO {
             ext_id: format!("0x{}", hex::encode(&row.ext_id)),
             method: row.method.clone(),
             parent_id: row.parent_id.clone(),
-            trace_type: if row.metadata_storage_item_id.is_some() {
-                Some(TraceType::StorageItem)
-            } else if row.is_known_key {
-                Some(TraceType::KnownKey)
+            known_key: if row.is_known_key {
+                Some(String::from_utf8(row.key_prefix.clone())?)
             } else {
                 None
             },
-        }
+            pallet_index: row.pallet_index.map(|index| index as u32),
+            pallet_name: row.pallet_name.clone(),
+            pallet_storage_item_index: row.pallet_storage_item_index.map(|index| index as u32),
+            pallet_storage_item_name: row.pallet_storage_item_name.clone(),
+        })
     }
 }
 

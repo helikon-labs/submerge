@@ -155,6 +155,9 @@ pub struct TraceRow {
     pub ext_id: Vec<u8>,
     pub method: String,
     pub parent_id: Option<String>,
-    pub metadata_storage_item_id: Option<i32>,
     pub is_known_key: bool,
+    pub pallet_index: Option<i32>,
+    pub pallet_name: Option<String>,
+    pub pallet_storage_item_index: Option<i32>,
+    pub pallet_storage_item_name: Option<String>,
 }

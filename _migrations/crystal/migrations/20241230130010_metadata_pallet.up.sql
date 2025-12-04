@@ -13,5 +13,7 @@ CREATE TABLE IF NOT EXISTS metadata_pallet
             ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS metadata_pallet_idx_spec_version ON metadata_pallet (spec_version);
-CREATE INDEX IF NOT EXISTS metadata_pallet_idx_gin_name ON metadata_pallet USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS metadata_pallet_idx_spec_version
+    ON metadata_pallet (spec_version);
+CREATE INDEX IF NOT EXISTS metadata_pallet_idx_gin_name
+    ON metadata_pallet USING GIN (name gin_trgm_ops);

@@ -170,8 +170,8 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
-                hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version,
-                status, weight, extrinsic_count, event_count, author_multi_address
+                hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight,
+                extrinsic_count, event_count, author_multi_address
             FROM block
             WHERE 1=1
             "#,

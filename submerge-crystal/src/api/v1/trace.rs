@@ -71,7 +71,7 @@ pub(crate) async fn get_traces(
     )?;
     let mut data = Vec::new();
     for row in rows.iter() {
-        data.push(row.into());
+        data.push(row.try_into()?);
     }
     let response = PagedResponse {
         pagination: PaginationData {
@@ -108,7 +108,7 @@ pub(crate) async fn get_traces_by_block_reference(
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
-                data.push(row.into());
+                data.push(row.try_into()?);
             }
             let response = PagedResponse {
                 pagination: PaginationData {
@@ -132,7 +132,7 @@ pub(crate) async fn get_traces_by_block_reference(
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
-                data.push(row.into());
+                data.push(row.try_into()?);
             }
             let response = PagedResponse {
                 pagination: PaginationData {
