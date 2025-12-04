@@ -1,4 +1,5 @@
 use crate::types::persistence::EventCompositeRow;
+use serde_json::Value as JSONValue;
 use sqlx::{Postgres, QueryBuilder};
 use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
 
@@ -11,7 +12,7 @@ const COUNT: &str = r#"
 const SELECT: &str = r#"
     SELECT
         E.hash, E.block_hash, E.block_number, E.block_timestamp, E.spec_version, E.block_status,
-        E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index, E.args,
+        E.trace_index, E.extrinsic_index, E.extrinsic_hash, E.phase, E.index,
         MP.index AS pallet_index, MP.name AS pallet_name,
         ME.index AS pallet_event_index, ME.name AS pallet_event_name
     FROM event E
@@ -121,6 +122,7 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_event_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<EventCompositeRow>>;
+    async fn get_event_args_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<JSONValue>>;
 }
 
 impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -562,5 +564,13 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
                 .fetch_optional(&self.connection_pool)
                 .await?;
         Ok(event_row)
+    }
+
+    async fn get_event_args_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<JSONValue>> {
+        let row: Option<(JSONValue,)> = sqlx::query_as("SELECT args FROM event WHERE hash = $1")
+            .bind(hash)
+            .fetch_optional(&self.connection_pool)
+            .await?;
+        Ok(row.map(|tuple| tuple.0))
     }
 }

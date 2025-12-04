@@ -15,9 +15,6 @@ use crate::{
     },
 };
 
-const DEFAULT_PAGE_SIZE: u64 = 10;
-const MAX_PAGE_SIZE: u64 = 25;
-
 pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,
@@ -25,7 +22,7 @@ pub(crate) async fn get_blocks(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let Ok(author_multi_address) = query.get_author_multi_address() else {
         return Err(APIError::InvalidBlockAuthor(
             query.author.unwrap_or("".to_string()),

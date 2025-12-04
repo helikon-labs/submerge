@@ -1,3 +1,6 @@
+const DEFAULT_PAGE_SIZE: u64 = 25;
+const MAX_PAGE_SIZE: u64 = 100;
+
 pub(crate) mod block;
 pub(crate) mod call;
 pub(crate) mod event;

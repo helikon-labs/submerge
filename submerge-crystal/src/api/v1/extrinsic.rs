@@ -22,9 +22,6 @@ use crate::{
     },
 };
 
-const DEFAULT_PAGE_SIZE: u64 = 10;
-const MAX_PAGE_SIZE: u64 = 25;
-
 pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
     Query(query): Query<ExtrinsicQuery>,
@@ -32,7 +29,7 @@ pub(crate) async fn get_extrinsics(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
         return Err(APIError::InvalidExtrinsicSigner(
             query.signer.unwrap_or("".to_string()),
@@ -89,7 +86,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
         return Err(APIError::InvalidExtrinsicSigner(
             query.signer.unwrap_or("".to_string()),

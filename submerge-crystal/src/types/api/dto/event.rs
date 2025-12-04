@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JSONValue;
 
 use crate::types::{
     api::dto::pagination::PaginationQuery, persistence::EventCompositeRow, BlockStatus,
@@ -47,7 +46,6 @@ pub struct EventDTO {
     pub extrinsic_hash: Option<String>,
     pub phase: String,
     pub index: u32,
-    pub args: JSONValue,
 }
 
 impl From<&EventCompositeRow> for EventDTO {
@@ -70,7 +68,6 @@ impl From<&EventCompositeRow> for EventDTO {
                 .map(|hash| format!("0x{}", hex::encode(hash))),
             phase: row.phase.clone(),
             index: row.index as u32,
-            args: row.args.clone(),
         }
     }
 }

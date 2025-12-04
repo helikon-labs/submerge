@@ -2,6 +2,7 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use serde_json::Value as JSONValue;
 
 use crate::{
     api::ServiceState,
@@ -21,9 +22,6 @@ use crate::{
     },
 };
 
-const DEFAULT_PAGE_SIZE: u64 = 10;
-const MAX_PAGE_SIZE: u64 = 25;
-
 pub(crate) async fn get_events(
     State(state): State<ServiceState>,
     Query(query): Query<EventQuery>,
@@ -31,7 +29,7 @@ pub(crate) async fn get_events(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -83,7 +81,7 @@ pub(crate) async fn get_events_by_block_reference(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -199,7 +197,7 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -301,7 +299,7 @@ pub(crate) async fn get_events_by_extrinsic_hash(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_event_count_by_extrinsic_hash(
             &extrinsic_hash,
@@ -341,6 +339,21 @@ pub(crate) async fn get_event_by_hash(
     };
     if let Some(row) = &state.postgres.get_event_by_hash(&event_hash).await? {
         Ok(Json(row.into()))
+    } else {
+        Err(APIError::EventNotFoundWithHash(event_hash))
+    }
+}
+
+pub(crate) async fn get_event_args_by_hash(
+    State(state): State<ServiceState>,
+    Path(event_hash): Path<String>,
+) -> Result<Json<JSONValue>, APIError> {
+    let event_hash = match hex::decode(event_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid event hash: {e}"))),
+    };
+    if let Some(args) = state.postgres.get_event_args_by_hash(&event_hash).await? {
+        Ok(Json(args))
     } else {
         Err(APIError::EventNotFoundWithHash(event_hash))
     }

@@ -24,15 +24,12 @@ use crate::{
 };
 use serde_json::Value as JSONValue;
 
-const DEFAULT_PAGE_SIZE: u64 = 50;
-const MAX_PAGE_SIZE: u64 = 100;
-
 pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
 ) -> Result<Json<PagedResponse<MetadataDTO>>, APIError> {
     let page = query.get_page()?;
-    let page_size = query.get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+    let page_size = query.get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_metadata_count(),
         state.postgres.get_metadata_list(page, page_size),

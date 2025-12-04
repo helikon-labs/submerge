@@ -4,7 +4,7 @@ use crate::api::v1::call::{
     get_parent_call_by_hash, get_sub_calls_by_hash,
 };
 use crate::api::v1::event::{
-    get_event_by_hash, get_events, get_events_by_block_reference,
+    get_event_args_by_hash, get_event_by_hash, get_events, get_events_by_block_reference,
     get_events_by_block_reference_and_extrinsic_index, get_events_by_block_reference_and_index,
     get_events_by_extrinsic_hash,
 };
@@ -193,6 +193,7 @@ fn build_api_routes() -> Router<ServiceState> {
             get(get_events_by_extrinsic_hash),
         )
         .route("/events/{event_hash}", get(get_event_by_hash))
+        .route("/events/{event_hash}/args", get(get_event_args_by_hash))
         // extrinsics
         .route("/extrinsics", get(get_extrinsics))
         .route(

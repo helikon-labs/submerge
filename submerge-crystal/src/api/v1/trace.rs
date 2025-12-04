@@ -21,9 +21,6 @@ use crate::{
     },
 };
 
-const DEFAULT_PAGE_SIZE: u64 = 10;
-const MAX_PAGE_SIZE: u64 = 10;
-
 pub(crate) async fn get_traces(
     State(state): State<ServiceState>,
     Query(query): Query<TraceQuery>,
@@ -31,7 +28,7 @@ pub(crate) async fn get_traces(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -92,7 +89,7 @@ pub(crate) async fn get_traces_by_block_reference(
     let page = query.pagination.get_page()?;
     let page_size = query
         .pagination
-        .get_page_size(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)?;
+        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
