@@ -9,7 +9,8 @@ use crate::api::v1::event::{
     get_events_by_extrinsic_hash,
 };
 use crate::api::v1::extrinsic::{
-    get_extrinsic_by_hash, get_extrinsics_by_block_reference_and_index,
+    get_extrinsic_by_hash, get_extrinsic_root_call_by_hash,
+    get_extrinsics_by_block_reference_and_index,
 };
 use crate::api::v1::trace::{get_traces, get_traces_by_block_reference};
 use crate::metrics;
@@ -205,6 +206,10 @@ fn build_api_routes() -> Router<ServiceState> {
             get(get_extrinsics_by_block_reference_and_index),
         )
         .route("/extrinsics/{extrinsic_hash}", get(get_extrinsic_by_hash))
+        .route(
+            "/extrinsics/{extrinsic_hash}/call",
+            get(get_extrinsic_root_call_by_hash),
+        )
         // genesis
         .route("/genesis", get(get_genesis_records))
         // calls

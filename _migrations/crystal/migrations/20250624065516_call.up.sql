@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS call
     extrinsic_hash          BYTEA NOT NULL,
     parent_call_hash        BYTEA,
     call_path               VARCHAR(512) NOT NULL,
-    call_index              SMALLINT[],
+    call_index              SMALLINT[] NOT NULL,
     metadata_call_id        INTEGER NOT NULL,
     extrinsic_is_successful BOOLEAN NOT NULL,
     args                    JSONB NOT NULL,

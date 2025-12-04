@@ -7,7 +7,7 @@ use crate::{
     api::ServiceState,
     persistence::{
         api::{
-            block::CrystalBlockAPIPostgreSQLStorage,
+            block::CrystalBlockAPIPostgreSQLStorage, call::CrystalCallAPIPostgreSQLStorage as _,
             extrinsic::CrystalExtrinsicAPIPostgreSQLStorage,
         },
         CrystalPostgreSQLStorage,
@@ -15,6 +15,7 @@ use crate::{
     types::api::{
         dto::{
             block::BlockReference,
+            call::CallDTO,
             extrinsic::{BlockExtrinsicQuery, ExtrinsicDTO, ExtrinsicQuery},
             pagination::{PagedResponse, PaginationData},
         },
@@ -213,6 +214,25 @@ pub(crate) async fn get_extrinsic_by_hash(
         .await?
     {
         Ok(Json(row.try_into()?))
+    } else {
+        Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
+    }
+}
+
+pub(crate) async fn get_extrinsic_root_call_by_hash(
+    State(state): State<ServiceState>,
+    Path(extrinsic_hash): Path<String>,
+) -> Result<Json<CallDTO>, APIError> {
+    let extrinsic_hash = match hex::decode(extrinsic_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid extrinsic hash: {e}"))),
+    };
+    if let Some(row) = &state
+        .postgres
+        .get_extrinsic_root_call_by_hash(&extrinsic_hash)
+        .await?
+    {
+        Ok(Json(row.into()))
     } else {
         Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
     }

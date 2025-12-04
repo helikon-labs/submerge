@@ -131,6 +131,10 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         page_size: u64,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
+    async fn get_extrinsic_root_call_by_hash(
+        &self,
+        extrinsic_hash: &[u8],
+    ) -> anyhow::Result<Option<CallRow>>;
 }
 
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -636,6 +640,19 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             "#,
         )
         .bind(hash)
+        .fetch_optional(&self.connection_pool)
+        .await?;
+        Ok(call_row)
+    }
+
+    async fn get_extrinsic_root_call_by_hash(
+        &self,
+        extrinsic_hash: &[u8],
+    ) -> anyhow::Result<Option<CallRow>> {
+        let call_row: Option<CallRow> = sqlx::query_as(
+            format!("{SELECT} WHERE C.extrinsic_hash = $1 AND parent_call_hash IS NULL").as_str(),
+        )
+        .bind(extrinsic_hash)
         .fetch_optional(&self.connection_pool)
         .await?;
         Ok(call_row)
