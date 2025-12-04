@@ -2,6 +2,7 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use serde_json::Value as JSONValue;
 
 use crate::{
     api::ServiceState,
@@ -21,8 +22,8 @@ use crate::{
     },
 };
 
-const DEFAULT_PAGE_SIZE: u64 = 10;
-const MAX_PAGE_SIZE: u64 = 25;
+const DEFAULT_PAGE_SIZE: u64 = 25;
+const MAX_PAGE_SIZE: u64 = 100;
 
 pub(crate) async fn get_calls(
     State(state): State<ServiceState>,
@@ -303,6 +304,21 @@ pub(crate) async fn get_call_by_hash(
     };
     if let Some(row) = &state.postgres.get_call_by_hash(&call_hash).await? {
         Ok(Json(row.into()))
+    } else {
+        Err(APIError::CallNotFoundWithHash(call_hash))
+    }
+}
+
+pub(crate) async fn get_call_args_by_hash(
+    State(state): State<ServiceState>,
+    Path(call_hash): Path<String>,
+) -> Result<Json<JSONValue>, APIError> {
+    let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
+    };
+    if let Some(args) = state.postgres.get_call_args_by_hash(&call_hash).await? {
+        Ok(Json(args))
     } else {
         Err(APIError::CallNotFoundWithHash(call_hash))
     }

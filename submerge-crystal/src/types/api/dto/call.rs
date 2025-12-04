@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JSONValue;
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::CallRow, BlockStatus};
 
@@ -46,7 +45,6 @@ pub struct CallDTO {
     pub pallet_call_index: u32,
     pub pallet_call_name: String,
     pub extrinsic_is_successful: bool,
-    pub args: JSONValue,
 }
 
 impl From<&CallRow> for CallDTO {
@@ -75,7 +73,6 @@ impl From<&CallRow> for CallDTO {
             pallet_call_index: row.pallet_call_index as u32,
             pallet_call_name: row.pallet_call_name.clone(),
             extrinsic_is_successful: row.extrinsic_is_successful,
-            args: row.args.clone(),
         }
     }
 }
