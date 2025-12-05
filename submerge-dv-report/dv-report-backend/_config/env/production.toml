@@ -1,9 +1,0 @@
-[log]
-dv_report_level = "info"
-other_level = "warn"
-
-[postgres]
-host = "127.0.0.1"
-
-[metrics]
-host = "0.0.0.0"

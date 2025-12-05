@@ -1,1 +1,0 @@
-DROP TABLE delegate_comment_account CASCADE;

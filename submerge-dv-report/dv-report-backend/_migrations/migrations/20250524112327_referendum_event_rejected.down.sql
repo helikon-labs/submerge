@@ -1,1 +1,0 @@
-DROP TABLE referendum_event_rejected CASCADE;

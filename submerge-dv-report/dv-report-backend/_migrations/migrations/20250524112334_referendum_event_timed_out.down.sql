@@ -1,1 +1,0 @@
-DROP TABLE referendum_event_timed_out CASCADE;

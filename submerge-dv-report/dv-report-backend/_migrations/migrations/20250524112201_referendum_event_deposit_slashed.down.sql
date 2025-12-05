@@ -1,1 +1,0 @@
-DROP TABLE referendum_event_deposit_slashed CASCADE;

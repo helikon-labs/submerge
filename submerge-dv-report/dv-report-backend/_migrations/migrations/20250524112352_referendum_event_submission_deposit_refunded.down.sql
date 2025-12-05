@@ -1,1 +1,0 @@
-DROP TABLE referendum_event_submission_deposit_refunded CASCADE;
