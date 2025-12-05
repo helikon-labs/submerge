@@ -27,7 +27,7 @@
     "homepage": "https://github.com/helikon-labs/submerge#readme",
     "dependencies": {},
     "devDependencies": {
-        "@polkadot/api": "^16.3.1",
+        "@polkadot/api": "16.3.1",
         "@polkadot/types": "./lib/polkadot-types-16.3.1.tgz",
         "@typescript-eslint/eslint-plugin": "^8.35.1",
         "@types/cors": "^2.8.19",
@@ -47,6 +47,8 @@
         "typescript": "5.8.3"
     },
     "overrides": {
-        "@polkadot/types-codec": "./lib/polkadot-types-codec-16.3.1.tgz"
+        "@polkadot/types-codec": "./lib/polkadot-types-codec-16.3.1.tgz",
+        "glob": ">=10.5.0",
+        "js-yaml": ">=4.1.1"
     }
 }
