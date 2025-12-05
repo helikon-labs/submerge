@@ -48,7 +48,10 @@
     },
     "overrides": {
         "node-forge": ">=1.3.2",
-        "glob": ">=10.5.0"
+        "glob": ">=10.5.0",
+        "gray-matter": {
+            "js-yaml": "^3.14.1"
+        }
     },
     "browserslist": {
         "production": [
