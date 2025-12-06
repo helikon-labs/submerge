@@ -7,3 +7,8 @@ certificate/
 .github
 .gitignore
 .gitmodules
+node_modules
+.vite
+.docusaurus
+build
+dist

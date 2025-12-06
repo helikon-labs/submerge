@@ -5305,15 +5305,15 @@ dependencies = [
 
 [[package]]
 name = "submerge-api"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-auth3"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-base"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5341,11 +5341,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-bloom"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-cli"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -5356,11 +5356,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-cortex"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-crystal"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-recursion",
@@ -5403,11 +5403,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-fractal"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-metrics"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "once_cell",
  "prometheus 0.14.0",
@@ -5419,11 +5419,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-mycelium"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-persistence"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "sqlx",
@@ -5433,11 +5433,11 @@ dependencies = [
 
 [[package]]
 name = "submerge-reflex"
-version = "1.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "submerge-sentinel"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5452,7 +5452,7 @@ dependencies = [
 
 [[package]]
 name = "submerge-substrate-client"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "frame-metadata",
@@ -5469,7 +5469,7 @@ dependencies = [
 
 [[package]]
 name = "submerge-util"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",

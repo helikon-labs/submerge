@@ -1,4 +1,4 @@
-FROM postgres:17.5
+FROM postgres:18.1
 ENV POSTGRES_PASSWORD postgres
 ENV POSTGRES_HOST postgres
 ENV PGDATA /var/lib/postgresql/data

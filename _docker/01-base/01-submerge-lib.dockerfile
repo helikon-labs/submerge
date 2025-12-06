@@ -1,4 +1,4 @@
-FROM rust:1.88-bookworm AS builder
+FROM rust:1.91-trixie AS builder
 RUN mkdir -p /submerge/bin \
     && mkdir -p /submerge/src
 WORKDIR /submerge/src
