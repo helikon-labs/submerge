@@ -4,10 +4,11 @@ use serde::{Deserialize, Serialize};
 use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use utoipa::ToSchema;
 
 use crate::types::error::decode::DecodeError;
 
-#[derive(Clone, Copy, Debug, Encode, Default, Decode, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Encode, Default, Decode, Eq, Hash, PartialEq, ToSchema)]
 pub struct AccountId([u8; 32]);
 
 impl AccountId {

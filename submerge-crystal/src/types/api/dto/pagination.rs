@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 
 use crate::types::api::error::APIError;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
 pub struct PaginationQuery {
     pub page: Option<String>,
     pub page_size: Option<String>,
@@ -58,7 +59,7 @@ impl PaginationQuery {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PaginationData {
     pub page: u64,
@@ -66,7 +67,7 @@ pub struct PaginationData {
     pub total: u64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PagedResponse<T> {
     pub pagination: PaginationData,

@@ -5,6 +5,7 @@ use frame_system::Phase;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::signature::Signature;
+use utoipa::ToSchema;
 
 pub(crate) mod api;
 pub mod decode;
@@ -52,7 +53,7 @@ pub struct Event {
     pub args: JSONValue,
 }
 
-#[derive(Clone, Copy, Debug, sqlx::Type, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, sqlx::Type, Serialize, Deserialize, Eq, PartialEq, ToSchema)]
 #[sqlx(type_name = "BLOCK_STATUS", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum BlockStatus {

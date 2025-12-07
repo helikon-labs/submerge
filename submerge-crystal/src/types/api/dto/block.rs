@@ -4,6 +4,7 @@ use parity_scale_codec::Decode as _;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::multi_address::MultiAddress;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::types::{api::dto::pagination::PaginationQuery, persistence::BlockRow, BlockStatus};
 
@@ -26,11 +27,17 @@ impl TryFrom<&str> for BlockReference {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
 #[serde(deny_unknown_fields)]
+#[schema(
+    title = "BlockQuery",
+    description = "Query parameters for filtering blocks"
+)]
 pub struct BlockQuery {
     #[serde(flatten)]
     pub pagination: PaginationQuery,
+    /// Filter results by block status
+    #[param(value_type = Option<String>)]
     pub status: Option<BlockStatus>,
     pub min_block_number: Option<u64>,
     pub max_block_number: Option<u64>,
@@ -52,8 +59,22 @@ impl BlockQuery {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
+#[schema(
+    title = "Block",
+    description = "A block in the blockchain",
+    example = json!({
+        "hash": "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8",
+        "parentHash": "0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b",
+        "number": 27419831,
+        "timestamp": "1755773684012",
+        "specVersion": 1006001,
+        "status": "finalized",
+        "extrinsicCount": 2,
+        "eventCount": 56
+    })
+)]
 pub struct BlockDTO {
     pub hash: String,
     pub parent_hash: String,

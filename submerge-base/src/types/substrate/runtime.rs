@@ -1,7 +1,8 @@
+use parity_scale_codec::Decode;
 use serde::Deserialize;
 use submerge_util::substrate::storage::decode_hex_string;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Decode)]
 #[serde(rename_all = "camelCase")]
 pub struct LastRuntimeUpgradeInfo {
     pub spec_version: u32,

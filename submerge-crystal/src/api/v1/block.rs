@@ -11,10 +11,24 @@ use crate::{
             block::{BlockDTO, BlockQuery, BlockReference},
             pagination::{PagedResponse, PaginationData},
         },
-        error::APIError,
+        error::{APIError, APIErrorBody},
     },
 };
 
+#[utoipa::path(
+    get,
+    path = "/blocks",
+    tag = "block",
+    summary = "Get blocks",
+    description = "Returns all blocks from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number.",
+    params(BlockQuery),
+    responses(
+        (status = 200, description = "Paginated list of blocks", body = PagedResponse<BlockDTO>),
+        (status = 400, description = "Invalid parameter", body = APIErrorBody),
+        (status = 429, description = "Too many requests", body = APIErrorBody),
+        (status = 500, description = "Internal server error", body = APIErrorBody)
+    )
+)]
 pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,

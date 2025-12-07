@@ -7,13 +7,14 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use utoipa::ToSchema;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, ToSchema)]
 pub struct APIErrorBody {
     pub message: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum APIError {
     NotFound,
     SerializationError,
@@ -27,8 +28,8 @@ pub enum APIError {
     CallNotFoundWithHash(Vec<u8>),
     EventNotFoundWithHash(Vec<u8>),
     ParentCallNotFoundForCallWithHash(Vec<u8>),
-    InvalidHex(hex::FromHexError),
-    InvalidUTF8(string::FromUtf8Error),
+    InvalidHex(String),
+    InvalidUTF8(String),
     InvalidBlockAuthor(String),
     InvalidExtrinsicSigner(String),
 }
@@ -67,12 +68,8 @@ impl APIError {
                     hex::encode(hash)
                 )
             }
-            APIError::InvalidHex(error) => {
-                format!("{error}")
-            }
-            APIError::InvalidUTF8(error) => {
-                format!("{error}")
-            }
+            APIError::InvalidHex(error) => error.to_string(),
+            APIError::InvalidUTF8(error) => error.to_string(),
             APIError::InvalidBlockAuthor(author) => {
                 format!("Invalid block author: {author}. Enter valid SS58 address or hexadecimal string.")
             }
@@ -122,14 +119,14 @@ impl From<anyhow::Error> for APIError {
 impl From<hex::FromHexError> for APIError {
     fn from(error: hex::FromHexError) -> Self {
         tracing::error!("Hexadecimal decode error: {}", error);
-        APIError::InvalidHex(error)
+        APIError::InvalidHex(error.to_string())
     }
 }
 
 impl From<string::FromUtf8Error> for APIError {
     fn from(error: string::FromUtf8Error) -> Self {
         tracing::error!("UTF-8 conversion error: {}", error);
-        APIError::InvalidUTF8(error)
+        APIError::InvalidUTF8(error.to_string())
     }
 }
 

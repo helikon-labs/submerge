@@ -10,6 +10,7 @@ license.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 frame-metadata = { workspace = true }
+frame-system = { workspace = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true }
 jsonrpsee-core = { workspace = true }

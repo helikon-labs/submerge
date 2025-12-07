@@ -13,7 +13,7 @@ use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
 use uuid::Uuid as UUID;
 
-mod api;
+pub mod api;
 pub mod args;
 pub mod metadata_cache;
 mod metrics;
@@ -157,7 +157,7 @@ impl BaseService for Crystal {
             },
             legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
             retry_delay: Duration::from_secs(self.args.service.recovery_sleep_seconds),
-            skip_traces: false,
+            skip_traces: true,
             stop_on_error: false,
         };
         self.print_summary(&chainspec);
