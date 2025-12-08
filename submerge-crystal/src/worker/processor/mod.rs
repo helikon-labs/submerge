@@ -508,17 +508,17 @@ impl BlockProcessor {
             .substrate_client
             .get_block_header(block_hash_hex)
             .await?;
-        let spec_version = self
-            .substrate_client
-            .get_last_runtime_upgrade_info(block_hash_hex)
-            .await?
-            .spec_version;
         if block_number == 0 {
+            let spec_version = self
+                .substrate_client
+                .get_last_runtime_upgrade_info(block_hash_hex)
+                .await?
+                .spec_version;
             self.process_block_0(&block_hash, &block_header, spec_version, status)
                 .await?;
             return Ok(());
         }
-        let parent_spec_version = self
+        let spec_version = self
             .substrate_client
             .get_last_runtime_upgrade_info(&block_header.parent_hash)
             .await?
@@ -526,7 +526,7 @@ impl BlockProcessor {
         let parent_hash = hex::decode(block_header.parent_hash.trim_start_matches("0x"))?;
         let metadata = get_metadata(
             &parent_hash,
-            parent_spec_version,
+            spec_version,
             &self.postgres,
             &self.substrate_client,
             &self.legacy_decode_api_client,
@@ -534,7 +534,7 @@ impl BlockProcessor {
         .await?;
         let parsed_metadata = get_parsed_metadata(
             &parent_hash,
-            parent_spec_version,
+            spec_version,
             &self.postgres,
             &self.substrate_client,
             &self.legacy_decode_api_client,

@@ -298,19 +298,11 @@ impl SubstrateClient {
         &self,
         block_hash: &str,
     ) -> anyhow::Result<LastRuntimeUpgradeInfo> {
-        let hex_string: String = self
+        let upgrade_info: LastRuntimeUpgradeInfo = self
             .ws_client
-            .request(
-                "state_getStorage",
-                get_rpc_storage_plain_params("System", "LastRuntimeUpgrade", Some(block_hash))?,
-            )
+            .request("state_getRuntimeVersion", rpc_params!(block_hash))
             .await?;
-        let last_runtime_upgrade_info: frame_system::LastRuntimeUpgradeInfo =
-            decode_hex_string(hex_string.as_str())?;
-        Ok(LastRuntimeUpgradeInfo {
-            spec_version: last_runtime_upgrade_info.spec_version.0,
-            spec_name: last_runtime_upgrade_info.spec_name.to_string(),
-        })
+        Ok(upgrade_info)
     }
 
     /// Gets encoded runtime metadata hex string at a block.

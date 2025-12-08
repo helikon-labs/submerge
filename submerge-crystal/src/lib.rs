@@ -111,8 +111,8 @@ impl Crystal {
         self.worker_manager
             .spawn(
                 WorkerType::ProcessFinalizedRange {
-                    maybe_start_block_number: None,
-                    maybe_end_block_number: None,
+                    maybe_start_block_number: Some(2720370),
+                    maybe_end_block_number: Some(2720379),
                     scan: true,
                     reindex: false,
                 },
