@@ -8,7 +8,10 @@ use utoipa::{IntoParams, ToSchema};
 
 use crate::types::{
     api::dto::{
-        block_weight_schema, multi_address::MultiAddressDTO, pagination::PaginationData, Hash256Hex,
+        block_weight_schema,
+        multi_address::{MultiAddressAccountIdDTO, MultiAddressAccountIdType, MultiAddressDTO},
+        pagination::PaginationData,
+        AccountIdHex, Hash256Hex,
     },
     persistence::BlockRow,
     BlockStatus,
@@ -93,7 +96,6 @@ pub struct BlockQuery {
     /// - Author's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).
     #[param(
         required = false,
-        max_length = 512,
         nullable = false,
         pattern = "^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$",
         example = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
@@ -113,16 +115,24 @@ impl BlockQuery {
 }
 
 fn block_dto_example() -> JSONValue {
-    serde_json::json!({
-        "hash": "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8",
-        "parentHash": "0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b",
-        "stateRoot": "0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603",
-        "extrinsicRoot": "0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454",
-        "number": 27419831,
-        "timestamp": 1755773684012u64,
-        "specVersion": 1006001,
-        "status": "finalized",
-        "weight": {
+    let block = BlockDTO {
+        hash: Hash256Hex(
+            "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8".to_string(),
+        ),
+        parent_hash: Hash256Hex(
+            "0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b".to_string(),
+        ),
+        state_root: Hash256Hex(
+            "0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603".to_string(),
+        ),
+        extrinsic_root: Hash256Hex(
+            "0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454".to_string(),
+        ),
+        number: 27419831,
+        timestamp: Some(1755773684012),
+        spec_version: 1006001,
+        status: BlockStatus::Finalized,
+        weight: Some(serde_json::json!({
             "normal": {
                 "refTime": "0",
                 "proofSize": "0"
@@ -135,14 +145,17 @@ fn block_dto_example() -> JSONValue {
                 "refTime": "0",
                 "proofSize": "0"
             }
-        },
-        "extrinsicCount": 2,
-        "eventCount": 56,
-        "author": {
-            "type": "accountId",
-            "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
-        }
-    })
+        })),
+        extrinsic_count: 2,
+        event_count: 56,
+        author: Some(MultiAddressDTO::AccountId(MultiAddressAccountIdDTO {
+            r#type: MultiAddressAccountIdType::AccountId,
+            value: AccountIdHex(
+                "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626".to_string(),
+            ),
+        })),
+    };
+    serde_json::to_value(&block).unwrap()
 }
 
 fn block_dto_list_example() -> JSONValue {
@@ -157,9 +170,13 @@ fn block_dto_list_example() -> JSONValue {
     example = block_dto_example,
 )]
 pub struct BlockDTO {
+    /// Block hash (Blake2 256-bit).
     pub hash: Hash256Hex,
+    /// Parent block hash.
     pub parent_hash: Hash256Hex,
+    /// Root hash of the state trie after executing this block.
     pub state_root: Hash256Hex,
+    /// Merkle root of included extrinsics.
     pub extrinsic_root: Hash256Hex,
     /// Block height.
     #[schema(example = 27419831u64)]
@@ -173,13 +190,12 @@ pub struct BlockDTO {
     /// Block status.
     #[schema(example = "finalized")]
     pub status: BlockStatus,
-    /// Block weight in JSON format. Schema depends on runtime metadata.
     #[schema(
         required = false,
         nullable = false,
         schema_with = block_weight_schema,
     )]
-    pub weight: Option<String>,
+    pub weight: Option<JSONValue>,
     /// Number of extrinsics in the block.
     #[schema(minimum = 0, example = 2)]
     pub extrinsic_count: u32,
@@ -211,11 +227,7 @@ impl TryFrom<&BlockRow> for BlockDTO {
             timestamp: row.timestamp.map(|timestamp| timestamp as u64),
             spec_version: row.spec_version as u32,
             status: row.status,
-            weight: if let Some(weight) = &row.weight {
-                Some(serde_json::to_string(weight)?)
-            } else {
-                None
-            },
+            weight: row.weight.clone(),
             extrinsic_count: row.extrinsic_count as u32,
             event_count: row.event_count as u32,
             author: author_multi_address
@@ -228,10 +240,7 @@ impl TryFrom<&BlockRow> for BlockDTO {
 /// Paginated list of blocks in blockchain.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedBlockList {
-    #[schema(
-        example = block_dto_list_example,
-        max_items = 100,
-    )]
+    #[schema(example = block_dto_list_example)]
     pub data: Vec<BlockDTO>,
     pub pagination: PaginationData,
 }

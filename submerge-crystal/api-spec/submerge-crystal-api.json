@@ -168,7 +168,6 @@
             "required": false,
             "schema": {
               "type": "string",
-              "maxLength": 512,
               "pattern": "^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$"
             },
             "example": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
@@ -176,7 +175,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Paginated list of blocks",
+            "description": "Paginated list of blocks.",
             "headers": {
               "X-RateLimit-Limit": {
                 "schema": {
@@ -202,7 +201,7 @@
             }
           },
           "400": {
-            "description": "Invalid parameter",
+            "description": "Invalid parameter.",
             "headers": {
               "X-RateLimit-Limit": {
                 "schema": {
@@ -228,7 +227,7 @@
             }
           },
           "429": {
-            "description": "Too many requests",
+            "description": "Too many requests.",
             "headers": {
               "Retry-After": {
                 "schema": {
@@ -268,7 +267,7 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "Internal server error.",
             "headers": {
               "X-RateLimit-Limit": {
                 "schema": {
@@ -339,10 +338,12 @@
             "minimum": 0
           },
           "extrinsicRoot": {
-            "$ref": "#/components/schemas/Hash256Hex"
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Merkle root of included extrinsics."
           },
           "hash": {
-            "$ref": "#/components/schemas/Hash256Hex"
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Block hash (Blake2 256-bit)."
           },
           "number": {
             "type": "integer",
@@ -352,7 +353,8 @@
             "minimum": 0
           },
           "parentHash": {
-            "$ref": "#/components/schemas/Hash256Hex"
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Parent block hash."
           },
           "specVersion": {
             "type": "integer",
@@ -362,7 +364,8 @@
             "minimum": 0
           },
           "stateRoot": {
-            "$ref": "#/components/schemas/Hash256Hex"
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Root hash of the state trie after executing this block."
           },
           "status": {
             "$ref": "#/components/schemas/BlockStatus",
@@ -377,6 +380,7 @@
           },
           "weight": {
             "type": "object",
+            "description": "Block weight in JSON format. Schema depends on runtime metadata.",
             "examples": [
               {
                 "mandatory": {
@@ -447,8 +451,7 @@
             "type": "string",
             "format": "text",
             "description": "Error message.",
-            "example": "Internal server error.",
-            "maxLength": 16384
+            "example": "Error message."
           }
         }
       },
@@ -669,8 +672,7 @@
                   }
                 }
               }
-            ],
-            "maxItems": 100
+            ]
           },
           "pagination": {
             "$ref": "#/components/schemas/PaginationData"

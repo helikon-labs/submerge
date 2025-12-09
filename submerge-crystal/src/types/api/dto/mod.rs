@@ -71,5 +71,8 @@ fn block_weight_schema() -> utoipa::openapi::Object {
                 "proofSize": "0"
             },
         }))])
+        .description(Some(
+            "Block weight in JSON format. Schema depends on runtime metadata.".to_string(),
+        ))
         .build()
 }

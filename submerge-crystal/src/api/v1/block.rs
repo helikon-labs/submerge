@@ -25,7 +25,7 @@ use crate::{
     responses(
         (
             status = 200,
-            description = "Paginated list of blocks",
+            description = "Paginated list of blocks.",
             headers(
                 ("X-RateLimit-Limit" = u32),
                 ("X-RateLimit-Remaining" = u32),
@@ -34,7 +34,7 @@ use crate::{
         ),
         (
             status = 400,
-            description = "Invalid parameter",
+            description = "Invalid parameter.",
             headers(
                 ("X-RateLimit-Limit" = u32),
                 ("X-RateLimit-Remaining" = u32),
@@ -43,7 +43,7 @@ use crate::{
         ),
         (
             status = 429,
-            description = "Too many requests",
+            description = "Too many requests.",
             headers(
                 ("X-RateLimit-Limit" = u32),
                 ("X-RateLimit-Remaining" = u32),
@@ -54,7 +54,7 @@ use crate::{
         ),
         (
             status = 500,
-            description = "Internal server error",
+            description = "Internal server error.",
             headers(
                 ("X-RateLimit-Limit" = u32),
                 ("X-RateLimit-Remaining" = u32),

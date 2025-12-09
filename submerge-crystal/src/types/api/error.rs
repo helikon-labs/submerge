@@ -14,11 +14,7 @@ use utoipa::ToSchema;
 #[schema(as = Error)]
 pub struct APIErrorBody {
     /// Error message.
-    #[schema(
-        max_length = 16384,
-        format = "text",
-        example = "Internal server error."
-    )]
+    #[schema(format = "text", example = "Error message.")]
     pub message: String,
 }
 

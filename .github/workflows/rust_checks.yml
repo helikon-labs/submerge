@@ -32,8 +32,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Increases rate limit from 60 to 5000 requests/hour
         run: |
           curl -fsSL https://quobix.com/scripts/install_vacuum.sh | sh
-      - name: Lint OpenAPI specs
-        run: vacuum lint -d ./submerge-crystal/api-spec/submerge-crystal-api.json
       - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -45,6 +43,12 @@ jobs:
       - run: rustup default nightly #-2025-08-01 # toolchain
       - run: rustup target add wasm32-unknown-unknown --toolchain nightly #-2025-08-01 # toolchain
       - run: rustup default stable
+      - name: Generate Crystal OpenAPI specs
+        run: |
+          cd submerge-crystal
+          cargo run --bin openapi-gen
+          vacuum lint -d ./api-spec/submerge-crystal-api.json
+          cd ..
       - name: Reset test DB
         env:
           PGUSER: postgres
