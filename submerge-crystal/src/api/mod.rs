@@ -14,8 +14,6 @@ use crate::api::v1::extrinsic::{
 };
 use crate::api::v1::trace::{get_traces, get_traces_by_block_reference};
 use crate::metrics;
-use crate::types::api::error::APIErrorBody;
-use crate::types::BlockStatus;
 use crate::worker::WorkerManager;
 use crate::{
     api::v1::{
@@ -50,6 +48,7 @@ use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::GovernorLayer;
 use tower_http::cors::{Any, CorsLayer};
 
+pub mod doc;
 pub mod legacy;
 pub mod v1;
 
@@ -283,8 +282,9 @@ pub(crate) async fn run_api(
         worker_manager: worker_manager.clone(),
     };
     let governor_conf = GovernorConfigBuilder::default()
-        .per_second(1)
+        .per_millisecond(1000)
         .burst_size(5)
+        .use_headers()
         .finish()
         .unwrap();
     let governor_limiter = governor_conf.limiter().clone();
@@ -320,70 +320,3 @@ pub(crate) async fn run_api(
     server_result?;
     Ok(())
 }
-
-use crate::types::api::dto::block::BlockDTO;
-use crate::types::api::dto::pagination::PagedResponse;
-use crate::types::api::dto::pagination::{PaginationData, PaginationQuery};
-
-#[derive(utoipa::OpenApi)]
-#[openapi(
-    info(
-        title = "Submerge Crystal API v1",
-        description = "REST API for Submerge Crystal, the core indexer component of Submerge.\n\nSubmerge API endpoints are grouped under five resource sets:\n- Blocks\n- Calls\n- Events\n- Extrinsics\n- Genesis\n- Metadata\n- Traces\n\nPublic API is limited by 5 requests per second.\nRequest query parameters use `snake_case`; response fields use `camelCase`.",
-        version = "1.0.0",
-        contact(
-            name = "Helikon Labs",
-            url = "https://submerge.io",
-            email = "info@helikon.io"
-        ),
-        license(
-            name = "GPLv3",
-            url = "https://www.gnu.org/licenses/gpl-3.0.html",
-        )
-    ),
-    servers(
-        (
-            url = "https://coretime-polkadot.crystal.submerge.io/api/v1",
-            description = "API preview deployment for Polkadot Coretime.",
-        ),
-        (
-            url = "https://{chain}.crystal.submerge.io/api/v1",
-            description = "Submerge Crystal production API per deployed chain.",
-            variables(
-                ("chain" = (
-                    default = "coretime-polkadot",
-                    description = "Chain subdomain",
-                    enum_values(
-                        "polkadot",
-                        "asset-hub-polkadot",
-                        "bridge-hub-polkadot",
-                        "collectives-polkadot",
-                        "coretime-polkadot",
-                        "people-polkadot",
-                        "kusama",
-                        "asset-hub-kusama",
-                        "bridge-hub-kusama",
-                        "coretime-kusama",
-                        "people-kusama",
-                    ),
-                )
-            )),
-        )
-    ),
-    tags(
-        (name = "block", description = "Endpoints related to blocks."),
-        (name = "call", description = "Endpoints related to calls in extrinsics."),
-        (name = "event", description = "Endpoints related to events."),
-        (name = "extrinsic", description = "Endpoints related to extrinsics."),
-        (name = "genesis", description = "Endpoints related to genesis records."),
-        (name = "metadata", description = "Endpoints related to metadata."),
-        (name = "trace", description = "Endpoints related to block traces.")
-    ),
-    paths(
-        crate::api::v1::block::get_blocks,
-    ),
-    components(
-        schemas(APIErrorBody, BlockDTO, PaginationData, PaginationQuery, PagedResponse<BlockDTO>, BlockStatus),
-    ),
-)]
-pub struct APIDoc;

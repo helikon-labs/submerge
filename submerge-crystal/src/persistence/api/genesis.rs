@@ -18,16 +18,16 @@ pub struct GenesisRecordRow {
 pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
     async fn get_genesis_record_rows(
         &self,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<GenesisRecordRow>>;
 }
 
 impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_genesis_record_rows(
         &self,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<GenesisRecordRow>> {
         let offset = (page - 1) * page_size;
         let rows: Vec<GenesisRecordRow> = sqlx::query_as(

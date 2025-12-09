@@ -36,8 +36,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash(
         &self,
@@ -50,8 +50,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         block_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number(
         &self,
@@ -64,8 +64,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         block_number: u64,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash_and_extrinsic_index(
         &self,
@@ -80,8 +80,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number_and_extrinsic_index(
         &self,
@@ -96,8 +96,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_extrinsic_hash(
         &self,
@@ -110,8 +110,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn call_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
     async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
@@ -127,8 +127,8 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
     async fn get_extrinsic_root_call_by_hash(
@@ -176,8 +176,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> =
@@ -242,8 +242,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -303,8 +303,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -369,8 +369,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -438,8 +438,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -502,8 +502,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -588,8 +588,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);

@@ -1,0 +1,749 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Submerge Crystal API v1",
+    "description": "REST API for Submerge Crystal, the core indexer component of Submerge.\n\nSubmerge API endpoints are grouped under five resource sets:\n- Blocks\n- Calls\n- Events\n- Extrinsics\n- Genesis\n- Metadata\n- Traces\n\nPublic API is limited by 5 requests per second.\nRequest query parameters use `snake_case`; response fields use `camelCase`.",
+    "contact": {
+      "name": "Helikon Labs",
+      "url": "https://submerge.io",
+      "email": "info@helikon.io"
+    },
+    "license": {
+      "name": "GPLv3",
+      "url": "https://www.gnu.org/licenses/gpl-3.0.html"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://coretime-polkadot.crystal.submerge.io/api/v1",
+      "description": "API preview deployment for Polkadot Coretime."
+    },
+    {
+      "url": "https://{chain}.crystal.submerge.io/api/v1",
+      "description": "Submerge Crystal production API per deployed chain.",
+      "variables": {
+        "chain": {
+          "default": "coretime-polkadot",
+          "description": "Chain subdomain",
+          "enum": [
+            "polkadot",
+            "asset-hub-polkadot",
+            "bridge-hub-polkadot",
+            "collectives-polkadot",
+            "coretime-polkadot",
+            "people-polkadot",
+            "kusama",
+            "asset-hub-kusama",
+            "bridge-hub-kusama",
+            "coretime-kusama",
+            "people-kusama"
+          ]
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/blocks": {
+      "get": {
+        "tags": [
+          "block"
+        ],
+        "summary": "Get blocks",
+        "description": "Returns all blocks from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number.",
+        "operationId": "get_blocks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of items per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter results by block status. If not specified, all blocks are returned.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/BlockStatus"
+            }
+          },
+          {
+            "name": "min_block_number",
+            "in": "query",
+            "description": "Filter results by minimum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1534287
+          },
+          {
+            "name": "max_block_number",
+            "in": "query",
+            "description": "Filter results by maximum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 2825701
+          },
+          {
+            "name": "min_block_timestamp",
+            "in": "query",
+            "description": "Filter results by minimum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "max_block_timestamp",
+            "in": "query",
+            "description": "Filter results by maximum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "min_spec_version",
+            "in": "query",
+            "description": "Filter results by minimum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "max_spec_version",
+            "in": "query",
+            "description": "Filter results by maximum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "description": "Filter results by block author. Either of the following:\n- Author's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Author's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Author's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 512,
+              "pattern": "^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$"
+            },
+            "example": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of blocks",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedBlockList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameter",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountIdHex": {
+        "type": "string",
+        "description": "32-byte Substrate account id, **always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.",
+        "example": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+        "pattern": "^0x[a-f0-9]{64}$"
+      },
+      "Block": {
+        "type": "object",
+        "description": "A block in the blockchain.",
+        "required": [
+          "hash",
+          "parentHash",
+          "stateRoot",
+          "extrinsicRoot",
+          "number",
+          "specVersion",
+          "status",
+          "extrinsicCount",
+          "eventCount"
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/MultiAddress",
+            "description": "Authoring validator address."
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of events in the block.",
+            "example": 56,
+            "minimum": 0
+          },
+          "extrinsicCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of extrinsics in the block.",
+            "example": 2,
+            "minimum": 0
+          },
+          "extrinsicRoot": {
+            "$ref": "#/components/schemas/Hash256Hex"
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Block height.",
+            "example": 27419831,
+            "minimum": 0
+          },
+          "parentHash": {
+            "$ref": "#/components/schemas/Hash256Hex"
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Runtime spec version.",
+            "example": 1006001,
+            "minimum": 0
+          },
+          "stateRoot": {
+            "$ref": "#/components/schemas/Hash256Hex"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BlockStatus",
+            "description": "Block status."
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Block timestamp - milliseconds.",
+            "example": 1755773684012,
+            "minimum": 0
+          },
+          "weight": {
+            "type": "object",
+            "examples": [
+              {
+                "mandatory": {
+                  "proofSize": "592668",
+                  "refTime": "361766342408"
+                },
+                "normal": {
+                  "proofSize": "0",
+                  "refTime": "0"
+                },
+                "operational": {
+                  "proofSize": "0",
+                  "refTime": "0"
+                }
+              }
+            ]
+          }
+        },
+        "example": {
+          "author": {
+            "type": "accountId",
+            "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
+          },
+          "eventCount": 56,
+          "extrinsicCount": 2,
+          "extrinsicRoot": "0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454",
+          "hash": "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8",
+          "number": 27419831,
+          "parentHash": "0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b",
+          "specVersion": 1006001,
+          "stateRoot": "0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603",
+          "status": "finalized",
+          "timestamp": 1755773684012,
+          "weight": {
+            "mandatory": {
+              "proofSize": "204955",
+              "refTime": "701777135384"
+            },
+            "normal": {
+              "proofSize": "0",
+              "refTime": "0"
+            },
+            "operational": {
+              "proofSize": "0",
+              "refTime": "0"
+            }
+          }
+        }
+      },
+      "BlockStatus": {
+        "type": "string",
+        "description": "Block status.\n- `finalized`: Blocks that have been finalized on chain.\n- `proposed`: Blocks that have been authored but not yet finalized.\n- `pruned`: Blocks that have been removed or are no longer accessible.",
+        "enum": [
+          "proposed",
+          "pruned",
+          "finalized"
+        ],
+        "example": "finalized"
+      },
+      "Error": {
+        "type": "object",
+        "description": "Generic error type.",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "format": "text",
+            "description": "Error message.",
+            "example": "Internal server error.",
+            "maxLength": 16384
+          }
+        }
+      },
+      "Hash256Hex": {
+        "type": "string",
+        "description": "32-byte Blake2b-256, **always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.",
+        "example": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+        "pattern": "^0x[a-f0-9]{64}$"
+      },
+      "HexString": {
+        "type": "string",
+        "description": "Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.",
+        "examples": [
+          "0xdeadbeef",
+          "0x0123456789abcdef"
+        ],
+        "pattern": "^0x(?:[0-9a-f]{2})+$"
+      },
+      "MultiAddress": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MultiAddressAccountId"
+          },
+          {
+            "$ref": "#/components/schemas/MultiAddressAccountIndex"
+          },
+          {
+            "$ref": "#/components/schemas/MultiAddressRaw"
+          },
+          {
+            "$ref": "#/components/schemas/MultiAddress20"
+          },
+          {
+            "$ref": "#/components/schemas/MultiAddress32"
+          }
+        ],
+        "description": "Discriminated union for the Substrate multiaddress type.\nThe `type` tag selects the variant; `value` carries the payload.",
+        "example": {
+          "type": "accountId",
+          "value": "0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a"
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "accountId": "#/components/schemas/MultiAddressAccountId",
+            "address20": "#/components/schemas/MultiAddress20",
+            "address32": "#/components/schemas/MultiAddress32",
+            "index": "#/components/schemas/MultiAddressIndex",
+            "raw": "#/components/schemas/MultiAddressRaw"
+          }
+        }
+      },
+      "MultiAddress20": {
+        "type": "object",
+        "description": "20-byte address.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiAddress20Type",
+            "description": "Must be `address20`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/HexString"
+          }
+        }
+      },
+      "MultiAddress20Type": {
+        "type": "string",
+        "description": "Multi-address 20-byte address type.",
+        "enum": [
+          "address20"
+        ]
+      },
+      "MultiAddress32": {
+        "type": "object",
+        "description": "32-byte address.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiAddress32Type",
+            "description": "Must be `address32`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/HexString"
+          }
+        }
+      },
+      "MultiAddress32Type": {
+        "type": "string",
+        "description": "Multi-address 32-byte address type.",
+        "enum": [
+          "address32"
+        ]
+      },
+      "MultiAddressAccountId": {
+        "type": "object",
+        "description": "32-byte account id.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiAddressAccountIdType",
+            "description": "Must be `accountId`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/AccountIdHex",
+            "description": "Account id as 32-byte hex."
+          }
+        }
+      },
+      "MultiAddressAccountIdType": {
+        "type": "string",
+        "description": "Multi-address 32-byte account id type.",
+        "enum": [
+          "accountId"
+        ]
+      },
+      "MultiAddressAccountIndex": {
+        "type": "object",
+        "description": "Account index.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiAddressIndexType",
+            "description": "Must be `index`."
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32",
+            "example": 83,
+            "minimum": 0
+          }
+        }
+      },
+      "MultiAddressIndexType": {
+        "type": "string",
+        "description": "Multi-address account index type.",
+        "enum": [
+          "index"
+        ]
+      },
+      "MultiAddressRaw": {
+        "type": "object",
+        "description": "Raw account address.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiAddressRawType",
+            "description": "Must be `raw`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/HexString"
+          }
+        }
+      },
+      "MultiAddressRawType": {
+        "type": "string",
+        "description": "Multi-address raw account address type.",
+        "enum": [
+          "raw"
+        ]
+      },
+      "PaginatedBlockList": {
+        "type": "object",
+        "description": "Paginated list of blocks in blockchain.",
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Block"
+            },
+            "example": [
+              {
+                "author": {
+                  "type": "accountId",
+                  "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
+                },
+                "eventCount": 56,
+                "extrinsicCount": 2,
+                "extrinsicRoot": "0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454",
+                "hash": "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8",
+                "number": 27419831,
+                "parentHash": "0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b",
+                "specVersion": 1006001,
+                "stateRoot": "0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603",
+                "status": "finalized",
+                "timestamp": 1755773684012,
+                "weight": {
+                  "mandatory": {
+                    "proofSize": "204955",
+                    "refTime": "701777135384"
+                  },
+                  "normal": {
+                    "proofSize": "0",
+                    "refTime": "0"
+                  },
+                  "operational": {
+                    "proofSize": "0",
+                    "refTime": "0"
+                  }
+                }
+              }
+            ],
+            "maxItems": 100
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationData"
+          }
+        }
+      },
+      "PaginationData": {
+        "type": "object",
+        "description": "Pagination data for paged responses.",
+        "required": [
+          "page",
+          "pageSize",
+          "total"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current page number. 1-indexed.",
+            "example": 1,
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items per page.",
+            "example": 1,
+            "minimum": 1
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total number of items across all pages.",
+            "example": 10467367,
+            "minimum": 0
+          }
+        },
+        "example": {
+          "page": 1,
+          "pageSize": 1,
+          "total": 4352561
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "block",
+      "description": "Endpoints related to blocks."
+    },
+    {
+      "name": "call",
+      "description": "Endpoints related to calls in extrinsics."
+    },
+    {
+      "name": "event",
+      "description": "Endpoints related to events."
+    },
+    {
+      "name": "extrinsic",
+      "description": "Endpoints related to extrinsics."
+    },
+    {
+      "name": "genesis",
+      "description": "Endpoints related to genesis records."
+    },
+    {
+      "name": "metadata",
+      "description": "Endpoints related to metadata."
+    },
+    {
+      "name": "trace",
+      "description": "Endpoints related to block traces."
+    }
+  ]
+}

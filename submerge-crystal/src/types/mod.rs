@@ -53,9 +53,14 @@ pub struct Event {
     pub args: JSONValue,
 }
 
+/// Block status.
+/// - `finalized`: Blocks that have been finalized on chain.
+/// - `proposed`: Blocks that have been authored but not yet finalized.
+/// - `pruned`: Blocks that have been removed or are no longer accessible.
 #[derive(Clone, Copy, Debug, sqlx::Type, Serialize, Deserialize, Eq, PartialEq, ToSchema)]
 #[sqlx(type_name = "BLOCK_STATUS", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
+#[schema(example = "finalized")]
 pub enum BlockStatus {
     Proposed,
     Pruned,

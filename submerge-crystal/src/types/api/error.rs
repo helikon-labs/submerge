@@ -9,8 +9,16 @@ use axum::{
 };
 use utoipa::ToSchema;
 
+/// Generic error type.
 #[derive(Clone, Debug, Serialize, ToSchema)]
+#[schema(as = Error)]
 pub struct APIErrorBody {
+    /// Error message.
+    #[schema(
+        max_length = 16384,
+        format = "text",
+        example = "Internal server error."
+    )]
     pub message: String,
 }
 
@@ -127,6 +135,32 @@ impl From<string::FromUtf8Error> for APIError {
     fn from(error: string::FromUtf8Error) -> Self {
         tracing::error!("UTF-8 conversion error: {}", error);
         APIError::InvalidUTF8(error.to_string())
+    }
+}
+
+impl From<validator::ValidationErrors> for APIError {
+    fn from(value: validator::ValidationErrors) -> Self {
+        let mut messages = Vec::new();
+        for (field, kind) in value.field_errors() {
+            for err in kind {
+                let code = err.code.to_string();
+                let value = err
+                    .params
+                    .get("value")
+                    .map(|v| v.to_string())
+                    .unwrap_or_default();
+                let message = err
+                    .message
+                    .as_ref()
+                    .map(|m| m.to_string())
+                    .unwrap_or_else(|| format!("`{field}`: {code} (value={value})"));
+                messages.push(message);
+            }
+        }
+        APIError::BadRequest(format!(
+            "Validation failed on fields: {}",
+            messages.join(", "),
+        ))
     }
 }
 

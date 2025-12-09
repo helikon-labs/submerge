@@ -32,22 +32,22 @@ pub(crate) trait CrystalTraceAPIPostgreSQLStorage {
         max_block_number: Option<i64>,
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>>;
     async fn get_trace_count_by_block_hash(&self, block_hash: &[u8]) -> anyhow::Result<u64>;
     async fn get_traces_by_block_hash(
         &self,
         block_hash: &[u8],
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>>;
     async fn get_trace_count_by_block_number(&self, block_number: u64) -> anyhow::Result<u64>;
     async fn get_traces_by_block_number(
         &self,
         block_number: u64,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>>;
 }
 
@@ -90,8 +90,8 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         max_block_number: Option<i64>,
         key_prefix: Option<&[u8]>,
         key_params: Option<&[u8]>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> =
@@ -138,8 +138,8 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_traces_by_block_hash(
         &self,
         block_hash: &[u8],
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -172,8 +172,8 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_traces_by_block_number(
         &self,
         block_number: u64,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);

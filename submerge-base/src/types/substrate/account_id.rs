@@ -4,11 +4,10 @@ use serde::{Deserialize, Serialize};
 use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use utoipa::ToSchema;
 
 use crate::types::error::decode::DecodeError;
 
-#[derive(Clone, Copy, Debug, Encode, Default, Decode, Eq, Hash, PartialEq, ToSchema)]
+#[derive(Clone, Copy, Debug, Encode, Default, Decode, Eq, Hash, PartialEq)]
 pub struct AccountId([u8; 32]);
 
 impl AccountId {
@@ -32,7 +31,6 @@ impl AccountId {
 /// Display in hex format.
 impl Display for AccountId {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str("0x")?;
         f.write_str(&hex::encode(self.0))
     }
 }

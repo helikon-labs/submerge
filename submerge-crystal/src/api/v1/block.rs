@@ -2,14 +2,15 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use validator::Validate;
 
 use crate::{
     api::ServiceState,
     persistence::{api::block::CrystalBlockAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
-            block::{BlockDTO, BlockQuery, BlockReference},
-            pagination::{PagedResponse, PaginationData},
+            block::{BlockDTO, BlockQuery, BlockReference, PaginatedBlockList},
+            pagination::PaginationData,
         },
         error::{APIError, APIErrorBody},
     },
@@ -23,20 +24,53 @@ use crate::{
     description = "Returns all blocks from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number.",
     params(BlockQuery),
     responses(
-        (status = 200, description = "Paginated list of blocks", body = PagedResponse<BlockDTO>),
-        (status = 400, description = "Invalid parameter", body = APIErrorBody),
-        (status = 429, description = "Too many requests", body = APIErrorBody),
-        (status = 500, description = "Internal server error", body = APIErrorBody)
+        (
+            status = 200,
+            description = "Paginated list of blocks",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = PaginatedBlockList,
+        ),
+        (
+            status = 400,
+            description = "Invalid parameter",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = APIErrorBody,
+        ),
+        (
+            status = 429,
+            description = "Too many requests",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+                ("X-Retry-After" = u32),
+                ("Retry-After" = u32),
+            ),
+            body = APIErrorBody,
+        ),
+        (
+            status = 500,
+            description = "Internal server error",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = APIErrorBody,
+        )
     )
 )]
 pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,
-) -> Result<Json<PagedResponse<BlockDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+) -> Result<Json<PaginatedBlockList>, APIError> {
+    query.validate()?;
+    let page = query.page.unwrap_or(super::DEFAULT_PAGE);
+    let page_size = query.page_size.unwrap_or(super::DEFAULT_PAGE_SIZE);
     let Ok(author_multi_address) = query.get_author_multi_address() else {
         return Err(APIError::InvalidBlockAuthor(
             query.author.unwrap_or("".to_string()),
@@ -74,13 +108,13 @@ pub(crate) async fn get_blocks(
     for row in rows.iter() {
         data.push(row.try_into()?);
     }
-    let response = PagedResponse {
+    let response = PaginatedBlockList {
+        data,
         pagination: PaginationData {
             page,
             page_size,
             total: total_count,
         },
-        data,
     };
     Ok(Json(response))
 }

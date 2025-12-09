@@ -34,8 +34,8 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_event_count_by_block_hash(
         &self,
@@ -48,8 +48,8 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         block_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_event_count_by_block_number(
         &self,
@@ -62,8 +62,8 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         block_number: u64,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_events_by_block_number_and_index(
         &self,
@@ -88,8 +88,8 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_event_count_by_block_hash_and_extrinsic_index(
         &self,
@@ -104,8 +104,8 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_event_count_by_extrinsic_hash(
         &self,
@@ -118,8 +118,8 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
     async fn get_event_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<EventCompositeRow>>;
     async fn get_event_args_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<JSONValue>>;
@@ -164,8 +164,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> =
@@ -229,8 +229,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -290,8 +290,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -395,8 +395,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -464,8 +464,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -528,8 +528,8 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);

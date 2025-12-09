@@ -182,7 +182,7 @@ const config: Config = {
                 docsPluginId: 'classic',
                 config: {
                     crystal: {
-                        specPath: '../submerge-crystal/api-spec/submerge-crystal-api.yaml',
+                        specPath: '../submerge-crystal/api-spec/submerge-crystal-api.json',
                         outputDir: './docs/crystal-api',
                         infoTemplate: './templates/crystal-api-info.mustache',
                         sidebarOptions: {

@@ -107,8 +107,8 @@ pub(crate) trait CrystalBlockAPIPostgreSQLStorage {
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         author_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<BlockRow>>;
     async fn get_block_number_range(
         &self,
@@ -163,8 +163,8 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         author_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<BlockRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(

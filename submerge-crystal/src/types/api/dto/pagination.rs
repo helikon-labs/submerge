@@ -10,7 +10,7 @@ pub struct PaginationQuery {
 }
 
 impl PaginationQuery {
-    pub fn get_page(&self) -> Result<u64, APIError> {
+    pub fn get_page(&self) -> Result<u32, APIError> {
         match &self.page {
             Some(page) => match page.parse() {
                 Ok(page) => {
@@ -32,9 +32,9 @@ impl PaginationQuery {
 
     pub fn get_page_size(
         &self,
-        default_page_size: u64,
-        max_page_size: u64,
-    ) -> Result<u64, APIError> {
+        default_page_size: u32,
+        max_page_size: u32,
+    ) -> Result<u32, APIError> {
         match &self.page_size {
             Some(page_size) => match page_size.parse() {
                 Ok(page_size) => {
@@ -59,17 +59,33 @@ impl PaginationQuery {
     }
 }
 
+/// Pagination data for paged responses.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "page": 1,
+    "pageSize": 1,
+    "total": 4352561,
+}))]
 pub struct PaginationData {
-    pub page: u64,
-    pub page_size: u64,
+    /// Current page number. 1-indexed.
+    #[schema(minimum = 1, example = 1)]
+    pub page: u32,
+    /// Number of items per page.
+    #[schema(minimum = 1, example = 1)]
+    #[schema(example = 1)]
+    pub page_size: u32,
+    /// Total number of items across all pages.
+    #[schema(minimum = 0, example = 10467367)]
     pub total: u64,
 }
 
+/// Paged data response.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PagedResponse<T> {
+    /// Pagination data.
     pub pagination: PaginationData,
+    /// Data on the current page.
     pub data: Vec<T>,
 }

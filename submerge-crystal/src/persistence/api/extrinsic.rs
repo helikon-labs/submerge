@@ -32,8 +32,8 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         max_block_number: Option<i64>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
     async fn get_extrinsic_count_by_block_hash(
         &self,
@@ -46,8 +46,8 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         block_hash: &[u8],
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
     async fn get_extrinsic_count_by_block_number(
         &self,
@@ -60,8 +60,8 @@ pub(crate) trait CrystalExtrinsicAPIPostgreSQLStorage {
         block_number: u64,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>>;
     async fn get_extrinsics_by_block_number_and_index(
         &self,
@@ -121,8 +121,8 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         max_block_number: Option<i64>,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> =
@@ -190,8 +190,8 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
@@ -255,8 +255,8 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         is_signed: Option<bool>,
         signer_multi_address: &Option<MultiAddress>,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
