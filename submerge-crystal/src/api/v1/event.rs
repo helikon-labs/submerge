@@ -5,7 +5,7 @@ use axum::{
 use serde_json::Value as JSONValue;
 
 use crate::{
-    api::ServiceState,
+    api::{get_page_number_and_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, event::CrystalEventAPIPostgreSQLStorage,
@@ -26,10 +26,8 @@ pub(crate) async fn get_events(
     State(state): State<ServiceState>,
     Query(query): Query<EventQuery>,
 ) -> Result<Json<PagedResponse<EventDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -78,10 +76,8 @@ pub(crate) async fn get_events_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockEventQuery>,
 ) -> Result<Json<PagedResponse<EventDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -194,10 +190,8 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
     Path((block_reference, extrinsic_index)): Path<(String, u32)>,
     Query(query): Query<BlockEventQuery>,
 ) -> Result<Json<PagedResponse<EventDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -296,10 +290,8 @@ pub(crate) async fn get_events_by_extrinsic_hash(
     {
         return Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash));
     }
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_event_count_by_extrinsic_hash(
             &extrinsic_hash,

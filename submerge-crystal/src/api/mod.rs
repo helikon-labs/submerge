@@ -52,7 +52,33 @@ pub mod doc;
 pub mod legacy;
 pub mod v1;
 
+const DEFAULT_PAGE: u32 = 1;
+const DEFAULT_PAGE_SIZE: u32 = 25;
+const MAX_PAGE_SIZE: u32 = 100;
 const MAX_RESPONSE_MESSAGE_BYTES: usize = 64 * 1024;
+
+fn get_page_number_and_size(
+    page: Option<u32>,
+    page_size: Option<u32>,
+) -> Result<(u32, u32), APIError> {
+    let page = page.unwrap_or(DEFAULT_PAGE);
+    let page_size = page_size.unwrap_or(DEFAULT_PAGE_SIZE);
+    if page < 1 {
+        Err(APIError::BadRequest(
+            "Page number cannot be less than 1.".to_string(),
+        ))
+    } else if page_size < 1 {
+        Err(APIError::BadRequest(
+            "Page size cannot be less than 1.".to_string(),
+        ))
+    } else if page_size > MAX_PAGE_SIZE {
+        Err(APIError::BadRequest(format!(
+            "Page size cannot be greater than {MAX_PAGE_SIZE}."
+        )))
+    } else {
+        Ok((page, page_size))
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone)]

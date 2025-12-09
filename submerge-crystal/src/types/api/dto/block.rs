@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use utoipa::{IntoParams, ToSchema};
-use validator::Validate;
 
 use crate::types::{
     api::dto::{
@@ -35,11 +34,10 @@ impl TryFrom<&str> for BlockReference {
 }
 
 /// Query parameters for fetching blocks.
-#[derive(Debug, Deserialize, IntoParams, Validate)]
+#[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
 pub struct BlockQuery {
     /// Page number to retrieve. 1-indexed.
-    #[validate(range(min = 1))]
     #[param(
         required = false,
         nullable = false,
@@ -49,7 +47,6 @@ pub struct BlockQuery {
     )]
     pub page: Option<u32>,
     /// Number of items per page to be returned.
-    #[validate(range(min = 1))]
     #[param(
         required = false,
         nullable = false,

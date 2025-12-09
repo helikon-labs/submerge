@@ -4,7 +4,7 @@ use axum::{
 };
 
 use crate::{
-    api::ServiceState,
+    api::{get_page_number_and_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, trace::CrystalTraceAPIPostgreSQLStorage,
@@ -25,10 +25,8 @@ pub(crate) async fn get_traces(
     State(state): State<ServiceState>,
     Query(query): Query<TraceQuery>,
 ) -> Result<Json<PagedResponse<TraceDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -86,10 +84,8 @@ pub(crate) async fn get_traces_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockTraceQuery>,
 ) -> Result<Json<PagedResponse<TraceDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {

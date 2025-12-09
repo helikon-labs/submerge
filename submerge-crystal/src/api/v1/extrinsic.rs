@@ -4,7 +4,7 @@ use axum::{
 };
 
 use crate::{
-    api::ServiceState,
+    api::{get_page_number_and_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage, call::CrystalCallAPIPostgreSQLStorage as _,
@@ -27,10 +27,8 @@ pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
     Query(query): Query<ExtrinsicQuery>,
 ) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
         return Err(APIError::InvalidExtrinsicSigner(
             query.signer.unwrap_or("".to_string()),
@@ -84,10 +82,8 @@ pub(crate) async fn get_extrinsics_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockExtrinsicQuery>,
 ) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
-    let page = query.pagination.get_page()?;
-    let page_size = query
-        .pagination
-        .get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
         return Err(APIError::InvalidExtrinsicSigner(
             query.signer.unwrap_or("".to_string()),

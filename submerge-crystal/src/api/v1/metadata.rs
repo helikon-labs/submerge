@@ -6,7 +6,7 @@ use axum::{
 };
 
 use crate::{
-    api::ServiceState,
+    api::{get_page_number_and_size, ServiceState},
     persistence::{
         api::metadata::CrystalMetadataAPIPostgreSQLStorage as _, CrystalPostgreSQLStorage as _,
     },
@@ -28,8 +28,7 @@ pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
 ) -> Result<Json<PagedResponse<MetadataDTO>>, APIError> {
-    let page = query.get_page()?;
-    let page_size = query.get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_metadata_count(),
         state.postgres.get_metadata_list(page, page_size),

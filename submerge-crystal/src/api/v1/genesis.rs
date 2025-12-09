@@ -4,7 +4,7 @@ use axum::{
 };
 
 use crate::{
-    api::ServiceState,
+    api::{get_page_number_and_size, ServiceState},
     persistence::{api::genesis::CrystalMetadataAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
@@ -19,8 +19,7 @@ pub(crate) async fn get_genesis_records(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
 ) -> Result<Json<PagedResponse<GenesisRecordDTO>>, APIError> {
-    let page = query.get_page()?;
-    let page_size = query.get_page_size(super::DEFAULT_PAGE_SIZE, super::MAX_PAGE_SIZE)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_genesis_record_count(),
         state.postgres.get_genesis_record_rows(page, page_size),

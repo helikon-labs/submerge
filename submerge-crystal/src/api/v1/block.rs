@@ -2,10 +2,9 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use validator::Validate;
 
 use crate::{
-    api::ServiceState,
+    api::{get_page_number_and_size, ServiceState},
     persistence::{api::block::CrystalBlockAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
@@ -68,9 +67,7 @@ pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,
 ) -> Result<Json<PaginatedBlockList>, APIError> {
-    query.validate()?;
-    let page = query.page.unwrap_or(super::DEFAULT_PAGE);
-    let page_size = query.page_size.unwrap_or(super::DEFAULT_PAGE_SIZE);
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let Ok(author_multi_address) = query.get_author_multi_address() else {
         return Err(APIError::InvalidBlockAuthor(
             query.author.unwrap_or("".to_string()),
