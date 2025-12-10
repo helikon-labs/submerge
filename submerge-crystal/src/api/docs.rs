@@ -54,6 +54,7 @@
     ),
     paths(
         crate::api::v1::block::get_blocks,
+        crate::api::v1::block::get_blocks_by_reference,
     ),
     components(
         schemas(),

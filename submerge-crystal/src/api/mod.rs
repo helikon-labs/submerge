@@ -48,7 +48,7 @@ use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::GovernorLayer;
 use tower_http::cors::{Any, CorsLayer};
 
-pub mod doc;
+pub mod docs;
 pub mod legacy;
 pub mod v1;
 

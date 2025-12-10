@@ -116,6 +116,70 @@ pub(crate) async fn get_blocks(
     Ok(Json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/blocks/{block_ref}",
+    tag = "block",
+    summary = "Get blocks by reference",
+    description = "If a hash is passed, returns the matching block. If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot.",
+    params(
+        (
+            "block_ref" = String,
+            Path,
+            description = "Block reference. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            description = "List of matching blocks.",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = Vec<BlockDTO>,
+        ),
+        (
+            status = 400,
+            description = "Invalid parameter.",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = APIErrorBody,
+        ),
+        (
+            status = 404,
+            description = "Block not found.",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = APIErrorBody,
+        ),
+        (
+            status = 429,
+            description = "Too many requests.",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+                ("X-Retry-After" = u32),
+                ("Retry-After" = u32),
+            ),
+            body = APIErrorBody,
+        ),
+        (
+            status = 500,
+            description = "Internal server error.",
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            body = APIErrorBody,
+        )
+    )
+)]
 pub(crate) async fn get_blocks_by_reference(
     State(state): State<ServiceState>,
     Path(block_reference): Path<String>,
