@@ -1,5 +1,5 @@
 use clap::Parser;
-use submerge_base::Supervisor;
+use submerge_base::supervisor::Supervisor;
 use submerge_crystal::{args::Args, Crystal};
 
 use tracing::{span, Level};

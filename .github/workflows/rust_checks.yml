@@ -43,7 +43,7 @@ jobs:
       - run: rustup default nightly #-2025-08-01 # toolchain
       - run: rustup target add wasm32-unknown-unknown --toolchain nightly #-2025-08-01 # toolchain
       - run: rustup default stable
-      - name: Generate Crystal OpenAPI specs
+      - name: Generate Crystal OpenAPI specs and Lint with Vacuum
         run: |
           cd submerge-crystal
           cargo run --bin openapi-gen

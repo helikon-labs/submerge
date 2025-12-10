@@ -2,7 +2,7 @@ use serde::Serialize;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use utoipa::ToSchema;
 
-use crate::types::api::dto::{AccountIdHex, HexString};
+use crate::types::api::dto::hex::{AccountIdHex, Address20Hex, Address32Hex, HexString};
 
 /// Multi-address 32-byte account id type.
 #[derive(Debug, Serialize, ToSchema)]
@@ -38,6 +38,7 @@ pub struct MultiAddressIndexDTO {
     #[serde(rename = "type")]
     pub r#type: MultiAddressIndexType,
 
+    /// Account index value.
     #[schema(example = 83)]
     pub value: u32,
 }
@@ -73,7 +74,7 @@ pub struct MultiAddress20DTO {
     /// Must be `address20`.
     #[serde(rename = "type")]
     pub r#type: MultiAddress20Type,
-    pub value: HexString,
+    pub value: Address20Hex,
 }
 
 /// Multi-address 32-byte address type.
@@ -90,7 +91,7 @@ pub struct MultiAddress32DTO {
     /// Must be `address32`.
     #[serde(rename = "type")]
     pub r#type: MultiAddress32Type,
-    pub value: HexString,
+    pub value: Address32Hex,
 }
 
 /// Discriminated union for the Substrate multiaddress type.
@@ -136,11 +137,11 @@ impl From<&MultiAddress> for MultiAddressDTO {
             }),
             MultiAddress::Address20(bytes) => Self::Address20(MultiAddress20DTO {
                 r#type: MultiAddress20Type::Address20,
-                value: bytes.as_slice().into(),
+                value: bytes.into(),
             }),
             MultiAddress::Address32(bytes) => Self::Address32(MultiAddress32DTO {
                 r#type: MultiAddress32Type::Address32,
-                value: bytes.as_slice().into(),
+                value: bytes.into(),
             }),
         }
     }

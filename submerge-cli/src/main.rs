@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
-use submerge_base::Supervisor;
+use submerge_base::supervisor::Supervisor;
 use submerge_crystal::Crystal;
 
 #[derive(Parser)]

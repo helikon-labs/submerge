@@ -1,7 +1,6 @@
-use crate::{
-    api::legacy::LegacyDecodeAPIClient, metadata_cache::get_parsed_metadata, types::GenesisItem,
-};
+use crate::{api::legacy::LegacyDecodeAPIClient, types::GenesisItem};
 use anyhow::Context as _;
+use metadata_cache::get_parsed_metadata;
 use std::{sync::Arc, time::Duration};
 use submerge_base::types::substrate::chainspec::Chainspec;
 use submerge_substrate_client::{RPCConfig, SubstrateClient};
@@ -18,6 +17,7 @@ use crate::{
     worker::processor::BlockProcessor,
 };
 
+mod metadata_cache;
 pub mod processor;
 mod subscription;
 

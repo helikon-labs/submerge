@@ -2,12 +2,12 @@ use std::cmp::min;
 use std::sync::{Arc, LazyLock};
 
 use crate::api::legacy::LegacyDecodeAPIClient;
-use crate::metadata_cache::{get_metadata, get_parsed_metadata};
 use crate::persistence::CrystalPostgreSQLStorage;
 use crate::types::metadata::util::{
     get_metadata_type_by_id, get_metadata_version, get_pallet_storage_item_type_by_name,
 };
 use crate::types::BlockStatus;
+use crate::worker::metadata_cache::{get_metadata, get_parsed_metadata};
 use crate::worker::WorkerError;
 use anyhow::Context as _;
 use sqlx::{Postgres, Transaction};

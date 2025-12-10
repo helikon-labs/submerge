@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use sqlx::migrate::Migrator;
 use std::sync::Arc;
 use std::time::Duration;
+use submerge_base::service::BaseService;
 use submerge_base::types::substrate::chainspec::Chainspec;
-use submerge_base::BaseService;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
 use uuid::Uuid as UUID;
@@ -22,24 +22,6 @@ mod types;
 pub mod worker;
 
 static DB_MIGRATOR: Migrator = sqlx::migrate!("../_migrations/crystal/migrations");
-
-//const RPC_URL: &str = "wss://acala.dotters.network";
-//const RPC_URL: &str = "wss://astar-rpc.n.dwellir.com";
-//const RPC_URL: &str = "wss://bifrost-polkadot.dotters.network";
-//const RPC_URL: &str = "wss://rpc-centrifuge.luckyfriday.io";
-//const RPC_URL: &str = "wss://hydration.dotters.network";
-//const RPC_URL: &str = "wss://nexus.dotters.network";
-//const RPC_URL: &str = "wss://moonbeam.dotters.network";
-//const RPC_URL: &str = "wss://mythos.dotters.network";
-//const RPC_URL: &str = "wss://public-rpc.mainnet.aventus.io";
-//const RPC_URL: &str = "wss://polkadot.dotters.network";
-//const RPC_URL: &str = "wss://asset-hub-polkadot.dotters.network";
-
-//const RPC_URL: &str = "wss://kusama.dotters.network";
-// const RPC_URL: &str = "ws://10.2.0.225:5151";
-
-//const RPC_URL: &str = "wss://bifrost-rpc.liebi.com/ws";
-//const RPC_URL: &str = "wss:/moonriver.public.curie.radiumblock.co/ws";
 
 pub struct Crystal {
     args: Args,
@@ -157,7 +139,7 @@ impl BaseService for Crystal {
             },
             legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
             retry_delay: Duration::from_secs(self.args.service.recovery_sleep_seconds),
-            skip_traces: false,
+            skip_traces: true,
             stop_on_error: false,
         };
         self.print_summary(&chainspec);

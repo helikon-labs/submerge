@@ -13,7 +13,6 @@ use submerge_util::substrate::storage::{self, get_storage_plain_key};
 
 use super::BlockProcessor;
 use crate::{
-    metadata_cache::get_parsed_metadata,
     persistence::CrystalPostgreSQLStorage,
     types::{
         decode::{Value, ValueVisitor},
@@ -25,6 +24,7 @@ use crate::{
         },
         BlockStatus, Call, Event, Extrinsic,
     },
+    worker::metadata_cache::get_parsed_metadata,
 };
 
 const SIGN_MASK: u8 = 0b10000000;

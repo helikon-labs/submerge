@@ -15,7 +15,6 @@ use submerge_util::substrate::storage::get_storage_plain_key;
 
 use crate::{
     api::legacy::LegacyDecodeAPIClient,
-    metadata_cache::get_parsed_metadata,
     persistence::CrystalPostgreSQLStorage,
     types::{
         decode::{Value, ValueVisitor},
@@ -24,7 +23,7 @@ use crate::{
         persistence::EventRow,
         BlockStatus, Event, Extrinsic,
     },
-    worker::processor::BlockProcessor,
+    worker::{metadata_cache::get_parsed_metadata, processor::BlockProcessor},
 };
 
 const SYSTEM_PALLET_NAME: &str = "System";

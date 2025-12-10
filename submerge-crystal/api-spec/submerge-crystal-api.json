@@ -300,7 +300,19 @@
     "schemas": {
       "AccountIdHex": {
         "type": "string",
-        "description": "32-byte Substrate account id, **always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.",
+        "description": "32-byte Substrate account id as lowercase hex, **always** `0x`-prefixed and lowercase in responses.",
+        "example": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+        "pattern": "^0x[a-f0-9]{64}$"
+      },
+      "Address20Hex": {
+        "type": "string",
+        "description": "20-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.",
+        "example": "0x00112233445566778899aabbccddeeff00112233",
+        "pattern": "^0x[a-f0-9]{40}$"
+      },
+      "Address32Hex": {
+        "type": "string",
+        "description": "32-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.",
         "example": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
         "pattern": "^0x[a-f0-9]{64}$"
       },
@@ -517,7 +529,7 @@
             "description": "Must be `address20`."
           },
           "value": {
-            "$ref": "#/components/schemas/HexString"
+            "$ref": "#/components/schemas/Address20Hex"
           }
         }
       },
@@ -541,7 +553,7 @@
             "description": "Must be `address32`."
           },
           "value": {
-            "$ref": "#/components/schemas/HexString"
+            "$ref": "#/components/schemas/Address32Hex"
           }
         }
       },
@@ -592,6 +604,7 @@
           "value": {
             "type": "integer",
             "format": "int32",
+            "description": "Account index value.",
             "example": 83,
             "minimum": 0
           }
