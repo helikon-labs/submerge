@@ -11,7 +11,9 @@ use utoipa::ToSchema;
 use crate::types::{
     api::dto::{
         hex::{AccountIdHex, Hash256Hex},
-        multi_address::{MultiAddressAccountIdDTO, MultiAddressAccountIdType, MultiAddressDTO},
+        response::multi_address::{
+            MultiAddressAccountIdDTO, MultiAddressAccountIdType, MultiAddressDTO,
+        },
     },
     persistence::BlockRow,
     BlockStatus,

@@ -1,11 +1,10 @@
-pub mod block;
 pub mod call;
 pub mod event;
 pub mod extrinsic;
 pub mod genesis;
 pub mod hex;
 pub mod metadata;
-pub mod multi_address;
 pub mod pagination;
+pub mod request;
 pub mod response;
 pub mod trace;

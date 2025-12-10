@@ -8,8 +8,8 @@ use crate::{
     persistence::{api::block::CrystalBlockAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
-            block::{BlockQuery, BlockReference},
             pagination::PaginationData,
+            request::block::{BlockQuery, BlockReference},
             response::{
                 block::{BlockList, PaginatedBlockList},
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},

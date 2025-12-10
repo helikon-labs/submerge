@@ -13,8 +13,8 @@ use crate::{
     },
     types::api::{
         dto::{
-            block::BlockReference,
             pagination::{PagedResponse, PaginationData},
+            request::block::BlockReference,
             trace::{BlockTraceQuery, TraceDTO, TraceQuery},
         },
         error::APIError,

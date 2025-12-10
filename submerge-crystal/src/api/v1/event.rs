@@ -14,9 +14,9 @@ use crate::{
     },
     types::api::{
         dto::{
-            block::BlockReference,
             event::{BlockEventQuery, EventDTO, EventQuery},
             pagination::{PagedResponse, PaginationData},
+            request::block::BlockReference,
         },
         error::APIError,
     },

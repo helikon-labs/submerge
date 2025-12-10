@@ -14,10 +14,10 @@ use crate::{
     },
     types::api::{
         dto::{
-            block::BlockReference,
             call::CallDTO,
             extrinsic::{BlockExtrinsicQuery, ExtrinsicDTO, ExtrinsicQuery},
             pagination::{PagedResponse, PaginationData},
+            request::block::BlockReference,
         },
         error::APIError,
     },
