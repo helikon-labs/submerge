@@ -7,4 +7,5 @@ pub mod hex;
 pub mod metadata;
 pub mod multi_address;
 pub mod pagination;
+pub mod response;
 pub mod trace;

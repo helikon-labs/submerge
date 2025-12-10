@@ -139,7 +139,6 @@ impl IntoResponse for APIError {
         let body = APIErrorBody {
             message: self.message(),
         };
-
         (self.status_code(), Json(body)).into_response()
     }
 }

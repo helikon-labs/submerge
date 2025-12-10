@@ -1,3 +1,14 @@
+use crate::types::api::{
+    dto::{
+        pagination::PaginationData,
+        response::{
+            block::{BlockDTO, BlockList, PaginatedBlockList},
+            error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
+        },
+    },
+    error::APIErrorBody,
+};
+
 #[derive(utoipa::OpenApi)]
 #[openapi(
     info(
@@ -57,8 +68,8 @@
         crate::api::v1::block::get_blocks_by_reference,
     ),
     components(
-        schemas(),
-        responses(),
+        schemas(BlockDTO, PaginationData, APIErrorBody),
+        responses(BadRequest, TooManyRequests, InternalServerError, BlockList, PaginatedBlockList, NotFound),
     ),
 )]
 pub struct APIDoc;

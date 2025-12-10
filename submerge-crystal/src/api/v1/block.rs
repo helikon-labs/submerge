@@ -8,10 +8,14 @@ use crate::{
     persistence::{api::block::CrystalBlockAPIPostgreSQLStorage, CrystalPostgreSQLStorage},
     types::api::{
         dto::{
-            block::{BlockDTO, BlockQuery, BlockReference, PaginatedBlockList},
+            block::{BlockQuery, BlockReference},
             pagination::PaginationData,
+            response::{
+                block::{BlockList, PaginatedBlockList},
+                error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
+            },
         },
-        error::{APIError, APIErrorBody},
+        error::APIError,
     },
 };
 
@@ -25,41 +29,19 @@ use crate::{
     responses(
         (
             status = 200,
-            description = "Paginated list of blocks.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = PaginatedBlockList,
+            response = PaginatedBlockList,
         ),
         (
             status = 400,
-            description = "Invalid parameter.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = APIErrorBody,
+            response = BadRequest,
         ),
         (
             status = 429,
-            description = "Too many requests.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-                ("X-Retry-After" = u32),
-                ("Retry-After" = u32),
-            ),
-            body = APIErrorBody,
+            response = TooManyRequests,
         ),
         (
             status = 500,
-            description = "Internal server error.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = APIErrorBody,
+            response = InternalServerError,
         )
     )
 )]
@@ -133,57 +115,30 @@ pub(crate) async fn get_blocks(
     responses(
         (
             status = 200,
-            description = "List of matching blocks.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = Vec<BlockDTO>,
+            response = BlockList,
         ),
         (
             status = 400,
-            description = "Invalid parameter.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = APIErrorBody,
+            response = BadRequest,
         ),
         (
             status = 404,
-            description = "Block not found.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = APIErrorBody,
+            response = NotFound,
         ),
         (
             status = 429,
-            description = "Too many requests.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-                ("X-Retry-After" = u32),
-                ("Retry-After" = u32),
-            ),
-            body = APIErrorBody,
+            response = TooManyRequests,
         ),
         (
             status = 500,
-            description = "Internal server error.",
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            body = APIErrorBody,
+            response = InternalServerError,
         )
     )
 )]
 pub(crate) async fn get_blocks_by_reference(
     State(state): State<ServiceState>,
     Path(block_reference): Path<String>,
-) -> Result<Json<Vec<BlockDTO>>, APIError> {
+) -> Result<Json<BlockList>, APIError> {
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(number)) => {
             let rows = state.postgres.get_blocks_by_number(number).await?;
@@ -194,11 +149,11 @@ pub(crate) async fn get_blocks_by_reference(
                 for row in rows.iter() {
                     data.push(row.try_into()?);
                 }
-                Ok(Json(data))
+                Ok(Json(BlockList(data)))
             }
         }
         Ok(BlockReference::Hash(hash)) => match &state.postgres.get_block_by_hash(&hash).await {
-            Ok(Some(row)) => Ok(Json(vec![row.try_into()?])),
+            Ok(Some(row)) => Ok(Json(BlockList(vec![row.try_into()?]))),
             _ => Err(APIError::BlockNotFoundWithHash(hash)),
         },
         Err(message) => Err(APIError::BadRequest(message)),
