@@ -99,7 +99,6 @@ impl TryFrom<&BlockRow> for BlockDTO {
         ("X-RateLimit-Limit" = u32),
         ("X-RateLimit-Remaining" = u32),
     ),
-    example = json!([block_example()]),
 )]
 pub struct BlockList(pub Vec<BlockDTO>);
 

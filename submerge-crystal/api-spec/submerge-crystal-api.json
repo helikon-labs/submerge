@@ -664,39 +664,7 @@
               "items": {
                 "$ref": "#/components/schemas/Block"
               }
-            },
-            "example": [
-              {
-                "author": {
-                  "type": "accountId",
-                  "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
-                },
-                "eventCount": 56,
-                "extrinsicCount": 2,
-                "extrinsicRoot": "0x7893dd573a5033a6d785bf4038c237cbd8e1f3730d177d4f9b21c8d2c7b34454",
-                "hash": "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8",
-                "number": 27419831,
-                "parentHash": "0x1615581259dd1ac45fea1b23406367ca79c9f6dfa3b3b1115517c6e86250c42b",
-                "specVersion": 1006001,
-                "stateRoot": "0x8c8b0b599733c41bad79a617d8f2f0213a5d965d287cee16c9efd65f23001603",
-                "status": "finalized",
-                "timestamp": 1755773684012,
-                "weight": {
-                  "mandatory": {
-                    "proofSize": "204955",
-                    "refTime": "701777135384"
-                  },
-                  "normal": {
-                    "proofSize": "0",
-                    "refTime": "0"
-                  },
-                  "operational": {
-                    "proofSize": "0",
-                    "refTime": "0"
-                  }
-                }
-              }
-            ]
+            }
           }
         }
       },
