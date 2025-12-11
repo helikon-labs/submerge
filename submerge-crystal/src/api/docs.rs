@@ -5,6 +5,7 @@ use crate::types::api::{
             block::{BlockDTO, BlockList, PaginatedBlockList},
             call::{CallDTO, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
+            extrinsic::{ExtrinsicList, PaginatedExtrinsicList},
         },
     },
     error::APIErrorBody,
@@ -65,8 +66,10 @@ use crate::types::api::{
         (name = "trace", description = "Endpoints related to block traces.")
     ),
     paths(
+        // block
         crate::api::v1::block::get_blocks,
         crate::api::v1::block::get_blocks_by_reference,
+        // call
         crate::api::v1::call::get_calls,
         crate::api::v1::call::get_calls_by_block_reference,
         crate::api::v1::call::get_calls_by_block_reference_and_extrinsic_index,
@@ -76,10 +79,19 @@ use crate::types::api::{
         crate::api::v1::call::get_parent_call_by_hash,
         crate::api::v1::call::get_sub_calls_by_hash,
         crate::api::v1::call::get_call_extrinsic_by_hash,
+        // extrinsic
+        crate::api::v1::extrinsic::get_extrinsics,
+        crate::api::v1::extrinsic::get_extrinsics_by_block_reference,
+        crate::api::v1::extrinsic::get_extrinsics_by_block_reference_and_index,
+        crate::api::v1::extrinsic::get_extrinsic_by_hash,
+        crate::api::v1::extrinsic::get_extrinsic_root_call_by_hash,
     ),
     components(
         schemas(BlockDTO, CallDTO, PaginationData, APIErrorBody),
-        responses(BlockList, PaginatedBlockList, PaginatedCallList, BadRequest, TooManyRequests, InternalServerError, NotFound),
+        responses(
+            BlockList, PaginatedBlockList, PaginatedCallList, ExtrinsicList, PaginatedExtrinsicList,
+            BadRequest, TooManyRequests, InternalServerError, NotFound,
+        ),
     ),
 )]
 pub struct APIDoc;

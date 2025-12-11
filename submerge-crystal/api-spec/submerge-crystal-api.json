@@ -233,7 +233,7 @@
         "tags": [
           "call"
         ],
-        "summary": "Get calls in a block",
+        "summary": "Get block calls",
         "description": "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.",
         "operationId": "get_calls_by_block_reference",
         "parameters": [
@@ -298,6 +298,145 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/extrinsics": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get block extrinsics",
+        "description": "If a hash is passed, returns the extrinsics for the matching block. If a number is passed, gives the extrinsis for the block by that number - could be multiple blocks if there's a pruned block in that slot.",
+        "operationId": "get_extrinsics_by_block_reference",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the extrinsics. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            },
+            "example": "13453264"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block call list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block calls per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "is_signed",
+            "in": "query",
+            "description": "Whether to include only signed/unsigned extrinsics within the block.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "signer",
+            "in": "query",
+            "description": "Filter block extrinsics by signer. Either of the following:\n- Signer's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Signer's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Signer's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedExtrinsicList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/extrinsics/{extrinsic_index}": {
+      "get": {
+        "tags": [
+          "block"
+        ],
+        "summary": "Get block extrinsics by index",
+        "description": "Returns the extrinsics in the given block at the given index. It can return multiple extrinsics if a number is passed and there's a pruned block in that slot.",
+        "operationId": "get_extrinsics_by_block_reference_and_index",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the extrinsic. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "extrinsic_index",
+            "in": "path",
+            "description": "0-based index for the extrinsic in the block.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ExtrinsicList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -874,6 +1013,276 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/extrinsics": {
+      "get": {
+        "tags": [
+          "extrinsic"
+        ],
+        "summary": "Get extrinsics",
+        "description": "Returns all extrinsics from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number and ascending extrinsic index.",
+        "operationId": "get_extrinsics",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Extrinsic list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of extrinsics per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "min_block_number",
+            "in": "query",
+            "description": "Filter extrinsics by minimum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1534287
+          },
+          {
+            "name": "max_block_number",
+            "in": "query",
+            "description": "Filter extrinsics by maximum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 2825701
+          },
+          {
+            "name": "min_block_timestamp",
+            "in": "query",
+            "description": "Filter extrinsics by minimum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "max_block_timestamp",
+            "in": "query",
+            "description": "Filter extrinsics by maximum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "min_spec_version",
+            "in": "query",
+            "description": "Filter extrinsics by minimum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "max_spec_version",
+            "in": "query",
+            "description": "Filter extrinsics by maximum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "is_signed",
+            "in": "query",
+            "description": "Whether to include only signed/unsigned extrinsics.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "signer",
+            "in": "query",
+            "description": "Filter extrinsics by signer. Either of the following:\n- Signer's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Signer's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Signer's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$"
+            },
+            "example": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedExtrinsicList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/extrinsics/{extrinsic_hash}": {
+      "get": {
+        "tags": [
+          "extrinsic"
+        ],
+        "summary": "Get extrinsic by hash",
+        "description": "Returns the extrinsic by its hash.",
+        "operationId": "get_extrinsic_by_hash",
+        "parameters": [
+          {
+            "name": "extrinsic_hash",
+            "in": "path",
+            "description": "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Extrinsic with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Extrinsic"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/extrinsics/{extrinsic_hash}/call": {
+      "get": {
+        "tags": [
+          "extrinsic"
+        ],
+        "summary": "Get extrinsic root call",
+        "description": "Returns the root call of an extrinsic by its hash.",
+        "operationId": "get_extrinsic_root_call_by_hash",
+        "parameters": [
+          {
+            "name": "extrinsic_hash",
+            "in": "path",
+            "description": "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The root call of the extrinsic.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -1846,6 +2255,35 @@
           }
         }
       },
+      "ExtrinsicList": {
+        "description": "List of matching extrinsics.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Extrinsic"
+              }
+            }
+          }
+        }
+      },
       "InternalServerError": {
         "description": "Internal server error.",
         "headers": {
@@ -2023,6 +2461,91 @@
                       "palletName": "Balances",
                       "parentCallHash": "0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f",
                       "specVersion": 2000000
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/PaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaginatedExtrinsicList": {
+        "description": "Paginated list of matching extrinsics.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Extrinsic"
+                  },
+                  "example": [
+                    {
+                      "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
+                      "blockNumber": 3172595,
+                      "blockStatus": "proposed",
+                      "blockTimestamp": 1765432302000,
+                      "extra": {
+                        "chargeAssetTxPayment": {
+                          "assetId": null,
+                          "tip": "0"
+                        },
+                        "checkGenesis": {},
+                        "checkMetadataHash": {
+                          "mode": {
+                            "type": "Disabled",
+                            "value": []
+                          }
+                        },
+                        "checkMortality": {
+                          "type": "Mortal84",
+                          "value": "0"
+                        },
+                        "checkNonZeroSender": {},
+                        "checkNonce": "8362",
+                        "checkSpecVersion": {},
+                        "checkTxVersion": {},
+                        "checkWeight": {}
+                      },
+                      "hash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+                      "index": 2,
+                      "isSuccessful": true,
+                      "signature": {
+                        "type": "sr25519",
+                        "value": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+                      },
+                      "signer": {
+                        "type": "accountId",
+                        "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
+                      },
+                      "specVersion": 2000000,
+                      "traceIndex": 2,
+                      "version": 4
                     }
                   ]
                 },

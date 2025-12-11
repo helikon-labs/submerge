@@ -105,6 +105,16 @@ impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
     }
 }
 
+#[derive(Debug, Serialize, ToResponse)]
+#[response(
+    description = "List of matching extrinsics.",
+    headers(
+        ("X-RateLimit-Limit" = u32),
+        ("X-RateLimit-Remaining" = u32),
+    ),
+)]
+pub struct ExtrinsicList(pub Vec<ExtrinsicDTO>);
+
 #[derive(Debug, Serialize, ToResponse, ToSchema)]
 #[response(
     description = "Paginated list of matching extrinsics.",
