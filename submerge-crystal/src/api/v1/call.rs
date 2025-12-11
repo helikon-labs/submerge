@@ -2,7 +2,6 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use serde_json::Value as JSONValue;
 
 use crate::{
     api::{get_page_number_and_size, ServiceState},
@@ -15,15 +14,16 @@ use crate::{
     },
     types::api::{
         dto::{
-            extrinsic::ExtrinsicDTO,
-            pagination::{PagedResponse, PaginationData},
+            pagination::PaginationData,
             request::{
                 block::BlockReference,
                 call::{BlockCallQuery, CallQuery},
             },
             response::{
-                call::{CallDTO, PaginatedCallList},
-                error::{BadRequest, InternalServerError, TooManyRequests},
+                call::{CallArgs, CallDTO, PaginatedCallList},
+                error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
+                extrinsic::ExtrinsicDTO,
+                hex::Hash256Hex,
             },
         },
         error::APIError,
@@ -104,11 +104,49 @@ pub(crate) async fn get_calls(
     Ok(Json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/blocks/{block_ref}/calls",
+    tag = "call",
+    summary = "Get calls in a block",
+    description = "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.",
+    params(
+        (
+            "block_ref" = String,
+            Path,
+            description = "Block reference for the calls. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+        BlockCallQuery,
+    ),
+    responses(
+        (
+            status = 200,
+            response = PaginatedCallList,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_calls_by_block_reference(
     State(state): State<ServiceState>,
     Path(block_reference): Path<String>,
     Query(query): Query<BlockCallQuery>,
-) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
+) -> Result<Json<PaginatedCallList>, APIError> {
     let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
@@ -133,7 +171,7 @@ pub(crate) async fn get_calls_by_block_reference(
             for row in rows.iter() {
                 data.push(row.into());
             }
-            let response = PagedResponse {
+            let response = PaginatedCallList {
                 pagination: PaginationData {
                     page,
                     page_size,
@@ -165,7 +203,7 @@ pub(crate) async fn get_calls_by_block_reference(
             for row in rows.iter() {
                 data.push(row.into());
             }
-            let response = PagedResponse {
+            let response = PaginatedCallList {
                 pagination: PaginationData {
                     page,
                     page_size,
@@ -179,16 +217,69 @@ pub(crate) async fn get_calls_by_block_reference(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/blocks/{block_ref}/extrinsics/{extrinsic_index}/calls",
+    tag = "call",
+    summary = "Get block extrinsic calls",
+    description = "Returns the calls for extrinsic in a block by block reference and 0-based extrinsic index.",
+    params(
+        (
+            "block_ref" = String,
+            Path,
+            description = "Block reference for the extrinsic. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+        (
+            "extrinsic_index" = u32,
+            Path,
+            description = "0-based index for the extrinsic in the block.",
+        ),
+        BlockCallQuery,
+    ),
+    responses(
+        (
+            status = 200,
+            response = PaginatedCallList,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
     State(state): State<ServiceState>,
     Path((block_reference, extrinsic_index)): Path<(String, u32)>,
     Query(query): Query<BlockCallQuery>,
-) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
+) -> Result<Json<PaginatedCallList>, APIError> {
     let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
                 return Err(APIError::BlockNotFoundWithNumber(block_number));
+            }
+            if !state
+                .postgres
+                .block_extrinsic_exists_by_number_and_index(block_number, extrinsic_index)
+                .await?
+            {
+                return Err(APIError::BlockExtrinsicNotFoundWithNumberAndIndex(
+                    block_number,
+                    extrinsic_index,
+                ));
             }
             let (total_count, rows) = tokio::try_join!(
                 state
@@ -214,7 +305,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
             for row in rows.iter() {
                 data.push(row.into());
             }
-            let response = PagedResponse {
+            let response = PaginatedCallList {
                 pagination: PaginationData {
                     page,
                     page_size,
@@ -227,6 +318,16 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
         Ok(BlockReference::Hash(block_hash)) => {
             if !state.postgres.block_exists_by_hash(&block_hash).await? {
                 return Err(APIError::BlockNotFoundWithHash(block_hash));
+            }
+            if !state
+                .postgres
+                .block_extrinsic_exists_by_hash_and_index(&block_hash, extrinsic_index)
+                .await?
+            {
+                return Err(APIError::BlockExtrinsicNotFoundWithHashAndIndex(
+                    block_hash,
+                    extrinsic_index,
+                ));
             }
             let (total_count, rows) = tokio::try_join!(
                 state
@@ -250,7 +351,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
             for row in rows.iter() {
                 data.push(row.into());
             }
-            let response = PagedResponse {
+            let response = PaginatedCallList {
                 pagination: PaginationData {
                     page,
                     page_size,
@@ -264,11 +365,49 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/extrinsics/{extrinsic_hash}/calls",
+    tag = "call",
+    summary = "Get extrinsic calls",
+    description = "Returns the calls in an extrinsic by extrinsic hash.",
+    params(
+        (
+            "extrinsic_hash" = String,
+            Path,
+            description = "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:0x)?[0-9a-fA-F]{64}$",
+        ),
+        BlockCallQuery,
+    ),
+    responses(
+        (
+            status = 200,
+            response = PaginatedCallList,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_calls_by_extrinsic_hash(
     State(state): State<ServiceState>,
     Path(extrinsic_hash): Path<String>,
     Query(query): Query<BlockCallQuery>,
-) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
+) -> Result<Json<PaginatedCallList>, APIError> {
     let extrinsic_hash = if let Ok(extrinsic_hash) =
         hex::decode(extrinsic_hash.trim_start_matches("0x"))
     {
@@ -302,7 +441,7 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     for row in rows.iter() {
         data.push(row.into());
     }
-    let response = PagedResponse {
+    let response = PaginatedCallList {
         pagination: PaginationData {
             page,
             page_size,
@@ -313,6 +452,48 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     Ok(Json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/calls/{call_hash}",
+    tag = "call",
+    summary = "Get call by hash",
+    description = "Returns the call by its hash.",
+    params(
+        (
+            "call_hash" = String,
+            Path,
+            description = "Call hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "Call with the given hash.",
+            body = CallDTO,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_call_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,
@@ -328,21 +509,108 @@ pub(crate) async fn get_call_by_hash(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/calls/{call_hash}/args",
+    tag = "call",
+    summary = "Get call arguments",
+    description = "Returns the arguments of a runtime call by its hash.",
+    params(
+        (
+            "call_hash" = String,
+            Path,
+            description = "Call hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "Arguments for the runtime call with the given hash.",
+            body = CallArgs,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_call_args_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,
-) -> Result<Json<JSONValue>, APIError> {
+) -> Result<Json<CallArgs>, APIError> {
     let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
         Ok(hash) => hash,
         Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
     };
     if let Some(args) = state.postgres.get_call_args_by_hash(&call_hash).await? {
-        Ok(Json(args))
+        Ok(Json(CallArgs {
+            hash: Hash256Hex(hex::encode(call_hash.as_slice())),
+            args,
+        }))
     } else {
         Err(APIError::CallNotFoundWithHash(call_hash))
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/calls/{call_hash}/parent",
+    tag = "call",
+    summary = "Get parent call",
+    description = "Returns a parent call by the sub call's hash.",
+    params(
+        (
+            "call_hash" = String,
+            Path,
+            description = "Sub call hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "Parent call for the given sub call hash.",
+            body = CallDTO,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_parent_call_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,
@@ -361,11 +629,49 @@ pub(crate) async fn get_parent_call_by_hash(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/calls/{call_hash}/subs",
+    tag = "call",
+    summary = "Get sub calls",
+    description = "Returns sub calls call by a parent call's hash.",
+    params(
+        (
+            "call_hash" = String,
+            Path,
+            description = "Parent call hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+        BlockCallQuery,
+    ),
+    responses(
+        (
+            status = 200,
+            response = PaginatedCallList,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_sub_calls_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,
     Query(query): Query<BlockCallQuery>,
-) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
+) -> Result<Json<PaginatedCallList>, APIError> {
     let call_hash = if let Ok(call_hash) = hex::decode(call_hash.trim_start_matches("0x")) {
         call_hash
     } else {
@@ -393,7 +699,7 @@ pub(crate) async fn get_sub_calls_by_hash(
     for row in rows.iter() {
         data.push(row.into());
     }
-    let response = PagedResponse {
+    let response: PaginatedCallList = PaginatedCallList {
         pagination: PaginationData {
             page,
             page_size,
@@ -404,6 +710,48 @@ pub(crate) async fn get_sub_calls_by_hash(
     Ok(Json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/calls/{call_hash}/extrinsic",
+    tag = "call",
+    summary = "Get call extrinsic",
+    description = "Returns the extrinsic of a call by call hash.",
+    params(
+        (
+            "call_hash" = String,
+            Path,
+            description = "Hash of the extrinsic call in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "The extrinsic that contains the call.",
+            body = ExtrinsicDTO,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_call_extrinsic_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,

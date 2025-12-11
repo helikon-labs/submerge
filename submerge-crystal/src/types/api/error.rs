@@ -28,6 +28,8 @@ pub enum APIError {
     MetadataPalletNotFound(u32, u32),
     BlockNotFoundWithNumber(u64),
     BlockNotFoundWithHash(Vec<u8>),
+    BlockExtrinsicNotFoundWithNumberAndIndex(u64, u32),
+    BlockExtrinsicNotFoundWithHashAndIndex(Vec<u8>, u32),
     ExtrinsicNotFoundWithHash(Vec<u8>),
     CallNotFoundWithHash(Vec<u8>),
     EventNotFoundWithHash(Vec<u8>),
@@ -56,6 +58,19 @@ impl APIError {
             }
             APIError::BlockNotFoundWithHash(hash) => {
                 format!("Block with hash 0x{} not found.", hex::encode(hash))
+            }
+            APIError::BlockExtrinsicNotFoundWithNumberAndIndex(block_number, extrinsic_index) => {
+                format!(
+                    "Extrinsic with index {} not found in block(s) with number {}.",
+                    extrinsic_index, block_number
+                )
+            }
+            APIError::BlockExtrinsicNotFoundWithHashAndIndex(block_hash, extrinsic_index) => {
+                format!(
+                    "Extrinsic with index {} not found in block with hash 0x{}.",
+                    extrinsic_index,
+                    hex::encode(block_hash)
+                )
             }
             APIError::ExtrinsicNotFoundWithHash(hash) => {
                 format!("Extrinsic with hash 0x{} not found.", hex::encode(hash))
@@ -93,6 +108,8 @@ impl APIError {
             APIError::MetadataPalletNotFound(_, _) => StatusCode::NOT_FOUND,
             APIError::BlockNotFoundWithNumber(_) => StatusCode::NOT_FOUND,
             APIError::BlockNotFoundWithHash(_) => StatusCode::NOT_FOUND,
+            APIError::BlockExtrinsicNotFoundWithNumberAndIndex(_, _) => StatusCode::NOT_FOUND,
+            APIError::BlockExtrinsicNotFoundWithHashAndIndex(_, _) => StatusCode::NOT_FOUND,
             APIError::ExtrinsicNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::CallNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::EventNotFoundWithHash(_) => StatusCode::NOT_FOUND,

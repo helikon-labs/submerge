@@ -58,7 +58,7 @@ pub struct CallDTO {
     #[schema(example = "SetCode")]
     pub pallet_call_name: String,
     /// Whether the call's extrinsic was successful.
-    /// Note: The extrinsic can be successful where the call has failed (see the Utility.ForceBatch call).
+    /// Note: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).
     pub extrinsic_is_successful: bool,
 }
 
@@ -92,16 +92,6 @@ impl From<&CallRow> for CallDTO {
     }
 }
 
-#[derive(Debug, Serialize, ToResponse)]
-#[response(
-    description = "List of matching calls.",
-    headers(
-        ("X-RateLimit-Limit" = u32),
-        ("X-RateLimit-Remaining" = u32),
-    ),
-)]
-pub struct CallList(pub Vec<CallDTO>);
-
 #[derive(Debug, Serialize, ToResponse, ToSchema)]
 #[response(
     description = "Paginated list of matching calls.",
@@ -114,6 +104,46 @@ pub struct PaginatedCallList {
     #[schema(example = json!([call_example()]))]
     pub data: Vec<CallDTO>,
     pub pagination: PaginationData,
+}
+
+/// Call arguments wrapper.
+#[derive(Debug, Serialize, ToSchema)]
+#[schema(
+    example = json!({
+        "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011",
+        "args": {
+            "dest": {
+                "type": "Id",
+                "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+            },
+            "value": "117284000000"
+        }
+    }),
+)]
+pub struct CallArgs {
+    /// Call hash.
+    pub hash: Hash256Hex,
+    #[schema(schema_with = call_args_schema)]
+    pub args: JSONValue,
+}
+
+fn call_args_schema() -> utoipa::openapi::Object {
+    use utoipa::openapi::ObjectBuilder;
+
+    ObjectBuilder::new()
+        .schema_type(utoipa::openapi::schema::Type::Object)
+        .examples([Some(serde_json::json!({
+            "dest": {
+                "type": "Id",
+                "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+            },
+            "value": "117284000000"
+        }))])
+        .description(Some(
+            "Call arguments in JSON format. Schema depends on runtime metadata and the call."
+                .to_string(),
+        ))
+        .build()
 }
 
 fn call_example() -> JSONValue {
@@ -138,9 +168,9 @@ fn call_example() -> JSONValue {
         call_path: "root".to_string(),
         call_index: vec![0],
         pallet_index: 1,
-        pallet_name: "ParachainSystem".to_string(),
+        pallet_name: "Balances".to_string(),
         pallet_call_index: 0,
-        pallet_call_name: "SetValidationData".to_string(),
+        pallet_call_name: "TransferKeepAlive".to_string(),
         extrinsic_is_successful: true,
     };
     serde_json::to_value(&call).unwrap()

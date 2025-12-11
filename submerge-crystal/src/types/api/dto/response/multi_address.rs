@@ -94,7 +94,7 @@ pub struct MultiAddress32DTO {
     pub value: Address32Hex,
 }
 
-/// Discriminated union for the Substrate multiaddress type.
+/// Discriminated union for the Substrate multi-address type.
 /// The `type` tag selects the variant; `value` carries the payload.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(untagged)]

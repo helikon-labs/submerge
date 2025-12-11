@@ -228,6 +228,189 @@
         }
       }
     },
+    "/blocks/{block_ref}/calls": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get calls in a block",
+        "description": "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.",
+        "operationId": "get_calls_by_block_reference",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the calls. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block call list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block calls per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "system"
+          },
+          {
+            "name": "pallet_call_name",
+            "in": "query",
+            "description": "Filter blocks calls by call name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "setcode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/extrinsics/{extrinsic_index}/calls": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get block extrinsic calls",
+        "description": "Returns the calls for extrinsic in a block by block reference and 0-based extrinsic index.",
+        "operationId": "get_calls_by_block_reference_and_extrinsic_index",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the extrinsic. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "extrinsic_index",
+            "in": "path",
+            "description": "0-based index for the extrinsic in the block.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block call list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block calls per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "system"
+          },
+          {
+            "name": "pallet_call_name",
+            "in": "query",
+            "description": "Filter blocks calls by call name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "setcode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/calls": {
       "get": {
         "tags": [
@@ -363,6 +546,426 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/calls/{call_hash}": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get call by hash",
+        "description": "Returns the call by its hash.",
+        "operationId": "get_call_by_hash",
+        "parameters": [
+          {
+            "name": "call_hash",
+            "in": "path",
+            "description": "Call hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Call with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/calls/{call_hash}/args": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get call arguments",
+        "description": "Returns the arguments of a runtime call by its hash.",
+        "operationId": "get_call_args_by_hash",
+        "parameters": [
+          {
+            "name": "call_hash",
+            "in": "path",
+            "description": "Call hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arguments for the runtime call with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallArgs"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/calls/{call_hash}/extrinsic": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get call extrinsic",
+        "description": "Returns the extrinsic of a call by call hash.",
+        "operationId": "get_call_extrinsic_by_hash",
+        "parameters": [
+          {
+            "name": "call_hash",
+            "in": "path",
+            "description": "Hash of the extrinsic call in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The extrinsic that contains the call.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Extrinsic"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/calls/{call_hash}/parent": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get parent call",
+        "description": "Returns a parent call by the sub call's hash.",
+        "operationId": "get_parent_call_by_hash",
+        "parameters": [
+          {
+            "name": "call_hash",
+            "in": "path",
+            "description": "Sub call hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Parent call for the given sub call hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/calls/{call_hash}/subs": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get sub calls",
+        "description": "Returns sub calls call by a parent call's hash.",
+        "operationId": "get_sub_calls_by_hash",
+        "parameters": [
+          {
+            "name": "call_hash",
+            "in": "path",
+            "description": "Parent call hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block call list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block calls per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "system"
+          },
+          {
+            "name": "pallet_call_name",
+            "in": "query",
+            "description": "Filter blocks calls by call name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "setcode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/extrinsics/{extrinsic_hash}/calls": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get extrinsic calls",
+        "description": "Returns the calls in an extrinsic by extrinsic hash.",
+        "operationId": "get_calls_by_extrinsic_hash",
+        "parameters": [
+          {
+            "name": "extrinsic_hash",
+            "in": "path",
+            "description": "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:0x)?[0-9a-fA-F]{64}$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block call list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block calls per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "system"
+          },
+          {
+            "name": "pallet_call_name",
+            "in": "query",
+            "description": "Filter blocks calls by call name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "setcode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -604,7 +1207,7 @@
           },
           "extrinsicIsSuccessful": {
             "type": "boolean",
-            "description": "Whether the call's extrinsic was successful.\nNote: The extrinsic can be successful where the call has failed (see the Utility.ForceBatch call)."
+            "description": "Whether the call's extrinsic was successful.\nNote: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call)."
           },
           "hash": {
             "$ref": "#/components/schemas/Hash256Hex",
@@ -660,11 +1263,48 @@
           "extrinsicIsSuccessful": true,
           "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
           "palletCallIndex": 0,
-          "palletCallName": "SetValidationData",
+          "palletCallName": "TransferKeepAlive",
           "palletIndex": 1,
-          "palletName": "ParachainSystem",
+          "palletName": "Balances",
           "parentCallHash": "0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f",
           "specVersion": 2000000
+        }
+      },
+      "CallArgs": {
+        "type": "object",
+        "description": "Call arguments wrapper.",
+        "required": [
+          "hash",
+          "args"
+        ],
+        "properties": {
+          "args": {
+            "type": "object",
+            "description": "Call arguments in JSON format. Schema depends on runtime metadata and the call.",
+            "examples": [
+              {
+                "dest": {
+                  "type": "Id",
+                  "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                },
+                "value": "117284000000"
+              }
+            ]
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Call hash."
+          }
+        },
+        "example": {
+          "args": {
+            "dest": {
+              "type": "Id",
+              "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+            },
+            "value": "117284000000"
+          },
+          "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
         }
       },
       "Error": {
@@ -680,6 +1320,152 @@
             "description": "Error message.",
             "example": "Error message."
           }
+        }
+      },
+      "Extrinsic": {
+        "type": "object",
+        "description": "An extrinsic in a block. Signed or unsigned.",
+        "required": [
+          "blockHash",
+          "blockNumber",
+          "specVersion",
+          "blockStatus",
+          "hash",
+          "index",
+          "version",
+          "isSuccessful"
+        ],
+        "properties": {
+          "blockHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the extrinsic's block."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Number of the extrinsic's block.",
+            "minimum": 0
+          },
+          "blockStatus": {
+            "$ref": "#/components/schemas/BlockStatus",
+            "description": "Status of the extrinsic's block."
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp of the extrinsic's block. Milliseconds.",
+            "minimum": 0
+          },
+          "extra": {
+            "type": "object",
+            "description": "Extrinsic extras in JSON format - checkNonce, checkGenesis, chargeTransactionPayment, etc.",
+            "examples": [
+              {
+                "chargeAssetTxPayment": {
+                  "assetId": null,
+                  "tip": "0"
+                },
+                "checkGenesis": {},
+                "checkMetadataHash": {
+                  "mode": {
+                    "type": "Disabled",
+                    "value": []
+                  }
+                },
+                "checkMortality": {
+                  "type": "Mortal84",
+                  "value": "0"
+                },
+                "checkNonZeroSender": {},
+                "checkNonce": "8362",
+                "checkSpecVersion": {},
+                "checkTxVersion": {},
+                "checkWeight": {}
+              }
+            ]
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Extrinsic hash."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Extrinsic index.",
+            "minimum": 0
+          },
+          "isSuccessful": {
+            "type": "boolean",
+            "description": "Whether the extrinsic was successful."
+          },
+          "signature": {
+            "$ref": "#/components/schemas/MultiSignature",
+            "description": "Extrinsic signature address."
+          },
+          "signer": {
+            "$ref": "#/components/schemas/MultiAddress",
+            "description": "Extrinsic signer address."
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Runtime spec version of the extrinsic's block.",
+            "minimum": 0
+          },
+          "traceIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Trace index for the extrinsic.",
+            "minimum": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Extrinsic version in metadata.",
+            "minimum": 0
+          }
+        },
+        "example": {
+          "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
+          "blockNumber": 3172595,
+          "blockStatus": "proposed",
+          "blockTimestamp": 1765432302000,
+          "extra": {
+            "chargeAssetTxPayment": {
+              "assetId": null,
+              "tip": "0"
+            },
+            "checkGenesis": {},
+            "checkMetadataHash": {
+              "mode": {
+                "type": "Disabled",
+                "value": []
+              }
+            },
+            "checkMortality": {
+              "type": "Mortal84",
+              "value": "0"
+            },
+            "checkNonZeroSender": {},
+            "checkNonce": "8362",
+            "checkSpecVersion": {},
+            "checkTxVersion": {},
+            "checkWeight": {}
+          },
+          "hash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+          "index": 2,
+          "isSuccessful": true,
+          "signature": {
+            "type": "sr25519",
+            "value": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+          },
+          "signer": {
+            "type": "accountId",
+            "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
+          },
+          "specVersion": 2000000,
+          "traceIndex": 2,
+          "version": 4
         }
       },
       "Hash256Hex": {
@@ -715,7 +1501,7 @@
             "$ref": "#/components/schemas/MultiAddress32"
           }
         ],
-        "description": "Discriminated union for the Substrate multiaddress type.\nThe `type` tag selects the variant; `value` carries the payload.",
+        "description": "Discriminated union for the Substrate multi-address type.\nThe `type` tag selects the variant; `value` carries the payload.",
         "example": {
           "type": "accountId",
           "value": "0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a"
@@ -856,6 +1642,107 @@
           "raw"
         ]
       },
+      "MultiSignature": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MultiSignatureECDSA"
+          },
+          {
+            "$ref": "#/components/schemas/MultiSignatureEd25519"
+          },
+          {
+            "$ref": "#/components/schemas/MultiSignatureSr25519"
+          }
+        ],
+        "description": "Discriminated union for the Substrate multi-signature type.\nThe `type` tag selects the variant; `value` carries the payload.",
+        "example": {
+          "type": "sr25519",
+          "value": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "ecdsa": "#/components/schemas/MultiSignatureECDSA",
+            "ed25519": "#/components/schemas/MultiSignatureEd25519",
+            "sr25519": "#/components/schemas/MultiSignatureSr25519"
+          }
+        }
+      },
+      "MultiSignatureECDSA": {
+        "type": "object",
+        "description": "ECDSA signature.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiSignatureECDSAType",
+            "description": "Must be `ecdsa`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/SignatureHexString",
+            "description": "ECDSA signature hex."
+          }
+        }
+      },
+      "MultiSignatureECDSAType": {
+        "type": "string",
+        "description": "Multi-signature ECDSA type.",
+        "enum": [
+          "ecdsa"
+        ]
+      },
+      "MultiSignatureEd25519": {
+        "type": "object",
+        "description": "Ed25519 signature.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiSignatureEd25519Type",
+            "description": "Must be `ed25519`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/SignatureHexString",
+            "description": "Ed25519 signature hex."
+          }
+        }
+      },
+      "MultiSignatureEd25519Type": {
+        "type": "string",
+        "description": "Multi-signature Ed25519 type.",
+        "enum": [
+          "ed25519"
+        ]
+      },
+      "MultiSignatureSr25519": {
+        "type": "object",
+        "description": "Sr25519 signature.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiSignatureSr25519Type",
+            "description": "Must be `sr25519`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/SignatureHexString",
+            "description": "Sr25519 signature hex."
+          }
+        }
+      },
+      "MultiSignatureSr25519Type": {
+        "type": "string",
+        "description": "Multi-signature Sr25519 type.",
+        "enum": [
+          "sr25519"
+        ]
+      },
       "PaginationData": {
         "type": "object",
         "description": "Pagination data for paged responses.",
@@ -892,6 +1779,15 @@
           "pageSize": 1,
           "total": 4352561
         }
+      },
+      "SignatureHexString": {
+        "type": "string",
+        "description": "and ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.",
+        "examples": [
+          "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+          "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+        ],
+        "pattern": "^0x([0-9a-f]{128}|[0-9a-f]{130})$"
       }
     },
     "responses": {
@@ -945,35 +1841,6 @@
               "type": "array",
               "items": {
                 "$ref": "#/components/schemas/Block"
-              }
-            }
-          }
-        }
-      },
-      "CallList": {
-        "description": "List of matching calls.",
-        "headers": {
-          "X-RateLimit-Limit": {
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
-          },
-          "X-RateLimit-Remaining": {
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
-          }
-        },
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/Call"
               }
             }
           }
@@ -1151,9 +2018,9 @@
                       "extrinsicIsSuccessful": true,
                       "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
                       "palletCallIndex": 0,
-                      "palletCallName": "SetValidationData",
+                      "palletCallName": "TransferKeepAlive",
                       "palletIndex": 1,
-                      "palletName": "ParachainSystem",
+                      "palletName": "Balances",
                       "parentCallHash": "0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f",
                       "specVersion": 2000000
                     }

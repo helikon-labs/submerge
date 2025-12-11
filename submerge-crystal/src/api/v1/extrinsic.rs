@@ -14,10 +14,13 @@ use crate::{
     },
     types::api::{
         dto::{
-            extrinsic::{BlockExtrinsicQuery, ExtrinsicDTO, ExtrinsicQuery},
-            pagination::{PagedResponse, PaginationData},
+            extrinsic::{BlockExtrinsicQuery, ExtrinsicQuery},
+            pagination::PaginationData,
             request::block::BlockReference,
-            response::call::CallDTO,
+            response::{
+                call::CallDTO,
+                extrinsic::{ExtrinsicDTO, PaginatedExtrinsicList},
+            },
         },
         error::APIError,
     },
@@ -26,7 +29,7 @@ use crate::{
 pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
     Query(query): Query<ExtrinsicQuery>,
-) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
+) -> Result<Json<PaginatedExtrinsicList>, APIError> {
     let (page, page_size) =
         get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
@@ -66,7 +69,7 @@ pub(crate) async fn get_extrinsics(
     for row in rows.iter() {
         data.push(row.try_into()?);
     }
-    let response = PagedResponse {
+    let response = PaginatedExtrinsicList {
         pagination: PaginationData {
             page,
             page_size,
@@ -81,7 +84,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
     State(state): State<ServiceState>,
     Path(block_reference): Path<String>,
     Query(query): Query<BlockExtrinsicQuery>,
-) -> Result<Json<PagedResponse<ExtrinsicDTO>>, APIError> {
+) -> Result<Json<PaginatedExtrinsicList>, APIError> {
     let (page, page_size) =
         get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
@@ -112,7 +115,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
-            let response = PagedResponse {
+            let response = PaginatedExtrinsicList {
                 pagination: PaginationData {
                     page,
                     page_size,
@@ -144,7 +147,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
-            let response = PagedResponse {
+            let response = PaginatedExtrinsicList {
                 pagination: PaginationData {
                     page,
                     page_size,

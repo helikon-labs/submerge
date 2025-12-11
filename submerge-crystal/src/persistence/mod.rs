@@ -103,6 +103,16 @@ pub(crate) trait CrystalPostgreSQLStorage {
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
     async fn block_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
+    async fn block_extrinsic_exists_by_hash_and_index(
+        &self,
+        block_hash: &[u8],
+        extrinsic_index: u32,
+    ) -> anyhow::Result<bool>;
+    async fn block_extrinsic_exists_by_number_and_index(
+        &self,
+        block_number: u64,
+        extrinsic_index: u32,
+    ) -> anyhow::Result<bool>;
     async fn get_block_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<BlockRow>>;
     async fn block_exists_by_number(&self, number: u64) -> anyhow::Result<bool>;
     async fn get_blocks_by_number(&self, number: u64) -> anyhow::Result<Vec<BlockRow>>;
@@ -628,6 +638,36 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(hash)
             .fetch_one(&self.connection_pool)
             .await?;
+        Ok(exists)
+    }
+
+    async fn block_extrinsic_exists_by_hash_and_index(
+        &self,
+        block_hash: &[u8],
+        extrinsic_index: u32,
+    ) -> anyhow::Result<bool> {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM extrinsic WHERE block_hash = $1 AND extrinsic = $2)",
+        )
+        .bind(block_hash)
+        .bind(extrinsic_index as i32)
+        .fetch_one(&self.connection_pool)
+        .await?;
+        Ok(exists)
+    }
+
+    async fn block_extrinsic_exists_by_number_and_index(
+        &self,
+        block_number: u64,
+        extrinsic_index: u32,
+    ) -> anyhow::Result<bool> {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM extrinsic WHERE block_number = $1 AND extrinsic = $2)",
+        )
+        .bind(block_number as i32)
+        .bind(extrinsic_index as i32)
+        .fetch_one(&self.connection_pool)
+        .await?;
         Ok(exists)
     }
 

@@ -70,3 +70,17 @@ impl From<&[u8; 32]> for Address32Hex {
         Self(format!("0x{}", hex::encode(value)))
     }
 }
+
+// Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)
+/// and ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.
+/// Inputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+#[schema(
+    value_type = String,
+    pattern = "^0x([0-9a-f]{128}|[0-9a-f]{130})$",
+    examples(
+        "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+        "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+    ),
+)]
+pub struct SignatureHexString(pub String);

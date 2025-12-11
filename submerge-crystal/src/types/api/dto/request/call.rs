@@ -73,7 +73,7 @@ pub struct BlockCallQuery {
         example = 1
     )]
     pub page: Option<u32>,
-    /// Number of calls per page to be returned.
+    /// Number of block calls per page to be returned.
     #[param(
         required = false,
         nullable = false,
