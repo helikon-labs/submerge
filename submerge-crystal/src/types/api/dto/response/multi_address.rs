@@ -2,7 +2,7 @@ use serde::Serialize;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use utoipa::ToSchema;
 
-use crate::types::api::dto::hex::{AccountIdHex, Address20Hex, Address32Hex, HexString};
+use super::hex::{AccountIdHex, Address20Hex, Address32Hex, HexString};
 
 /// Multi-address 32-byte account id type.
 #[derive(Debug, Serialize, ToSchema)]

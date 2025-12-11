@@ -8,16 +8,12 @@ use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use utoipa::ToSchema;
 
-use crate::types::{
-    api::dto::{
-        hex::{AccountIdHex, Hash256Hex},
-        response::multi_address::{
-            MultiAddressAccountIdDTO, MultiAddressAccountIdType, MultiAddressDTO,
-        },
-    },
-    persistence::BlockRow,
-    BlockStatus,
+use super::{
+    hex::{AccountIdHex, Hash256Hex},
+    multi_address::{MultiAddressAccountIdDTO, MultiAddressAccountIdType, MultiAddressDTO},
 };
+
+use crate::types::{persistence::BlockRow, BlockStatus};
 
 /// A block in the blockchain.
 #[derive(Debug, Serialize, ToSchema)]
@@ -38,7 +34,7 @@ pub struct BlockDTO {
     /// Block height.
     #[schema(example = 27419831u64)]
     pub number: u64,
-    /// Block timestamp - milliseconds.
+    /// Block timestamp. Milliseconds.
     #[schema(required = false, nullable = false, example = 1755773684012u64)]
     pub timestamp: Option<u64>,
     /// Runtime spec version.

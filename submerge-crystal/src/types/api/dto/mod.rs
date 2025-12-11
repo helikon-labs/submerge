@@ -1,8 +1,6 @@
-pub mod call;
 pub mod event;
 pub mod extrinsic;
 pub mod genesis;
-pub mod hex;
 pub mod metadata;
 pub mod pagination;
 pub mod request;

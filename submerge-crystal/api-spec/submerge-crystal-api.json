@@ -56,7 +56,7 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Page number to retrieve. 1-indexed.",
+            "description": "Block list page number to retrieve. 1-indexed.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -69,7 +69,7 @@
           {
             "name": "page_size",
             "in": "query",
-            "description": "Number of items per page to be returned.",
+            "description": "Number of blocks per page to be returned.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -92,7 +92,7 @@
           {
             "name": "min_block_number",
             "in": "query",
-            "description": "Filter results by minimum block number.",
+            "description": "Filter blocks by minimum block number.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -104,7 +104,7 @@
           {
             "name": "max_block_number",
             "in": "query",
-            "description": "Filter results by maximum block number.",
+            "description": "Filter blocks by maximum block number.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -116,7 +116,7 @@
           {
             "name": "min_block_timestamp",
             "in": "query",
-            "description": "Filter results by minimum block timestamp. In milliseconds.",
+            "description": "Filter blocks by minimum block timestamp. In milliseconds.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -128,7 +128,7 @@
           {
             "name": "max_block_timestamp",
             "in": "query",
-            "description": "Filter results by maximum block timestamp. In milliseconds.",
+            "description": "Filter blocks by maximum block timestamp. In milliseconds.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -140,7 +140,7 @@
           {
             "name": "min_spec_version",
             "in": "query",
-            "description": "Filter results by minimum runtime spec version.",
+            "description": "Filter blocks by minimum runtime spec version.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -152,7 +152,7 @@
           {
             "name": "max_spec_version",
             "in": "query",
-            "description": "Filter results by maximum runtime spec version.",
+            "description": "Filter blocks by maximum runtime spec version.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -218,6 +218,151 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/calls": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get calls",
+        "description": "Returns all calls from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number, then call id.",
+        "operationId": "get_calls",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Call list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of calls per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "min_block_number",
+            "in": "query",
+            "description": "Filter calls by minimum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1534287
+          },
+          {
+            "name": "max_block_number",
+            "in": "query",
+            "description": "Filter calls by maximum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 2825701
+          },
+          {
+            "name": "min_block_timestamp",
+            "in": "query",
+            "description": "Filter calls by minimum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "max_block_timestamp",
+            "in": "query",
+            "description": "Filter calls by maximum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "min_spec_version",
+            "in": "query",
+            "description": "Filter calls by minimum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "max_spec_version",
+            "in": "query",
+            "description": "Filter calls by maximum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter calls by pallet name. Case insensitive. Stored in `camelCase`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "system"
+          },
+          {
+            "name": "pallet_call_name",
+            "in": "query",
+            "description": "Filter calls by call name. Case insensitive. Stored in `camelCase`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "setcode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -319,7 +464,7 @@
           "timestamp": {
             "type": "integer",
             "format": "int64",
-            "description": "Block timestamp - milliseconds.",
+            "description": "Block timestamp. Milliseconds.",
             "example": 1755773684012,
             "minimum": 0
           },
@@ -384,6 +529,143 @@
           "finalized"
         ],
         "example": "finalized"
+      },
+      "Call": {
+        "type": "object",
+        "description": "A runtime call.",
+        "required": [
+          "hash",
+          "blockHash",
+          "blockNumber",
+          "specVersion",
+          "blockStatus",
+          "extrinsicIndex",
+          "extrinsicHash",
+          "callPath",
+          "callIndex",
+          "palletIndex",
+          "palletName",
+          "palletCallIndex",
+          "palletCallName",
+          "extrinsicIsSuccessful"
+        ],
+        "properties": {
+          "blockHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the call's block."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Number of the call's block.",
+            "example": 3172595,
+            "minimum": 0
+          },
+          "blockStatus": {
+            "$ref": "#/components/schemas/BlockStatus",
+            "description": "Status of the call's block."
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp of the call's block. Milliseconds.",
+            "example": 1755773684012,
+            "minimum": 0
+          },
+          "callIndex": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Index of the call, represented as an unsigned integer array.",
+            "example": [
+              0,
+              1,
+              0
+            ]
+          },
+          "callPath": {
+            "type": "string",
+            "description": "Rust-style path of the call represented with parameter names or indices.",
+            "example": "root::calls:0"
+          },
+          "extrinsicHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the call's extrinsic."
+          },
+          "extrinsicIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the call's extrinsic.",
+            "example": 1,
+            "minimum": 0
+          },
+          "extrinsicIsSuccessful": {
+            "type": "boolean",
+            "description": "Whether the call's extrinsic was successful.\nNote: The extrinsic can be successful where the call has failed (see the Utility.ForceBatch call)."
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Artificial call hash."
+          },
+          "palletCallIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the call in its pallet.",
+            "example": 5,
+            "minimum": 0
+          },
+          "palletCallName": {
+            "type": "string",
+            "description": "Name of the call.",
+            "example": "SetCode"
+          },
+          "palletIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pallet index of the call.",
+            "example": 14,
+            "minimum": 0
+          },
+          "palletName": {
+            "type": "string",
+            "description": "Pallet name of the call.",
+            "example": "System"
+          },
+          "parentCallHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the parent call if this call is a nested call (batch, multisig, etc.)."
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Runtime spec version of the call's block.",
+            "example": 2000000,
+            "minimum": 0
+          }
+        },
+        "example": {
+          "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
+          "blockNumber": 3172595,
+          "blockStatus": "proposed",
+          "blockTimestamp": 1765432302000,
+          "callIndex": [
+            0
+          ],
+          "callPath": "root",
+          "extrinsicHash": "0x18acc73c8e38351bc5b266cffacf39944945dd66342dab8ce2f86f2c97b3006f",
+          "extrinsicIndex": 0,
+          "extrinsicIsSuccessful": true,
+          "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
+          "palletCallIndex": 0,
+          "palletCallName": "SetValidationData",
+          "palletIndex": 1,
+          "palletName": "ParachainSystem",
+          "parentCallHash": "0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f",
+          "specVersion": 2000000
+        }
       },
       "Error": {
         "type": "object",
@@ -668,6 +950,35 @@
           }
         }
       },
+      "CallList": {
+        "description": "List of matching calls.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Call"
+              }
+            }
+          }
+        }
+      },
       "InternalServerError": {
         "description": "Internal server error.",
         "headers": {
@@ -782,6 +1093,69 @@
                           "refTime": "0"
                         }
                       }
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/PaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaginatedCallList": {
+        "description": "Paginated list of matching calls.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Call"
+                  },
+                  "example": [
+                    {
+                      "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
+                      "blockNumber": 3172595,
+                      "blockStatus": "proposed",
+                      "blockTimestamp": 1765432302000,
+                      "callIndex": [
+                        0
+                      ],
+                      "callPath": "root",
+                      "extrinsicHash": "0x18acc73c8e38351bc5b266cffacf39944945dd66342dab8ce2f86f2c97b3006f",
+                      "extrinsicIndex": 0,
+                      "extrinsicIsSuccessful": true,
+                      "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
+                      "palletCallIndex": 0,
+                      "palletCallName": "SetValidationData",
+                      "palletIndex": 1,
+                      "palletName": "ParachainSystem",
+                      "parentCallHash": "0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f",
+                      "specVersion": 2000000
                     }
                   ]
                 },

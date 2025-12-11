@@ -25,11 +25,11 @@ impl TryFrom<&str> for BlockReference {
     }
 }
 
-/// Query parameters for fetching blocks.
+/// Query parameters for fetching and filtering blocks.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
 pub struct BlockQuery {
-    /// Page number to retrieve. 1-indexed.
+    /// Block list page number to retrieve. 1-indexed.
     #[param(
         required = false,
         nullable = false,
@@ -38,7 +38,7 @@ pub struct BlockQuery {
         example = 1
     )]
     pub page: Option<u32>,
-    /// Number of items per page to be returned.
+    /// Number of blocks per page to be returned.
     #[param(
         required = false,
         nullable = false,
@@ -51,13 +51,13 @@ pub struct BlockQuery {
     /// Filter results by block status. If not specified, all blocks are returned.
     #[param(required = false, nullable = false)]
     pub status: Option<BlockStatus>,
-    /// Filter results by minimum block number.
+    /// Filter blocks by minimum block number.
     #[param(required = false, nullable = false, minimum = 0, example = 1534287)]
     pub min_block_number: Option<u64>,
-    /// Filter results by maximum block number.
+    /// Filter blocks by maximum block number.
     #[param(required = false, nullable = false, minimum = 0, example = 2825701)]
     pub max_block_number: Option<u64>,
-    /// Filter results by minimum block timestamp. In milliseconds.
+    /// Filter blocks by minimum block timestamp. In milliseconds.
     #[param(
         required = false,
         nullable = false,
@@ -65,7 +65,7 @@ pub struct BlockQuery {
         example = 1755773684012u64
     )]
     pub min_block_timestamp: Option<u64>,
-    /// Filter results by maximum block timestamp. In milliseconds.
+    /// Filter blocks by maximum block timestamp. In milliseconds.
     #[param(
         required = false,
         nullable = false,
@@ -73,10 +73,10 @@ pub struct BlockQuery {
         example = 1755773684012u64
     )]
     pub max_block_timestamp: Option<u64>,
-    /// Filter results by minimum runtime spec version.
+    /// Filter blocks by minimum runtime spec version.
     #[param(required = false, nullable = false, minimum = 0, example = 1090)]
     pub min_spec_version: Option<u32>,
-    /// Filter results by maximum runtime spec version.
+    /// Filter blocks by maximum runtime spec version.
     #[param(required = false, nullable = false, minimum = 0, example = 1090)]
     pub max_spec_version: Option<u32>,
     /// Filter results by block author. Either of the following:

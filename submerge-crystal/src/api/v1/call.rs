@@ -15,21 +15,52 @@ use crate::{
     },
     types::api::{
         dto::{
-            call::{BlockCallQuery, CallDTO, CallQuery},
             extrinsic::ExtrinsicDTO,
             pagination::{PagedResponse, PaginationData},
-            request::block::BlockReference,
+            request::{
+                block::BlockReference,
+                call::{BlockCallQuery, CallQuery},
+            },
+            response::{
+                call::{CallDTO, PaginatedCallList},
+                error::{BadRequest, InternalServerError, TooManyRequests},
+            },
         },
         error::APIError,
     },
 };
 
+#[utoipa::path(
+    get,
+    path = "/calls",
+    tag = "call",
+    summary = "Get calls",
+    description = "Returns all calls from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number, then call id.",
+    params(CallQuery),
+    responses(
+        (
+            status = 200,
+            response = PaginatedCallList,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_calls(
     State(state): State<ServiceState>,
     Query(query): Query<CallQuery>,
-) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
-    let (page, page_size) =
-        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
+) -> Result<Json<PaginatedCallList>, APIError> {
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -62,13 +93,13 @@ pub(crate) async fn get_calls(
     for row in rows.iter() {
         data.push(row.into());
     }
-    let response = PagedResponse {
+    let response = PaginatedCallList {
+        data,
         pagination: PaginationData {
             page,
             page_size,
             total: total_count,
         },
-        data,
     };
     Ok(Json(response))
 }
@@ -78,8 +109,7 @@ pub(crate) async fn get_calls_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockCallQuery>,
 ) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
-    let (page, page_size) =
-        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -154,8 +184,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
     Path((block_reference, extrinsic_index)): Path<(String, u32)>,
     Query(query): Query<BlockCallQuery>,
 ) -> Result<Json<PagedResponse<CallDTO>>, APIError> {
-    let (page, page_size) =
-        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -254,8 +283,7 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     {
         return Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash));
     }
-    let (page, page_size) =
-        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_call_count_by_extrinsic_hash(
             &extrinsic_hash,
@@ -346,8 +374,7 @@ pub(crate) async fn get_sub_calls_by_hash(
     if !state.postgres.call_exists_by_hash(&call_hash).await? {
         return Err(APIError::CallNotFoundWithHash(call_hash));
     }
-    let (page, page_size) =
-        get_page_number_and_size(query.pagination.page, query.pagination.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_sub_call_count_by_hash(
             &call_hash,

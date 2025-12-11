@@ -3,6 +3,7 @@ use crate::types::api::{
         pagination::PaginationData,
         response::{
             block::{BlockDTO, BlockList, PaginatedBlockList},
+            call::{CallDTO, CallList, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
         },
     },
@@ -66,10 +67,11 @@ use crate::types::api::{
     paths(
         crate::api::v1::block::get_blocks,
         crate::api::v1::block::get_blocks_by_reference,
+        crate::api::v1::call::get_calls,
     ),
     components(
-        schemas(BlockDTO, PaginationData, APIErrorBody),
-        responses(BadRequest, TooManyRequests, InternalServerError, BlockList, PaginatedBlockList, NotFound),
+        schemas(BlockDTO, CallDTO, PaginationData, APIErrorBody),
+        responses(BlockList, PaginatedBlockList, CallList, PaginatedCallList, BadRequest, TooManyRequests, InternalServerError, NotFound),
     ),
 )]
 pub struct APIDoc;
