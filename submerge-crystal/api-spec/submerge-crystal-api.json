@@ -234,7 +234,7 @@
           "call"
         ],
         "summary": "Get block calls",
-        "description": "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.",
+        "description": "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the blocks with that number - could be multiple blocks if there's a pruned block in that slot.",
         "operationId": "get_calls_by_block_reference",
         "parameters": [
           {
@@ -298,6 +298,142 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/events": {
+      "get": {
+        "tags": [
+          "event"
+        ],
+        "summary": "Get block events",
+        "description": "If a hash is passed, returns the events for the matching block. If a number is passed, gives the events for the block with that number - could be multiple blocks if there's a pruned block in that slot.",
+        "operationId": "get_events_by_block_reference",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the events. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block event list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block events per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter events calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "staking"
+          },
+          {
+            "name": "pallet_event_name",
+            "in": "query",
+            "description": "Filter blocks events by event name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "bonded"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedEventList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/events/{event_index}": {
+      "get": {
+        "tags": [
+          "block"
+        ],
+        "summary": "Get block events by index",
+        "description": "Returns the events in the given block at the given index. It can return multiple events if a number is passed and there's a pruned block in that slot.",
+        "operationId": "get_events_by_block_reference_and_index",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the event(s). Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "event_index",
+            "in": "path",
+            "description": "0-based index for the event(s) in the block(s).",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EventList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -534,6 +670,103 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/PaginatedCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/extrinsics/{extrinsic_index}/events": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get block extrinsic events",
+        "description": "Returns the events for extrinsic in a block by block reference and 0-based extrinsic index.",
+        "operationId": "get_events_by_block_reference_and_extrinsic_index",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the extrinsic. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "extrinsic_index",
+            "in": "path",
+            "description": "0-based index for the extrinsic in the block.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block event list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block events per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter events calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "staking"
+          },
+          {
+            "name": "pallet_event_name",
+            "in": "query",
+            "description": "Filter blocks events by event name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "bonded"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedEventList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -1029,6 +1262,275 @@
         }
       }
     },
+    "/events": {
+      "get": {
+        "tags": [
+          "event"
+        ],
+        "summary": "Get events",
+        "description": "Returns all events from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number and ascending event index.",
+        "operationId": "get_events",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Events list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of events per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "min_block_number",
+            "in": "query",
+            "description": "Filter events by minimum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1534287
+          },
+          {
+            "name": "max_block_number",
+            "in": "query",
+            "description": "Filter events by maximum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 2825701
+          },
+          {
+            "name": "min_block_timestamp",
+            "in": "query",
+            "description": "Filter events by minimum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "max_block_timestamp",
+            "in": "query",
+            "description": "Filter events by maximum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "min_spec_version",
+            "in": "query",
+            "description": "Filter events by minimum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "max_spec_version",
+            "in": "query",
+            "description": "Filter events by maximum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter events by pallet name. Case insensitive. Stored in `camelCase`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "balances"
+          },
+          {
+            "name": "pallet_event_name",
+            "in": "query",
+            "description": "Filter events by event name. Case insensitive. Stored in `camelCase`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "transfer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedEventList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/events/{event_hash}": {
+      "get": {
+        "tags": [
+          "event"
+        ],
+        "summary": "Get event by hash",
+        "description": "Returns the event by its hash.",
+        "operationId": "get_event_by_hash",
+        "parameters": [
+          {
+            "name": "event_hash",
+            "in": "path",
+            "description": "Event hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/events/{event_hash}/args": {
+      "get": {
+        "tags": [
+          "event"
+        ],
+        "summary": "Get event arguments",
+        "description": "Returns the arguments of a runtime call by its hash.",
+        "operationId": "get_event_args_by_hash",
+        "parameters": [
+          {
+            "name": "event_hash",
+            "in": "path",
+            "description": "Event hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arguments for the runtime event with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventArgs"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/extrinsics": {
       "get": {
         "tags": [
@@ -1375,6 +1877,145 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/extrinsics/{extrinsic_hash}/events": {
+      "get": {
+        "tags": [
+          "event"
+        ],
+        "summary": "Get extrinsic events",
+        "description": "Returns the events in an extrinsic by extrinsic hash.",
+        "operationId": "get_events_by_extrinsic_hash",
+        "parameters": [
+          {
+            "name": "extrinsic_hash",
+            "in": "path",
+            "description": "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:0x)?[0-9a-fA-F]{64}$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block event list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of block events per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "pallet_name",
+            "in": "query",
+            "description": "Filter events calls by pallet name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "staking"
+          },
+          {
+            "name": "pallet_event_name",
+            "in": "query",
+            "description": "Filter blocks events by event name. Case insensitive.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "bonded"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedEventList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/genesis": {
+      "get": {
+        "tags": [
+          "genesis"
+        ],
+        "summary": "Get genesis records",
+        "description": "Returns a paginated list of all genesis storage records.",
+        "operationId": "get_genesis_records",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Genesis record list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of genesis records per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedGenesisRecordList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -1731,6 +2372,162 @@
           }
         }
       },
+      "Event": {
+        "type": "object",
+        "description": "A runtime event.",
+        "required": [
+          "hash",
+          "blockHash",
+          "blockNumber",
+          "specVersion",
+          "blockStatus",
+          "palletIndex",
+          "palletName",
+          "palletEventIndex",
+          "palletEventName",
+          "phase",
+          "index"
+        ],
+        "properties": {
+          "blockHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the event's block."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Number of the event's block.",
+            "example": 3172595,
+            "minimum": 0
+          },
+          "blockStatus": {
+            "$ref": "#/components/schemas/BlockStatus",
+            "description": "Status of the event's block."
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Timestamp of the event's block. Milliseconds.",
+            "example": 1755773684012,
+            "minimum": 0
+          },
+          "extrinsicHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the event's extrinsic, if it was output from an extrinsic."
+          },
+          "extrinsicIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the event's extrinsic, if it was output from an extrinsic.",
+            "example": 3,
+            "minimum": 0
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Artificial event hash."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the event in block.",
+            "example": 77,
+            "minimum": 0
+          },
+          "palletEventIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the event in its pallet.",
+            "example": 12,
+            "minimum": 0
+          },
+          "palletEventName": {
+            "type": "string",
+            "description": "Name of the event.",
+            "example": "Rewarded"
+          },
+          "palletIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pallet index of the event.",
+            "example": 14,
+            "minimum": 0
+          },
+          "palletName": {
+            "type": "string",
+            "description": "Pallet name of the event.",
+            "example": "Staking"
+          },
+          "phase": {
+            "type": "string",
+            "description": "Event phase.",
+            "example": "ApplyExtrinsic"
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Runtime spec version of the event's block.",
+            "example": 2000000,
+            "minimum": 0
+          },
+          "traceIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the event's trace, if traces are enabled.",
+            "example": 78,
+            "minimum": 0
+          }
+        },
+        "example": {
+          "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
+          "blockNumber": 10758052,
+          "blockStatus": "proposed",
+          "blockTimestamp": 1765456362000,
+          "extrinsicHash": "0x6963ce866a54258d9d6ca9222060f7270a8f5f6b83eaac88e899bb73fbbb68cb",
+          "extrinsicIndex": 0,
+          "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc",
+          "index": 1,
+          "palletEventIndex": 0,
+          "palletEventName": "ExtrinsicSuccess",
+          "palletIndex": 0,
+          "palletName": "System",
+          "phase": "ApplyExtrinsic",
+          "specVersion": 2000003,
+          "traceIndex": 78
+        }
+      },
+      "EventArgs": {
+        "type": "object",
+        "description": "Event arguments wrapper.",
+        "required": [
+          "hash",
+          "args"
+        ],
+        "properties": {
+          "args": {
+            "type": "object",
+            "description": "Event arguments in JSON format. Schema depends on runtime metadata and the event.",
+            "examples": [
+              {
+                "amount": "171162271",
+                "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
+                "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144"
+              }
+            ]
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Event hash."
+          }
+        },
+        "example": {
+          "args": {
+            "amount": "171162271",
+            "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
+            "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144"
+          },
+          "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc"
+        }
+      },
       "Extrinsic": {
         "type": "object",
         "description": "An extrinsic in a block. Signed or unsigned.",
@@ -1875,6 +2672,66 @@
           "specVersion": 2000000,
           "traceIndex": 2,
           "version": 4
+        }
+      },
+      "GenesisRecord": {
+        "type": "object",
+        "description": "A storage item initialized at genesis.",
+        "required": [
+          "keyPrefix",
+          "value"
+        ],
+        "properties": {
+          "keyParams": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Storage item key parameter(s) for the genesis record."
+          },
+          "keyPrefix": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Storage item key prefix for the genesis record."
+          },
+          "knownKey": {
+            "type": "string",
+            "description": "If the record is a known UTF-8 key, the string representation of the key.",
+            "example": ":extrinsic_index"
+          },
+          "palletIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "If the record is a storage item, the storage item's pallet index in the metadata.",
+            "example": 0,
+            "minimum": 0
+          },
+          "palletName": {
+            "type": "string",
+            "description": "If the record is a storage item, the storage item's pallet name in the metadata.",
+            "example": "System"
+          },
+          "palletStorageItemIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "If the record is a storage item, the storage item's index in the pallet metadata.",
+            "example": 4,
+            "minimum": 0
+          },
+          "palletStorageItemName": {
+            "type": "string",
+            "description": "If the record is a storage item, the storage item's name.",
+            "example": "BlockHash"
+          },
+          "value": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Value of the genesis record."
+          }
+        },
+        "example": {
+          "keyParams": "0xb4def25cfda6ef3a00000000",
+          "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef7a44704b568d21667356a5a050c118746",
+          "palletIndex": 0,
+          "palletName": "System",
+          "palletStorageItemIndex": 4,
+          "palletStorageItemName": "BlockHash",
+          "value": "0x4545454545454545454545454545454545454545454545454545454545454545"
         }
       },
       "Hash256Hex": {
@@ -2255,6 +3112,35 @@
           }
         }
       },
+      "EventList": {
+        "description": "List of matching events.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Event"
+              }
+            }
+          }
+        }
+      },
       "ExtrinsicList": {
         "description": "List of matching extrinsics.",
         "headers": {
@@ -2472,6 +3358,66 @@
           }
         }
       },
+      "PaginatedEventList": {
+        "description": "Paginated list of matching events.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  },
+                  "example": [
+                    {
+                      "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
+                      "blockNumber": 10758052,
+                      "blockStatus": "proposed",
+                      "blockTimestamp": 1765456362000,
+                      "extrinsicHash": "0x6963ce866a54258d9d6ca9222060f7270a8f5f6b83eaac88e899bb73fbbb68cb",
+                      "extrinsicIndex": 0,
+                      "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc",
+                      "index": 1,
+                      "palletEventIndex": 0,
+                      "palletEventName": "ExtrinsicSuccess",
+                      "palletIndex": 0,
+                      "palletName": "System",
+                      "phase": "ApplyExtrinsic",
+                      "specVersion": 2000003,
+                      "traceIndex": 78
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/PaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
       "PaginatedExtrinsicList": {
         "description": "Paginated list of matching extrinsics.",
         "headers": {
@@ -2546,6 +3492,58 @@
                       "specVersion": 2000000,
                       "traceIndex": 2,
                       "version": 4
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/PaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaginatedGenesisRecordList": {
+        "description": "Paginated list of genesis record items.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GenesisRecord"
+                  },
+                  "example": [
+                    {
+                      "keyParams": "0xb4def25cfda6ef3a00000000",
+                      "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef7a44704b568d21667356a5a050c118746",
+                      "palletIndex": 0,
+                      "palletName": "System",
+                      "palletStorageItemIndex": 4,
+                      "palletStorageItemName": "BlockHash",
+                      "value": "0x4545454545454545454545454545454545454545454545454545454545454545"
                     }
                   ]
                 },

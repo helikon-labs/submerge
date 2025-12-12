@@ -272,7 +272,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
 pub(crate) async fn get_extrinsics_by_block_reference_and_index(
     State(state): State<ServiceState>,
     Path((block_reference, index)): Path<(String, u32)>,
-) -> Result<Json<Vec<ExtrinsicDTO>>, APIError> {
+) -> Result<Json<ExtrinsicList>, APIError> {
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -286,13 +286,13 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
-            Ok(Json(data))
+            Ok(Json(ExtrinsicList(data)))
         }
         Ok(BlockReference::Hash(block_hash)) => {
             if !state.postgres.block_exists_by_hash(&block_hash).await? {
                 return Err(APIError::BlockNotFoundWithHash(block_hash));
             }
-            let response = if let Some(row) = &state
+            let data = if let Some(row) = &state
                 .postgres
                 .get_extrinsic_by_block_hash_and_index(&block_hash, index)
                 .await?
@@ -301,7 +301,7 @@ pub(crate) async fn get_extrinsics_by_block_reference_and_index(
             } else {
                 vec![]
             };
-            Ok(Json(response))
+            Ok(Json(ExtrinsicList(data)))
         }
         Err(message) => Err(APIError::BadRequest(message)),
     }

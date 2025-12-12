@@ -5,7 +5,9 @@ use crate::types::api::{
             block::{BlockDTO, BlockList, PaginatedBlockList},
             call::{CallDTO, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
+            event::{EventDTO, EventList, PaginatedEventList},
             extrinsic::{ExtrinsicList, PaginatedExtrinsicList},
+            genesis::{GenesisRecordDTO, PaginatedGenesisRecordList},
         },
     },
     error::APIErrorBody,
@@ -85,11 +87,22 @@ use crate::types::api::{
         crate::api::v1::extrinsic::get_extrinsics_by_block_reference_and_index,
         crate::api::v1::extrinsic::get_extrinsic_by_hash,
         crate::api::v1::extrinsic::get_extrinsic_root_call_by_hash,
+        // event
+        crate::api::v1::event::get_events,
+        crate::api::v1::event::get_events_by_block_reference,
+        crate::api::v1::event::get_events_by_block_reference_and_index,
+        crate::api::v1::event::get_events_by_block_reference_and_extrinsic_index,
+        crate::api::v1::event::get_events_by_extrinsic_hash,
+        crate::api::v1::event::get_event_by_hash,
+        crate::api::v1::event::get_event_args_by_hash,
+        // genesis
+        crate::api::v1::genesis::get_genesis_records,
     ),
     components(
-        schemas(BlockDTO, CallDTO, PaginationData, APIErrorBody),
+        schemas(BlockDTO, CallDTO, EventDTO, GenesisRecordDTO, PaginationData, APIErrorBody),
         responses(
             BlockList, PaginatedBlockList, PaginatedCallList, ExtrinsicList, PaginatedExtrinsicList,
+            EventList, PaginatedEventList, PaginatedGenesisRecordList,
             BadRequest, TooManyRequests, InternalServerError, NotFound,
         ),
     ),

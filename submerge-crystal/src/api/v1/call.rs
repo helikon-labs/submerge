@@ -109,7 +109,7 @@ pub(crate) async fn get_calls(
     path = "/blocks/{block_ref}/calls",
     tag = "call",
     summary = "Get block calls",
-    description = "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the latest block by that number - could be multiple blocks if there's a pruned block in that slot.",
+    description = "If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the blocks with that number - could be multiple blocks if there's a pruned block in that slot.",
     params(
         (
             "block_ref" = String,
