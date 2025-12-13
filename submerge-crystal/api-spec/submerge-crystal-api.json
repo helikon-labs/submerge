@@ -164,7 +164,7 @@
           {
             "name": "author",
             "in": "query",
-            "description": "Filter results by block author. Either of the following:\n- Author's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Author's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Author's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
+            "description": "Filter results by block author. Either of the following:\n- Author's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Author's Substrate account id encoded as a hexadecimal string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Author's address encoded as a hexadecimal string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
             "required": false,
             "schema": {
               "type": "string",
@@ -510,7 +510,7 @@
           {
             "name": "signer",
             "in": "query",
-            "description": "Filter block extrinsics by signer. Either of the following:\n- Signer's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Signer's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Signer's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
+            "description": "Filter block extrinsics by signer. Either of the following:\n- Signer's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Signer's Substrate account id encoded as a hexadecimal string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Signer's address encoded as a hexadecimal string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
             "required": false,
             "schema": {
               "type": [
@@ -1033,6 +1033,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CallArgs"
+                },
+                "example": {
+                  "args": {
+                    "dest": {
+                      "type": "Id",
+                      "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                    },
+                    "value": "117284000000"
+                  },
+                  "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
                 }
               }
             }
@@ -1512,6 +1522,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EventArgs"
+                },
+                "example": {
+                  "args": {
+                    "amount": "171162271",
+                    "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
+                    "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144"
+                  },
+                  "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc"
                 }
               }
             }
@@ -1652,7 +1670,7 @@
           {
             "name": "signer",
             "in": "query",
-            "description": "Filter extrinsics by signer. Either of the following:\n- Signer's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Signer's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Signer's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
+            "description": "Filter extrinsics by signer. Either of the following:\n- Signer's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).\n- Signer's Substrate account id encoded as a hexadecimal string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).\n- Signer's address encoded as a hexadecimal string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).",
             "required": false,
             "schema": {
               "type": "string",
@@ -2029,7 +2047,7 @@
     "/metadata": {
       "get": {
         "tags": [
-          "call"
+          "metadata"
         ],
         "summary": "Get metadata list",
         "description": "Returns a list of metadata summaries for all runtime versions.",
@@ -2066,6 +2084,641 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata by spec version",
+        "description": "Returns the metadata by its spec version.",
+        "operationId": "get_metadata",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full metadata with the given spec version.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metadata"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/hex": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata hex",
+        "description": "Returns the SCALE-encoded hexadecimal string for the prefixed metadata.",
+        "operationId": "get_metadata_hex",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SCALE-encoded prefixed metadata hexadecimal string.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HexString"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/json": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata JSON",
+        "description": "Returns the original Substrate runtime metadata by its spec version in JSON representation.",
+        "operationId": "get_metadata_json",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full metadata with the given spec version.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataJSON"
+                },
+                "example": [
+                  1635018093,
+                  {
+                    "V14": {
+                      "extrinsic": {
+                        "signed_extensions": [
+                          {
+                            "additional_signed": 122,
+                            "identifier": "CheckNonZeroSender",
+                            "ty": 385
+                          },
+                          {
+                            "additional_signed": 4,
+                            "identifier": "CheckSpecVersion",
+                            "ty": 386
+                          },
+                          {
+                            "additional_signed": 4,
+                            "identifier": "CheckTxVersion",
+                            "ty": 387
+                          },
+                          {
+                            "additional_signed": 13,
+                            "identifier": "CheckGenesis",
+                            "ty": 388
+                          },
+                          {
+                            "additional_signed": 13,
+                            "identifier": "CheckMortality",
+                            "ty": 389
+                          },
+                          {
+                            "additional_signed": 122,
+                            "identifier": "CheckNonce",
+                            "ty": 391
+                          },
+                          {
+                            "additional_signed": 122,
+                            "identifier": "CheckWeight",
+                            "ty": 392
+                          },
+                          {
+                            "additional_signed": 122,
+                            "identifier": "ChargeTransactionPayment",
+                            "ty": 393
+                          },
+                          {
+                            "additional_signed": 32,
+                            "identifier": "CheckMetadataHash",
+                            "ty": 394
+                          }
+                        ],
+                        "ty": 380,
+                        "version": 4
+                      },
+                      "pallets": [],
+                      "ty": 396,
+                      "types": []
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallets",
+        "description": "Returns pallets in a metadata version.",
+        "operationId": "get_metadata_pallets",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetadataPalletSummaryList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets/{pallet_index}": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallet",
+        "description": "Returns the full metadata pallet by metadata spec version and pallet index.",
+        "operationId": "get_metadata_pallet",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 2000000
+          },
+          {
+            "name": "pallet_index",
+            "in": "path",
+            "description": "Metadata pallet index.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full metadata pallet with the given spec version and pallet index.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataPallet"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets/{pallet_index}/calls": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallet calls",
+        "description": "Returns the calls in a pallet in a metadata version.",
+        "operationId": "get_metadata_pallet_calls",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          },
+          {
+            "name": "pallet_index",
+            "in": "path",
+            "description": "Metadata pallet index.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetadataPalletCallList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets/{pallet_index}/constants": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallet constants",
+        "description": "Returns the constants in a pallet in a metadata version.",
+        "operationId": "get_metadata_pallet_constants",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          },
+          {
+            "name": "pallet_index",
+            "in": "path",
+            "description": "Metadata pallet index.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetadataPalletConstantList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets/{pallet_index}/errors": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallet errors",
+        "description": "Returns the errors in a pallet in a metadata version.",
+        "operationId": "get_metadata_pallet_errors",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          },
+          {
+            "name": "pallet_index",
+            "in": "path",
+            "description": "Metadata pallet index.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetadataPalletErrorList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets/{pallet_index}/events": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallet events",
+        "description": "Returns the events in a pallet in a metadata version.",
+        "operationId": "get_metadata_pallet_events",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          },
+          {
+            "name": "pallet_index",
+            "in": "path",
+            "description": "Metadata pallet index.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetadataPalletEventList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/metadata/{spec_version}/pallets/{pallet_index}/storage": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get metadata pallet storage items",
+        "description": "Returns the storage items in a pallet in a metadata version.",
+        "operationId": "get_metadata_pallet_storage_items",
+        "parameters": [
+          {
+            "name": "spec_version",
+            "in": "path",
+            "description": "Metadata spec version.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1003
+          },
+          {
+            "name": "pallet_index",
+            "in": "path",
+            "description": "Metadata pallet index.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetadataPalletStorageItemList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -2372,40 +3025,7 @@
       },
       "CallArgs": {
         "type": "object",
-        "description": "Call arguments wrapper.",
-        "required": [
-          "hash",
-          "args"
-        ],
-        "properties": {
-          "args": {
-            "type": "object",
-            "description": "Call arguments in JSON format. Schema depends on runtime metadata and the call.",
-            "examples": [
-              {
-                "dest": {
-                  "type": "Id",
-                  "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
-                },
-                "value": "117284000000"
-              }
-            ]
-          },
-          "hash": {
-            "$ref": "#/components/schemas/Hash256Hex",
-            "description": "Call hash."
-          }
-        },
-        "example": {
-          "args": {
-            "dest": {
-              "type": "Id",
-              "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
-            },
-            "value": "117284000000"
-          },
-          "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
-        }
+        "description": "Call arguments wrapper."
       },
       "Error": {
         "type": "object",
@@ -2547,36 +3167,7 @@
       },
       "EventArgs": {
         "type": "object",
-        "description": "Event arguments wrapper.",
-        "required": [
-          "hash",
-          "args"
-        ],
-        "properties": {
-          "args": {
-            "type": "object",
-            "description": "Event arguments in JSON format. Schema depends on runtime metadata and the event.",
-            "examples": [
-              {
-                "amount": "171162271",
-                "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
-                "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144"
-              }
-            ]
-          },
-          "hash": {
-            "$ref": "#/components/schemas/Hash256Hex",
-            "description": "Event hash."
-          }
-        },
-        "example": {
-          "args": {
-            "amount": "171162271",
-            "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
-            "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144"
-          },
-          "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc"
-        }
+        "description": "Event arguments wrapper."
       },
       "Extrinsic": {
         "type": "object",
@@ -2798,6 +3389,428 @@
           "0x0123456789abcdef"
         ],
         "pattern": "^0x(?:[0-9a-f]{2})+$"
+      },
+      "Metadata": {
+        "type": "object",
+        "description": "Parsed metadata specification complete with its pallets.",
+        "required": [
+          "specVersion",
+          "metadataVersion",
+          "pallets"
+        ],
+        "properties": {
+          "metadataVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Metadata version.",
+            "example": 14,
+            "minimum": 0
+          },
+          "pallets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataPallet"
+            },
+            "description": "Metadata pallets.",
+            "example": [
+              {
+                "calls": [
+                  {
+                    "docs": [
+                      "Make some on-chain remark."
+                    ],
+                    "index": 0,
+                    "name": "Remark"
+                  }
+                ],
+                "constants": [
+                  {
+                    "docs": [
+                      "The maximum length of a block (in bytes)."
+                    ],
+                    "index": 1,
+                    "name": "BlockLength",
+                    "typeId": 156,
+                    "typeName": "frame_system::limits::BlockLength",
+                    "value": {
+                      "max": {
+                        "mandatory": "5242880",
+                        "normal": "3932160",
+                        "operational": "5242880"
+                      }
+                    },
+                    "valueHex": "0x00003c000000500000005000"
+                  }
+                ],
+                "errors": [
+                  {
+                    "docs": [
+                      "The name of specification does not match between the current runtime",
+                      "and the new runtime."
+                    ],
+                    "index": 0,
+                    "name": "InvalidSpecName"
+                  }
+                ],
+                "events": [
+                  {
+                    "docs": [
+                      "`:code` was updated."
+                    ],
+                    "index": 2,
+                    "name": "CodeUpdated"
+                  }
+                ],
+                "index": 0,
+                "name": "System",
+                "storageItems": [
+                  {
+                    "docs": [
+                      "Hash of the previous block."
+                    ],
+                    "index": 8,
+                    "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef78a42f33323cb5ced3b44dd825fda9fcc",
+                    "name": "ParentHash"
+                  }
+                ]
+              }
+            ]
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Metadata runtime spec version.",
+            "example": 1001,
+            "minimum": 0
+          }
+        }
+      },
+      "MetadataCall": {
+        "type": "object",
+        "description": "A call defined in a metadata pallet.",
+        "required": [
+          "index",
+          "name",
+          "docs"
+        ],
+        "properties": {
+          "docs": {
+            "$ref": "#/components/schemas/MetadataItemDocumentation",
+            "description": "Call documentation. One item per line in the array."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Call's index inside the metadata pallet.",
+            "example": 37,
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Call name. Camel case.",
+            "example": "Transfer"
+          }
+        }
+      },
+      "MetadataConstant": {
+        "type": "object",
+        "description": "A constant defined in a metadata pallet.",
+        "required": [
+          "index",
+          "name",
+          "typeName",
+          "valueHex",
+          "docs"
+        ],
+        "properties": {
+          "docs": {
+            "$ref": "#/components/schemas/MetadataItemDocumentation",
+            "description": "Constant documentation. One item per line in the array."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Constant's index inside the metadata pallet.",
+            "example": 7,
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Constant name. Camel case.",
+            "example": "BountyDepositBase"
+          },
+          "typeId": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Id of the constant's type.",
+            "example": 3,
+            "minimum": 0
+          },
+          "typeName": {
+            "type": "string",
+            "description": "Name of the constant's type.",
+            "example": "TypeName"
+          },
+          "value": {
+            "type": "object",
+            "description": "Metadata constant value in JSON format. Schema depends on the definition within the runtime metadata.",
+            "examples": [
+              {
+                "proofSize": "8388608",
+                "refTime": "1600000000000"
+              }
+            ]
+          },
+          "valueHex": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Value of the constant. SCALE-encoded hexadecimal string."
+          }
+        }
+      },
+      "MetadataError": {
+        "type": "object",
+        "description": "An error defined in a metadata pallet.",
+        "required": [
+          "index",
+          "name",
+          "docs"
+        ],
+        "properties": {
+          "docs": {
+            "$ref": "#/components/schemas/MetadataItemDocumentation",
+            "description": "Error documentation. One item per line in the array."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Error's index inside the metadata pallet.",
+            "example": 17,
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Error name. Camel case.",
+            "example": "AssignmentsEmpty"
+          }
+        }
+      },
+      "MetadataEvent": {
+        "type": "object",
+        "description": "An event defined in a metadata pallet.",
+        "required": [
+          "index",
+          "name",
+          "docs"
+        ],
+        "properties": {
+          "docs": {
+            "$ref": "#/components/schemas/MetadataItemDocumentation",
+            "description": "Event documentation. One item per line in the array."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Event's index inside the metadata pallet.",
+            "example": 21,
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Event name. Camel case.",
+            "example": "CandidateBacked"
+          }
+        }
+      },
+      "MetadataItemDocumentation": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Metadata item documentation. One item per line in the array.",
+        "example": [
+          "Call documentation line 1.",
+          "Call documentation line 2."
+        ]
+      },
+      "MetadataJSON": {
+        "description": "Original Substrate runtime metadata in JSON representation."
+      },
+      "MetadataPallet": {
+        "type": "object",
+        "description": "A pallet defined in metadata, with its calls, constants, errors, events, and storage items.",
+        "required": [
+          "index",
+          "name",
+          "calls",
+          "constants",
+          "errors",
+          "events",
+          "storageItems"
+        ],
+        "properties": {
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataCall"
+            },
+            "description": "Pallet's calls."
+          },
+          "constants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataConstant"
+            },
+            "description": "Pallet's constants."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataError"
+            },
+            "description": "Pallet's errors."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataEvent"
+            },
+            "description": "Pallet's events."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pallet's index inside the metadata.",
+            "example": 53,
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Pallet's name.",
+            "example": "Balances"
+          },
+          "storageItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataStorageItem"
+            },
+            "description": "Pallet's storage items."
+          }
+        },
+        "example": {
+          "calls": [
+            {
+              "docs": [
+                "Make some on-chain remark."
+              ],
+              "index": 0,
+              "name": "Remark"
+            }
+          ],
+          "constants": [
+            {
+              "docs": [
+                "The maximum length of a block (in bytes)."
+              ],
+              "index": 1,
+              "name": "BlockLength",
+              "typeId": 156,
+              "typeName": "frame_system::limits::BlockLength",
+              "value": {
+                "max": {
+                  "mandatory": "5242880",
+                  "normal": "3932160",
+                  "operational": "5242880"
+                }
+              },
+              "valueHex": "0x00003c000000500000005000"
+            }
+          ],
+          "errors": [
+            {
+              "docs": [
+                "The name of specification does not match between the current runtime",
+                "and the new runtime."
+              ],
+              "index": 0,
+              "name": "InvalidSpecName"
+            }
+          ],
+          "events": [
+            {
+              "docs": [
+                "`:code` was updated."
+              ],
+              "index": 2,
+              "name": "CodeUpdated"
+            }
+          ],
+          "index": 0,
+          "name": "System",
+          "storageItems": [
+            {
+              "docs": [
+                "Hash of the previous block."
+              ],
+              "index": 8,
+              "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef78a42f33323cb5ced3b44dd825fda9fcc",
+              "name": "ParentHash"
+            }
+          ]
+        }
+      },
+      "MetadataPalletSummary": {
+        "type": "object",
+        "description": "The summary of a pallet defined in metadata, with only its index and name.",
+        "required": [
+          "index",
+          "name"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Pallet's index inside the metadata.",
+            "example": 53,
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Pallet's name.",
+            "example": "Balances"
+          }
+        }
+      },
+      "MetadataStorageItem": {
+        "type": "object",
+        "description": "A storage item defined in a metadata pallet.",
+        "required": [
+          "index",
+          "name",
+          "keyPrefix",
+          "docs"
+        ],
+        "properties": {
+          "docs": {
+            "$ref": "#/components/schemas/MetadataItemDocumentation",
+            "description": "Storage item documentation. One item per line in the array."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Storage item's index inside the metadata pallet.",
+            "example": 0,
+            "minimum": 0
+          },
+          "keyPrefix": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Storage item Substrate storage key prefix."
+          },
+          "name": {
+            "type": "string",
+            "description": "Storage item name. Camel case.",
+            "example": "Account"
+          }
+        }
       },
       "MetadataSummary": {
         "type": "object",
@@ -3270,6 +4283,180 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "MetadataPalletCallList": {
+        "description": "All calls in a pallet.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetadataCall"
+              }
+            }
+          }
+        }
+      },
+      "MetadataPalletConstantList": {
+        "description": "All constants in a pallet.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetadataConstant"
+              }
+            }
+          }
+        }
+      },
+      "MetadataPalletErrorList": {
+        "description": "All errors in a pallet.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetadataError"
+              }
+            }
+          }
+        }
+      },
+      "MetadataPalletEventList": {
+        "description": "All events in a pallet.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetadataEvent"
+              }
+            }
+          }
+        }
+      },
+      "MetadataPalletStorageItemList": {
+        "description": "All storage items in a pallet.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetadataStorageItem"
+              }
+            }
+          }
+        }
+      },
+      "MetadataPalletSummaryList": {
+        "description": "List of summaries of matching metadata pallets.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/MetadataPalletSummary"
+              }
             }
           }
         }

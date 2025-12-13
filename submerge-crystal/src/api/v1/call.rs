@@ -23,7 +23,6 @@ use crate::{
                 call::{CallArgs, CallDTO, PaginatedCallList},
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
                 extrinsic::ExtrinsicDTO,
-                hex::Hash256Hex,
             },
         },
         error::APIError,
@@ -413,7 +412,7 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     {
         extrinsic_hash
     } else {
-        return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hex string (with or without 0x prefix, case-insensitive).".to_string()));
+        return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hexadecimal string (with or without 0x prefix, case-insensitive).".to_string()));
     };
     if !state
         .postgres
@@ -532,6 +531,16 @@ pub(crate) async fn get_call_by_hash(
             ),
             description = "Arguments for the runtime call with the given hash.",
             body = CallArgs,
+            example = json!({
+                "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011",
+                "args": {
+                    "dest": {
+                        "type": "Id",
+                        "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                    },
+                    "value": "117284000000"
+                }
+            }),
         ),
         (
             status = 400,
@@ -560,10 +569,7 @@ pub(crate) async fn get_call_args_by_hash(
         Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
     };
     if let Some(args) = state.postgres.get_call_args_by_hash(&call_hash).await? {
-        Ok(Json(CallArgs {
-            hash: Hash256Hex(hex::encode(call_hash.as_slice())),
-            args,
-        }))
+        Ok(Json(CallArgs(args)))
     } else {
         Err(APIError::CallNotFoundWithHash(call_hash))
     }
@@ -675,7 +681,7 @@ pub(crate) async fn get_sub_calls_by_hash(
     let call_hash = if let Ok(call_hash) = hex::decode(call_hash.trim_start_matches("0x")) {
         call_hash
     } else {
-        return Err(APIError::BadRequest("Invalid call hash. It should be a hex string (with or without 0x prefix, case-insensitive).".to_string()));
+        return Err(APIError::BadRequest("Invalid call hash. It should be a hexadecimal string (with or without 0x prefix, case-insensitive).".to_string()));
     };
     if !state.postgres.call_exists_by_hash(&call_hash).await? {
         return Err(APIError::CallNotFoundWithHash(call_hash));

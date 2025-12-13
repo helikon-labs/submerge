@@ -590,11 +590,14 @@ impl BlockProcessor {
                     .strip_prefix("some(")
                     .and_then(|s| s.strip_suffix(')'))
                 {
-                    Some(hex::decode(inner).context("Cannot decode trace value hex string.")?)
+                    Some(
+                        hex::decode(inner)
+                            .context("Cannot decode trace value hexadecimal string.")?,
+                    )
                 } else {
                     Some(
                         hex::decode(&event.data_wrapper.data.value)
-                            .context("Cannot decode trace value hex string.")?,
+                            .context("Cannot decode trace value hexadecimal string.")?,
                     )
                 };
                 // find storage item

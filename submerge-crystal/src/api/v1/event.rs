@@ -21,7 +21,6 @@ use crate::{
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
                 event::{EventArgs, EventDTO, EventList, PaginatedEventList},
-                hex::Hash256Hex,
             },
         },
         error::APIError,
@@ -471,7 +470,7 @@ pub(crate) async fn get_events_by_extrinsic_hash(
     {
         extrinsic_hash
     } else {
-        return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hex string (with or without 0x prefix, case-insensitive).".to_string()));
+        return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hexadecimal string (with or without 0x prefix, case-insensitive).".to_string()));
     };
     if !state
         .postgres
@@ -590,6 +589,14 @@ pub(crate) async fn get_event_by_hash(
             ),
             description = "Arguments for the runtime event with the given hash.",
             body = EventArgs,
+            example = json!({
+                "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc",
+                "args": {
+                    "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144",
+                    "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
+                    "amount": "171162271"
+                }
+            }),
         ),
         (
             status = 400,
@@ -618,10 +625,7 @@ pub(crate) async fn get_event_args_by_hash(
         Err(e) => return Err(APIError::BadRequest(format!("Invalid event hash: {e}"))),
     };
     if let Some(args) = state.postgres.get_event_args_by_hash(&event_hash).await? {
-        Ok(Json(EventArgs {
-            hash: Hash256Hex(hex::encode(event_hash.as_slice())),
-            args,
-        }))
+        Ok(Json(EventArgs(args)))
     } else {
         Err(APIError::EventNotFoundWithHash(event_hash))
     }

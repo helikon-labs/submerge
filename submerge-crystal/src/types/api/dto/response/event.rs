@@ -3,7 +3,10 @@ use serde_json::Value as JSONValue;
 use utoipa::{ToResponse, ToSchema};
 
 use crate::types::{
-    api::dto::{pagination::PaginationData, response::hex::Hash256Hex},
+    api::dto::{
+        pagination::PaginationData,
+        response::{example::event::event_example, hex::Hash256Hex},
+    },
     persistence::EventCompositeRow,
     BlockStatus,
 };
@@ -100,22 +103,8 @@ pub struct PaginatedEventList {
 
 /// Event arguments wrapper.
 #[derive(Debug, Serialize, ToSchema)]
-#[schema(
-    example = json!({
-        "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc",
-        "args": {
-            "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144",
-            "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
-            "amount": "171162271"
-        }
-    }),
-)]
-pub struct EventArgs {
-    /// Event hash.
-    pub hash: Hash256Hex,
-    #[schema(schema_with = event_args_schema)]
-    pub args: JSONValue,
-}
+#[schema(value_type = Object)]
+pub struct EventArgs(pub JSONValue);
 
 #[derive(Debug, Serialize, ToResponse)]
 #[response(
@@ -126,47 +115,3 @@ pub struct EventArgs {
     ),
 )]
 pub struct EventList(pub Vec<EventDTO>);
-
-fn event_args_schema() -> utoipa::openapi::Object {
-    use utoipa::openapi::ObjectBuilder;
-
-    ObjectBuilder::new()
-        .schema_type(utoipa::openapi::schema::Type::Object)
-        .examples([Some(serde_json::json!({
-            "to": "0x967cccc1ff3d1f37b9e6c8a39d8ba72ad85d35e19cc0717a72f1a21037606144",
-            "from": "0x96b4be4ad947987922c88449866e738b4f4d09dece5157d2c3ac9477d8c6512e",
-            "amount": "171162271"
-        }))])
-        .description(Some(
-            "Event arguments in JSON format. Schema depends on runtime metadata and the event."
-                .to_string(),
-        ))
-        .build()
-}
-
-fn event_example() -> JSONValue {
-    let event = EventDTO {
-        hash: Hash256Hex(
-            "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc".to_string(),
-        ),
-        block_hash: Hash256Hex(
-            "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa".to_string(),
-        ),
-        block_number: 10758052,
-        block_timestamp: Some(1765456362000),
-        spec_version: 2000003,
-        block_status: BlockStatus::Proposed,
-        trace_index: Some(78),
-        pallet_index: 0,
-        pallet_name: "System".to_string(),
-        pallet_event_index: 0,
-        pallet_event_name: "ExtrinsicSuccess".to_string(),
-        extrinsic_index: Some(0),
-        extrinsic_hash: Some(Hash256Hex(
-            "0x6963ce866a54258d9d6ca9222060f7270a8f5f6b83eaac88e899bb73fbbb68cb".to_string(),
-        )),
-        phase: "ApplyExtrinsic".to_string(),
-        index: 1,
-    };
-    serde_json::to_value(&event).unwrap()
-}

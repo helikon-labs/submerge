@@ -130,7 +130,7 @@ impl Worker {
             return Err(anyhow::Error::msg(message.to_string()));
         };
         let block_hash = hex::decode(block_hash_hex.trim_start_matches("0x"))
-            .context("🔴 Cannot decode block 0 hash hex string for genesis processing.")?;
+            .context("🔴 Cannot decode block 0 hash hexadecimal string for genesis processing.")?;
         let spec_version = substrate_client
             .get_last_runtime_upgrade_info(&block_hash_hex)
             .await?

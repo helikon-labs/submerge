@@ -79,7 +79,7 @@ class API {
             if (!hex) {
                 return response
                     .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+                    .json({ error: 'Extrinsic hexadecimal string not found in the request body.' });
             }
 
             const registry = await this.getRegistry(blockHash, specVersion);
@@ -108,7 +108,7 @@ class API {
             if (!hex) {
                 return response
                     .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+                    .json({ error: 'Extrinsic hexadecimal string not found in the request body.' });
             }
             const registry = await this.getRegistry(blockHash, specVersion);
             const events = registry.createType('Vec<EventRecord>', hex);
@@ -136,7 +136,7 @@ class API {
             if (!hex) {
                 return response
                     .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+                    .json({ error: 'Extrinsic hexadecimal string not found in the request body.' });
             }
             const registry = await this.getRegistry(blockHash, specVersion);
             const extrinsic = new GenericExtrinsic(registry, hex);
@@ -164,7 +164,7 @@ class API {
             if (!hex) {
                 return response
                     .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+                    .json({ error: 'Extrinsic hexadecimal string not found in the request body.' });
             }
 
             const registry = await this.getRegistry(blockHash, specVersion);
@@ -198,7 +198,7 @@ class API {
             if (!hex) {
                 return response
                     .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Extrinsic hex string not found in the request body.' });
+                    .json({ error: 'Extrinsic hexadecimal string not found in the request body.' });
             }
 
             const registry = await this.getRegistry(blockHash, specVersion);

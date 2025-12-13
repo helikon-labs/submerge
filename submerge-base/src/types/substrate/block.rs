@@ -19,7 +19,7 @@ pub struct BlockHeader {
 }
 
 impl BlockHeader {
-    /// Number from the hex string.
+    /// Number from the hexadecimal string.
     pub fn get_number(&self) -> anyhow::Result<u64> {
         let number = u64::from_str_radix(self.number.trim_start_matches("0x"), 16)?;
         Ok(number)

@@ -305,7 +305,7 @@ impl SubstrateClient {
         Ok(upgrade_info)
     }
 
-    /// Gets encoded runtime metadata hex string at a block.
+    /// Gets encoded runtime metadata hexadecimal string at a block.
     pub async fn get_metadata_hex_string_at_block(
         &self,
         block_hash: &str,

@@ -81,8 +81,8 @@ pub struct BlockQuery {
     pub max_spec_version: Option<u32>,
     /// Filter results by block author. Either of the following:
     /// - Author's Substrate SS58 address string (e.g. `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`).
-    /// - Author's Substrate account id encoded as a hex string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).
-    /// - Author's address encoded as a hex string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).
+    /// - Author's Substrate account id encoded as a hexadecimal string (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).
+    /// - Author's address encoded as a hexadecimal string with optional `0x` prefix (e.g. `0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a`).
     #[param(
         required = false,
         nullable = false,

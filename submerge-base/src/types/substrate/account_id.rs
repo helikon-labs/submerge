@@ -69,7 +69,7 @@ impl AccountId {
     }
 }
 
-/// Parse account id from a hex string, prefixed with `0x` or not.
+/// Parse account id from a hexadecimal string, prefixed with `0x` or not.
 impl FromStr for AccountId {
     type Err = String;
 
