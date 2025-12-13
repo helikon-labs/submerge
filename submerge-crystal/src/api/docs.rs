@@ -8,6 +8,7 @@ use crate::types::api::{
             event::{EventDTO, EventList, PaginatedEventList},
             extrinsic::{ExtrinsicList, PaginatedExtrinsicList},
             genesis::{GenesisRecordDTO, PaginatedGenesisRecordList},
+            metadata::{MetadataDTO, PaginatedMetadataList},
         },
     },
     error::APIErrorBody,
@@ -97,12 +98,14 @@ use crate::types::api::{
         crate::api::v1::event::get_event_args_by_hash,
         // genesis
         crate::api::v1::genesis::get_genesis_records,
+        // metadata
+        crate::api::v1::metadata::get_metadata_list,
     ),
     components(
-        schemas(BlockDTO, CallDTO, EventDTO, GenesisRecordDTO, PaginationData, APIErrorBody),
+        schemas(BlockDTO, CallDTO, EventDTO, GenesisRecordDTO, MetadataDTO, PaginationData, APIErrorBody),
         responses(
             BlockList, PaginatedBlockList, PaginatedCallList, ExtrinsicList, PaginatedExtrinsicList,
-            EventList, PaginatedEventList, PaginatedGenesisRecordList,
+            EventList, PaginatedEventList, PaginatedGenesisRecordList, PaginatedMetadataList,
             BadRequest, TooManyRequests, InternalServerError, NotFound,
         ),
     ),

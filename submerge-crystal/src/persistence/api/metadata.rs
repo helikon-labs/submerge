@@ -2,9 +2,12 @@ use serde_json::Value as JSONValue;
 use sqlx::FromRow;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
-use crate::types::api::dto::metadata::{
-    MetadataCallDTO, MetadataConstantDTO, MetadataDTO, MetadataErrorDTO, MetadataEventDTO,
-    MetadataPalletDTO, MetadataStorageItemDTO,
+use crate::types::api::dto::{
+    metadata::{
+        MetadataCallDTO, MetadataConstantDTO, MetadataErrorDTO, MetadataEventDTO,
+        MetadataPalletDTO, MetadataStorageItemDTO,
+    },
+    response::metadata::MetadataDTO,
 };
 
 #[derive(Clone, Debug, FromRow)]

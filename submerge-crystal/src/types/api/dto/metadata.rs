@@ -3,13 +3,6 @@ use serde_json::Value as JSONValue;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetadataDTO {
-    pub spec_version: u32,
-    pub metadata_version: u32,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct MetadataFullDTO {
     pub spec_version: u32,
     pub metadata_version: u32,

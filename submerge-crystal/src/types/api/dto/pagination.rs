@@ -3,7 +3,11 @@ use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Deserialize, ToSchema, IntoParams)]
 pub struct PaginationQuery {
+    /// Page number to retrieve. 1-indexed.
+    #[param(required = false, nullable = false, example = 1)]
     pub page: Option<u32>,
+    /// Number of items per page to be returned.
+    #[param(required = false, nullable = false, example = 100)]
     pub page_size: Option<u32>,
 }
 

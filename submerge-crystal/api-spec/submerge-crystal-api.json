@@ -2025,6 +2025,56 @@
           }
         }
       }
+    },
+    "/metadata": {
+      "get": {
+        "tags": [
+          "call"
+        ],
+        "summary": "Get metadata list",
+        "description": "Returns a list of metadata summaries for all runtime versions.",
+        "operationId": "get_metadata_list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of items per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 100
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedMetadataList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2748,6 +2798,34 @@
           "0x0123456789abcdef"
         ],
         "pattern": "^0x(?:[0-9a-f]{2})+$"
+      },
+      "MetadataSummary": {
+        "type": "object",
+        "description": "Basic fields to represent a runtime version metadata.",
+        "required": [
+          "specVersion",
+          "metadataVersion"
+        ],
+        "properties": {
+          "metadataVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Metadata version.",
+            "example": 14,
+            "minimum": 0
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Metadata runtime spec version.",
+            "example": 1001,
+            "minimum": 0
+          }
+        },
+        "example": {
+          "metadataVersion": 14,
+          "specVersion": 1001
+        }
       },
       "MultiAddress": {
         "oneOf": [
@@ -3544,6 +3622,53 @@
                       "palletStorageItemIndex": 4,
                       "palletStorageItemName": "BlockHash",
                       "value": "0x4545454545454545454545454545454545454545454545454545454545454545"
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/PaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaginatedMetadataList": {
+        "description": "Response with a paginated list of metadata summaries.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MetadataSummary"
+                  },
+                  "example": [
+                    {
+                      "metadataVersion": 14,
+                      "specVersion": 1001
                     }
                   ]
                 },

@@ -5,5 +5,6 @@ pub mod event;
 pub mod extrinsic;
 pub mod genesis;
 pub mod hex;
+pub mod metadata;
 pub mod multi_address;
 pub mod multi_signature;

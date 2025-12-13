@@ -13,27 +13,56 @@ use crate::{
     types::api::{
         dto::{
             metadata::{
-                MetadataCallDTO, MetadataConstantDTO, MetadataDTO, MetadataErrorDTO,
-                MetadataEventDTO, MetadataFullDTO, MetadataPalletDTO, MetadataPalletFullDTO,
-                MetadataStorageItemDTO,
+                MetadataCallDTO, MetadataConstantDTO, MetadataErrorDTO, MetadataEventDTO,
+                MetadataFullDTO, MetadataPalletDTO, MetadataPalletFullDTO, MetadataStorageItemDTO,
             },
-            pagination::{PagedResponse, PaginationData, PaginationQuery},
+            pagination::{PaginationData, PaginationQuery},
+            response::{
+                error::{BadRequest, InternalServerError, TooManyRequests},
+                metadata::PaginatedMetadataList,
+            },
         },
         error::APIError,
     },
 };
 use serde_json::Value as JSONValue;
 
+#[utoipa::path(
+    get,
+    path = "/metadata",
+    tag = "call",
+    summary = "Get metadata list",
+    description = "Returns a list of metadata summaries for all runtime versions.",
+    params(PaginationQuery),
+    responses(
+        (
+            status = 200,
+            response = PaginatedMetadataList,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
 pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
-) -> Result<Json<PagedResponse<MetadataDTO>>, APIError> {
+) -> Result<Json<PaginatedMetadataList>, APIError> {
     let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_metadata_count(),
         state.postgres.get_metadata_list(page, page_size),
     )?;
-    Ok(Json(PagedResponse {
+    Ok(Json(PaginatedMetadataList {
         pagination: PaginationData {
             page,
             page_size,
