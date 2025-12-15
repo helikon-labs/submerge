@@ -39,7 +39,7 @@ These are messages originating from a parachain and destined for the Relay Chain
 
 These are messages sent from the Relay Chain to a specific parachain.
 
-- Listen for the `xcmPallet.Attempted`, `xcmPallet.Sent` event on the Polkadot Relay Chain. It contains origin, destination, message and message_id.
+- Listen for the `xcmPallet` extrinsic and `xcmPallet.Attempted`, `xcmPallet.Sent` event on the Polkadot Relay Chain. It contains origin, destination, message and message_id.
 
 
 **3. Cross-Chain Message Passing (XCMP/HRMP): Parachain to Parachain**
