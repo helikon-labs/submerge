@@ -9,6 +9,11 @@ const sidebars: SidebarsConfig = {
             id: 'introduction',
             label: 'Introduction',
         },
+        {
+            type: 'doc',
+            id: 'mycelium-spec',
+            label: 'Mycelium Specification',
+        },
     ],
     crystalAPISidebar,
 };
