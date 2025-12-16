@@ -40,7 +40,6 @@ These are messages sent from the Relay Chain to a specific parachain.
 
 - Listen for the `xcmPallet.limitedReserveTransferAssets`, `xcmPallet.limitedTeleportAssets`, `xcmPallet.reserveTransferAssets`, `xcmPallet.teleportAssets`, `xcmPallet.transferAssetsUsingTypeAndThen` extrinsic and/or `xcmPallet.Attempted`, `xcmPallet.Sent` event on the Polkadot Relay Chain. It contains origin, destination, message and message_id.
 
-
 **3. Cross-Chain Message Passing (XCMP/HRMP): Parachain to Parachain**
 
 These messages are routed through the Relay Chain but are not executed there. The Relay Chain acts as a transport layer.
@@ -49,16 +48,25 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
 ## Polkadot Asset Hub
 
-- Asset Hub to Parachain/Relay
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
+- **Asset Hub to Parachain/Relay**
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
 
-- Parachain/Relay to Asset Hub
+- **Parachain/Relay to Asset Hub**
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
 
 ## Polkadot Bridge Hub
 
-- Bridge Hub to Parachain/Relay
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` would have message hash.
+- **Bridge Hub to Parachain/Relay**
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` would have message hash.
 
-- Parachain/Relay to Bridge Hub
-    - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
+- **Parachain/Relay to Bridge Hub**
+    - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event. Both events have message id or hash in it which would act as co-relation key.
+
+## Polkadot Collectives
+
+- **Collectives to Parachain/Relay**
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` or `xcmpqueue.XcmpMessageSent` would have message hash.
+
+- **Parachain/Relay to Collectives**
+    - If source chain is Polkadot Relay, Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event. Both events have message id or hash in it which would act as co-relation key.
+    - else listen for `messageQueue.processed` (for XCM v4 and v5) or `xcmpqueue.success` (for other XCM versions). Both events has message id or hash in it which would act as co-relation key.
