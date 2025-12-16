@@ -24,7 +24,7 @@ For each of these, we will monitor specific events and extrinsics to identify th
 
 These are messages originating from a parachain and destined for the Relay Chain.
 
-- Listen for the `messageQueue.Processed` system event on the Polkadot Relay Chain.
+- Listen for the `messageQueue.Processed` (for XCM v3, v4 and v5) or `ump.ExecutedUpward` (for other XCM versions) system event on the Polkadot Relay Chain.
 - What to index from the event:
     - **message_id**: A unique identifier for the message. This is crucial for tracing.
     - **origin**: The parachain_id from which the message originated along with message type.
@@ -33,13 +33,12 @@ These are messages originating from a parachain and destined for the Relay Chain
     - Block number and extrinsic hash associated with the event for context.
 - How to trace:
     - The message_id can be used to correlate this event with the original `polkadotXcm.Sent` event on the source parachain.
-- Crystal API Query: GET /events?pallet=ump&event=ExecutedUpward
 
 **2. Downward Message Passing (DMP): Relay Chain to Parachain**
 
 These are messages sent from the Relay Chain to a specific parachain.
 
-- Listen for the `xcmPallet` extrinsic and `xcmPallet.Attempted`, `xcmPallet.Sent` event on the Polkadot Relay Chain. It contains origin, destination, message and message_id.
+- Listen for the `xcmPallet.limitedReserveTransferAssets`, `xcmPallet.limitedTeleportAssets`, `xcmPallet.reserveTransferAssets`, `xcmPallet.teleportAssets`, `xcmPallet.transferAssetsUsingTypeAndThen` extrinsic and/or `xcmPallet.Attempted`, `xcmPallet.Sent` event on the Polkadot Relay Chain. It contains origin, destination, message and message_id.
 
 
 **3. Cross-Chain Message Passing (XCMP/HRMP): Parachain to Parachain**
@@ -47,3 +46,11 @@ These are messages sent from the Relay Chain to a specific parachain.
 These messages are routed through the Relay Chain but are not executed there. The Relay Chain acts as a transport layer.
 
 - What to look for: The Relay Chain's role in XCMP is to pass messages from an origin parachain's upward queue to a destination parachain's downward queue. However, direct tracing is more efficient at the parachain level.
+
+## Polkadot Asset Hub
+
+- Asset Hub to Parachain/Relay
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
+
+- Parachain/Relay to Asset Hub
+    - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
