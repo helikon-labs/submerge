@@ -50,7 +50,15 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ## Polkadot Asset Hub
 
 - Asset Hub to Parachain/Relay
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
 
 - Parachain/Relay to Asset Hub
+    - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
+
+## Polkadot Bridge Hub
+
+- Bridge Hub to Parachain/Relay
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` would have message hash.
+
+- Parachain/Relay to Bridge Hub
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
