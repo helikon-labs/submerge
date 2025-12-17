@@ -86,3 +86,11 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
 - **Parachain/Relay to People**
     - Listen for `messageQueue.processed`. Works for all XCM versions. Event have message id in it which might act as co-relation key.
+
+### Caveat
+
+- [ ] Mostly, we are tracking XCM on chain with events, but important thing is, we should know which extrinsic emitted the event. Need to properly maintain event->extrinsic mapping.
+
+- [ ] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelational key which we can use to find source chain XCM details. Need to look into it.
+
+These are few answers, we will look for next.
