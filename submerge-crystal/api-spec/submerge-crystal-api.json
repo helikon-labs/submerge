@@ -4553,7 +4553,7 @@
           },
           "palletName": {
             "type": "string",
-            "description": "If the trac record is a storage item, the storage item's pallet name in the metadata.",
+            "description": "If the trace record is a storage item, the storage item's pallet name in the metadata.",
             "example": "System"
           },
           "palletStorageItemIndex": {
@@ -4584,10 +4584,6 @@
           "storageMethod": {
             "$ref": "#/components/schemas/TraceStorageMethod",
             "description": "Trace storage method."
-          },
-          "value": {
-            "$ref": "#/components/schemas/HexString",
-            "description": "SCALE-encoded value of the trace, if exists."
           }
         },
         "example": {
@@ -4604,8 +4600,7 @@
           "palletStorageItemName": "Account",
           "parentId": null,
           "specVersion": 2000000,
-          "storageMethod": "Put",
-          "value": "0x000000000000000001000000000000008aca9a3b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"
+          "storageMethod": "Put"
         }
       },
       "TraceStorageMethod": {
@@ -5389,8 +5384,7 @@
                       "palletStorageItemName": "Account",
                       "parentId": null,
                       "specVersion": 2000000,
-                      "storageMethod": "Put",
-                      "value": "0x000000000000000001000000000000008aca9a3b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"
+                      "storageMethod": "Put"
                     }
                   ]
                 },

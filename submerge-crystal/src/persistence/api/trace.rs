@@ -10,7 +10,7 @@ const COUNT: &str = r#"
 const SELECT: &str = r#"
     SELECT
         T.hash, T.block_hash, T.block_number, T.spec_version, T.index,
-        T.key_prefix, T.key_params, T.value, T.ext_id, T.storage_method, T.parent_id, T.is_known_key,
+        T.key_prefix, T.key_params, T.ext_id, T.storage_method, T.parent_id, T.is_known_key,
         MP.index AS pallet_index, MP.name AS pallet_name,
         MSI.index AS pallet_storage_item_index, MSI.name AS pallet_storage_item_name
     FROM trace T

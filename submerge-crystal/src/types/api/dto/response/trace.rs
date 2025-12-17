@@ -41,9 +41,6 @@ pub struct TraceDTO {
     /// if the storage item has parameters.
     #[schema(required = false, nullable = false)]
     pub key_params: Option<HexString>,
-    /// SCALE-encoded value of the trace, if exists.
-    #[schema(required = false, nullable = false)]
-    pub value: Option<HexString>,
     /// ExtId value for the trace record.
     pub ext_id: HexString,
     /// Trace storage method.
@@ -86,10 +83,6 @@ impl TryFrom<&TraceRow> for TraceDTO {
                 .key_params
                 .as_ref()
                 .map(|key_params| HexString(format!("0x{}", hex::encode(key_params)))),
-            value: row
-                .value
-                .as_ref()
-                .map(|value| HexString(format!("0x{}", hex::encode(value)))),
             ext_id: HexString(format!("0x{}", hex::encode(&row.ext_id))),
             storage_method: row.storage_method.clone(),
             parent_id: row.parent_id.clone(),

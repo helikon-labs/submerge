@@ -15,7 +15,6 @@ pub fn trace_example() -> JSONValue {
         index: 20,
         key_prefix: HexString("0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9".to_string()),
         key_params: Some(HexString("0x5a3fb8de4321e12fad081eaeece61bc56d6f646c506f745374616b650000000000000000000000000000000000000000".to_string())),
-        value: Some(HexString("0x000000000000000001000000000000008aca9a3b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080".to_string())),
         ext_id: HexString("0x3e44".to_string()),
         storage_method: TraceStorageMethod::Put,
         parent_id: None,

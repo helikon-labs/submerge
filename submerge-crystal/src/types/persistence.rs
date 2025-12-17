@@ -146,7 +146,6 @@ pub struct TraceRow {
     pub index: i32,
     pub key_prefix: Vec<u8>,
     pub key_params: Option<Vec<u8>>,
-    pub value: Option<Vec<u8>>,
     pub ext_id: Vec<u8>,
     pub storage_method: TraceStorageMethod,
     pub parent_id: Option<String>,
