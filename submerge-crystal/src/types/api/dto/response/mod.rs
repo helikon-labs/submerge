@@ -10,3 +10,4 @@ pub mod metadata;
 pub mod multi_address;
 pub mod multi_signature;
 pub mod schema;
+pub mod trace;

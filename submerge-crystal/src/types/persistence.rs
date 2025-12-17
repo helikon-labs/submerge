@@ -1,6 +1,7 @@
 use crate::types::{BlockStatus, Event, Extrinsic};
 use serde_json::Value as JSONValue;
 use sqlx::FromRow;
+use submerge_base::types::substrate::trace::TraceStorageMethod;
 
 #[derive(Debug, FromRow)]
 pub struct BlockRow {
@@ -138,8 +139,7 @@ pub struct CallRow {
 
 #[derive(Debug, FromRow)]
 pub struct TraceRow {
-    #[allow(dead_code)]
-    pub id: i64,
+    pub hash: Vec<u8>,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub spec_version: i32,
@@ -148,7 +148,7 @@ pub struct TraceRow {
     pub key_params: Option<Vec<u8>>,
     pub value: Option<Vec<u8>>,
     pub ext_id: Vec<u8>,
-    pub method: String,
+    pub storage_method: TraceStorageMethod,
     pub parent_id: Option<String>,
     pub is_known_key: bool,
     pub pallet_index: Option<i32>,

@@ -4,3 +4,4 @@ pub mod event;
 pub mod extrinsic;
 pub mod genesis;
 pub mod metadata;
+pub mod trace;

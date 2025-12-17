@@ -5548,6 +5548,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-runtime 44.0.0",
+ "sqlx",
  "strum",
  "strum_macros",
  "submerge-metrics",
@@ -5556,6 +5557,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "utoipa",
 ]
 
 [[package]]

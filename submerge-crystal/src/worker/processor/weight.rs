@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_metadata::RuntimeMetadata;
 use serde_json::Value as JSONValue;
-use submerge_base::types::substrate::block_trace::BlockTrace;
+use submerge_base::types::substrate::trace::BlockTrace;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
 impl BlockProcessor {

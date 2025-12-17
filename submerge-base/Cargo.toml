@@ -22,6 +22,7 @@ serde_json = { workspace = true }
 sp-consensus-babe = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
+sqlx = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 submerge-metrics = { path = "../submerge-metrics" }
@@ -30,3 +31,4 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+utoipa = { workspace = true }

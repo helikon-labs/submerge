@@ -1,14 +1,23 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-/// Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.
-#[derive(Debug, Clone, Serialize, ToSchema)]
+/// Arbitrary hex-encoded bytes, `0x`-prefixed.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 #[schema(
     value_type = String,
     pattern = "^0x(?:[0-9a-f]{2})+$",
     examples("0xdeadbeef", "0x0123456789abcdef"),
 )]
 pub struct HexString(pub String);
+
+/// Arbitrary hex-encoded bytes, mixed case, optional `0x`-prefix.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+#[schema(
+    value_type = String,
+    pattern = "^0x(?:[0-9a-f]{2})+$",
+    examples("0xdeadbeef", "0x0123456789abcdef"),
+)]
+pub struct HexStringParam(pub String);
 
 impl From<&[u8]> for HexString {
     fn from(value: &[u8]) -> Self {

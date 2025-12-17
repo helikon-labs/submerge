@@ -8,6 +8,7 @@ use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::block::BlockHeader;
 use submerge_base::types::substrate::block::DecodedBlockHeader;
 use submerge_base::types::substrate::multi_address::MultiAddress;
+use submerge_base::types::substrate::trace::TraceStorageMethod;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_util::substrate::storage::get_storage_plain_key;
 
@@ -91,9 +92,9 @@ pub(crate) trait CrystalPostgreSQLStorage {
         author_multi_address: &Option<MultiAddress>,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()>;
-    async fn delete_block_and_traces_by_hash(
+    async fn delete_block_and_traces_by_block_hash(
         &self,
-        hash: &[u8],
+        block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<bool>;
     async fn update_block_status(
@@ -131,7 +132,7 @@ pub(crate) trait CrystalPostgreSQLStorage {
         key_params: Option<&[u8]>,
         value: Option<&[u8]>,
         ext_id: &[u8],
-        method: &str,
+        storage_method: &TraceStorageMethod,
         parent_id: Option<&str>,
         metadata_storage_item_id: Option<u32>,
         is_known_key: bool,
@@ -546,17 +547,17 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         Ok(())
     }
 
-    async fn delete_block_and_traces_by_hash(
+    async fn delete_block_and_traces_by_block_hash(
         &self,
-        hash: &[u8],
+        block_hash: &[u8],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<bool> {
         let block_delete_result = sqlx::query("DELETE FROM block WHERE hash = $1")
-            .bind(hash)
+            .bind(block_hash)
             .execute(&mut **tx)
             .await?;
         sqlx::query("DELETE FROM trace WHERE block_hash = $1")
-            .bind(hash)
+            .bind(block_hash)
             .execute(&mut **tx)
             .await?;
         Ok(block_delete_result.rows_affected() == 1)
@@ -742,7 +743,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         key_params: Option<&[u8]>,
         value: Option<&[u8]>,
         ext_id: &[u8],
-        method: &str,
+        storage_method: &TraceStorageMethod,
         parent_id: Option<&str>,
         metadata_storage_item_id: Option<u32>,
         is_known_key: bool,
@@ -750,11 +751,11 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<()> {
         sqlx::query(
             r#"
-            INSERT INTO trace (block_hash, block_number, spec_version, index, key_prefix, key_params, value, ext_id, method, parent_id, metadata_storage_item_id, is_known_key)
+            INSERT INTO trace (block_hash, block_number, spec_version, index, key_prefix, key_params, value, ext_id, storage_method, parent_id, metadata_storage_item_id, is_known_key)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             ON CONFLICT (block_hash, block_number, index) DO UPDATE SET
                 spec_version = EXCLUDED.spec_version, key_prefix = EXCLUDED.key_prefix, key_params = EXCLUDED.key_params,
-                value = EXCLUDED.value, ext_id = EXCLUDED.ext_id, method = EXCLUDED.method, parent_id = EXCLUDED.parent_id,
+                value = EXCLUDED.value, ext_id = EXCLUDED.ext_id, storage_method = EXCLUDED.storage_method, parent_id = EXCLUDED.parent_id,
                 metadata_storage_item_id = EXCLUDED.metadata_storage_item_id, is_known_key = EXCLUDED.is_known_key
             "#,
         )
@@ -766,7 +767,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(key_params)
             .bind(value)
             .bind(ext_id)
-            .bind(method)
+            .bind(storage_method)
             .bind(parent_id)
             .bind(metadata_storage_item_id.map(|id| id as i32))
             .bind(is_known_key)
@@ -1136,7 +1137,7 @@ mod tests {
                         key_params,
                         value.as_deref(),
                         &ext_id,
-                        &event.data_wrapper.data.method.to_string(),
+                        &event.data_wrapper.data.storage_method,
                         event.parent_id.as_deref(),
                         None,
                         false,

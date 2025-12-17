@@ -13,11 +13,11 @@ use std::future::Future;
 use std::str::FromStr;
 use std::time::Duration;
 use submerge_base::types::substrate::block::{Block, BlockHeader, BlockWrapper};
-use submerge_base::types::substrate::block_trace::{BlockTrace, BlockTraceWrapper, StorageMethod};
 use submerge_base::types::substrate::chainspec::ChainProperties;
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_base::types::substrate::runtime::LastRuntimeUpgradeInfo;
 use submerge_base::types::substrate::system::SystemHealth;
+use submerge_base::types::substrate::trace::{BlockTrace, BlockTraceWrapper, TraceStorageMethod};
 use submerge_util::substrate::storage::{decode_hex_string, get_rpc_storage_plain_params};
 use tokio_util::sync::CancellationToken;
 
@@ -152,7 +152,7 @@ impl SubstrateClient {
 
     /// Gets execution/storage trace records of a block by its hash.
     pub async fn get_block_trace(&self, block_hash: &str) -> anyhow::Result<BlockTrace> {
-        let storage_method_names = StorageMethod::names().join(",");
+        let storage_method_names = TraceStorageMethod::names().join(",");
         let trace_wrapper: BlockTraceWrapper = self
             .ws_client
             .request(

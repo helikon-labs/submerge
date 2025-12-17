@@ -1,6 +1,12 @@
 CREATE TABLE IF NOT EXISTS trace
 (
-    id                          BIGSERIAL NOT NULL,
+    hash                        BYTEA GENERATED ALWAYS AS (
+        digest(
+            block_hash ||
+            index::bytea,
+            'sha256'
+        )
+    ) STORED,
     block_hash                  BYTEA NOT NULL,
     block_number                BIGINT NOT NULL,
     spec_version                INT NOT NULL,
@@ -9,15 +15,17 @@ CREATE TABLE IF NOT EXISTS trace
     key_params                  BYTEA,
     value                       BYTEA,
     ext_id                      BYTEA NOT NULL,
-    method                      VARCHAR(64) NOT NULL,
+    storage_method              TRACE_STORAGE_METHOD NOT NULL,
     parent_id                   TEXT,
     metadata_storage_item_id    INTEGER,
     is_known_key                BOOLEAN NOT NULL,
     created_at                  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT trace_pk PRIMARY KEY (id, block_number),
+    CONSTRAINT trace_pk PRIMARY KEY (hash, block_number),
     CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
 ) PARTITION BY RANGE (block_number);
 
+CREATE INDEX IF NOT EXISTS trace_idx_hash
+    ON trace (hash);
 CREATE INDEX IF NOT EXISTS trace_idx_kprefix_kparams_null_blockn_index
     ON trace (key_prefix, key_params, block_number DESC, index ASC)
     WHERE key_params IS NOT NULL;
