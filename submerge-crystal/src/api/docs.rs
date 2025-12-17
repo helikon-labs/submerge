@@ -120,6 +120,8 @@ use crate::types::api::{
         // trace
         crate::api::v1::trace::get_traces,
         crate::api::v1::trace::get_traces_by_block_reference,
+        crate::api::v1::trace::get_trace_by_hash,
+        crate::api::v1::trace::get_trace_value_by_hash,
     ),
     components(
         schemas(

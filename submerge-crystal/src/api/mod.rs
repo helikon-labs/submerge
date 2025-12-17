@@ -12,7 +12,9 @@ use crate::api::v1::extrinsic::{
     get_extrinsic_by_hash, get_extrinsic_root_call_by_hash,
     get_extrinsics_by_block_reference_and_index,
 };
-use crate::api::v1::trace::{get_traces, get_traces_by_block_reference};
+use crate::api::v1::trace::{
+    get_trace_by_hash, get_trace_value_by_hash, get_traces, get_traces_by_block_reference,
+};
 use crate::metrics;
 use crate::worker::WorkerManager;
 use crate::{
@@ -267,6 +269,8 @@ fn build_api_routes() -> Router<ServiceState> {
             "/blocks/{block_ref}/traces",
             get(get_traces_by_block_reference),
         )
+        .route("/traces/{trace_hash}", get(get_trace_by_hash))
+        .route("/traces/{trace_hash}/value", get(get_trace_value_by_hash))
 }
 
 async fn shutdown_signal() {

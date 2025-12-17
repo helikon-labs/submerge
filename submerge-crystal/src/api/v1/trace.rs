@@ -1,7 +1,10 @@
 use axum::{
     extract::{Path, Query, State},
+    http::header,
+    response::{IntoResponse as _, Response},
     Json,
 };
+use reqwest::StatusCode;
 
 use crate::{
     api::{get_page_number_and_size, ServiceState},
@@ -20,7 +23,8 @@ use crate::{
             },
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
-                trace::PaginatedTraceList,
+                hex::HexString,
+                trace::{PaginatedTraceList, TraceDTO},
             },
         },
         error::APIError,
@@ -208,5 +212,127 @@ pub(crate) async fn get_traces_by_block_reference(
             Ok(Json(response))
         }
         Err(message) => Err(APIError::BadRequest(message)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/traces/{trace_hash}",
+    tag = "trace",
+    summary = "Get trace by hash",
+    description = "Returns the trace by its hash.",
+    params(
+        (
+            "trace_hash" = String,
+            Path,
+            description = "Trace hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "Trace with the given hash.",
+            body = TraceDTO,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
+pub(crate) async fn get_trace_by_hash(
+    State(state): State<ServiceState>,
+    Path(trace_hash): Path<String>,
+) -> Result<Json<TraceDTO>, APIError> {
+    let trace_hash = match hex::decode(trace_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid trace hash: {e}"))),
+    };
+    if let Some(row) = &state.postgres.get_trace_by_hash(&trace_hash).await? {
+        Ok(Json(row.try_into()?))
+    } else {
+        Err(APIError::TraceNotFoundWithHash(trace_hash))
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/traces/{trace_hash}/value",
+    tag = "trace",
+    summary = "Get trace value",
+    description = "Returns the value of a trace record by its hash.",
+    params(
+        (
+            "trace_hash" = String,
+            Path,
+            description = "Trace hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "SCALE-encoded value of the storage trace.",
+            body = HexString,
+        ),
+        (
+            status = 204,
+            description = "Trace exists but has no value (null).",
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
+pub(crate) async fn get_trace_value_by_hash(
+    State(state): State<ServiceState>,
+    Path(trace_hash): Path<String>,
+) -> Result<Response, APIError> {
+    let trace_hash = match hex::decode(trace_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid trace hash: {e}"))),
+    };
+    if !state.postgres.trace_exists_by_hash(&trace_hash).await? {
+        return Err(APIError::TraceNotFoundWithHash(trace_hash));
+    }
+    if let Some(value_bytes) = state.postgres.get_trace_value_by_hash(&trace_hash).await? {
+        let hex_string = format!("0x{}", hex::encode(value_bytes));
+        Ok(([(header::CONTENT_TYPE, "text/plain")], hex_string).into_response())
+    } else {
+        Ok(StatusCode::NO_CONTENT.into_response())
     }
 }

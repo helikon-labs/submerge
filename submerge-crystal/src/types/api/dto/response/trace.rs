@@ -57,7 +57,7 @@ pub struct TraceDTO {
     #[schema(required = false, nullable = false, example = 14)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pallet_index: Option<u32>,
-    /// If the trac record is a storage item, the storage item's pallet name in the metadata.
+    /// If the trace record is a storage item, the storage item's pallet name in the metadata.
     #[schema(required = false, nullable = false, example = "System")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pallet_name: Option<String>,

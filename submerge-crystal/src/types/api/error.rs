@@ -33,6 +33,7 @@ pub enum APIError {
     ExtrinsicNotFoundWithHash(Vec<u8>),
     CallNotFoundWithHash(Vec<u8>),
     EventNotFoundWithHash(Vec<u8>),
+    TraceNotFoundWithHash(Vec<u8>),
     ParentCallNotFoundForCallWithHash(Vec<u8>),
     InvalidHex(String),
     InvalidUTF8(String),
@@ -81,6 +82,9 @@ impl APIError {
             APIError::EventNotFoundWithHash(hash) => {
                 format!("Event with hash 0x{} not found.", hex::encode(hash))
             }
+            APIError::TraceNotFoundWithHash(hash) => {
+                format!("Trace with hash 0x{} not found.", hex::encode(hash))
+            }
             APIError::ParentCallNotFoundForCallWithHash(hash) => {
                 format!(
                     "Call with hash 0x{} does not have a parent call.",
@@ -113,6 +117,7 @@ impl APIError {
             APIError::ExtrinsicNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::CallNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::EventNotFoundWithHash(_) => StatusCode::NOT_FOUND,
+            APIError::TraceNotFoundWithHash(_) => StatusCode::NOT_FOUND,
             APIError::ParentCallNotFoundForCallWithHash(_) => StatusCode::NOT_FOUND,
             APIError::InvalidHex(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidUTF8(_) => StatusCode::BAD_REQUEST,

@@ -49,6 +49,9 @@ pub(crate) trait CrystalTraceAPIPostgreSQLStorage {
         page: u32,
         page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>>;
+    async fn trace_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
+    async fn get_trace_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<TraceRow>>;
+    async fn get_trace_value_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<Vec<u8>>>;
 }
 
 impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -189,5 +192,30 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
             .fetch_all(&self.connection_pool)
             .await?;
         Ok(rows)
+    }
+
+    async fn trace_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM trace WHERE hash = $1)")
+            .bind(hash)
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(exists)
+    }
+
+    async fn get_trace_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<TraceRow>> {
+        let call_row: Option<TraceRow> =
+            sqlx::query_as(format!("{SELECT} WHERE T.hash = $1").as_str())
+                .bind(hash)
+                .fetch_optional(&self.connection_pool)
+                .await?;
+        Ok(call_row)
+    }
+
+    async fn get_trace_value_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<Vec<u8>>> {
+        let row: (Option<Vec<u8>>,) = sqlx::query_as("SELECT value FROM trace WHERE hash = $1")
+            .bind(hash)
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(row.0)
     }
 }

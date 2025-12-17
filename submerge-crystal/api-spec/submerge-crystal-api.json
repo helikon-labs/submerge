@@ -2937,6 +2937,133 @@
           }
         }
       }
+    },
+    "/traces/{trace_hash}": {
+      "get": {
+        "tags": [
+          "trace"
+        ],
+        "summary": "Get trace by hash",
+        "description": "Returns the trace by its hash.",
+        "operationId": "get_trace_by_hash",
+        "parameters": [
+          {
+            "name": "trace_hash",
+            "in": "path",
+            "description": "Trace hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trace with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trace"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/traces/{trace_hash}/value": {
+      "get": {
+        "tags": [
+          "trace"
+        ],
+        "summary": "Get trace value",
+        "description": "Returns the value of a trace record by its hash.",
+        "operationId": "get_trace_value_by_hash",
+        "parameters": [
+          {
+            "name": "trace_hash",
+            "in": "path",
+            "description": "Trace hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SCALE-encoded value of the storage trace.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HexString"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Trace exists but has no value (null)."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
     }
   },
   "components": {
