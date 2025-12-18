@@ -46,6 +46,105 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
 - What to look for: The Relay Chain's role in XCMP is to pass messages from an origin parachain's upward queue to a destination parachain's downward queue. However, direct tracing is more efficient at the parachain level.
 
+
+**xcmPallet.Attempted**
+
+```
+{
+  "docs": "Execution of an XCM message was attempted.",
+  "args_name": [
+    "outcome"
+  ],
+  "args_type_name": [
+    "xcm::latest::Outcome"
+  ]
+}
+```
+
+```
+{
+  "docs": "Execution of an XCM message was attempted.\n\n\\[ outcome \\]",
+  "args_name": [
+    ""
+  ],
+  "args_type_name": [
+    "xcm::latest::Outcome"
+  ]
+}
+```
+
+**ump.ExecutedUpward**
+
+```
+{
+  "docs": "Upward message executed with the given outcome.\n\\[ id, outcome \\]",
+  "args_name": [
+    "",
+    ""
+  ],
+  "args_type_name": [
+    "MessageId",
+    "Outcome"
+  ]
+}
+```
+
+**ump.UpwardMessagesReceived**
+
+```
+{
+  "docs": "Some upward messages have been received and will be processed.\n\\[ para, count, size \\]",
+  "args_name": [
+    "",
+    "",
+    ""
+  ],
+  "args_type_name": [
+    "ParaId",
+    "u32",
+    "u32"
+  ]
+}
+```
+
+**messageQueue.Processed** (Introduced in v1000001)
+
+```
+{
+  "docs": "Message is processed.",
+  "args_name": [
+    "id",
+    "origin",
+    "weight_used",
+    "success"
+  ],
+  "args_type_name": [
+    "[u8; 32]",
+    "MessageOriginOf",
+    "Weight",
+    "bool"
+  ]
+}
+```
+
+``` (after v1003003)
+{
+  "docs": "Message is processed.",
+  "args_name": [
+    "id",
+    "origin",
+    "weight_used",
+    "success"
+  ],
+  "args_type_name": [
+    "H256",
+    "MessageOriginOf",
+    "Weight",
+    "bool"
+  ]
+}
+```
+
 ## Polkadot Asset Hub
 
 - **Asset Hub to Parachain/Relay**
