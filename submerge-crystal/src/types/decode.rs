@@ -320,23 +320,34 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
             Ok(Value::Object(field_map))
         } else {
             let values: Vec<Box<Value>> = field_map.values().cloned().collect();
-            let mut result = HashMap::default();
-            result.insert(
-                "type".to_string(),
-                Box::new(Value::String(value.name().to_string())),
-            );
-            result.insert(
-                "value".to_string(),
-                if values.len() == 1 {
-                    match values.into_iter().next() {
-                        Some(v) => v,
-                        None => Box::new(Value::Null),
-                    }
-                } else {
-                    Box::new(Value::Array(values.iter().map(|v| *v.clone()).collect()))
-                },
-            );
-            Ok(Value::Object(result))
+            let name = value.name();
+            match (
+                name.eq_ignore_ascii_case("some"),
+                name.eq_ignore_ascii_case("none"),
+                values.as_slice(),
+            ) {
+                (true, _, [single]) => Ok(*single.clone()),
+                (_, true, []) => Ok(Value::Null),
+                _ => {
+                    let mut result = HashMap::default();
+                    result.insert(
+                        "type".to_string(),
+                        Box::new(Value::String(value.name().to_string())),
+                    );
+                    result.insert(
+                        "value".to_string(),
+                        if values.len() == 1 {
+                            match values.into_iter().next() {
+                                Some(v) => v,
+                                None => Box::new(Value::Null),
+                            }
+                        } else {
+                            Box::new(Value::Array(values.iter().map(|v| *v.clone()).collect()))
+                        },
+                    );
+                    Ok(Value::Object(result))
+                }
+            }
         }
     }
 
