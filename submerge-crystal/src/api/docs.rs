@@ -89,12 +89,12 @@ use crate::types::api::{
         crate::api::v1::call::get_parent_call_by_hash,
         crate::api::v1::call::get_sub_calls_by_hash,
         crate::api::v1::call::get_call_extrinsic_by_hash,
+        crate::api::v1::call::get_extrinsic_root_call_by_hash,
         // extrinsic
         crate::api::v1::extrinsic::get_extrinsics,
         crate::api::v1::extrinsic::get_extrinsics_by_block_reference,
         crate::api::v1::extrinsic::get_extrinsics_by_block_reference_and_index,
         crate::api::v1::extrinsic::get_extrinsic_by_hash,
-        crate::api::v1::extrinsic::get_extrinsic_root_call_by_hash,
         // event
         crate::api::v1::event::get_events,
         crate::api::v1::event::get_events_by_block_reference,

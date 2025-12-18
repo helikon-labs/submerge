@@ -17,7 +17,7 @@ use crate::{
             pagination::PaginationData,
             request::{
                 block::BlockReference,
-                call::{BlockCallQuery, CallQuery},
+                call::{BlockCallQuery, CallQuery, IncludeCallArgsParam},
             },
             response::{
                 call::{CallArgs, CallDTO, PaginatedCallList},
@@ -86,6 +86,7 @@ pub(crate) async fn get_calls(
             &query.call_name,
             page,
             page_size,
+            query.include_args,
         ),
     )?;
     let mut data = Vec::new();
@@ -164,6 +165,7 @@ pub(crate) async fn get_calls_by_block_reference(
                     &query.pallet_call_name,
                     page,
                     page_size,
+                    query.include_args,
                 ),
             )?;
             let mut data = Vec::new();
@@ -196,6 +198,7 @@ pub(crate) async fn get_calls_by_block_reference(
                     &query.pallet_call_name,
                     page,
                     page_size,
+                    query.include_args,
                 ),
             )?;
             let mut data = Vec::new();
@@ -298,6 +301,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                         &query.pallet_call_name,
                         page,
                         page_size,
+                        query.include_args,
                     ),
             )?;
             let mut data = Vec::new();
@@ -344,6 +348,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                     &query.pallet_call_name,
                     page,
                     page_size,
+                    query.include_args,
                 ),
             )?;
             let mut data = Vec::new();
@@ -434,6 +439,7 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
             &query.pallet_call_name,
             page,
             page_size,
+            query.include_args,
         ),
     )?;
     let mut data = Vec::new();
@@ -464,6 +470,7 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
             description = "Call hash in hex (with or without `0x` prefix, case-insensitive).",
             pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
         ),
+        IncludeCallArgsParam,
     ),
     responses(
         (
@@ -496,12 +503,17 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
 pub(crate) async fn get_call_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,
+    Query(query): Query<IncludeCallArgsParam>,
 ) -> Result<Json<CallDTO>, APIError> {
     let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
         Ok(hash) => hash,
         Err(e) => return Err(APIError::BadRequest(format!("Invalid call hash: {e}"))),
     };
-    if let Some(row) = &state.postgres.get_call_by_hash(&call_hash).await? {
+    if let Some(row) = &state
+        .postgres
+        .get_call_by_hash(&call_hash, query.include_args)
+        .await?
+    {
         Ok(Json(row.into()))
     } else {
         Err(APIError::CallNotFoundWithHash(call_hash))
@@ -588,6 +600,7 @@ pub(crate) async fn get_call_args_by_hash(
             description = "Sub call hash in hex (with or without `0x` prefix, case-insensitive).",
             pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
         ),
+        IncludeCallArgsParam,
     ),
     responses(
         (
@@ -620,6 +633,7 @@ pub(crate) async fn get_call_args_by_hash(
 pub(crate) async fn get_parent_call_by_hash(
     State(state): State<ServiceState>,
     Path(call_hash): Path<String>,
+    Query(query): Query<IncludeCallArgsParam>,
 ) -> Result<Json<CallDTO>, APIError> {
     let call_hash = match hex::decode(call_hash.trim_start_matches("0x")) {
         Ok(hash) => hash,
@@ -628,7 +642,11 @@ pub(crate) async fn get_parent_call_by_hash(
     if !state.postgres.call_exists_by_hash(&call_hash).await? {
         return Err(APIError::CallNotFoundWithHash(call_hash));
     }
-    if let Some(row) = &state.postgres.get_parent_call_by_hash(&call_hash).await? {
+    if let Some(row) = &state
+        .postgres
+        .get_parent_call_by_hash(&call_hash, query.include_args)
+        .await?
+    {
         Ok(Json(row.into()))
     } else {
         Err(APIError::ParentCallNotFoundForCallWithHash(call_hash))
@@ -699,6 +717,7 @@ pub(crate) async fn get_sub_calls_by_hash(
             &query.pallet_call_name,
             page,
             page_size,
+            query.include_args,
         ),
     )?;
     let mut data = Vec::new();
@@ -774,5 +793,68 @@ pub(crate) async fn get_call_extrinsic_by_hash(
         Ok(Json(row.try_into()?))
     } else {
         Err(APIError::CallNotFoundWithHash(call_hash))
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/extrinsics/{extrinsic_hash}/call",
+    tag = "call",
+    summary = "Get extrinsic root call",
+    description = "Returns the root call of an extrinsic by its hash.",
+    params(
+        (
+            "extrinsic_hash" = String,
+            Path,
+            description = "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
+            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
+        ),
+        IncludeCallArgsParam,
+    ),
+    responses(
+        (
+            status = 200,
+            headers(
+                ("X-RateLimit-Limit" = u32),
+                ("X-RateLimit-Remaining" = u32),
+            ),
+            description = "The root call of the extrinsic.",
+            body = CallDTO,
+        ),
+        (
+            status = 400,
+            response = BadRequest,
+        ),
+        (
+            status = 404,
+            response = NotFound,
+        ),
+        (
+            status = 429,
+            response = TooManyRequests,
+        ),
+        (
+            status = 500,
+            response = InternalServerError,
+        )
+    )
+)]
+pub(crate) async fn get_extrinsic_root_call_by_hash(
+    State(state): State<ServiceState>,
+    Path(extrinsic_hash): Path<String>,
+    Query(query): Query<IncludeCallArgsParam>,
+) -> Result<Json<CallDTO>, APIError> {
+    let extrinsic_hash = match hex::decode(extrinsic_hash.trim_start_matches("0x")) {
+        Ok(hash) => hash,
+        Err(e) => return Err(APIError::BadRequest(format!("Invalid extrinsic hash: {e}"))),
+    };
+    if let Some(row) = &state
+        .postgres
+        .get_extrinsic_root_call_by_hash(&extrinsic_hash, query.include_args)
+        .await?
+    {
+        Ok(Json(row.into()))
+    } else {
+        Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
     }
 }

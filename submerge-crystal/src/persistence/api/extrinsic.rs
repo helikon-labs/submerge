@@ -339,7 +339,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         call_hash: &[u8],
     ) -> anyhow::Result<Option<ExtrinsicRow>> {
-        let Some(call) = self.get_call_by_hash(call_hash).await? else {
+        let Some(call) = self.get_call_by_hash(call_hash, false).await? else {
             return Ok(None);
         };
         let row: Option<ExtrinsicRow> =

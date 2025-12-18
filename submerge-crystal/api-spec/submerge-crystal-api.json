@@ -293,6 +293,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -665,6 +675,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -968,7 +988,7 @@
             "example": "system"
           },
           {
-            "name": "pallet_call_name",
+            "name": "call_name",
             "in": "query",
             "description": "Filter calls by call name. Case insensitive. Stored in `camelCase`.",
             "required": false,
@@ -976,6 +996,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the calls in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1011,6 +1041,16 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1208,6 +1248,16 @@
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
             }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1317,6 +1367,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1457,7 +1517,7 @@
             "example": "balances"
           },
           {
-            "name": "pallet_event_name",
+            "name": "event_name",
             "in": "query",
             "description": "Filter events by event name. Case insensitive. Stored in `camelCase`.",
             "required": false,
@@ -1826,7 +1886,7 @@
     "/extrinsics/{extrinsic_hash}/call": {
       "get": {
         "tags": [
-          "extrinsic"
+          "call"
         ],
         "summary": "Get extrinsic root call",
         "description": "Returns the root call of an extrinsic by its hash.",
@@ -1840,6 +1900,16 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1950,6 +2020,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -3242,6 +3322,22 @@
           "extrinsicIsSuccessful"
         ],
         "properties": {
+          "args": {
+            "type": "object",
+            "description": "Call arguments in JSON format. Schema depends on the call's schema definition in the runtime metadata.",
+            "examples": [
+              {
+                "args": {
+                  "dest": {
+                    "type": "Id",
+                    "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                  },
+                  "value": "117284000000"
+                },
+                "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+              }
+            ]
+          },
           "blockHash": {
             "$ref": "#/components/schemas/Hash256Hex",
             "description": "Hash of the call's block."
@@ -3339,6 +3435,16 @@
           }
         },
         "example": {
+          "args": {
+            "args": {
+              "dest": {
+                "type": "Id",
+                "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+              },
+              "value": "117284000000"
+            },
+            "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+          },
           "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
           "blockNumber": 3172595,
           "blockStatus": "proposed",
@@ -5064,6 +5170,16 @@
                   },
                   "example": [
                     {
+                      "args": {
+                        "args": {
+                          "dest": {
+                            "type": "Id",
+                            "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                          },
+                          "value": "117284000000"
+                        },
+                        "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+                      },
                       "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
                       "blockNumber": 3172595,
                       "blockStatus": "proposed",

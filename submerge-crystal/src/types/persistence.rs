@@ -135,6 +135,7 @@ pub struct CallRow {
     pub pallet_call_index: i32,
     pub pallet_call_name: String,
     pub extrinsic_is_successful: bool,
+    pub args: Option<JSONValue>,
 }
 
 #[derive(Debug, FromRow)]

@@ -10,17 +10,25 @@ const COUNT: &str = r#"
     JOIN metadata_call MC ON C.metadata_call_id = MC.id
     JOIN metadata_pallet MP ON MC.pallet_id = MP.id
 "#;
-const SELECT: &str = r#"
-    SELECT
-        C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
-        C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
-        C.extrinsic_is_successful,
-        MP.index AS pallet_index, MP.name AS pallet_name,
-        MC.index AS pallet_call_index, MC.name AS pallet_call_name
-    FROM call C
-    JOIN metadata_call MC ON C.metadata_call_id = MC.id
-    JOIN metadata_pallet MP ON MC.pallet_id = MP.id
-"#;
+
+fn get_select_query(include_args: bool) -> String {
+    let query = r#"
+        SELECT
+            C.hash, C.block_hash, C.block_number, C.block_timestamp, C.spec_version, C.block_status,
+            C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
+            C.extrinsic_is_successful, {ARGS_PLACEHOLDER},
+            MP.index AS pallet_index, MP.name AS pallet_name,
+            MC.index AS pallet_call_index, MC.name AS pallet_call_name
+        FROM call C
+        JOIN metadata_call MC ON C.metadata_call_id = MC.id
+        JOIN metadata_pallet MP ON MC.pallet_id = MP.id
+    "#;
+    if include_args {
+        query.replace("{ARGS_PLACEHOLDER}", "C.args")
+    } else {
+        query.replace("{ARGS_PLACEHOLDER}", "NULL::jsonb as args")
+    }
+}
 
 pub(crate) trait CrystalCallAPIPostgreSQLStorage {
     async fn get_call_count(
@@ -38,6 +46,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash(
         &self,
@@ -52,6 +61,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number(
         &self,
@@ -66,6 +76,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash_and_extrinsic_index(
         &self,
@@ -82,6 +93,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number_and_extrinsic_index(
         &self,
@@ -98,6 +110,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_extrinsic_hash(
         &self,
@@ -112,9 +125,14 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn call_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
-    async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
+    async fn get_call_by_hash(
+        &self,
+        hash: &[u8],
+        include_args: bool,
+    ) -> anyhow::Result<Option<CallRow>>;
     async fn get_call_args_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<JSONValue>>;
     async fn get_sub_call_count_by_hash(
         &self,
@@ -129,11 +147,17 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
-    async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>>;
+    async fn get_parent_call_by_hash(
+        &self,
+        hash: &[u8],
+        include_args: bool,
+    ) -> anyhow::Result<Option<CallRow>>;
     async fn get_extrinsic_root_call_by_hash(
         &self,
         extrinsic_hash: &[u8],
+        include_args: bool,
     ) -> anyhow::Result<Option<CallRow>>;
 }
 
@@ -178,10 +202,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
+        let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{SELECT} WHERE 1=1"));
+            QueryBuilder::new(format!("{query} WHERE 1=1"));
         if let Some(min) = min_block_number {
             query_builder.push(" AND C.block_number >= ").push_bind(min);
         }
@@ -244,9 +270,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
+        let query = get_select_query(include_args);
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(query);
         query_builder
             .push(" AND C.block_hash = ")
             .push_bind(block_hash);
@@ -305,9 +333,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
+        let query = get_select_query(include_args);
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(query);
         query_builder
             .push(" AND C.block_number = ")
             .push_bind(block_number as i64);
@@ -371,9 +401,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
+        let query = get_select_query(include_args);
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(query);
         query_builder
             .push(" AND C.block_hash = ")
             .push_bind(block_hash);
@@ -440,11 +472,13 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
+        let query = get_select_query(include_args);
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(query);
         query_builder
-            .push(" AND C.block_number = ")
+            .push(" WHERE C.block_number = ")
             .push_bind(block_number as i64);
         query_builder
             .push(" AND C.extrinsic_index = ")
@@ -504,11 +538,13 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
+        let query = get_select_query(include_args);
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(query);
         query_builder
-            .push(" AND C.extrinsic_hash = ")
+            .push(" WHERE C.extrinsic_hash = ")
             .push_bind(extrinsic_hash);
         if let Some(pallet_name) = pallet_name {
             query_builder
@@ -539,9 +575,14 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(exists)
     }
 
-    async fn get_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
+    async fn get_call_by_hash(
+        &self,
+        hash: &[u8],
+        include_args: bool,
+    ) -> anyhow::Result<Option<CallRow>> {
+        let query = get_select_query(include_args);
         let call_row: Option<CallRow> =
-            sqlx::query_as(format!("{SELECT} WHERE C.hash = $1").as_str())
+            sqlx::query_as(format!("{query} WHERE C.hash = $1").as_str())
                 .bind(hash)
                 .fetch_optional(&self.connection_pool)
                 .await?;
@@ -590,11 +631,13 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SELECT);
+        let query = get_select_query(include_args);
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(query);
         query_builder
-            .push(" AND C.parent_call_hash = ")
+            .push(" WHERE C.parent_call_hash = ")
             .push_bind(hash);
         if let Some(pallet_name) = pallet_name {
             query_builder
@@ -617,22 +660,28 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         Ok(rows)
     }
 
-    async fn get_parent_call_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<CallRow>> {
-        let Some(child_call) = self.get_call_by_hash(hash).await? else {
+    async fn get_parent_call_by_hash(
+        &self,
+        hash: &[u8],
+        include_args: bool,
+    ) -> anyhow::Result<Option<CallRow>> {
+        let Some(child_call) = self.get_call_by_hash(hash, include_args).await? else {
             return Ok(None);
         };
         let Some(parent_call_hash) = child_call.parent_call_hash else {
             return Ok(None);
         };
-        self.get_call_by_hash(&parent_call_hash).await
+        self.get_call_by_hash(&parent_call_hash, include_args).await
     }
 
     async fn get_extrinsic_root_call_by_hash(
         &self,
         extrinsic_hash: &[u8],
+        include_args: bool,
     ) -> anyhow::Result<Option<CallRow>> {
+        let query = get_select_query(include_args);
         let call_row: Option<CallRow> = sqlx::query_as(
-            format!("{SELECT} WHERE C.extrinsic_hash = $1 AND parent_call_hash IS NULL").as_str(),
+            format!("{query} WHERE C.extrinsic_hash = $1 AND parent_call_hash IS NULL").as_str(),
         )
         .bind(extrinsic_hash)
         .fetch_optional(&self.connection_pool)

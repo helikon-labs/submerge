@@ -648,7 +648,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
     ) -> anyhow::Result<bool> {
         let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM extrinsic WHERE block_hash = $1 AND extrinsic = $2)",
+            "SELECT EXISTS(SELECT 1 FROM extrinsic WHERE block_hash = $1 AND index = $2)",
         )
         .bind(block_hash)
         .bind(extrinsic_index as i32)
@@ -663,7 +663,7 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_index: u32,
     ) -> anyhow::Result<bool> {
         let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM extrinsic WHERE block_number = $1 AND extrinsic = $2)",
+            "SELECT EXISTS(SELECT 1 FROM extrinsic WHERE block_number = $1 AND index = $2)",
         )
         .bind(block_number as i32)
         .bind(extrinsic_index as i32)
