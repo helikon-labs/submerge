@@ -87,6 +87,7 @@ pub struct EventCompositeRow {
     pub extrinsic_hash: Option<[u8; 32]>,
     pub phase: String,
     pub index: i32,
+    pub args: Option<JSONValue>,
 }
 
 #[derive(Debug, FromRow)]

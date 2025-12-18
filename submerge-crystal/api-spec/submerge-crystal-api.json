@@ -297,7 +297,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -389,6 +389,16 @@
               "type": "string"
             },
             "example": "bonded"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the block events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -438,6 +448,16 @@
               "type": "integer",
               "format": "int32",
               "minimum": 0
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the event(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -679,7 +699,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -782,6 +802,16 @@
               "type": "string"
             },
             "example": "bonded"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the block events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1000,7 +1030,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the calls in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -1046,7 +1076,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -1252,7 +1282,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -1371,7 +1401,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -1525,6 +1555,16 @@
               "type": "string"
             },
             "example": "transfer"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per event instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1560,6 +1600,16 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the event(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1905,7 +1955,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -2024,7 +2074,7 @@
           {
             "name": "include_args",
             "in": "query",
-            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` considerable increases response size.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -2116,6 +2166,16 @@
               "type": "string"
             },
             "example": "bonded"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the block events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -3501,6 +3561,28 @@
           "index"
         ],
         "properties": {
+          "args": {
+            "type": "object",
+            "description": "Call arguments in JSON format. Schema depends on the call's schema definition in the runtime metadata.",
+            "examples": [
+              {
+                "dispatchInfo": {
+                  "class": {
+                    "type": "Mandatory",
+                    "value": []
+                  },
+                  "paysFee": {
+                    "type": "Yes",
+                    "value": []
+                  },
+                  "weight": {
+                    "proofSize": "0",
+                    "refTime": "125000000"
+                  }
+                }
+              }
+            ]
+          },
           "blockHash": {
             "$ref": "#/components/schemas/Hash256Hex",
             "description": "Hash of the event's block."
@@ -3590,6 +3672,22 @@
           }
         },
         "example": {
+          "args": {
+            "dispatchInfo": {
+              "class": {
+                "type": "Mandatory",
+                "value": []
+              },
+              "paysFee": {
+                "type": "Yes",
+                "value": []
+              },
+              "weight": {
+                "proofSize": "0",
+                "refTime": "125000000"
+              }
+            }
+          },
           "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
           "blockNumber": 10758052,
           "blockStatus": "proposed",
@@ -5243,6 +5341,22 @@
                   },
                   "example": [
                     {
+                      "args": {
+                        "dispatchInfo": {
+                          "class": {
+                            "type": "Mandatory",
+                            "value": []
+                          },
+                          "paysFee": {
+                            "type": "Yes",
+                            "value": []
+                          },
+                          "weight": {
+                            "proofSize": "0",
+                            "refTime": "125000000"
+                          }
+                        }
+                      },
                       "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
                       "blockNumber": 10758052,
                       "blockStatus": "proposed",

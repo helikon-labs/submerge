@@ -5,7 +5,9 @@ use utoipa::{ToResponse, ToSchema};
 use crate::types::{
     api::dto::{
         pagination::PaginationData,
-        response::{example::event::event_example, hex::Hash256Hex},
+        response::{
+            example::event::event_example, hex::Hash256Hex, schema::event::event_args_schema,
+        },
     },
     persistence::EventCompositeRow,
     BlockStatus,
@@ -61,6 +63,10 @@ pub struct EventDTO {
     /// Index of the event in block.
     #[schema(example = 77)]
     pub index: u32,
+    /// Event arguments.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(schema_with = event_args_schema)]
+    pub args: Option<JSONValue>,
 }
 
 impl From<&EventCompositeRow> for EventDTO {
@@ -83,6 +89,7 @@ impl From<&EventCompositeRow> for EventDTO {
                 .map(|hash| Hash256Hex(format!("0x{}", hex::encode(hash)))),
             phase: row.phase.clone(),
             index: row.index as u32,
+            args: row.args.clone(),
         }
     }
 }

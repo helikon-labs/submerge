@@ -58,6 +58,12 @@ pub struct EventQuery {
     /// Filter events by event name. Case insensitive. Stored in `camelCase`.
     #[param(required = false, nullable = false, example = "transfer")]
     pub event_name: Option<String>,
+    /// Whether to include event arguments in the events in the response.
+    /// Default is `false`. Setting this to `true` increases response size considerably.
+    /// Prefer to use the `GET /event/{event_hash}/args` endpoint per event instead.
+    #[serde(default)]
+    #[param(required = false, default = false)]
+    pub include_args: bool,
 }
 
 /// Query parameters for fetching and filtering events within a block.
@@ -89,4 +95,22 @@ pub struct BlockEventQuery {
     /// Filter blocks events by event name. Case insensitive.
     #[param(required = false, nullable = false, example = "bonded")]
     pub pallet_event_name: Option<String>,
+    /// Whether to include event arguments in the block events in the response.
+    /// Default is `false`. Setting this to `true` increases response size considerably.
+    /// Prefer to use the `GET /event/{event_hash}/args` endpoint per call instead.
+    #[serde(default)]
+    #[param(required = false, default = false)]
+    pub include_args: bool,
+}
+
+/// Query parameter for definining whether the endpoint should include event arguments
+/// within the returned event(s).
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct IncludeEventArgsParam {
+    /// Whether to include event arguments in the event(s) in the response.
+    /// Default is `false`. Setting this to `true` increases the response size considerably.
+    /// Prefer to use the `GET /event/{event_hash}/args` endpoint per call instead.
+    #[serde(default)]
+    #[param(required = false, default = false)]
+    pub include_args: bool,
 }
