@@ -90,6 +90,7 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ### Caveat
 
 - [ ] Mostly, we are tracking XCM on chain with events, but important thing is, we should know which extrinsic emitted the event. Need to properly maintain event->extrinsic mapping.
+    - This could be made with Crystal APIs itself. For every block, we can find all events (with `/blocks/:block_ref/events`). In response, we get extrinsic hash. All other events emitted from the extrinsic can be found with `/extrinsics/:extrinsic_hash/events` and more details about extrinsic itself can be found with `/extrinsics/:extrinsic_hash`. With this, we can properly establish event->extrinsic mapping.
 
 - [ ] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelational key which we can use to find source chain XCM details. Need to look into it.
 
