@@ -57,7 +57,7 @@ pub struct CallQuery {
     pub pallet_name: Option<String>,
     /// Filter calls by call name. Case insensitive. Stored in `camelCase`.
     #[param(required = false, nullable = false, example = "setcode")]
-    pub pallet_call_name: Option<String>,
+    pub call_name: Option<String>,
 }
 
 /// Query parameters for fetching and filtering calls within a block.

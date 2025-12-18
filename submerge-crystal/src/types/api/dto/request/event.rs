@@ -57,7 +57,7 @@ pub struct EventQuery {
     pub pallet_name: Option<String>,
     /// Filter events by event name. Case insensitive. Stored in `camelCase`.
     #[param(required = false, nullable = false, example = "transfer")]
-    pub pallet_event_name: Option<String>,
+    pub event_name: Option<String>,
 }
 
 /// Query parameters for fetching and filtering events within a block.
