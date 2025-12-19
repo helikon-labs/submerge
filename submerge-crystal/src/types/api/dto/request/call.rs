@@ -57,7 +57,13 @@ pub struct CallQuery {
     pub pallet_name: Option<String>,
     /// Filter calls by call name. Case insensitive. Stored in `camelCase`.
     #[param(required = false, nullable = false, example = "setcode")]
-    pub pallet_call_name: Option<String>,
+    pub call_name: Option<String>,
+    /// Whether to include call arguments in the calls in the response.
+    /// Default is `false`. Setting this to `true` increases the response size considerably.
+    /// Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.
+    #[serde(default)]
+    #[param(required = false, default = false)]
+    pub include_args: bool,
 }
 
 /// Query parameters for fetching and filtering calls within a block.
@@ -89,4 +95,22 @@ pub struct BlockCallQuery {
     /// Filter blocks calls by call name. Case insensitive.
     #[param(required = false, nullable = false, example = "setcode")]
     pub pallet_call_name: Option<String>,
+    /// Whether to include call arguments in the block calls in the response.
+    /// Default is `false`. Setting this to `true` increases the response size considerably.
+    /// Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.
+    #[serde(default)]
+    #[param(required = false, default = false)]
+    pub include_args: bool,
+}
+
+/// Query parameter for definining whether the endpoint should include call arguments
+/// within the returned call(s).
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct IncludeCallArgsParam {
+    /// Whether to include call arguments in the call(s) in the response.
+    /// Default is `false`. Setting this to `true` increases the response size considerably.
+    /// Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.
+    #[serde(default)]
+    #[param(required = false, default = false)]
+    pub include_args: bool,
 }

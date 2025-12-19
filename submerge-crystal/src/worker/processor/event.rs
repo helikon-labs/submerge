@@ -9,7 +9,7 @@ use serde_json::Value as JSONValue;
 use sqlx::{Postgres, Transaction};
 use submerge_base::types::substrate::{
     block::BlockHeader,
-    block_trace::{BlockTrace, StorageMethod},
+    trace::{BlockTrace, TraceStorageMethod},
 };
 use submerge_util::substrate::storage::get_storage_plain_key;
 
@@ -162,14 +162,14 @@ fn parse_legacy_phase(legacy_phase: &LegacyEventPhase) -> anyhow::Result<Phase> 
 
 fn extract_trace_value(
     value: &str,
-    method: &StorageMethod,
+    storage_method: &TraceStorageMethod,
     processed_events_hex: &str,
 ) -> anyhow::Result<String> {
     let trimmed = value
         .trim_start_matches(SOME_PREFIX)
         .trim_end_matches(SOME_SUFFIX);
-    match method {
-        StorageMethod::Put => {
+    match storage_method {
+        TraceStorageMethod::Put => {
             let mut bytes: &[u8] = &hex::decode(trimmed)?;
             let _event_count = <Compact<u32>>::decode(&mut bytes)?.0;
             Ok(hex::encode(bytes)
@@ -333,8 +333,11 @@ impl BlockProcessor {
             if trace_data.key != events_key || trace_data.value.eq_ignore_ascii_case(NONE_VALUE) {
                 continue;
             }
-            let value =
-                extract_trace_value(&trace_data.value, &trace_data.method, &processed_events_hex)?;
+            let value = extract_trace_value(
+                &trace_data.value,
+                &trace_data.storage_method,
+                &processed_events_hex,
+            )?;
             let mut bytes: &[u8] = &hex::decode(&value)?;
             if metadata_version < METADATA_VERSION_LEGACY_THRESHOLD {
                 let legacy_decode_api_client = self.get_legacy_decode_client()?;
@@ -378,7 +381,7 @@ impl BlockProcessor {
                 }
                 _ => anyhow::bail!("Unsupported runtime metadata version."),
             }
-            if let StorageMethod::Put = trace_data.method {
+            if let TraceStorageMethod::Put = trace_data.storage_method {
                 processed_events_hex.push_str(value.as_str());
             }
         }

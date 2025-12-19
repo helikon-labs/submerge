@@ -5,6 +5,7 @@ use std::str::FromStr;
 use strum::VariantNames;
 use strum_macros::VariantNames;
 use submerge_util::substrate::storage::get_storage_plain_key;
+use utoipa::ToSchema;
 
 #[derive(Debug)]
 pub struct ParseStorageMethodError(String);
@@ -17,7 +18,7 @@ impl Display for ParseStorageMethodError {
 
 impl std::error::Error for ParseStorageMethodError {}
 
-impl FromStr for StorageMethod {
+impl FromStr for TraceStorageMethod {
     type Err = ParseStorageMethodError;
 
     /// Get chain from string.
@@ -37,8 +38,10 @@ impl FromStr for StorageMethod {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, VariantNames)]
-pub enum StorageMethod {
+/// Block trace storage method.
+#[derive(Serialize, Deserialize, Clone, Debug, VariantNames, sqlx::Type, ToSchema)]
+#[sqlx(type_name = "TRACE_STORAGE_METHOD")]
+pub enum TraceStorageMethod {
     Put,
     ChildPut,
     ChildKill,
@@ -48,7 +51,7 @@ pub enum StorageMethod {
     Genesis,
 }
 
-impl Display for StorageMethod {
+impl Display for TraceStorageMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Self::Put => "Put",
@@ -63,9 +66,9 @@ impl Display for StorageMethod {
     }
 }
 
-impl StorageMethod {
+impl TraceStorageMethod {
     pub fn names() -> Vec<String> {
-        StorageMethod::VARIANTS
+        TraceStorageMethod::VARIANTS
             .iter()
             .map(|s| s.to_string())
             .collect()
@@ -77,7 +80,8 @@ pub struct BlockTraceData {
     pub key: String,
     pub value: String,
     pub ext_id: String,
-    pub method: StorageMethod,
+    #[serde(rename = "method")]
+    pub storage_method: TraceStorageMethod,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

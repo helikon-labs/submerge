@@ -28,6 +28,22 @@ pub fn event_example() -> JSONValue {
         )),
         phase: "ApplyExtrinsic".to_string(),
         index: 1,
+        args: Some(serde_json::json!({
+            "dispatchInfo": {
+                "class": {
+                    "type": "Mandatory",
+                    "value": []
+                },
+                "paysFee": {
+                    "type": "Yes",
+                    "value": []
+                },
+                "weight": {
+                    "proofSize": "0",
+                    "refTime": "125000000"
+                }
+            }
+        })),
     };
     serde_json::to_value(&event).unwrap()
 }

@@ -16,7 +16,7 @@ use crate::{
             pagination::PaginationData,
             request::{
                 block::BlockReference,
-                event::{BlockEventQuery, EventQuery},
+                event::{BlockEventQuery, EventQuery, IncludeEventArgsParam},
             },
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
@@ -75,15 +75,16 @@ pub(crate) async fn get_events(
             min_block_number,
             max_block_number,
             &query.pallet_name,
-            &query.pallet_event_name,
+            &query.event_name,
         ),
         state.postgres.get_events(
             min_block_number,
             max_block_number,
             &query.pallet_name,
-            &query.pallet_event_name,
+            &query.event_name,
             page,
             page_size,
+            query.include_args,
         ),
     )?;
     let mut data = Vec::new();
@@ -162,6 +163,7 @@ pub(crate) async fn get_events_by_block_reference(
                     &query.pallet_event_name,
                     page,
                     page_size,
+                    query.include_args,
                 ),
             )?;
             let mut data = Vec::new();
@@ -194,6 +196,7 @@ pub(crate) async fn get_events_by_block_reference(
                     &query.pallet_event_name,
                     page,
                     page_size,
+                    query.include_args,
                 ),
             )?;
             let mut data = Vec::new();
@@ -232,6 +235,7 @@ pub(crate) async fn get_events_by_block_reference(
             Path,
             description = "0-based index for the event(s) in the block(s).",
         ),
+        IncludeEventArgsParam,
     ),
     responses(
         (
@@ -259,6 +263,7 @@ pub(crate) async fn get_events_by_block_reference(
 pub(crate) async fn get_events_by_block_reference_and_index(
     State(state): State<ServiceState>,
     Path((block_reference, index)): Path<(String, u32)>,
+    Query(query): Query<IncludeEventArgsParam>,
 ) -> Result<Json<EventList>, APIError> {
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
@@ -267,7 +272,7 @@ pub(crate) async fn get_events_by_block_reference_and_index(
             }
             let rows = state
                 .postgres
-                .get_events_by_block_number_and_index(block_number, index)
+                .get_events_by_block_number_and_index(block_number, index, query.include_args)
                 .await?;
             let mut data = Vec::new();
             for row in rows.iter() {
@@ -281,7 +286,7 @@ pub(crate) async fn get_events_by_block_reference_and_index(
             }
             let data = if let Some(row) = &state
                 .postgres
-                .get_event_by_block_hash_and_index(&block_hash, index)
+                .get_event_by_block_hash_and_index(&block_hash, index, query.include_args)
                 .await?
             {
                 vec![row.into()]
@@ -366,6 +371,7 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                         &query.pallet_event_name,
                         page,
                         page_size,
+                        query.include_args,
                     ),
             )?;
             let mut data = Vec::new();
@@ -402,6 +408,7 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                     &query.pallet_event_name,
                     page,
                     page_size,
+                    query.include_args,
                 ),
             )?;
             let mut data = Vec::new();
@@ -492,6 +499,7 @@ pub(crate) async fn get_events_by_extrinsic_hash(
             &query.pallet_event_name,
             page,
             page_size,
+            query.include_args,
         ),
     )?;
     let mut data = Vec::new();
@@ -522,6 +530,7 @@ pub(crate) async fn get_events_by_extrinsic_hash(
             description = "Event hash in hex (with or without `0x` prefix, case-insensitive).",
             pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
         ),
+        IncludeEventArgsParam,
     ),
     responses(
         (
@@ -554,12 +563,17 @@ pub(crate) async fn get_events_by_extrinsic_hash(
 pub(crate) async fn get_event_by_hash(
     State(state): State<ServiceState>,
     Path(event_hash): Path<String>,
+    Query(query): Query<IncludeEventArgsParam>,
 ) -> Result<Json<EventDTO>, APIError> {
     let event_hash = match hex::decode(event_hash.trim_start_matches("0x")) {
         Ok(hash) => hash,
         Err(e) => return Err(APIError::BadRequest(format!("Invalid event hash: {e}"))),
     };
-    if let Some(row) = &state.postgres.get_event_by_hash(&event_hash).await? {
+    if let Some(row) = &state
+        .postgres
+        .get_event_by_hash(&event_hash, query.include_args)
+        .await?
+    {
         Ok(Json(row.into()))
     } else {
         Err(APIError::EventNotFoundWithHash(event_hash))

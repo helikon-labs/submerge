@@ -9,14 +9,60 @@ const COUNT: &str = r#"
 "#;
 const SELECT: &str = r#"
     SELECT
-        T.id, T.block_hash, T.block_number, T.spec_version, T.index,
-        T.key_prefix, T.key_params, T.value, T.ext_id, T.method, T.parent_id, T.is_known_key,
+        T.hash, T.block_hash, T.block_number, T.spec_version, T.index,
+        T.key_prefix, T.key_params, T.ext_id, T.storage_method, T.parent_id, T.is_known_key,
         MP.index AS pallet_index, MP.name AS pallet_name,
         MSI.index AS pallet_storage_item_index, MSI.name AS pallet_storage_item_name
     FROM trace T
     LEFT JOIN metadata_storage_item MSI ON T.metadata_storage_item_id = MSI.id
     LEFT JOIN metadata_pallet MP ON MSI.pallet_id = MP.id
 "#;
+
+fn get_query_sql(
+    min_block_number: Option<i64>,
+    max_block_number: Option<i64>,
+    key_prefix: Option<&[u8]>,
+    key_params: Option<&[u8]>,
+) -> String {
+    let mut conditions = Vec::new();
+    if key_prefix.is_some() {
+        conditions.push(format!("key_prefix = ${}", conditions.len() + 1));
+    }
+    if key_params.is_some() {
+        conditions.push(format!("key_params = ${}", conditions.len() + 1));
+    }
+    if min_block_number.is_some() {
+        conditions.push(format!("block_number >= ${}", conditions.len() + 1));
+    }
+    if max_block_number.is_some() {
+        conditions.push(format!("block_number <= ${}", conditions.len() + 1));
+    }
+    let limit_param = conditions.len() + 1;
+    let offset_param = conditions.len() + 2;
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", conditions.join(" AND "))
+    };
+    format!(
+        r#"
+        SELECT
+            T.hash, T.block_hash, T.block_number, T.spec_version, T.index,
+            T.key_prefix, T.key_params, T.ext_id, T.storage_method, T.parent_id, T.is_known_key,
+            MP.index AS pallet_index, MP.name AS pallet_name,
+            MSI.index AS pallet_storage_item_index, MSI.name AS pallet_storage_item_name
+        FROM (
+            SELECT * FROM trace
+            {where_clause}
+            ORDER BY block_number DESC, index ASC
+            LIMIT ${limit_param} OFFSET ${offset_param}
+        ) T
+        LEFT JOIN metadata_storage_item MSI ON T.metadata_storage_item_id = MSI.id
+        LEFT JOIN metadata_pallet MP ON MSI.pallet_id = MP.id
+        ORDER BY T.block_number DESC, T.index ASC
+    "#
+    )
+}
 
 pub(crate) trait CrystalTraceAPIPostgreSQLStorage {
     async fn get_trace_count(
@@ -49,6 +95,9 @@ pub(crate) trait CrystalTraceAPIPostgreSQLStorage {
         page: u32,
         page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>>;
+    async fn trace_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool>;
+    async fn get_trace_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<TraceRow>>;
+    async fn get_trace_value_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<Vec<u8>>>;
 }
 
 impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -94,32 +143,24 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u32,
     ) -> anyhow::Result<Vec<TraceRow>> {
         let offset = (page - 1) * page_size;
-        let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{SELECT} WHERE 1=1"));
-        if let Some(key_prefix) = key_prefix {
-            query_builder
-                .push(" AND T.key_prefix = ")
-                .push_bind(key_prefix);
+        let sql = get_query_sql(min_block_number, max_block_number, key_prefix, key_params);
+        let mut query = sqlx::query_as::<_, TraceRow>(&sql);
+        // Bind in the same order as parameter numbers
+        if let Some(v) = key_prefix {
+            query = query.bind(v);
         }
-        if let Some(key_params) = key_params {
-            query_builder
-                .push(" AND T.key_params = ")
-                .push_bind(key_params);
+        if let Some(v) = key_params {
+            query = query.bind(v);
         }
-        if let Some(min) = min_block_number {
-            query_builder.push(" AND T.block_number >= ").push_bind(min);
+        if let Some(v) = min_block_number {
+            query = query.bind(v);
         }
-        if let Some(max) = max_block_number {
-            query_builder.push(" AND T.block_number <= ").push_bind(max);
+        if let Some(v) = max_block_number {
+            query = query.bind(v);
         }
-        query_builder.push(" ORDER BY T.block_number DESC, T.index ASC");
-        query_builder.push(" LIMIT ").push_bind(page_size as i64);
-        query_builder.push(" OFFSET ").push_bind(offset as i64);
-
-        let rows: Vec<TraceRow> = query_builder
-            .build_query_as()
-            .fetch_all(&self.connection_pool)
-            .await?;
+        query = query.bind(page_size as i64);
+        query = query.bind(offset as i64);
+        let rows = query.fetch_all(&self.connection_pool).await?;
         Ok(rows)
     }
 
@@ -189,5 +230,30 @@ impl CrystalTraceAPIPostgreSQLStorage for PostgreSQLStorage {
             .fetch_all(&self.connection_pool)
             .await?;
         Ok(rows)
+    }
+
+    async fn trace_exists_by_hash(&self, hash: &[u8]) -> anyhow::Result<bool> {
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM trace WHERE hash = $1)")
+            .bind(hash)
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(exists)
+    }
+
+    async fn get_trace_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<TraceRow>> {
+        let call_row: Option<TraceRow> =
+            sqlx::query_as(format!("{SELECT} WHERE T.hash = $1").as_str())
+                .bind(hash)
+                .fetch_optional(&self.connection_pool)
+                .await?;
+        Ok(call_row)
+    }
+
+    async fn get_trace_value_by_hash(&self, hash: &[u8]) -> anyhow::Result<Option<Vec<u8>>> {
+        let row: (Option<Vec<u8>>,) = sqlx::query_as("SELECT value FROM trace WHERE hash = $1")
+            .bind(hash)
+            .fetch_one(&self.connection_pool)
+            .await?;
+        Ok(row.0)
     }
 }

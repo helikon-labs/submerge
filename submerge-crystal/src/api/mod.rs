@@ -1,7 +1,8 @@
 use crate::api::v1::call::{
     get_call_args_by_hash, get_call_by_hash, get_call_extrinsic_by_hash, get_calls,
     get_calls_by_block_reference, get_calls_by_block_reference_and_extrinsic_index,
-    get_calls_by_extrinsic_hash, get_parent_call_by_hash, get_sub_calls_by_hash,
+    get_calls_by_extrinsic_hash, get_extrinsic_root_call_by_hash, get_parent_call_by_hash,
+    get_sub_calls_by_hash,
 };
 use crate::api::v1::event::{
     get_event_args_by_hash, get_event_by_hash, get_events, get_events_by_block_reference,
@@ -9,10 +10,11 @@ use crate::api::v1::event::{
     get_events_by_extrinsic_hash,
 };
 use crate::api::v1::extrinsic::{
-    get_extrinsic_by_hash, get_extrinsic_root_call_by_hash,
-    get_extrinsics_by_block_reference_and_index,
+    get_extrinsic_by_hash, get_extrinsics_by_block_reference_and_index,
 };
-use crate::api::v1::trace::{get_traces, get_traces_by_block_reference};
+use crate::api::v1::trace::{
+    get_trace_by_hash, get_trace_value_by_hash, get_traces, get_traces_by_block_reference,
+};
 use crate::metrics;
 use crate::worker::WorkerManager;
 use crate::{
@@ -233,10 +235,6 @@ fn build_api_routes() -> Router<ServiceState> {
             get(get_extrinsics_by_block_reference_and_index),
         )
         .route("/extrinsics/{extrinsic_hash}", get(get_extrinsic_by_hash))
-        .route(
-            "/extrinsics/{extrinsic_hash}/call",
-            get(get_extrinsic_root_call_by_hash),
-        )
         // genesis
         .route("/genesis", get(get_genesis_records))
         // calls
@@ -261,12 +259,18 @@ fn build_api_routes() -> Router<ServiceState> {
             "/calls/{call_hash}/extrinsic",
             get(get_call_extrinsic_by_hash),
         )
+        .route(
+            "/extrinsics/{extrinsic_hash}/call",
+            get(get_extrinsic_root_call_by_hash),
+        )
         // traces
         .route("/traces", get(get_traces))
         .route(
             "/blocks/{block_ref}/traces",
             get(get_traces_by_block_reference),
         )
+        .route("/traces/{trace_hash}", get(get_trace_by_hash))
+        .route("/traces/{trace_hash}/value", get(get_trace_value_by_hash))
 }
 
 async fn shutdown_signal() {

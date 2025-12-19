@@ -5,7 +5,7 @@ use utoipa::{ToResponse, ToSchema};
 use crate::types::{
     api::dto::{
         pagination::PaginationData,
-        response::{example::call::call_example, hex::Hash256Hex},
+        response::{example::call::call_example, hex::Hash256Hex, schema::call::call_args_schema},
     },
     persistence::CallRow,
     BlockStatus,
@@ -63,6 +63,10 @@ pub struct CallDTO {
     /// Whether the call's extrinsic was successful.
     /// Note: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).
     pub extrinsic_is_successful: bool,
+    /// Call arguments.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(schema_with = call_args_schema)]
+    pub args: Option<JSONValue>,
 }
 
 impl From<&CallRow> for CallDTO {
@@ -91,6 +95,7 @@ impl From<&CallRow> for CallDTO {
             pallet_call_index: row.pallet_call_index as u32,
             pallet_call_name: row.pallet_call_name.clone(),
             extrinsic_is_successful: row.extrinsic_is_successful,
+            args: row.args.clone(),
         }
     }
 }

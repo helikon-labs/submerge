@@ -7,7 +7,7 @@ use crate::{
     api::{get_page_number_and_size, ServiceState},
     persistence::{
         api::{
-            block::CrystalBlockAPIPostgreSQLStorage, call::CrystalCallAPIPostgreSQLStorage as _,
+            block::CrystalBlockAPIPostgreSQLStorage,
             extrinsic::CrystalExtrinsicAPIPostgreSQLStorage,
         },
         CrystalPostgreSQLStorage,
@@ -20,7 +20,6 @@ use crate::{
                 extrinsic::{BlockExtrinsicQuery, ExtrinsicQuery},
             },
             response::{
-                call::CallDTO,
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
                 extrinsic::{ExtrinsicDTO, ExtrinsicList, PaginatedExtrinsicList},
             },
@@ -363,67 +362,6 @@ pub(crate) async fn get_extrinsic_by_hash(
         .await?
     {
         Ok(Json(row.try_into()?))
-    } else {
-        Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/extrinsics/{extrinsic_hash}/call",
-    tag = "extrinsic",
-    summary = "Get extrinsic root call",
-    description = "Returns the root call of an extrinsic by its hash.",
-    params(
-        (
-            "extrinsic_hash" = String,
-            Path,
-            description = "Extrinsic hash in hex (with or without `0x` prefix, case-insensitive).",
-            pattern = r"^(?:\d+|(0x)?[a-f0-9A-F]{64})$",
-        ),
-    ),
-    responses(
-        (
-            status = 200,
-            headers(
-                ("X-RateLimit-Limit" = u32),
-                ("X-RateLimit-Remaining" = u32),
-            ),
-            description = "The root call of the extrinsic.",
-            body = CallDTO,
-        ),
-        (
-            status = 400,
-            response = BadRequest,
-        ),
-        (
-            status = 404,
-            response = NotFound,
-        ),
-        (
-            status = 429,
-            response = TooManyRequests,
-        ),
-        (
-            status = 500,
-            response = InternalServerError,
-        )
-    )
-)]
-pub(crate) async fn get_extrinsic_root_call_by_hash(
-    State(state): State<ServiceState>,
-    Path(extrinsic_hash): Path<String>,
-) -> Result<Json<CallDTO>, APIError> {
-    let extrinsic_hash = match hex::decode(extrinsic_hash.trim_start_matches("0x")) {
-        Ok(hash) => hash,
-        Err(e) => return Err(APIError::BadRequest(format!("Invalid extrinsic hash: {e}"))),
-    };
-    if let Some(row) = &state
-        .postgres
-        .get_extrinsic_root_call_by_hash(&extrinsic_hash)
-        .await?
-    {
-        Ok(Json(row.into()))
     } else {
         Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash))
     }

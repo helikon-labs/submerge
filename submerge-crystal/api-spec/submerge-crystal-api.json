@@ -293,6 +293,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -379,6 +389,16 @@
               "type": "string"
             },
             "example": "bonded"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the block events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -428,6 +448,16 @@
               "type": "integer",
               "format": "int32",
               "minimum": 0
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the event(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -665,6 +695,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -762,11 +802,87 @@
               "type": "string"
             },
             "example": "bonded"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the block events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
           "200": {
             "$ref": "#/components/responses/PaginatedEventList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/blocks/{block_ref}/traces": {
+      "get": {
+        "tags": [
+          "trace"
+        ],
+        "summary": "Get block traces",
+        "description": "If a hash is passed, returns the traces for the matching block. If a number is passed, returns the traces for the blocks with that number - could be multiple blocks if there's a pruned block in that slot.",
+        "operationId": "get_traces_by_block_reference",
+        "parameters": [
+          {
+            "name": "block_ref",
+            "in": "path",
+            "description": "Block reference for the traces. Either a block number (integer ≥ 0), or a block hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Block traces list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of traces traces in block per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedTraceList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -902,7 +1018,7 @@
             "example": "system"
           },
           {
-            "name": "pallet_call_name",
+            "name": "call_name",
             "in": "query",
             "description": "Filter calls by call name. Case insensitive. Stored in `camelCase`.",
             "required": false,
@@ -910,6 +1026,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -945,6 +1071,16 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1142,6 +1278,16 @@
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
             }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1251,6 +1397,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1391,7 +1547,7 @@
             "example": "balances"
           },
           {
-            "name": "pallet_event_name",
+            "name": "event_name",
             "in": "query",
             "description": "Filter events by event name. Case insensitive. Stored in `camelCase`.",
             "required": false,
@@ -1399,6 +1555,16 @@
               "type": "string"
             },
             "example": "transfer"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per event instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1434,6 +1600,16 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the event(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1760,7 +1936,7 @@
     "/extrinsics/{extrinsic_hash}/call": {
       "get": {
         "tags": [
-          "extrinsic"
+          "call"
         ],
         "summary": "Get extrinsic root call",
         "description": "Returns the root call of an extrinsic by its hash.",
@@ -1774,6 +1950,16 @@
             "schema": {
               "type": "string",
               "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the call(s) in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -1884,6 +2070,16 @@
               "type": "string"
             },
             "example": "setcode"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include call arguments in the block calls in the response.\nDefault is `false`. Setting this to `true` increases the response size considerably.\nPrefer to use the `GET /call/{call_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1970,6 +2166,16 @@
               "type": "string"
             },
             "example": "bonded"
+          },
+          {
+            "name": "include_args",
+            "in": "query",
+            "description": "Whether to include event arguments in the block events in the response.\nDefault is `false`. Setting this to `true` increases response size considerably.\nPrefer to use the `GET /event/{event_hash}/args` endpoint per call instead.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -2728,6 +2934,276 @@
           }
         }
       }
+    },
+    "/traces": {
+      "get": {
+        "tags": [
+          "trace"
+        ],
+        "summary": "Get traces",
+        "description": "Returns all traces from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number, then ascending trace index.",
+        "operationId": "get_traces",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Trace list page number to retrieve. 1-indexed.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Number of traces per page to be returned.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "min_block_number",
+            "in": "query",
+            "description": "Filter traces by minimum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1534287
+          },
+          {
+            "name": "max_block_number",
+            "in": "query",
+            "description": "Filter traces by maximum block number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 2825701
+          },
+          {
+            "name": "min_block_timestamp",
+            "in": "query",
+            "description": "Filter traces by minimum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "max_block_timestamp",
+            "in": "query",
+            "description": "Filter traces by maximum block timestamp. In milliseconds.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "example": 1755773684012
+          },
+          {
+            "name": "min_spec_version",
+            "in": "query",
+            "description": "Filter traces by minimum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "max_spec_version",
+            "in": "query",
+            "description": "Filter traces by maximum runtime spec version.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 1090
+          },
+          {
+            "name": "key_prefix",
+            "in": "query",
+            "description": "Filter traces by Substrate storage key prefix.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/HexStringParam"
+            }
+          },
+          {
+            "name": "key_params",
+            "in": "query",
+            "description": "Filter traces by Substrate storage key parameters.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/HexStringParam"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PaginatedTraceList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/traces/{trace_hash}": {
+      "get": {
+        "tags": [
+          "trace"
+        ],
+        "summary": "Get trace by hash",
+        "description": "Returns the trace by its hash.",
+        "operationId": "get_trace_by_hash",
+        "parameters": [
+          {
+            "name": "trace_hash",
+            "in": "path",
+            "description": "Trace hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trace with the given hash.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trace"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/traces/{trace_hash}/value": {
+      "get": {
+        "tags": [
+          "trace"
+        ],
+        "summary": "Get trace value",
+        "description": "Returns the value of a trace record by its hash.",
+        "operationId": "get_trace_value_by_hash",
+        "parameters": [
+          {
+            "name": "trace_hash",
+            "in": "path",
+            "description": "Trace hash in hex (with or without `0x` prefix, case-insensitive).",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:\\d+|(0x)?[a-f0-9A-F]{64})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SCALE-encoded value of the storage trace.",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HexString"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Trace exists but has no value (null)."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2906,6 +3382,22 @@
           "extrinsicIsSuccessful"
         ],
         "properties": {
+          "args": {
+            "type": "object",
+            "description": "Call arguments in JSON format. Schema depends on the call's schema definition in the runtime metadata.",
+            "examples": [
+              {
+                "args": {
+                  "dest": {
+                    "type": "Id",
+                    "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                  },
+                  "value": "117284000000"
+                },
+                "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+              }
+            ]
+          },
           "blockHash": {
             "$ref": "#/components/schemas/Hash256Hex",
             "description": "Hash of the call's block."
@@ -3003,6 +3495,16 @@
           }
         },
         "example": {
+          "args": {
+            "args": {
+              "dest": {
+                "type": "Id",
+                "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+              },
+              "value": "117284000000"
+            },
+            "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+          },
           "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
           "blockNumber": 3172595,
           "blockStatus": "proposed",
@@ -3059,6 +3561,28 @@
           "index"
         ],
         "properties": {
+          "args": {
+            "type": "object",
+            "description": "Call arguments in JSON format. Schema depends on the call's schema definition in the runtime metadata.",
+            "examples": [
+              {
+                "dispatchInfo": {
+                  "class": {
+                    "type": "Mandatory",
+                    "value": []
+                  },
+                  "paysFee": {
+                    "type": "Yes",
+                    "value": []
+                  },
+                  "weight": {
+                    "proofSize": "0",
+                    "refTime": "125000000"
+                  }
+                }
+              }
+            ]
+          },
           "blockHash": {
             "$ref": "#/components/schemas/Hash256Hex",
             "description": "Hash of the event's block."
@@ -3148,6 +3672,22 @@
           }
         },
         "example": {
+          "args": {
+            "dispatchInfo": {
+              "class": {
+                "type": "Mandatory",
+                "value": []
+              },
+              "paysFee": {
+                "type": "Yes",
+                "value": []
+              },
+              "weight": {
+                "proofSize": "0",
+                "refTime": "125000000"
+              }
+            }
+          },
           "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
           "blockNumber": 10758052,
           "blockStatus": "proposed",
@@ -3383,7 +3923,16 @@
       },
       "HexString": {
         "type": "string",
-        "description": "Arbitrary hex-encoded bytes. Lowercase, even length, `0x`-prefixed.",
+        "description": "Arbitrary hex-encoded bytes, `0x`-prefixed.",
+        "examples": [
+          "0xdeadbeef",
+          "0x0123456789abcdef"
+        ],
+        "pattern": "^0x(?:[0-9a-f]{2})+$"
+      },
+      "HexStringParam": {
+        "type": "string",
+        "description": "Arbitrary hex-encoded bytes, mixed case, optional `0x`-prefix.",
         "examples": [
           "0xdeadbeef",
           "0x0123456789abcdef"
@@ -4134,7 +4683,7 @@
         "example": {
           "page": 1,
           "pageSize": 1,
-          "total": 4352561
+          "total": 324
         }
       },
       "SignatureHexString": {
@@ -4145,6 +4694,131 @@
           "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
         ],
         "pattern": "^0x([0-9a-f]{128}|[0-9a-f]{130})$"
+      },
+      "Trace": {
+        "type": "object",
+        "description": "A trace record in a block.",
+        "required": [
+          "hash",
+          "blockHash",
+          "blockNumber",
+          "specVersion",
+          "index",
+          "keyPrefix",
+          "extId",
+          "storageMethod"
+        ],
+        "properties": {
+          "blockHash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Hash of the trace's block."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Number of the trace's block.",
+            "example": 3172595,
+            "minimum": 0
+          },
+          "extId": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "ExtId value for the trace record."
+          },
+          "hash": {
+            "$ref": "#/components/schemas/Hash256Hex",
+            "description": "Artificial hash of the trace (`sha256(block_hash || index)`)."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the trace within the block.",
+            "example": 83,
+            "minimum": 0
+          },
+          "keyParams": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Substrate storage parameters appended to the end of the storage key,\nif the storage item has parameters."
+          },
+          "keyPrefix": {
+            "$ref": "#/components/schemas/HexString",
+            "description": "Substrate storage key prefix of the trace record."
+          },
+          "knownKey": {
+            "type": "string",
+            "description": "If the trace record is for a known UTF-8 key, the string representation of the key.",
+            "example": ":extrinsic_index"
+          },
+          "palletIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "If the trace record is a storage item, the storage item's pallet index in the metadata.",
+            "example": 14,
+            "minimum": 0
+          },
+          "palletName": {
+            "type": "string",
+            "description": "If the trace record is a storage item, the storage item's pallet name in the metadata.",
+            "example": "System"
+          },
+          "palletStorageItemIndex": {
+            "type": "integer",
+            "format": "int32",
+            "description": "If the trace record is a storage item, the storage item's index in the pallet metadata.",
+            "example": 4,
+            "minimum": 0
+          },
+          "palletStorageItemName": {
+            "type": "string",
+            "description": "If the trace record is a storage item, the storage item's name.",
+            "example": "BlockHash"
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "specVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Runtime spec version of the call's block.",
+            "example": 2000000,
+            "minimum": 0
+          },
+          "storageMethod": {
+            "$ref": "#/components/schemas/TraceStorageMethod",
+            "description": "Trace storage method."
+          }
+        },
+        "example": {
+          "blockHash": "0x2f08d6887f29369af351118631221891b47ca5f0c2ef14f4da0dd32c3bed0d77",
+          "blockNumber": 3213251,
+          "extId": "0x3e44",
+          "hash": "0xebae2efe1479e7e4535c8ffb337359e252a54ac77a13c6095c9bbc5e78622daa",
+          "index": 20,
+          "keyParams": "0x5a3fb8de4321e12fad081eaeece61bc56d6f646c506f745374616b650000000000000000000000000000000000000000",
+          "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9",
+          "palletIndex": 0,
+          "palletName": "System",
+          "palletStorageItemIndex": 0,
+          "palletStorageItemName": "Account",
+          "parentId": null,
+          "specVersion": 2000000,
+          "storageMethod": "Put"
+        }
+      },
+      "TraceStorageMethod": {
+        "type": "string",
+        "description": "Block trace storage method.",
+        "enum": [
+          "Put",
+          "ChildPut",
+          "ChildKill",
+          "ClearPrefix",
+          "ChildClearPrefix",
+          "Append",
+          "Genesis"
+        ]
       }
     },
     "responses": {
@@ -4594,6 +5268,16 @@
                   },
                   "example": [
                     {
+                      "args": {
+                        "args": {
+                          "dest": {
+                            "type": "Id",
+                            "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                          },
+                          "value": "117284000000"
+                        },
+                        "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+                      },
                       "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
                       "blockNumber": 3172595,
                       "blockStatus": "proposed",
@@ -4657,6 +5341,22 @@
                   },
                   "example": [
                     {
+                      "args": {
+                        "dispatchInfo": {
+                          "class": {
+                            "type": "Mandatory",
+                            "value": []
+                          },
+                          "paysFee": {
+                            "type": "Yes",
+                            "value": []
+                          },
+                          "weight": {
+                            "proofSize": "0",
+                            "refTime": "125000000"
+                          }
+                        }
+                      },
                       "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
                       "blockNumber": 10758052,
                       "blockStatus": "proposed",
@@ -4856,6 +5556,65 @@
                     {
                       "metadataVersion": 14,
                       "specVersion": 1001
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/PaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaginatedTraceList": {
+        "description": "Paginated list of matching traces.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Trace"
+                  },
+                  "example": [
+                    {
+                      "blockHash": "0x2f08d6887f29369af351118631221891b47ca5f0c2ef14f4da0dd32c3bed0d77",
+                      "blockNumber": 3213251,
+                      "extId": "0x3e44",
+                      "hash": "0xebae2efe1479e7e4535c8ffb337359e252a54ac77a13c6095c9bbc5e78622daa",
+                      "index": 20,
+                      "keyParams": "0x5a3fb8de4321e12fad081eaeece61bc56d6f646c506f745374616b650000000000000000000000000000000000000000",
+                      "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9",
+                      "palletIndex": 0,
+                      "palletName": "System",
+                      "palletStorageItemIndex": 0,
+                      "palletStorageItemName": "Account",
+                      "parentId": null,
+                      "specVersion": 2000000,
+                      "storageMethod": "Put"
                     }
                   ]
                 },

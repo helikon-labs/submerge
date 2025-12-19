@@ -17,7 +17,7 @@ pub struct PaginationQuery {
 #[schema(example = json!({
     "page": 1,
     "pageSize": 1,
-    "total": 4352561,
+    "total": 324,
 }))]
 pub struct PaginationData {
     /// Current page number. 1-indexed.
@@ -30,14 +30,4 @@ pub struct PaginationData {
     /// Total number of items across all pages.
     #[schema(minimum = 0, example = 10467367)]
     pub total: u64,
-}
-
-/// Paged data response.
-#[derive(Debug, Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct PagedResponse<T> {
-    /// Pagination data.
-    pub pagination: PaginationData,
-    /// Data on the current page.
-    pub data: Vec<T>,
 }

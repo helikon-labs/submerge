@@ -481,7 +481,7 @@ impl BlockProcessor {
                     "🗑️  Deleting block [{block_number}][{truncated_block_hash}] and its traces for reindexing.",
                 );
                 self.postgres
-                    .delete_block_and_traces_by_hash(&block_hash, &mut tx)
+                    .delete_block_and_traces_by_block_hash(&block_hash, &mut tx)
                     .await?;
             } else {
                 if block_row.status != status && status == BlockStatus::Finalized {
@@ -648,7 +648,7 @@ impl BlockProcessor {
                         key_params,
                         value.as_deref(),
                         &ext_id,
-                        &event.data_wrapper.data.method.to_string(),
+                        &event.data_wrapper.data.storage_method,
                         event.parent_id.as_deref(),
                         storage_item.map(|storage_item| storage_item.id),
                         is_known_key,
