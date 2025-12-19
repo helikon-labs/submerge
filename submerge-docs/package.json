@@ -19,7 +19,8 @@
         "regen-all-api-docs": "docusaurus clean-api-docs all && docusaurus gen-api-docs all",
         "clean-all-api-docs": "docusaurus clean-api-docs all",
         "gen-all-api-docs:version": "docusaurus gen-api-docs:version all",
-        "clean-all-api-docs:version": "docusaurus clean-api-docs:version all"
+        "clean-all-api-docs:version": "docusaurus clean-api-docs:version all",
+        "scripts": "tsx scripts/index.ts"
     },
     "dependencies": {
         "@docusaurus/core": "3.9.2",
@@ -36,14 +37,15 @@
         "prism-react-renderer": "^2.3.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
-        "remark-math": "^6.0.0",
-        "rehype-katex": "^7.0.1"
+        "rehype-katex": "^7.0.1",
+        "remark-math": "^6.0.0"
     },
     "devDependencies": {
         "@docusaurus/module-type-aliases": "3.9.2",
         "@docusaurus/tsconfig": "3.9.2",
         "@docusaurus/types": "3.9.2",
         "prettier": "^3.6.2",
+        "tsx": "^4.21.0",
         "typescript": "~5.6.2"
     },
     "overrides": {
