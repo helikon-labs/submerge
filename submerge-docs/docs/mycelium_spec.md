@@ -46,7 +46,6 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
 - What to look for: The Relay Chain's role in XCMP is to pass messages from an origin parachain's upward queue to a destination parachain's downward queue. However, direct tracing is more efficient at the parachain level.
 
-
 **xcmPallet.Attempted**
 
 ```
@@ -127,7 +126,7 @@ These messages are routed through the Relay Chain but are not executed there. Th
 }
 ```
 
-``` (after v1003003)
+```(after v1003003)
 {
   "docs": "Message is processed.",
   "args_name": [
@@ -177,6 +176,45 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
 - **Parachain/Relay to Coretime**
     - Listen for `messageQueue.processed`. Event have message id in it which might act as co-relation key.
+
+`parachainsystem.UpwardMessageSent`: Stays same for all runtimes
+
+```
+{
+  messageHash: {
+    type: 'Some',
+    value: '0x54e2d0ea97d34f069b8b0d79a0e5ba4901946b065fb9a102aa094888de4429cb'
+  }
+}
+```
+
+`xcmpqueue.XcmpMessageSent`: Stays same for all runtimes
+
+```
+{
+  messageHash: '0x494920be50870cc9623154a2ae42519175272c0d1f4b3ad9dd54792cf21a57c9'
+}
+```
+
+`messageQueue.Processed`: Stays same for all runtime
+
+```
+{
+  id: '0x894f9b5b5c7f0fdad7c87affee713c59f41d9d4bb21018a1fe669789100a00c8',
+  origin: { type: 'Sibling', value: '1000' },
+  success: true,
+  weightUsed: { proofSize: '3465', refTime: '32930000' }
+}
+```
+
+```
+{
+  id: '0x4a00b223eb85be70f7aec13fc8cdc6e9c3203f1fe4e8352e59ec7a85ae1e28dc',
+  origin: { type: 'Parent', value: [] },
+  success: true,
+  weightUsed: { proofSize: '0', refTime: '123620000' }
+}
+```
 
 ## Polkadot People
 
