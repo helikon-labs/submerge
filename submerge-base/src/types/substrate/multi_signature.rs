@@ -12,6 +12,8 @@ pub enum MultiSignature {
     Sr25519(sp_core::sr25519::Signature),
     #[serde(with = "hex_serde")]
     Ecdsa(sp_core::ecdsa::Signature),
+    #[serde(with = "hex_serde")]
+    Eth(sp_core::ecdsa::KeccakSignature),
 }
 
 impl From<sp_runtime::MultiSignature> for MultiSignature {
@@ -20,6 +22,7 @@ impl From<sp_runtime::MultiSignature> for MultiSignature {
             sp_runtime::MultiSignature::Ed25519(bytes) => Self::Ed25519(bytes),
             sp_runtime::MultiSignature::Sr25519(bytes) => Self::Sr25519(bytes),
             sp_runtime::MultiSignature::Ecdsa(bytes) => Self::Ecdsa(bytes),
+            sp_runtime::MultiSignature::Eth(bytes) => Self::Eth(bytes),
         }
     }
 }

@@ -23,6 +23,25 @@ pub struct MultiSignatureEcdsaDTO {
     pub value: SignatureHexString,
 }
 
+/// Multi-signature Eth type (ECDSA over secp256k1, applied to a Keccak-256 hash).
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum MultiSignatureEthType {
+    Eth,
+}
+
+/// Eth signature.
+#[derive(Debug, Serialize, ToSchema)]
+#[schema(as = MultiSignatureEth)]
+pub struct MultiSignatureEthDTO {
+    /// Must be `eth`.
+    #[serde(rename = "type")]
+    pub r#type: MultiSignatureEthType,
+
+    /// Eth signature hex.
+    pub value: SignatureHexString,
+}
+
 /// Multi-signature Ed25519 type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
@@ -79,6 +98,7 @@ pub struct MultiSignatureSr25519DTO {
 )]
 pub enum MultiSignatureDTO {
     Ecdsa(MultiSignatureEcdsaDTO),
+    Eth(MultiSignatureEthDTO),
     Ed25519(MultiSignatureEd25519DTO),
     Sr25519(MultiSignatureSr25519DTO),
 }
@@ -96,6 +116,10 @@ impl From<&MultiSignature> for MultiSignatureDTO {
             }),
             MultiSignature::Sr25519(bytes) => Self::Sr25519(MultiSignatureSr25519DTO {
                 r#type: MultiSignatureSr25519Type::Sr25519,
+                value: SignatureHexString(hex::encode(bytes)),
+            }),
+            MultiSignature::Eth(bytes) => Self::Eth(MultiSignatureEthDTO {
+                r#type: MultiSignatureEthType::Eth,
                 value: SignatureHexString(hex::encode(bytes)),
             }),
         }
