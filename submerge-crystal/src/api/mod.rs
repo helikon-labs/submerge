@@ -41,7 +41,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use std::sync::Arc;
-use submerge_base::args::PostgreSQLArgs;
+use submerge_base::args::{HTTPAPIArgs, PostgreSQLArgs};
 use submerge_metrics::use_metric;
 use submerge_persistence::postgres::PostgreSQLStorage;
 use tokio::net::TcpListener;
@@ -302,8 +302,7 @@ pub(crate) async fn run_api(
     chain_name: String,
     postgres_args: &PostgreSQLArgs,
     worker_manager: &Arc<WorkerManager>,
-    host: &str,
-    port: u16,
+    args: &HTTPAPIArgs,
 ) -> anyhow::Result<()> {
     let postgres = Arc::new(PostgreSQLStorage::new(postgres_args).await?);
     let service_state = ServiceState {
@@ -312,8 +311,8 @@ pub(crate) async fn run_api(
         worker_manager: worker_manager.clone(),
     };
     let governor_conf = GovernorConfigBuilder::default()
-        .per_millisecond(1000)
-        .burst_size(5)
+        .per_millisecond(args.api_rate_limit_window_ms)
+        .burst_size(args.api_rate_limit_request_count)
         .use_headers()
         .finish()
         .unwrap();
@@ -340,13 +339,16 @@ pub(crate) async fn run_api(
         .layer(GovernorLayer::new(governor_conf))
         .layer(middleware::from_fn(json_error_middleware))
         .layer(middleware::from_fn(metrics_middleware));
-    let listener = TcpListener::bind((host, port)).await?;
+    let listener = TcpListener::bind((args.api_host.as_str(), args.api_port)).await?;
     let server = axum::serve(
         listener,
         app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
     );
     let graceful_server = server.with_graceful_shutdown(shutdown_signal());
-    let (server_result, _) = tokio::join!(graceful_server, on_server_ready(host, port));
+    let (server_result, _) = tokio::join!(
+        graceful_server,
+        on_server_ready(args.api_host.as_str(), args.api_port)
+    );
     server_result?;
     Ok(())
 }

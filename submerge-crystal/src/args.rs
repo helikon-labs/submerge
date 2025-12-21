@@ -19,13 +19,15 @@ pub struct Args {
     #[clap(flatten)]
     pub logging: LoggingArgs,
 
-    #[arg(short = 'c', long)]
     /// Name of the chain, or path of the chain specification file
+    #[arg(short = 'c', long)]
     pub chain: String,
 
+    /// URL of the legacy decode API for block content pre-metadata-v14
     #[arg(long)]
     pub legacy_decode_api_url: Option<String>,
 
+    /// Default RPC node URL for workers
     #[arg(long)]
     pub default_rpc_url: String,
 }

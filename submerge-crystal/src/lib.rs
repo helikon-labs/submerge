@@ -54,8 +54,7 @@ impl Crystal {
             chain_name.to_string(),
             &self.args.postgres,
             &self.worker_manager,
-            &self.args.api.api_host,
-            self.args.api.api_port,
+            &self.args.api,
         )
         .await
     }

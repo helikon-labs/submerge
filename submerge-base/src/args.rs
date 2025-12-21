@@ -47,6 +47,14 @@ pub struct HTTPAPIArgs {
     #[arg(long, default_value_t = 3030)]
     /// HTTP API listen port
     pub api_port: u16,
+
+    /// API rate limit window (e.g. 5 requests per 1000 milliseconds) - default 1000 ms (1 sec)
+    #[arg(long, default_value_t = 1000)]
+    pub api_rate_limit_window_ms: u64,
+
+    /// API rate limit request count (e.g. 5 requests per 1000 milliseconds) - default 5 requests
+    #[arg(long, default_value_t = 5)]
+    pub api_rate_limit_request_count: u32,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -62,9 +70,11 @@ pub struct MetricsArgs {
 
 #[derive(Parser, Clone, Debug)]
 pub struct LoggingArgs {
+    /// Log level for the native Submerge crates
     #[arg(long, default_value = "debug")]
     pub native_log_level: String,
 
+    /// Log level for all crates external to Submerge
     #[arg(long, default_value = "warn")]
     pub external_log_level: String,
 }
