@@ -58,7 +58,7 @@ pub(crate) async fn get_metadata_list(
     State(state): State<ServiceState>,
     Query(query): Query<PaginationQuery>,
 ) -> Result<Json<PaginatedMetadataList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_metadata_count(),
         state.postgres.get_metadata_list(page, page_size),

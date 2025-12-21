@@ -57,11 +57,13 @@ pub mod v1;
 const DEFAULT_PAGE: u32 = 1;
 const DEFAULT_PAGE_SIZE: u32 = 25;
 const MAX_PAGE_SIZE: u32 = 100;
+const MAX_PAGE_SIZE_WITH_ARGS: u32 = 25;
 const MAX_RESPONSE_MESSAGE_BYTES: usize = 64 * 1024;
 
 fn get_page_number_and_size(
     page: Option<u32>,
     page_size: Option<u32>,
+    include_args: bool,
 ) -> Result<(u32, u32), APIError> {
     let page = page.unwrap_or(DEFAULT_PAGE);
     let page_size = page_size.unwrap_or(DEFAULT_PAGE_SIZE);
@@ -73,9 +75,13 @@ fn get_page_number_and_size(
         Err(APIError::BadRequest(
             "Page size cannot be less than 1.".to_string(),
         ))
-    } else if page_size > MAX_PAGE_SIZE {
+    } else if !include_args && page_size > MAX_PAGE_SIZE {
         Err(APIError::BadRequest(format!(
             "Page size cannot be greater than {MAX_PAGE_SIZE}."
+        )))
+    } else if include_args && page_size > MAX_PAGE_SIZE_WITH_ARGS {
+        Err(APIError::BadRequest(format!(
+            "Page size for requests with arguments included cannot be greater than {MAX_PAGE_SIZE_WITH_ARGS}."
         )))
     } else {
         Ok((page, page_size))

@@ -59,7 +59,8 @@ pub(crate) async fn get_calls(
     State(state): State<ServiceState>,
     Query(query): Query<CallQuery>,
 ) -> Result<Json<PaginatedCallList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -147,7 +148,8 @@ pub(crate) async fn get_calls_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockCallQuery>,
 ) -> Result<Json<PaginatedCallList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -267,7 +269,8 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
     Path((block_reference, extrinsic_index)): Path<(String, u32)>,
     Query(query): Query<BlockCallQuery>,
 ) -> Result<Json<PaginatedCallList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -426,7 +429,8 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     {
         return Err(APIError::ExtrinsicNotFoundWithHash(extrinsic_hash));
     }
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_call_count_by_extrinsic_hash(
             &extrinsic_hash,
@@ -704,7 +708,8 @@ pub(crate) async fn get_sub_calls_by_hash(
     if !state.postgres.call_exists_by_hash(&call_hash).await? {
         return Err(APIError::CallNotFoundWithHash(call_hash));
     }
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) =
+        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_sub_call_count_by_hash(
             &call_hash,

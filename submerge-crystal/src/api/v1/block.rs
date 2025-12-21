@@ -49,7 +49,7 @@ pub(crate) async fn get_blocks(
     State(state): State<ServiceState>,
     Query(query): Query<BlockQuery>,
 ) -> Result<Json<PaginatedBlockList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
     let Ok(author_multi_address) = query.get_author_multi_address() else {
         return Err(APIError::InvalidBlockAuthor(
             query.author.unwrap_or("".to_string()),

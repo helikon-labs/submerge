@@ -61,7 +61,7 @@ pub(crate) async fn get_traces(
     State(state): State<ServiceState>,
     Query(query): Query<TraceQuery>,
 ) -> Result<Json<PaginatedTraceList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -158,7 +158,7 @@ pub(crate) async fn get_traces_by_block_reference(
     Path(block_reference): Path<String>,
     Query(query): Query<BlockTraceQuery>,
 ) -> Result<Json<PaginatedTraceList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
 
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
@@ -166,12 +166,10 @@ pub(crate) async fn get_traces_by_block_reference(
                 return Err(APIError::BlockNotFoundWithNumber(block_number));
             }
             let (total_count, rows) = tokio::try_join!(
+                state.postgres.get_trace_count_by_block_number(block_number),
                 state
                     .postgres
-                    .get_trace_count_by_block_number(block_number,),
-                state
-                    .postgres
-                    .get_traces_by_block_number(block_number, page, page_size,),
+                    .get_traces_by_block_number(block_number, page, page_size),
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {
@@ -192,10 +190,10 @@ pub(crate) async fn get_traces_by_block_reference(
                 return Err(APIError::BlockNotFoundWithHash(block_hash));
             }
             let (total_count, rows) = tokio::try_join!(
-                state.postgres.get_trace_count_by_block_hash(&block_hash,),
+                state.postgres.get_trace_count_by_block_hash(&block_hash),
                 state
                     .postgres
-                    .get_traces_by_block_hash(&block_hash, page, page_size,),
+                    .get_traces_by_block_hash(&block_hash, page, page_size),
             )?;
             let mut data = Vec::new();
             for row in rows.iter() {

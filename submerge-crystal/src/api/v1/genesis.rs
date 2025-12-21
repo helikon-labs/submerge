@@ -50,7 +50,7 @@ pub(crate) async fn get_genesis_records(
     State(state): State<ServiceState>,
     Query(query): Query<GenesisRecordQuery>,
 ) -> Result<Json<PaginatedGenesisRecordList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size)?;
+    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_genesis_record_count(),
         state.postgres.get_genesis_record_rows(page, page_size),
