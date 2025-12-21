@@ -4573,6 +4573,7 @@
           "mapping": {
             "ecdsa": "#/components/schemas/MultiSignatureECDSA",
             "ed25519": "#/components/schemas/MultiSignatureEd25519",
+            "eth": "#/components/schemas/MultiSignatureEth",
             "sr25519": "#/components/schemas/MultiSignatureSr25519"
           }
         }

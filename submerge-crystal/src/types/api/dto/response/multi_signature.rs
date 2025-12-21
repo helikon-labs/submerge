@@ -88,6 +88,7 @@ pub struct MultiSignatureSr25519DTO {
     as = MultiSignature,
     discriminator(property_name = "type", mapping(
         ("ecdsa" = "#/components/schemas/MultiSignatureECDSA"),
+        ("eth" = "#/components/schemas/MultiSignatureEth"),
         ("ed25519" = "#/components/schemas/MultiSignatureEd25519"),
         ("sr25519" = "#/components/schemas/MultiSignatureSr25519"),
     )),
