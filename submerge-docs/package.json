@@ -51,6 +51,9 @@
         "glob": ">=10.5.0",
         "gray-matter": {
             "js-yaml": "^3.14.1"
+        },
+        "docusaurus-plugin-openapi-docs": {
+            "js-yaml": "^4.1.1"
         }
     },
     "browserslist": {
