@@ -49,7 +49,7 @@ jobs:
         run: |
           cd submerge-crystal
           cargo run --bin openapi-gen
-          vacuum lint -d ./api-spec/submerge-crystal-api.json
+          vacuum lint -r ../vacuum-ruleset-recommended.yaml -d ./api-spec/submerge-crystal-api.json
           cd ..
       - name: Reset test DB
         env:
