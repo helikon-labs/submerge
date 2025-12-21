@@ -4554,6 +4554,9 @@
             "$ref": "#/components/schemas/MultiSignatureECDSA"
           },
           {
+            "$ref": "#/components/schemas/MultiSignatureEth"
+          },
+          {
             "$ref": "#/components/schemas/MultiSignatureEd25519"
           },
           {
@@ -4622,6 +4625,31 @@
         "description": "Multi-signature Ed25519 type.",
         "enum": [
           "ed25519"
+        ]
+      },
+      "MultiSignatureEth": {
+        "type": "object",
+        "description": "Eth signature.",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/MultiSignatureEthType",
+            "description": "Must be `eth`."
+          },
+          "value": {
+            "$ref": "#/components/schemas/SignatureHexString",
+            "description": "Eth signature hex."
+          }
+        }
+      },
+      "MultiSignatureEthType": {
+        "type": "string",
+        "description": "Multi-signature Eth type (ECDSA over secp256k1, applied to a Keccak-256 hash).",
+        "enum": [
+          "eth"
         ]
       },
       "MultiSignatureSr25519": {
