@@ -145,7 +145,7 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ## Polkadot Asset Hub
 
 - **Asset Hub to Parachain/Relay**
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Listen for `polkadotXcm.Attempted` event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent`. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
+    - Listen for `polkadotXcm.Attempted` event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent`. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
 
     - **When destination chain is Relay**
         - For XCM V2, not sure how to find corelation key. For XCM v3 and above, `parachainSystem.UpwardMessageSent` would have `message_hash` which acts as corelation key.
@@ -161,15 +161,15 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
     - **When source was any system chain**
         - For XCM v3, event `xcmpQueue.Success` has `message_hash` which is the key.
-        - else `messageQueue.Processed` has `message_id` but it's not corelation key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest. `message_id`
+        - else `messageQueue.Processed` has `message_id` but it's not corelation key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest `message_id`
 
 ## Polkadot Bridge Hub
 
 - **Bridge Hub to Parachain/Relay**
-    - Listen for `polkadotXcm.Attempted` (when destination is Relay) and `xcmpqueue.XcmpMessageSent` (when destination is other system chain) (which hash `message_hash` directly in it) event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent` which hash `message_hash`.
+    - Listen for `polkadotXcm.Attempted` (when destination is Relay) and `xcmpqueue.XcmpMessageSent` (when destination is other system chain, has `message_hash` directly in it which acts as corelation key) event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent` which has `message_hash`.
 
 - **Parachain/Relay to Bridge Hub**
-    - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event. Both events have message id or hash in it which would act as co-relation key.
+    - Listen for `messageQueue.processed` (for XCM v4 and v5, not sure how to get corelation key) or `dmpQueue.ExecutedDownward` (for older XCM versions, `message_id` in it's parameters acts as corelation key) event.
 
 ## Polkadot Collectives
 
@@ -187,10 +187,10 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ## Polkadot Coretime
 
 - **Coretime to Parachain/Relay**
-    - There are many extrinsics like `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` (can be more) can initiate XCM transfers which will have info about source, destination, assets etc but event `parachainsystem.UpwardMessageSent` (when destination is Relay chain) or `xcmpqueue.XcmpMessageSent` (when destination in System chain) would have message hash which would act as co-relation key.
+    - Exactly same as Collectives
 
 - **Parachain/Relay to Coretime**
-    - Listen for `messageQueue.processed`. Event have message id in it which might act as co-relation key.
+    - Listen for `messageQueue.processed` (need to find corelation key for this)
 
 `parachainsystem.UpwardMessageSent`: Stays same for all runtimes
 
@@ -234,10 +234,10 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ## Polkadot People
 
 - **People to Parachain/Relay**
-    - There are many extrinsics like `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` (can be more) can initiate XCM transfers which will have info about source, destination, assets etc but event `parachainsystem.UpwardMessageSent` (when destination is Relay chain with `polkadotXcm.Attempted`) or `xcmpqueue.XcmpMessageSent` (when destination in System chain) would have message hash which would act as co-relation key. We have to find associated extrinsic with it as well.
+    - Exactly same as Collectives
 
 - **Parachain/Relay to People**
-    - Listen for `messageQueue.processed`. Works for all XCM versions. Event have message id in it which might act as co-relation key.
+    - Listen for `messageQueue.processed`. Works for all XCM versions. (need to check for corelation key)
 
 ### Caveat
 
