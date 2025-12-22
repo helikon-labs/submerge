@@ -148,25 +148,25 @@ These messages are routed through the Relay Chain but are not executed there. Th
     - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Listen for `polkadotXcm.Attempted` event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent`. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
 
     - **When destination chain is Relay**
-        - For XCM V2, not sure how to find corelational key. For XCM v3 and above, `parachainSystem.UpwardMessageSent` would have `message_hash` which acts as corelational key.
+        - For XCM V2, not sure how to find corelation key. For XCM v3 and above, `parachainSystem.UpwardMessageSent` would have `message_hash` which acts as corelation key.
 
     - **When destination chain is any system parachain**
-        - For XCM v3 and above, `xcmpqueue.XcmpMessageSent.UpwardMessageSent` would have `message_hash` which acts as corelational key. Also, the fact is, chains which we are targeting used XCM v3 or above only so no need to check what would be corelation key for below XCM v3.
+        - For XCM v3 and above, `xcmpqueue.XcmpMessageSent.UpwardMessageSent` would have `message_hash` which acts as corelation key. Also, the fact is, chains which we are targeting used XCM v3 or above only so no need to check what would be corelation key for below XCM v3.
 
 - **Parachain/Relay to Asset Hub**
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
 
     - **When source was Relay chain**
-        - For XCM v2, `dmp.ExecutedDownward` has `message_id` which acts as corelational key. For XCM v3, `message_hash` in `dmp.ExecutedDownWard` is corelational key. For XCM v4 and above, `messageQueue.Processed` has `message_id` but it's not corelational key.
+        - For XCM v2, `dmp.ExecutedDownward` has `message_id` which acts as corelation key. For XCM v3, `message_hash` in `dmp.ExecutedDownWard` is corelation key. For XCM v4 and above, `messageQueue.Processed` has `message_id` but it's not corelation key.
 
     - **When source was any system chain**
         - For XCM v3, event `xcmpQueue.Success` has `message_hash` which is the key.
-        - else `messageQueue.Processed` has `message_id` but it's not corelational key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest. `message_id`
+        - else `messageQueue.Processed` has `message_id` but it's not corelation key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest. `message_id`
 
 ## Polkadot Bridge Hub
 
 - **Bridge Hub to Parachain/Relay**
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` or `xcmpQueue.xcmpMessageSent` would have message hash.
+    - Listen for `polkadotXcm.Attempted` (when destination is Relay) and `xcmpqueue.XcmpMessageSent` (when destination is other system chain) (which hash `message_hash` directly in it) event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent` which hash `message_hash`.
 
 - **Parachain/Relay to Bridge Hub**
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event. Both events have message id or hash in it which would act as co-relation key.
@@ -174,11 +174,15 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ## Polkadot Collectives
 
 - **Collectives to Parachain/Relay**
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` or `xcmpqueue.XcmpMessageSent` would have message hash.
+    - When destination is Relay
+        - Listen for `polkadotXcm.Attempted`. Find other events in extrinsic and get `message_hash` from `parachainSystem.UpwardMessageSent` event. But for XCM v2, not sure how to get `message_hash` because no `parachainSystem.UpwardMessageSent` event for XCM v2.
+
+    - When destination is system chain
+        - Listen for event `xcmpqueue.XcmpMessageSent`, would have `message_hash` which is corelation key.
 
 - **Parachain/Relay to Collectives**
-    - If source chain is Polkadot Relay, Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event. Both events have message id or hash in it which would act as co-relation key.
-    - else listen for `messageQueue.processed` (for XCM v4 and v5) or `xcmpqueue.success` (for other XCM versions). Both events has message id or hash in it which would act as co-relation key.
+    - If source chain is Polkadot Relay, Listen for `messageQueue.processed` (for XCM v4 and v5, and not sure how to get corelation key for this) or `Dmpqueue.ExecutedDownward` (`message_id` is corelation key for older XCM versions) event.
+    - else listen for `messageQueue.processed` (for XCM v4 and v5, and not sure for key) or `xcmpqueue.success` (`message_hash` is key, for other XCM versions).
 
 ## Polkadot Coretime
 
@@ -240,6 +244,6 @@ These messages are routed through the Relay Chain but are not executed there. Th
 - [ ] Mostly, we are tracking XCM on chain with events, but important thing is, we should know which extrinsic emitted the event. Need to properly maintain event->extrinsic mapping.
     - This could be made with Crystal APIs itself. For every block, we can find all events (with `/blocks/:block_ref/events`). In response, we get extrinsic hash. All other events emitted from the extrinsic can be found with `/extrinsics/:extrinsic_hash/events` and more details about extrinsic itself can be found with `/extrinsics/:extrinsic_hash`. With this, we can properly establish event->extrinsic mapping.
 
-- [ ] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelational key which we can use to find source chain XCM details. Need to look into it.
+- [ ] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelation key which we can use to find source chain XCM details. Need to look into it.
 
 These are few answers, we will look for next.
