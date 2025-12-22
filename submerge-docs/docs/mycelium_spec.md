@@ -24,19 +24,13 @@ For each of these, we will monitor specific events and extrinsics to identify th
 
 These are messages originating from a parachain and destined for the Relay Chain.
 
-- Listen for the `messageQueue.Processed` (for XCM v3, v4 and v5) or `ump.ExecutedUpward` (for other XCM versions) system event on the Polkadot Relay Chain.
-- What to index from the event:
-    - **message_id**: A unique identifier for the message. This is crucial for tracing.
-    - **origin**: The parachain_id from which the message originated along with message type.
-    - **weight_used**: Weight info
-    - **outcome**: The result of the execution (e.g., Success or Error).
-    - Block number and extrinsic hash associated with the event for context.
+- Listen for the `messageQueue.Processed` (for XCM v3, v4 and v5, not sure about corelation key) and `ump.ExecutedUpward` (for other XCM versions, `message_id` in it as acts as corelation key) event on the Polkadot Relay Chain.
 
 **2. Downward Message Passing (DMP): Relay Chain to Parachain**
 
 These are messages sent from the Relay Chain to a specific parachain.
 
-- Listen for the `xcmPallet.limitedReserveTransferAssets`, `xcmPallet.limitedTeleportAssets`, `xcmPallet.reserveTransferAssets`, `xcmPallet.teleportAssets`, `xcmPallet.transferAssetsUsingTypeAndThen` extrinsic and/or `xcmPallet.Attempted`, `xcmPallet.Sent` event on the Polkadot Relay Chain. It contains origin, destination, message and message_id.
+- Listen for `xcmPallet.Attempted` event on the Polkadot Relay Chain (can not find corelation key)
 
 **3. Cross-Chain Message Passing (XCMP/HRMP): Parachain to Parachain**
 
@@ -241,9 +235,8 @@ These messages are routed through the Relay Chain but are not executed there. Th
 
 ### Caveat
 
-- [ ] Mostly, we are tracking XCM on chain with events, but important thing is, we should know which extrinsic emitted the event. Need to properly maintain event->extrinsic mapping.
+- [x] Mostly, we are tracking XCM on chain with events, but important thing is, we should know which extrinsic emitted the event. Need to properly maintain event->extrinsic mapping.
     - This could be made with Crystal APIs itself. For every block, we can find all events (with `/blocks/:block_ref/events`). In response, we get extrinsic hash. All other events emitted from the extrinsic can be found with `/extrinsics/:extrinsic_hash/events` and more details about extrinsic itself can be found with `/extrinsics/:extrinsic_hash`. With this, we can properly establish event->extrinsic mapping.
 
-- [ ] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelation key which we can use to find source chain XCM details. Need to look into it.
-
-These are few answers, we will look for next.
+- [x] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelation key which we can use to find source chain XCM details. Need to look into it.
+    - Rule of thumb is, `messageQueue.processed` has `message_id` which should be match against `SetTopic` value in XCM instruction for source chain.
