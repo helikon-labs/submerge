@@ -157,11 +157,11 @@ These messages are routed through the Relay Chain but are not executed there. Th
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
 
     - **When source was Relay chain**
-        - For XCM v2, `dmp.ExecutedDownward` has `message_id` which acts as corelation key. For XCM v3, `message_hash` in `dmp.ExecutedDownWard` is corelation key. For XCM v4 and above, `messageQueue.Processed` has `message_id` but it's not corelation key.
+        - For XCM v2, `dmp.ExecutedDownward` has `message_id` which acts as corelation key. For XCM v3, `message_hash` in `dmp.ExecutedDownWard` is corelation key. For XCM v4 and above, `messageQueue.Processed` has `message_id` which matches with `SetTopic` value in source XCM instructions.
 
     - **When source was any system chain**
         - For XCM v3, event `xcmpQueue.Success` has `message_hash` which is the key.
-        - else `messageQueue.Processed` has `message_id` but it's not corelation key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest `message_id`
+        - else `messageQueue.Processed` has `message_id` but it's not corelation key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest `message_id` but `SetTopic` value in source XCM instructions or `xcmpQueue.XcmpMessageSent` value matches with destination `message_id`.
 
 ## Polkadot Bridge Hub
 
