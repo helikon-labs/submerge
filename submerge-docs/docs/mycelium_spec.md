@@ -31,8 +31,6 @@ These are messages originating from a parachain and destined for the Relay Chain
     - **weight_used**: Weight info
     - **outcome**: The result of the execution (e.g., Success or Error).
     - Block number and extrinsic hash associated with the event for context.
-- How to trace:
-    - The message_id can be used to correlate this event with the original `polkadotXcm.Sent` event on the source parachain.
 
 **2. Downward Message Passing (DMP): Relay Chain to Parachain**
 
@@ -147,15 +145,28 @@ These messages are routed through the Relay Chain but are not executed there. Th
 ## Polkadot Asset Hub
 
 - **Asset Hub to Parachain/Relay**
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Listen for `polkadotXcm.Attempted` event. Find other events for this extrinsic and look for `parachainSystem.UpwardMessageSent`. For reserve transfers, event `xcmpqueue.XcmpMessageSent` would have message hash.
+
+    - **When destination chain is Relay**
+        - For XCM V2, not sure how to find corelational key. For XCM v3 and above, `parachainSystem.UpwardMessageSent` would have `message_hash` which acts as corelational key.
+
+    - **When destination chain is any system parachain**
+        - For XCM v3 and above, `xcmpqueue.XcmpMessageSent.UpwardMessageSent` would have `message_hash` which acts as corelational key. Also, the fact is, chains which we are targeting used XCM v3 or above only so no need to check what would be corelation key for below XCM v3.
 
 - **Parachain/Relay to Asset Hub**
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event
 
+    - **When source was Relay chain**
+        - For XCM v2, `dmp.ExecutedDownward` has `message_id` which acts as corelational key. For XCM v3, `message_hash` in `dmp.ExecutedDownWard` is corelational key. For XCM v4 and above, `messageQueue.Processed` has `message_id` but it's not corelational key.
+
+    - **When source was any system chain**
+        - For XCM v3, event `xcmpQueue.Success` has `message_hash` which is the key.
+        - else `messageQueue.Processed` has `message_id` but it's not corelational key. However, on source chain, `polkadotXcm.Sent` event has `message_id` in it's args which is exactly same as dest. `message_id`
+
 ## Polkadot Bridge Hub
 
 - **Bridge Hub to Parachain/Relay**
-    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` would have message hash.
+    - Listen for `polkadotXcm.limitedReserveTransferAssets`, `polkadotXcm.limitedTeleportAssets`, `polkadotXcm.send`, `polkadotXcm.reserveTransferAssets`, `polkadotXcm.teleportAssets`, `polkadotXcm.transferAssets`, `polkadotXcm.transferAssetsUsingTypeAndThen` extrinsics. It will info about source, destination, assets etc. Event `parachainsystem.UpwardMessageSent` or `xcmpQueue.xcmpMessageSent` would have message hash.
 
 - **Parachain/Relay to Bridge Hub**
     - Listen for `messageQueue.processed` (for XCM v4 and v5) or `Dmpqueue.ExecutedDownward` (for older XCM versions) event. Both events have message id or hash in it which would act as co-relation key.
