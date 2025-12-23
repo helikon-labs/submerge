@@ -239,4 +239,4 @@ These messages are routed through the Relay Chain but are not executed there. Th
     - This could be made with Crystal APIs itself. For every block, we can find all events (with `/blocks/:block_ref/events`). In response, we get extrinsic hash. All other events emitted from the extrinsic can be found with `/extrinsics/:extrinsic_hash/events` and more details about extrinsic itself can be found with `/extrinsics/:extrinsic_hash`. With this, we can properly establish event->extrinsic mapping.
 
 - [x] Most of the `messageQueue.processed` has a `id` parameter in it, but it does not match with actual corelation key which we can use to find source chain XCM details. Need to look into it.
-    - Rule of thumb is, `messageQueue.processed` has `message_id` which should be match against `SetTopic` value in XCM instruction for source chain.
+    - Rule of thumb is, For XCM v3+, `messageQueue.processed` has `message_id` which should be match against `SetTopic` value in XCM instruction for source chain. For XCM v2 or less, `.sent` event has `message_id` which matches with destination so it could be used as corelation key.
