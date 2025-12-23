@@ -1,3 +1,4 @@
+use crate::api::admin::admin_router;
 use crate::api::v1::call::{
     get_call_args_by_hash, get_call_by_hash, get_call_extrinsic_by_hash, get_calls,
     get_calls_by_block_reference, get_calls_by_block_reference_and_extrinsic_index,
@@ -50,6 +51,7 @@ use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::GovernorLayer;
 use tower_http::cors::{Any, CorsLayer};
 
+mod admin;
 pub mod docs;
 pub mod legacy;
 pub mod v1;
@@ -337,14 +339,15 @@ pub(crate) async fn run_api(
         ])
         .allow_methods(Any)
         .allow_headers(Any);
-    let app = Router::new()
+    let api = Router::new()
         .nest("/api/v1", build_api_routes())
         .fallback(|| async { APIError::NotFound })
         .with_state(service_state)
-        .layer(cors)
         .layer(GovernorLayer::new(governor_conf))
         .layer(middleware::from_fn(json_error_middleware))
         .layer(middleware::from_fn(metrics_middleware));
+    let app = Router::new().merge(api).merge(admin_router()).layer(cors);
+
     let listener = TcpListener::bind((args.api_host.as_str(), args.api_port)).await?;
     let server = axum::serve(
         listener,

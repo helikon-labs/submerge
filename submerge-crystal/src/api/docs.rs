@@ -25,7 +25,7 @@ use crate::types::api::{
 #[openapi(
     info(
         title = "Submerge Crystal API v1",
-        description = "REST API for Submerge Crystal, the core indexer component of Submerge.\n\nSubmerge API endpoints are grouped under five resource sets:\n- Blocks\n- Calls\n- Events\n- Extrinsics\n- Genesis\n- Metadata\n- Traces\n\nPublic API is limited by 5 requests per second.\nRequest query parameters use `snake_case`; response fields use `camelCase`.",
+        description = "REST API for Submerge Crystal, the core indexer component of Submerge.\n\nSubmerge API endpoints are grouped under five resource sets:\n- Blocks\n- Calls\n- Events\n- Extrinsics\n- Genesis\n- Metadata\n- Traces\n- System\n\nPublic API is limited by 5 requests per second.\nRequest query parameters use `snake_case`; response fields use `camelCase`.",
         version = "1.0.0",
         contact(
             name = "Helikon Labs",
@@ -73,6 +73,7 @@ use crate::types::api::{
         (name = "extrinsic", description = "Endpoints related to extrinsics."),
         (name = "genesis", description = "Endpoints related to genesis records."),
         (name = "metadata", description = "Endpoints related to metadata."),
+        (name = "system", description = "Endpoints related to system management (workers, monitoring, etc.)."),
         (name = "trace", description = "Endpoints related to block traces.")
     ),
     paths(
