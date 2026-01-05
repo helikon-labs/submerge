@@ -58,6 +58,11 @@ tower-http = { workspace = true }
 tracing = { workspace = true }
 utoipa = { workspace = true }
 uuid = { workspace = true }
+serde_with = "3.16.1"
+validator = { version = "0.20.0", features = ["derive"] }
+oas3-gen-support = "0.23.5"
+regex = "1.12.2"
+
 
 [dev-dependencies]
 serde_json = { workspace = true }
