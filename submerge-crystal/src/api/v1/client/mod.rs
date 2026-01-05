@@ -9,6 +9,9 @@
 #![allow(clippy::unnecessary_wraps)]
 #![allow(clippy::unused_self)]
 #![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(clippy::too_many_arguments)]
+#![allow(warnings)]
 
 //!
 //! AUTO-GENERATED CODE - DO NOT EDIT!
