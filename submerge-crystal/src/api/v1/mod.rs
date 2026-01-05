@@ -6,4 +6,4 @@ pub(crate) mod genesis;
 pub(crate) mod metadata;
 pub(crate) mod system;
 pub(crate) mod trace;
-pub(crate) mod client;
+pub mod client;

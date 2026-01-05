@@ -5785,6 +5785,10 @@ dependencies = [
 [[package]]
 name = "submerge-mycelium"
 version = "0.1.0"
+dependencies = [
+ "submerge-crystal",
+ "tokio",
+]
 
 [[package]]
 name = "submerge-persistence"
