@@ -339,14 +339,16 @@ pub(crate) async fn run_api(
         ])
         .allow_methods(Any)
         .allow_headers(Any);
-    let api = Router::new()
-        .nest("/api/v1", build_api_routes())
+    let api_v1 = build_api_routes()
         .fallback(|| async { APIError::NotFound })
         .with_state(service_state)
         .layer(GovernorLayer::new(governor_conf))
         .layer(middleware::from_fn(json_error_middleware))
         .layer(middleware::from_fn(metrics_middleware));
-    let app = Router::new().merge(api).merge(admin_router()).layer(cors);
+    let app = Router::new()
+        .nest("/api/v1", api_v1)
+        .merge(admin_router())
+        .layer(cors);
 
     let listener = TcpListener::bind((args.api_host.as_str(), args.api_port)).await?;
     let server = axum::serve(
