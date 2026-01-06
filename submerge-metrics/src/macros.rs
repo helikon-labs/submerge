@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! define_gauge {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr,) => {
-        pub fn $name() -> $crate::PrometheusResult<$crate::registry::IntGauge> {
+        pub(crate) fn $name() -> $crate::PrometheusResult<$crate::registry::IntGauge> {
             static METER: once_cell::sync::OnceCell<$crate::registry::IntGauge> =
                 once_cell::sync::OnceCell::new();
             METER
@@ -16,7 +16,7 @@ macro_rules! define_gauge {
 #[macro_export]
 macro_rules! define_gauge_vec {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr, $labels:expr,) => {
-        pub fn $name() -> $crate::PrometheusResult<$crate::registry::IntGaugeVec> {
+        pub(crate) fn $name() -> $crate::PrometheusResult<$crate::registry::IntGaugeVec> {
             static METER: once_cell::sync::OnceCell<$crate::registry::IntGaugeVec> =
                 once_cell::sync::OnceCell::new();
             METER
@@ -36,7 +36,7 @@ macro_rules! define_gauge_vec {
 #[macro_export]
 macro_rules! define_counter {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr,) => {
-        pub fn $name() -> $crate::PrometheusResult<$crate::registry::IntCounter> {
+        pub(crate) fn $name() -> $crate::PrometheusResult<$crate::registry::IntCounter> {
             static METER: once_cell::sync::OnceCell<$crate::registry::IntCounter> =
                 once_cell::sync::OnceCell::new();
             METER
@@ -51,7 +51,7 @@ macro_rules! define_counter {
 #[macro_export]
 macro_rules! define_counter_vec {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr, $labels:expr,) => {
-        pub fn $name() -> $crate::PrometheusResult<$crate::registry::IntCounterVec> {
+        pub(crate) fn $name() -> $crate::PrometheusResult<$crate::registry::IntCounterVec> {
             static METER: once_cell::sync::OnceCell<$crate::registry::IntCounterVec> =
                 once_cell::sync::OnceCell::new();
             METER
@@ -71,7 +71,7 @@ macro_rules! define_counter_vec {
 #[macro_export]
 macro_rules! define_histogram {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr, $buckets:expr,) => {
-        pub fn $name() -> $crate::PrometheusResult<$crate::registry::Histogram> {
+        pub(crate) fn $name() -> $crate::PrometheusResult<$crate::registry::Histogram> {
             static METER: once_cell::sync::OnceCell<$crate::registry::Histogram> =
                 once_cell::sync::OnceCell::new();
             METER
@@ -91,7 +91,7 @@ macro_rules! define_histogram {
 #[macro_export]
 macro_rules! define_histogram_vec {
     ($prefix:expr, $name:ident, $metric_name:expr, $description:expr, $labels:expr, $buckets:expr,) => {
-        pub fn $name() -> $crate::PrometheusResult<$crate::registry::HistogramVec> {
+        pub(crate) fn $name() -> $crate::PrometheusResult<$crate::registry::HistogramVec> {
             static METER: once_cell::sync::OnceCell<$crate::registry::HistogramVec> =
                 once_cell::sync::OnceCell::new();
             METER

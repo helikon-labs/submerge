@@ -1,4 +1,4 @@
-pub fn block_weight_schema() -> utoipa::openapi::Object {
+pub(crate) fn block_weight_schema() -> utoipa::openapi::Object {
     use utoipa::openapi::ObjectBuilder;
 
     ObjectBuilder::new()

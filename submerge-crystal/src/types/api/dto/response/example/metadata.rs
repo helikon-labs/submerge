@@ -8,7 +8,7 @@ use crate::types::api::dto::response::{
     },
 };
 
-pub fn metadata_summary_example() -> JSONValue {
+pub(crate) fn metadata_summary_example() -> JSONValue {
     let metadata = MetadataSummaryDTO {
         spec_version: 1001,
         metadata_version: 14,
@@ -16,7 +16,7 @@ pub fn metadata_summary_example() -> JSONValue {
     serde_json::to_value(&metadata).unwrap()
 }
 
-pub fn metadata_pallet_example() -> JSONValue {
+pub(crate) fn metadata_pallet_example() -> JSONValue {
     let pallet = MetadataPalletDTO {
         index: 0,
         name: "System".to_string(),

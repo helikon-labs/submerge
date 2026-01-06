@@ -1,4 +1,4 @@
-pub fn extrinsic_extra_schema() -> utoipa::openapi::Object {
+pub(crate) fn extrinsic_extra_schema() -> utoipa::openapi::Object {
     use utoipa::openapi::ObjectBuilder;
 
     ObjectBuilder::new()

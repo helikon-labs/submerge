@@ -9,7 +9,7 @@ use crate::types::{
     BlockStatus,
 };
 
-pub fn block_example() -> JSONValue {
+pub(crate) fn block_example() -> JSONValue {
     let block = BlockDTO {
         hash: Hash256Hex(
             "0xc82fe0d5752d42ae3d325f14206859f86cec7447f244d5b4bccfc2a00bd58df8".to_string(),

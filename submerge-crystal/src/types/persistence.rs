@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use submerge_base::types::substrate::trace::TraceStorageMethod;
 
 #[derive(Debug, FromRow)]
-pub struct BlockRow {
+pub(crate) struct BlockRow {
     pub hash: Vec<u8>,
     pub parent_hash: Vec<u8>,
     pub state_root: Vec<u8>,
@@ -20,7 +20,7 @@ pub struct BlockRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct EventRow {
+pub(crate) struct EventRow {
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub block_timestamp: Option<i64>,
@@ -36,7 +36,7 @@ pub struct EventRow {
 }
 
 impl EventRow {
-    pub fn from_block_event(
+    pub(crate) fn from_block_event(
         block_hash: &[u8],
         block_number: u64,
         block_timestamp: Option<u64>,
@@ -71,7 +71,7 @@ impl EventRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct EventCompositeRow {
+pub(crate) struct EventCompositeRow {
     pub hash: Vec<u8>,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
@@ -91,7 +91,7 @@ pub struct EventCompositeRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct LogRow {
+pub(crate) struct LogRow {
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub index: i32,
@@ -102,7 +102,7 @@ pub struct LogRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct ExtrinsicRow {
+pub(crate) struct ExtrinsicRow {
     pub block_hash: Vec<u8>,
     pub block_number: i64,
     pub block_timestamp: Option<i64>,
@@ -119,7 +119,7 @@ pub struct ExtrinsicRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct CallRow {
+pub(crate) struct CallRow {
     pub hash: Vec<u8>,
     pub block_hash: Vec<u8>,
     pub block_number: i64,
@@ -142,7 +142,7 @@ pub struct CallRow {
 }
 
 #[derive(Debug, FromRow)]
-pub struct TraceRow {
+pub(crate) struct TraceRow {
     pub hash: Vec<u8>,
     pub block_hash: Vec<u8>,
     pub block_number: i64,

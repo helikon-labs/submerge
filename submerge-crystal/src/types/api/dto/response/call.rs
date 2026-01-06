@@ -18,7 +18,7 @@ use crate::types::{
     as = Call,
     example = call_example,
 )]
-pub struct CallDTO {
+pub(crate) struct CallDTO {
     /// Artificial call hash.
     pub hash: Hash256Hex,
     /// Hash of the call's block.
@@ -114,7 +114,7 @@ impl From<&CallRow> for CallDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedCallList {
+pub(crate) struct PaginatedCallList {
     #[schema(example = json!([call_example()]))]
     pub data: Vec<CallDTO>,
     pub pagination: PaginationData,
@@ -123,4 +123,4 @@ pub struct PaginatedCallList {
 /// Call arguments wrapper.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(value_type = Object)]
-pub struct CallArgs(pub JSONValue);
+pub(crate) struct CallArgs(pub JSONValue);

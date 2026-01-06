@@ -17,11 +17,11 @@ use crate::{
     api::legacy::LegacyDecodeAPIClient,
     persistence::CrystalPostgreSQLStorage,
     types::{
-        decode::{Value, ValueVisitor},
+        decode::ValueVisitor,
         legacy::{LegacyEventPhase, LegacyEventWrapper},
         metadata::util::{get_metadata_version, get_runtime_call_type, v14, v15},
         persistence::EventRow,
-        BlockStatus, Event, Extrinsic,
+        BlockStatus, Event, Extrinsic, Value,
     },
     worker::{metadata_cache::get_parsed_metadata, processor::BlockProcessor},
 };
@@ -295,7 +295,7 @@ impl BlockProcessor {
         Ok(events)
     }
 
-    pub async fn get_events_from_event_bytes(
+    pub(crate) async fn get_events_from_event_bytes(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -313,7 +313,7 @@ impl BlockProcessor {
         Ok(events)
     }
 
-    pub async fn get_events_from_trace(
+    pub(crate) async fn get_events_from_trace(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -388,7 +388,7 @@ impl BlockProcessor {
         Ok(events)
     }
 
-    pub async fn process_events(
+    pub(crate) async fn process_events(
         &self,
         block_hash: &[u8],
         block_header: &BlockHeader,

@@ -5,7 +5,7 @@ use crate::types::{
     BlockStatus,
 };
 
-pub fn call_example() -> JSONValue {
+pub(crate) fn call_example() -> JSONValue {
     let call = CallDTO {
         hash: Hash256Hex(
             "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca".to_string(),

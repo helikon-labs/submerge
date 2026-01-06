@@ -53,8 +53,8 @@ use tower_http::cors::{Any, CorsLayer};
 
 mod admin;
 pub mod docs;
-pub mod legacy;
-pub mod v1;
+pub(crate) mod legacy;
+pub(crate) mod v1;
 
 const DEFAULT_PAGE: u32 = 1;
 const DEFAULT_PAGE_SIZE: u32 = 25;
@@ -92,7 +92,7 @@ fn get_page_number_and_size(
 
 #[allow(dead_code)]
 #[derive(Clone)]
-pub struct ServiceState {
+pub(crate) struct ServiceState {
     pub chain_name: String,
     pub postgres: Arc<PostgreSQLStorage>,
     pub worker_manager: Arc<WorkerManager>,

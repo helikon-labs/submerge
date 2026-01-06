@@ -20,7 +20,7 @@ use crate::types::{
     as = Event,
     example = event_example,
 )]
-pub struct EventDTO {
+pub(crate) struct EventDTO {
     /// Artificial event hash.
     pub hash: Hash256Hex,
     /// Hash of the event's block.
@@ -102,7 +102,7 @@ impl From<&EventCompositeRow> for EventDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedEventList {
+pub(crate) struct PaginatedEventList {
     #[schema(example = json!([event_example()]))]
     pub data: Vec<EventDTO>,
     pub pagination: PaginationData,
@@ -111,7 +111,7 @@ pub struct PaginatedEventList {
 /// Event arguments wrapper.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(value_type = Object)]
-pub struct EventArgs(pub JSONValue);
+pub(crate) struct EventArgs(pub JSONValue);
 
 #[derive(Debug, Serialize, ToResponse)]
 #[response(
@@ -121,4 +121,4 @@ pub struct EventArgs(pub JSONValue);
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct EventList(pub Vec<EventDTO>);
+pub(crate) struct EventList(pub Vec<EventDTO>);

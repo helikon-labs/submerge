@@ -1,6 +1,6 @@
 use utoipa::OpenApi as _;
 
-use submerge_crystal::api::docs::APIDoc;
+use submerge_crystal::APIDoc;
 
 const SPEC_FILE_JSON_PATH: &str = "api-spec/submerge-crystal-api.json";
 

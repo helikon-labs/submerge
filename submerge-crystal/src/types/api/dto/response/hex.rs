@@ -8,7 +8,7 @@ use utoipa::ToSchema;
     pattern = "^0x(?:[0-9a-f]{2})+$",
     examples("0xdeadbeef", "0x0123456789abcdef"),
 )]
-pub struct HexString(pub String);
+pub(crate) struct HexString(pub String);
 
 /// Arbitrary hex-encoded bytes, mixed case, optional `0x`-prefix.
 #[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
@@ -17,7 +17,7 @@ pub struct HexString(pub String);
     pattern = "^0x(?:[0-9a-f]{2})+$",
     examples("0xdeadbeef", "0x0123456789abcdef"),
 )]
-pub struct HexStringParam(pub String);
+pub(crate) struct HexStringParam(pub String);
 
 impl From<&[u8]> for HexString {
     fn from(value: &[u8]) -> Self {
@@ -33,7 +33,7 @@ impl From<&[u8]> for HexString {
     pattern = "^0x[a-f0-9]{64}$",
     example = "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
 )]
-pub struct Hash256Hex(pub String);
+pub(crate) struct Hash256Hex(pub String);
 
 impl From<&[u8]> for Hash256Hex {
     fn from(value: &[u8]) -> Self {
@@ -48,7 +48,7 @@ impl From<&[u8]> for Hash256Hex {
     pattern = "^0x[a-f0-9]{64}$",
     example = "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
 )]
-pub struct AccountIdHex(pub String);
+pub(crate) struct AccountIdHex(pub String);
 
 /// 20-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.
 #[derive(Debug, Clone, Serialize, ToSchema)]
@@ -57,7 +57,7 @@ pub struct AccountIdHex(pub String);
     pattern = "^0x[a-f0-9]{40}$",
     example = "0x00112233445566778899aabbccddeeff00112233",
 )]
-pub struct Address20Hex(pub String);
+pub(crate) struct Address20Hex(pub String);
 
 impl From<&[u8; 20]> for Address20Hex {
     fn from(value: &[u8; 20]) -> Self {
@@ -72,7 +72,7 @@ impl From<&[u8; 20]> for Address20Hex {
     pattern = "^0x[a-f0-9]{64}$",
     example = "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
 )]
-pub struct Address32Hex(pub String);
+pub(crate) struct Address32Hex(pub String);
 
 impl From<&[u8; 32]> for Address32Hex {
     fn from(value: &[u8; 32]) -> Self {
@@ -92,4 +92,4 @@ impl From<&[u8; 32]> for Address32Hex {
         "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
     ),
 )]
-pub struct SignatureHexString(pub String);
+pub(crate) struct SignatureHexString(pub String);

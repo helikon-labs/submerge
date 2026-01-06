@@ -25,7 +25,7 @@ use submerge_base::types::substrate::{
     as = Extrinsic,
     example = extrinsic_example,
 )]
-pub struct ExtrinsicDTO {
+pub(crate) struct ExtrinsicDTO {
     /// Hash of the extrinsic's block.
     pub block_hash: Hash256Hex,
     /// Number of the extrinsic's block.
@@ -110,7 +110,7 @@ impl TryFrom<&ExtrinsicRow> for ExtrinsicDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct ExtrinsicList(pub Vec<ExtrinsicDTO>);
+pub(crate) struct ExtrinsicList(pub Vec<ExtrinsicDTO>);
 
 #[derive(Debug, Serialize, ToResponse, ToSchema)]
 #[response(
@@ -120,7 +120,7 @@ pub struct ExtrinsicList(pub Vec<ExtrinsicDTO>);
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedExtrinsicList {
+pub(crate) struct PaginatedExtrinsicList {
     #[schema(example = json!([extrinsic_example()]))]
     pub data: Vec<ExtrinsicDTO>,
     pub pagination: PaginationData,

@@ -2,7 +2,7 @@ use serde_json::Value as JSONValue;
 
 use crate::types::api::dto::response::{genesis::GenesisRecordDTO, hex::HexString};
 
-pub fn genesis_record_example() -> JSONValue {
+pub(crate) fn genesis_record_example() -> JSONValue {
     let event = GenesisRecordDTO {
         key_prefix: HexString(
             "0x26aa394eea5630e07c48ae0c9558cef7a44704b568d21667356a5a050c118746".to_string(),

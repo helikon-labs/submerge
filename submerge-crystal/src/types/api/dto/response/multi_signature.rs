@@ -7,14 +7,14 @@ use crate::types::api::dto::response::hex::SignatureHexString;
 /// Multi-signature ECDSA type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum MultiSignatureECDSAType {
+pub(crate) enum MultiSignatureECDSAType {
     Ecdsa,
 }
 
 /// ECDSA signature.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiSignatureECDSA)]
-pub struct MultiSignatureEcdsaDTO {
+pub(crate) struct MultiSignatureEcdsaDTO {
     /// Must be `ecdsa`.
     #[serde(rename = "type")]
     pub r#type: MultiSignatureECDSAType,
@@ -26,14 +26,14 @@ pub struct MultiSignatureEcdsaDTO {
 /// Multi-signature Eth type (ECDSA over secp256k1, applied to a Keccak-256 hash).
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum MultiSignatureEthType {
+pub(crate) enum MultiSignatureEthType {
     Eth,
 }
 
 /// Eth signature.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiSignatureEth)]
-pub struct MultiSignatureEthDTO {
+pub(crate) struct MultiSignatureEthDTO {
     /// Must be `eth`.
     #[serde(rename = "type")]
     pub r#type: MultiSignatureEthType,
@@ -45,14 +45,14 @@ pub struct MultiSignatureEthDTO {
 /// Multi-signature Ed25519 type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum MultiSignatureEd25519Type {
+pub(crate) enum MultiSignatureEd25519Type {
     Ed25519,
 }
 
 /// Ed25519 signature.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiSignatureEd25519)]
-pub struct MultiSignatureEd25519DTO {
+pub(crate) struct MultiSignatureEd25519DTO {
     /// Must be `ed25519`.
     #[serde(rename = "type")]
     pub r#type: MultiSignatureEd25519Type,
@@ -64,14 +64,14 @@ pub struct MultiSignatureEd25519DTO {
 /// Multi-signature Sr25519 type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum MultiSignatureSr25519Type {
+pub(crate) enum MultiSignatureSr25519Type {
     Sr25519,
 }
 
 /// Sr25519 signature.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiSignatureSr25519)]
-pub struct MultiSignatureSr25519DTO {
+pub(crate) struct MultiSignatureSr25519DTO {
     /// Must be `sr25519`.
     #[serde(rename = "type")]
     pub r#type: MultiSignatureSr25519Type,
@@ -97,7 +97,7 @@ pub struct MultiSignatureSr25519DTO {
         "value": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
     })
 )]
-pub enum MultiSignatureDTO {
+pub(crate) enum MultiSignatureDTO {
     Ecdsa(MultiSignatureEcdsaDTO),
     Eth(MultiSignatureEthDTO),
     Ed25519(MultiSignatureEd25519DTO),

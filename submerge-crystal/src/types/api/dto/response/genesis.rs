@@ -13,7 +13,7 @@ use crate::types::api::dto::{
     as = GenesisRecord,
     example = genesis_record_example,
 )]
-pub struct GenesisRecordDTO {
+pub(crate) struct GenesisRecordDTO {
     /// Storage item key prefix for the genesis record.
     pub key_prefix: HexString,
     /// Storage item key parameter(s) for the genesis record.
@@ -51,7 +51,7 @@ pub struct GenesisRecordDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedGenesisRecordList {
+pub(crate) struct PaginatedGenesisRecordList {
     #[schema(example = json!([genesis_record_example()]))]
     pub data: Vec<GenesisRecordDTO>,
     pub pagination: PaginationData,

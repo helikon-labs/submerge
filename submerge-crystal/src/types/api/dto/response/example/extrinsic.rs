@@ -10,7 +10,7 @@ use crate::types::{
     BlockStatus,
 };
 
-pub fn extrinsic_example() -> JSONValue {
+pub(crate) fn extrinsic_example() -> JSONValue {
     let extrinsic = ExtrinsicDTO {
         block_hash: Hash256Hex(
             "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77".to_string(),

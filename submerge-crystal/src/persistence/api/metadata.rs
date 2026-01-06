@@ -12,7 +12,7 @@ use crate::types::api::dto::response::{
 };
 
 #[derive(Clone, Debug, FromRow)]
-pub struct PalletConstantRow {
+pub(crate) struct PalletConstantRow {
     pub index: i32,
     pub name: String,
     pub type_id: Option<i32>,

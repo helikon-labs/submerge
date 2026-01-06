@@ -4,7 +4,7 @@ use utoipa::IntoParams;
 /// Query parameters for fetching and filtering events.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct EventQuery {
+pub(crate) struct EventQuery {
     /// Events list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -69,7 +69,7 @@ pub struct EventQuery {
 /// Query parameters for fetching and filtering events within a block.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct BlockEventQuery {
+pub(crate) struct BlockEventQuery {
     /// Block event list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -106,7 +106,7 @@ pub struct BlockEventQuery {
 /// Query parameter for definining whether the endpoint should include event arguments
 /// within the returned event(s).
 #[derive(Debug, Deserialize, IntoParams)]
-pub struct IncludeEventArgsParam {
+pub(crate) struct IncludeEventArgsParam {
     /// Whether to include event arguments in the event(s) in the response.
     /// Default is `false`. Setting this to `true` increases the response size considerably.
     /// Prefer to use the `GET /event/{event_hash}/args` endpoint per call instead.

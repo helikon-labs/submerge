@@ -6,7 +6,7 @@ use crate::types::api::dto::response::hex::HexStringParam;
 /// Query parameters for fetching and filtering traces.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct TraceQuery {
+pub(crate) struct TraceQuery {
     /// Trace list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -65,7 +65,7 @@ pub struct TraceQuery {
 /// Query parameters for fetching and filtering traces within a block.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct BlockTraceQuery {
+pub(crate) struct BlockTraceQuery {
     /// Block traces list page number to retrieve. 1-indexed.
     #[param(
         required = false,

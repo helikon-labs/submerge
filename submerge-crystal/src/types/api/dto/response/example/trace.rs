@@ -6,7 +6,7 @@ use crate::types::api::dto::response::{
     trace::TraceDTO,
 };
 
-pub fn trace_example() -> JSONValue {
+pub(crate) fn trace_example() -> JSONValue {
     let event = TraceDTO {
         hash: Hash256Hex("0xebae2efe1479e7e4535c8ffb337359e252a54ac77a13c6095c9bbc5e78622daa".to_string()),
         block_hash: Hash256Hex("0x2f08d6887f29369af351118631221891b47ca5f0c2ef14f4da0dd32c3bed0d77".to_string()),

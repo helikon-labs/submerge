@@ -50,7 +50,7 @@ fn validate_block_range(
     Ok(())
 }
 
-pub struct BlockProcessor {
+pub(crate) struct BlockProcessor {
     chain_name: String,
     worker_id: UUID,
     postgres: Arc<PostgreSQLStorage>,
@@ -59,7 +59,7 @@ pub struct BlockProcessor {
 }
 
 impl BlockProcessor {
-    pub async fn new(
+    pub(crate) async fn new(
         chain_name: &str,
         worker_id: UUID,
         postgres: Arc<PostgreSQLStorage>,
@@ -81,7 +81,7 @@ impl BlockProcessor {
         })
     }
 
-    pub async fn save_block_error(
+    pub(crate) async fn save_block_error(
         &self,
         block_hash: &[u8],
         block_number: u64,
@@ -122,7 +122,8 @@ impl BlockProcessor {
 
     /// Concurrent block fetching with full sequential processing
     /// Uses concurrent RPC fetching (fast) but delegates to existing process_block() for correctness
-    pub async fn process_finalized_blocks_in_range_concurrent(
+    #[allow(dead_code)]
+    pub(crate) async fn process_finalized_blocks_in_range_concurrent(
         &self,
         stop_on_error: bool,
         skip_traces: bool,
@@ -238,7 +239,7 @@ impl BlockProcessor {
         Ok(())
     }
 
-    pub async fn process_finalized_blocks_in_range(
+    pub(crate) async fn process_finalized_blocks_in_range(
         &self,
         stop_on_error: bool,
         skip_traces: bool,
@@ -351,7 +352,10 @@ impl BlockProcessor {
         Ok(())
     }
 
-    pub async fn get_block_hash_hex(&self, block_number: u64) -> anyhow::Result<Option<String>> {
+    pub(crate) async fn get_block_hash_hex(
+        &self,
+        block_number: u64,
+    ) -> anyhow::Result<Option<String>> {
         self.substrate_client.get_block_hash(block_number).await
     }
 
@@ -461,7 +465,7 @@ impl BlockProcessor {
         Ok(author_multi_address)
     }
 
-    pub async fn process_block(
+    pub(crate) async fn process_block(
         &self,
         skip_traces: bool,
         reindex: bool,

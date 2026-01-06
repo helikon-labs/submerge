@@ -18,7 +18,7 @@ use crate::types::api::dto::{
     as = MetadataSummary,
     example = metadata_summary_example,
 )]
-pub struct MetadataSummaryDTO {
+pub(crate) struct MetadataSummaryDTO {
     /// Metadata runtime spec version.
     #[schema(example = 1001)]
     pub spec_version: u32,
@@ -35,7 +35,7 @@ pub struct MetadataSummaryDTO {
     ),
     description = "Response with a paginated list of metadata summaries.",
 )]
-pub struct PaginatedMetadataList {
+pub(crate) struct PaginatedMetadataList {
     #[schema(example = json!([metadata_summary_example()]))]
     pub data: Vec<MetadataSummaryDTO>,
     pub pagination: PaginationData,
@@ -45,7 +45,7 @@ pub struct PaginatedMetadataList {
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = Metadata)]
-pub struct MetadataDTO {
+pub(crate) struct MetadataDTO {
     /// Metadata runtime spec version.
     #[schema(example = 1001)]
     pub spec_version: u32,
@@ -60,13 +60,13 @@ pub struct MetadataDTO {
 /// Original Substrate runtime metadata in JSON representation.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(value_type = Value)]
-pub struct MetadataJSON(pub JSONValue);
+pub(crate) struct MetadataJSON(pub JSONValue);
 
 /// The summary of a pallet defined in metadata, with only its index and name.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = MetadataPalletSummary)]
-pub struct MetadataPalletSummaryDTO {
+pub(crate) struct MetadataPalletSummaryDTO {
     /// Pallet's index inside the metadata.
     #[schema(example = 53)]
     pub index: u32,
@@ -83,7 +83,7 @@ pub struct MetadataPalletSummaryDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct MetadataPalletSummaryList(pub Vec<MetadataPalletSummaryDTO>);
+pub(crate) struct MetadataPalletSummaryList(pub Vec<MetadataPalletSummaryDTO>);
 
 /// A pallet defined in metadata, with its calls, constants, errors, events, and storage items.
 #[derive(Debug, Serialize, ToSchema)]
@@ -92,7 +92,7 @@ pub struct MetadataPalletSummaryList(pub Vec<MetadataPalletSummaryDTO>);
     as = MetadataPallet,
     example = metadata_pallet_example,
 )]
-pub struct MetadataPalletDTO {
+pub(crate) struct MetadataPalletDTO {
     /// Pallet's index inside the metadata.
     #[schema(example = 53)]
     pub index: u32,
@@ -116,7 +116,7 @@ pub struct MetadataPalletDTO {
 #[schema(
     example = json!(["Call documentation line 1.", "Call documentation line 2."]),
 )]
-pub struct MetadataItemDocumentation(pub Vec<String>);
+pub(crate) struct MetadataItemDocumentation(pub Vec<String>);
 
 #[derive(Clone, Debug, Serialize, ToResponse)]
 #[response(
@@ -126,13 +126,13 @@ pub struct MetadataItemDocumentation(pub Vec<String>);
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct MetadataPalletCallList(pub Vec<MetadataCallDTO>);
+pub(crate) struct MetadataPalletCallList(pub Vec<MetadataCallDTO>);
 
 /// A call defined in a metadata pallet.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = MetadataCall)]
-pub struct MetadataCallDTO {
+pub(crate) struct MetadataCallDTO {
     /// Call's index inside the metadata pallet.
     #[schema(example = 37)]
     pub index: u32,
@@ -151,13 +151,13 @@ pub struct MetadataCallDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct MetadataPalletConstantList(pub Vec<MetadataConstantDTO>);
+pub(crate) struct MetadataPalletConstantList(pub Vec<MetadataConstantDTO>);
 
 /// A constant defined in a metadata pallet.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = MetadataConstant)]
-pub struct MetadataConstantDTO {
+pub(crate) struct MetadataConstantDTO {
     /// Constant's index inside the metadata pallet.
     #[schema(example = 7)]
     pub index: u32,
@@ -193,13 +193,13 @@ pub struct MetadataConstantDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct MetadataPalletErrorList(pub Vec<MetadataErrorDTO>);
+pub(crate) struct MetadataPalletErrorList(pub Vec<MetadataErrorDTO>);
 
 /// An error defined in a metadata pallet.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = MetadataError)]
-pub struct MetadataErrorDTO {
+pub(crate) struct MetadataErrorDTO {
     /// Error's index inside the metadata pallet.
     #[schema(example = 17)]
     pub index: u32,
@@ -218,13 +218,13 @@ pub struct MetadataErrorDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct MetadataPalletEventList(pub Vec<MetadataEventDTO>);
+pub(crate) struct MetadataPalletEventList(pub Vec<MetadataEventDTO>);
 
 /// An event defined in a metadata pallet.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = MetadataEvent)]
-pub struct MetadataEventDTO {
+pub(crate) struct MetadataEventDTO {
     /// Event's index inside the metadata pallet.
     #[schema(example = 21)]
     pub index: u32,
@@ -243,13 +243,13 @@ pub struct MetadataEventDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct MetadataPalletStorageItemList(pub Vec<MetadataStorageItemDTO>);
+pub(crate) struct MetadataPalletStorageItemList(pub Vec<MetadataStorageItemDTO>);
 
 /// A storage item defined in a metadata pallet.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(as = MetadataStorageItem)]
-pub struct MetadataStorageItemDTO {
+pub(crate) struct MetadataStorageItemDTO {
     /// Storage item's index inside the metadata pallet.
     #[schema(example = 0)]
     pub index: u32,

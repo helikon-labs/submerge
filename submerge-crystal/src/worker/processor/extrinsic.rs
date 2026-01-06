@@ -15,14 +15,14 @@ use super::BlockProcessor;
 use crate::{
     persistence::CrystalPostgreSQLStorage,
     types::{
-        decode::{Value, ValueVisitor},
+        decode::ValueVisitor,
         legacy::LegacyCall,
         metadata::util::{
             get_extrinsic_extra_type, get_extrinsic_signature_type,
             get_extrinsic_signer_address_type, get_metadata_version, get_runtime_call_type,
             get_signed_extensions,
         },
-        BlockStatus, Call, Event, Extrinsic,
+        BlockStatus, Call, Event, Extrinsic, Value,
     },
     worker::metadata_cache::get_parsed_metadata,
 };
@@ -290,7 +290,7 @@ impl BlockProcessor {
         Ok(value)
     }
 
-    pub async fn convert_legacy_call(
+    pub(crate) async fn convert_legacy_call(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -394,7 +394,7 @@ impl BlockProcessor {
         })
     }
 
-    pub async fn get_extrinsics(
+    pub(crate) async fn get_extrinsics(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -467,7 +467,7 @@ impl BlockProcessor {
         Ok(raw_extrinsic_bytes)
     }
 
-    pub async fn get_extrinsics_from_trace(
+    pub(crate) async fn get_extrinsics_from_trace(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -503,7 +503,7 @@ impl BlockProcessor {
         Ok(extrinsics)
     }
 
-    pub async fn process_extrinsics(
+    pub(crate) async fn process_extrinsics(
         &self,
         block_hash: &[u8],
         block_header: &BlockHeader,
@@ -548,7 +548,7 @@ impl BlockProcessor {
 
     #[async_recursion]
     #[allow(clippy::too_many_arguments)]
-    pub async fn process_extrinsic_arg(
+    pub(crate) async fn process_extrinsic_arg(
         &self,
         block_hash: &[u8],
         block_number: u64,

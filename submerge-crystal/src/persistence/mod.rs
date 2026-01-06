@@ -19,7 +19,7 @@ use crate::types::BlockStatus;
 use crate::types::Extrinsic;
 use crate::types::GenesisItem;
 
-pub mod api;
+pub(crate) mod api;
 
 const INSERT_BATCH_SIZE: usize = 1000;
 

@@ -4,14 +4,16 @@ use scale_info::{form::PortableForm, PortableType, Variant};
 const UNCHECKED_EXTRINSIC_TYPE_PATH: &str =
     "sp_runtime::generic::unchecked_extrinsic::UncheckedExtrinsic";
 
-pub fn get_metadata_type_by_id(
+pub(crate) fn get_metadata_type_by_id(
     metadata_v14: &RuntimeMetadataV14,
     type_id: u32,
 ) -> Option<&PortableType> {
     metadata_v14.types.types.iter().find(|ty| ty.id == type_id)
 }
 
-pub fn get_extrinsic_type(metadata_v14: &RuntimeMetadataV14) -> anyhow::Result<&PortableType> {
+pub(crate) fn get_extrinsic_type(
+    metadata_v14: &RuntimeMetadataV14,
+) -> anyhow::Result<&PortableType> {
     let extrinsic_type = metadata_v14.types.types
         .iter()
         .find(|ty| ty.ty.path.segments.join("::").eq_ignore_ascii_case(UNCHECKED_EXTRINSIC_TYPE_PATH))
@@ -22,7 +24,7 @@ pub fn get_extrinsic_type(metadata_v14: &RuntimeMetadataV14) -> anyhow::Result<&
     )))
 }
 
-pub fn get_extrinsic_signer_address_type(
+pub(crate) fn get_extrinsic_signer_address_type(
     metadata_v14: &RuntimeMetadataV14,
 ) -> anyhow::Result<&PortableType> {
     let address_type_id = get_extrinsic_type(metadata_v14)?
@@ -42,7 +44,7 @@ pub fn get_extrinsic_signer_address_type(
         .ok_or(anyhow::Error::msg("Address type not found in metadata."))
 }
 
-pub fn get_extrinsic_signature_type(
+pub(crate) fn get_extrinsic_signature_type(
     metadata_v14: &RuntimeMetadataV14,
 ) -> anyhow::Result<&PortableType> {
     let address_type_id = get_extrinsic_type(metadata_v14)?
@@ -62,7 +64,7 @@ pub fn get_extrinsic_signature_type(
         .ok_or(anyhow::Error::msg("Signature type not found in metadata."))
 }
 
-pub fn get_pallet_metadata(
+pub(crate) fn get_pallet_metadata(
     metadata_v14: &RuntimeMetadataV14,
     pallet_index: u8,
 ) -> Option<&PalletMetadataV14<PortableForm>> {
@@ -84,7 +86,7 @@ fn get_pallet_events_type<'a>(
     }
 }
 
-pub fn get_event_variant<'a>(
+pub(crate) fn get_event_variant<'a>(
     metadata_v14: &'a RuntimeMetadataV14,
     pallet_metadata: &PalletMetadataV14<PortableForm>,
     event_index: u8,
@@ -108,7 +110,7 @@ pub fn get_event_variant<'a>(
     }
 }
 
-pub fn get_storage_item_type_by_name<'a>(
+pub(crate) fn get_storage_item_type_by_name<'a>(
     metadata_v14: &'a RuntimeMetadataV14,
     pallet_name: &'a str,
     pallet_storage_item_name: &'a str,

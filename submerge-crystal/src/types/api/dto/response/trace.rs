@@ -21,7 +21,7 @@ use crate::types::{
     as = Trace,
     example = trace_example,
 )]
-pub struct TraceDTO {
+pub(crate) struct TraceDTO {
     /// Artificial hash of the trace (`sha256(block_hash || index)`).
     pub hash: Hash256Hex,
     /// Hash of the trace's block.
@@ -107,7 +107,7 @@ impl TryFrom<&TraceRow> for TraceDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedTraceList {
+pub(crate) struct PaginatedTraceList {
     #[schema(example = json!([trace_example()]))]
     pub data: Vec<TraceDTO>,
     pub pagination: PaginationData,
