@@ -14,7 +14,7 @@ path = "src/main.rs"
 
 [[bin]]
 name = "openapi-gen"
-path = "src/generate_openapi.rs"
+path = "src/generate.rs"
 
 [dependencies]
 anyhow = { workspace = true }
@@ -62,6 +62,7 @@ serde_with = "3.16.1"
 validator = { version = "0.20.0", features = ["derive"] }
 oas3-gen-support = "0.23.5"
 regex = "1.12.2"
+bon = "3.8.1"
 
 
 [dev-dependencies]
