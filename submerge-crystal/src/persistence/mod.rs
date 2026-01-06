@@ -176,6 +176,8 @@ pub(crate) trait CrystalPostgreSQLStorage {
         metadata_call_id: u32,
         args: &JSONValue,
         extrinsic_is_successful: bool,
+        extrinsic_is_signed: bool,
+        is_successful: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<Vec<u8>>;
     async fn ingest_genesis_item(
@@ -972,18 +974,33 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
         metadata_call_id: u32,
         args: &JSONValue,
         extrinsic_is_successful: bool,
+        extrinsic_is_signed: bool,
+        is_successful: bool,
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<Vec<u8>> {
         let call_index: Vec<i16> = call_index.iter().map(|&x| x as i16).collect();
         let row: (Vec<u8>,) = sqlx::query_as(
             r#"
-            INSERT INTO call (block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_index, extrinsic_hash, parent_call_hash, call_path, call_index, metadata_call_id, extrinsic_is_successful, args)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            INSERT INTO call (
+                block_hash, block_number, block_timestamp, spec_version, block_status, extrinsic_index,
+                extrinsic_hash, parent_call_hash, call_path, call_index, metadata_call_id,
+                extrinsic_is_successful, extrinsic_is_signed, is_successful, args
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             ON CONFLICT (block_number, hash) DO UPDATE SET
-                block_timestamp = EXCLUDED.block_timestamp, spec_version = EXCLUDED.spec_version, block_status = EXCLUDED.block_status,
-                extrinsic_index = EXCLUDED.extrinsic_index, extrinsic_hash = EXCLUDED.extrinsic_hash,
-                parent_call_hash = EXCLUDED.parent_call_hash, call_path = EXCLUDED.call_path, call_index = EXCLUDED.call_index,
-                metadata_call_id = EXCLUDED.metadata_call_id, extrinsic_is_successful = EXCLUDED.extrinsic_is_successful, args = EXCLUDED.args
+                block_timestamp = EXCLUDED.block_timestamp,
+                spec_version = EXCLUDED.spec_version,
+                block_status = EXCLUDED.block_status,
+                extrinsic_index = EXCLUDED.extrinsic_index,
+                extrinsic_hash = EXCLUDED.extrinsic_hash,
+                parent_call_hash = EXCLUDED.parent_call_hash,
+                call_path = EXCLUDED.call_path,
+                call_index = EXCLUDED.call_index,
+                metadata_call_id = EXCLUDED.metadata_call_id,
+                extrinsic_is_successful = EXCLUDED.extrinsic_is_successful,
+                extrinsic_is_signed = EXCLUDED.extrinsic_is_signed,
+                is_successful = EXCLUDED.is_successful,
+                args = EXCLUDED.args
             RETURNING hash
             "#,
         )
@@ -999,6 +1016,8 @@ impl CrystalPostgreSQLStorage for PostgreSQLStorage {
             .bind(call_index)
             .bind(metadata_call_id as i32)
             .bind(extrinsic_is_successful)
+            .bind(extrinsic_is_signed)
+            .bind(is_successful)
             .bind(args)
             .fetch_one(&mut **tx)
             .await?;

@@ -3379,7 +3379,9 @@
           "palletName",
           "palletCallIndex",
           "palletCallName",
-          "extrinsicIsSuccessful"
+          "extrinsicIsSuccessful",
+          "extrinsicIsSigned",
+          "isSuccessful"
         ],
         "properties": {
           "args": {
@@ -3450,6 +3452,10 @@
             "example": 1,
             "minimum": 0
           },
+          "extrinsicIsSigned": {
+            "type": "boolean",
+            "description": "Whether the call's extrinsic was signed."
+          },
           "extrinsicIsSuccessful": {
             "type": "boolean",
             "description": "Whether the call's extrinsic was successful.\nNote: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call)."
@@ -3457,6 +3463,10 @@
           "hash": {
             "$ref": "#/components/schemas/Hash256Hex",
             "description": "Artificial call hash."
+          },
+          "isSuccessful": {
+            "type": "boolean",
+            "description": "Whether the call was successful."
           },
           "palletCallIndex": {
             "type": "integer",
@@ -3515,8 +3525,10 @@
           "callPath": "root",
           "extrinsicHash": "0x18acc73c8e38351bc5b266cffacf39944945dd66342dab8ce2f86f2c97b3006f",
           "extrinsicIndex": 0,
+          "extrinsicIsSigned": true,
           "extrinsicIsSuccessful": true,
           "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
+          "isSuccessful": true,
           "palletCallIndex": 0,
           "palletCallName": "TransferKeepAlive",
           "palletIndex": 1,
@@ -5317,8 +5329,10 @@
                       "callPath": "root",
                       "extrinsicHash": "0x18acc73c8e38351bc5b266cffacf39944945dd66342dab8ce2f86f2c97b3006f",
                       "extrinsicIndex": 0,
+                      "extrinsicIsSigned": true,
                       "extrinsicIsSuccessful": true,
                       "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
+                      "isSuccessful": true,
                       "palletCallIndex": 0,
                       "palletCallName": "TransferKeepAlive",
                       "palletIndex": 1,

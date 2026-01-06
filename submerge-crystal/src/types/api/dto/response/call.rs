@@ -63,6 +63,10 @@ pub struct CallDTO {
     /// Whether the call's extrinsic was successful.
     /// Note: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).
     pub extrinsic_is_successful: bool,
+    /// Whether the call's extrinsic was signed.
+    pub extrinsic_is_signed: bool,
+    /// Whether the call was successful.
+    pub is_successful: bool,
     /// Call arguments.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schema(schema_with = call_args_schema)]
@@ -95,6 +99,8 @@ impl From<&CallRow> for CallDTO {
             pallet_call_index: row.pallet_call_index as u32,
             pallet_call_name: row.pallet_call_name.clone(),
             extrinsic_is_successful: row.extrinsic_is_successful,
+            extrinsic_is_signed: row.extrinsic_is_signed,
+            is_successful: row.is_successful,
             args: row.args.clone(),
         }
     }

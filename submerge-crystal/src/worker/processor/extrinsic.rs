@@ -534,6 +534,7 @@ impl BlockProcessor {
                 block_status,
                 extrinsic,
                 extrinsic.is_successful,
+                extrinsic.signature.is_some(),
                 None,
                 "root",
                 &[0],
@@ -556,6 +557,7 @@ impl BlockProcessor {
         block_status: BlockStatus,
         extrinsic: &Extrinsic,
         extrinsic_is_successful: bool,
+        extrinsic_is_signed: bool,
         parent_call_hash: Option<&[u8]>,
         call_path: &str,
         call_index: &[u16],
@@ -588,6 +590,11 @@ impl BlockProcessor {
                             call.pallet_call_name,
                             call.pallet_call_index
                         ))?;
+                let is_successful = if call_index == [0] {
+                    extrinsic_is_successful
+                } else {
+                    false
+                };
                 let call_hash = self
                     .postgres
                     .ingest_call(
@@ -604,6 +611,8 @@ impl BlockProcessor {
                         pallet_call.id,
                         &call.args.clone().into(),
                         extrinsic_is_successful,
+                        extrinsic_is_signed,
+                        is_successful,
                         tx,
                     )
                     .await?;
@@ -615,6 +624,7 @@ impl BlockProcessor {
                     block_status,
                     extrinsic,
                     extrinsic_is_successful,
+                    extrinsic_is_signed,
                     Some(call_hash.as_slice()),
                     call_path,
                     call_index,
@@ -636,6 +646,7 @@ impl BlockProcessor {
                         block_status,
                         extrinsic,
                         extrinsic_is_successful,
+                        extrinsic_is_signed,
                         parent_call_hash,
                         &call_path,
                         call_index.as_slice(),
@@ -658,6 +669,7 @@ impl BlockProcessor {
                         block_status,
                         extrinsic,
                         extrinsic_is_successful,
+                        extrinsic_is_signed,
                         parent_call_hash,
                         &call_path,
                         call_index.as_slice(),

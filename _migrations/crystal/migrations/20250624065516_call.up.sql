@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS call
     call_index              SMALLINT[] NOT NULL,
     metadata_call_id        INTEGER NOT NULL,
     extrinsic_is_successful BOOLEAN NOT NULL,
+    extrinsic_is_signed     BOOLEAN NOT NULL,
+    is_successful           BOOLEAN NOT NULL, 
     args                    JSONB NOT NULL,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT call_pk PRIMARY KEY (block_number, hash),

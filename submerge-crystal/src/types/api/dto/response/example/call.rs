@@ -31,6 +31,8 @@ pub fn call_example() -> JSONValue {
         pallet_call_index: 0,
         pallet_call_name: "TransferKeepAlive".to_string(),
         extrinsic_is_successful: true,
+        extrinsic_is_signed: true,
+        is_successful: true,
         args: Some(serde_json::json!({
             "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011",
             "args": {
