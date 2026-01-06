@@ -590,10 +590,11 @@ impl BlockProcessor {
                             call.pallet_call_name,
                             call.pallet_call_index
                         ))?;
+                // TODO call success status identification for nested calls
                 let is_successful = if call_index == [0] {
                     extrinsic_is_successful
                 } else {
-                    false
+                    true
                 };
                 let call_hash = self
                     .postgres
