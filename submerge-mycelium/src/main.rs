@@ -1,10 +1,10 @@
-use submerge_crystal::api::v1::client::{GetBlocksRequest, SubmergeCrystalApiV1Client};
+use submerge_crystal::api::v1::client::{BlocksRequest, SubmergeCrystalApiV1Client};
 
 #[tokio::main]
 async fn main() {
     let client = SubmergeCrystalApiV1Client::new();
     let response = client
-        .get_blocks(GetBlocksRequest {
+        .blocks(BlocksRequest {
             ..Default::default()
         })
         .await

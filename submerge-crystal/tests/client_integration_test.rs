@@ -2,28 +2,27 @@ mod common;
 use common::get_api_client;
 
 use submerge_crystal::api::v1::client::{
-    GetBlocksByReferenceRequest, GetBlocksByReferenceRequestPath, GetBlocksByReferenceResponse,
-    GetBlocksRequest, GetBlocksRequestQuery, GetBlocksResponse, GetEventsRequest,
-    GetEventsRequestQuery, GetEventsResponse, GetExtrinsicsRequest, GetExtrinsicsRequestQuery,
-    GetExtrinsicsResponse, GetMetadataListRequest, GetMetadataListRequestQuery,
-    GetMetadataListResponse,
+    BlocksByReferenceRequest, BlocksByReferenceRequestPath, BlocksByReferenceResponse,
+    BlocksRequest, BlocksRequestQuery, BlocksResponse, EventsRequest, EventsRequestQuery,
+    EventsResponse, ExtrinsicsRequest, ExtrinsicsRequestQuery, ExtrinsicsResponse,
+    MetadataListRequest, MetadataListRequestQuery, MetadataListResponse,
 };
 
 #[tokio::test]
 async fn get_blocks_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
-    let request = GetBlocksRequest {
-        query: GetBlocksRequestQuery {
+    let request = BlocksRequest {
+        query: BlocksRequestQuery {
             page: Some(1),
             page_size: Some(1),
             ..Default::default()
         },
     };
 
-    let response = client.get_blocks(request).await?;
+    let response = client.blocks(request).await?;
 
-    if let GetBlocksResponse::Ok(data) = response {
+    if let BlocksResponse::Ok(data) = response {
         assert!(!data.data.is_empty(), "No blocks returned");
     } else {
         panic!("Unexpected response: {:?}", response);
@@ -36,18 +35,18 @@ async fn get_blocks_test() -> anyhow::Result<()> {
 async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
-    // Get the latest block to have a valid block number for the next request
-    let latest_block_request = GetBlocksRequest {
-        query: GetBlocksRequestQuery {
+    //  the latest block to have a valid block number for the next request
+    let latest_block_request = BlocksRequest {
+        query: BlocksRequestQuery {
             page: Some(1),
             page_size: Some(1),
             ..Default::default()
         },
     };
 
-    let latest_block_response = client.get_blocks(latest_block_request).await?;
+    let latest_block_response = client.blocks(latest_block_request).await?;
     let block_number = match latest_block_response {
-        GetBlocksResponse::Ok(data) => {
+        BlocksResponse::Ok(data) => {
             assert!(!data.data.is_empty(), "No blocks returned");
             data.data[0].number
         }
@@ -56,15 +55,15 @@ async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
         }
     };
 
-    let request = GetBlocksByReferenceRequest {
-        path: GetBlocksByReferenceRequestPath {
+    let request = BlocksByReferenceRequest {
+        path: BlocksByReferenceRequestPath {
             block_ref: block_number.to_string(),
         },
     };
 
-    let response = client.get_blocks_by_reference(request).await?;
+    let response = client.blocks_by_reference(request).await?;
 
-    if let GetBlocksByReferenceResponse::Ok(data) = response {
+    if let BlocksByReferenceResponse::Ok(data) = response {
         assert!(
             !data.is_empty(),
             "No block returned for number {}",
@@ -82,18 +81,18 @@ async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
 async fn get_events_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
-    let request = GetEventsRequest {
-        query: GetEventsRequestQuery {
+    let request = EventsRequest {
+        query: EventsRequestQuery {
             page: Some(1),
             page_size: Some(10),
             ..Default::default()
         },
     };
 
-    let response = client.get_events(request).await?;
+    let response = client.events(request).await?;
 
     match response {
-        GetEventsResponse::Ok(data) => {
+        EventsResponse::Ok(data) => {
             assert!(!data.data.is_empty(), "No events returned");
             assert!(data.data.len() <= 10);
         }
@@ -109,18 +108,18 @@ async fn get_events_test() -> anyhow::Result<()> {
 async fn get_extrinsics_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
-    let request = GetExtrinsicsRequest {
-        query: GetExtrinsicsRequestQuery {
+    let request = ExtrinsicsRequest {
+        query: ExtrinsicsRequestQuery {
             page: Some(1),
             page_size: Some(10),
             ..Default::default()
         },
     };
 
-    let response = client.get_extrinsics(request).await?;
+    let response = client.extrinsics(request).await?;
 
     match response {
-        GetExtrinsicsResponse::Ok(data) => {
+        ExtrinsicsResponse::Ok(data) => {
             assert!(!data.data.is_empty(), "No extrinsics returned");
             assert!(data.data.len() <= 10)
         }
@@ -137,8 +136,8 @@ async fn get_events_bad_page_size_fails() -> anyhow::Result<()> {
     let client = get_api_client();
 
     // page_size of 0 should be invalid per typical API behaviour
-    let request = GetEventsRequest {
-        query: GetEventsRequestQuery {
+    let request = EventsRequest {
+        query: EventsRequestQuery {
             page: Some(1),
             page_size: Some(0),
             ..Default::default()
@@ -146,7 +145,7 @@ async fn get_events_bad_page_size_fails() -> anyhow::Result<()> {
     };
 
     let err = client
-        .get_events(request)
+        .events(request)
         .await
         .expect_err("expected validation error");
 
@@ -159,28 +158,28 @@ async fn get_events_bad_page_size_fails() -> anyhow::Result<()> {
 async fn get_events_pagination_does_not_overlap() -> anyhow::Result<()> {
     let client = get_api_client();
 
-    let first_page_req = GetEventsRequest {
-        query: GetEventsRequestQuery {
+    let first_page_req = EventsRequest {
+        query: EventsRequestQuery {
             page: Some(1),
             page_size: Some(5),
             ..Default::default()
         },
     };
-    let second_page_req = GetEventsRequest {
-        query: GetEventsRequestQuery {
+    let second_page_req = EventsRequest {
+        query: EventsRequestQuery {
             page: Some(2),
             page_size: Some(5),
             ..Default::default()
         },
     };
 
-    let first_page = match client.get_events(first_page_req).await? {
-        GetEventsResponse::Ok(d) => d.data,
+    let first_page = match client.events(first_page_req).await? {
+        EventsResponse::Ok(d) => d.data,
         other => panic!("unexpected: {:?}", other),
     };
 
-    let second_page = match client.get_events(second_page_req).await? {
-        GetEventsResponse::Ok(d) => d.data,
+    let second_page = match client.events(second_page_req).await? {
+        EventsResponse::Ok(d) => d.data,
         other => panic!("unexpected: {:?}", other),
     };
 
@@ -203,8 +202,8 @@ async fn get_events_rejects_page_size_too_large() {
     let client = get_api_client();
 
     let err = client
-        .get_events(GetEventsRequest {
-            query: GetEventsRequestQuery {
+        .events(EventsRequest {
+            query: EventsRequestQuery {
                 page: Some(1),
                 page_size: Some(10_000),
                 ..Default::default()
@@ -223,8 +222,8 @@ async fn get_events_empty_page_is_ok() -> anyhow::Result<()> {
     let client = get_api_client();
 
     let response = client
-        .get_events(GetEventsRequest {
-            query: GetEventsRequestQuery {
+        .events(EventsRequest {
+            query: EventsRequestQuery {
                 page: Some(99999999), // likely empty
                 page_size: Some(10),
                 ..Default::default()
@@ -233,7 +232,7 @@ async fn get_events_empty_page_is_ok() -> anyhow::Result<()> {
         .await?;
 
     let data = match response {
-        GetEventsResponse::Ok(data) => data,
+        EventsResponse::Ok(data) => data,
         other => panic!("unexpected response: {:?}", other),
     };
 
@@ -253,8 +252,8 @@ async fn concurrent_requests() -> anyhow::Result<()> {
         let client = client.clone();
         tasks.spawn(async move {
             let response = client
-                .get_metadata_list(GetMetadataListRequest {
-                    query: GetMetadataListRequestQuery {
+                .metadata_list(MetadataListRequest {
+                    query: MetadataListRequestQuery {
                         page: Some(1),
                         page_size: Some(5),
                         ..Default::default()
@@ -264,7 +263,7 @@ async fn concurrent_requests() -> anyhow::Result<()> {
 
             // Match on the response enum
             let data = match response {
-                Ok(GetMetadataListResponse::Ok(data)) => data,
+                Ok(MetadataListResponse::Ok(data)) => data,
                 other => panic!("unexpected response variant: {:?}", other),
             };
 

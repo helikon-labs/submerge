@@ -25,6 +25,12 @@ jobs:
           postgres-version: 18
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Build Crystal admin app
+        run: |
+          cd submerge-crystal/admin
+          npm install
+          npm run build
+          cd ../..
       - name: Make the chainspec init script executable
         run: chmod +x ./_chainspecs/init.sh
       - name: Fetch chainspecs
