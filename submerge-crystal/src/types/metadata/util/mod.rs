@@ -4,10 +4,10 @@ use frame_metadata::{
 };
 use scale_info::PortableType;
 
-pub mod v14;
-pub mod v15;
+pub(crate) mod v14;
+pub(crate) mod v15;
 
-pub fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
+pub(crate) fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
     match &metadata {
         RuntimeMetadata::V8(_) => 8,
         RuntimeMetadata::V9(_) => 9,
@@ -22,14 +22,14 @@ pub fn get_metadata_version(metadata: &RuntimeMetadata) -> u32 {
     }
 }
 
-pub fn get_decode_different_string(value: &DecodeDifferentStr) -> String {
+pub(crate) fn get_decode_different_string(value: &DecodeDifferentStr) -> String {
     match value {
         DecodeDifferent::Encode(name) => name.to_string(),
         DecodeDifferent::Decoded(name) => name.clone(),
     }
 }
 
-pub fn get_extrinsic_signer_address_type(
+pub(crate) fn get_extrinsic_signer_address_type(
     metadata: &RuntimeMetadata,
 ) -> anyhow::Result<&PortableType> {
     match metadata {
@@ -42,7 +42,9 @@ pub fn get_extrinsic_signer_address_type(
     }
 }
 
-pub fn get_extrinsic_signature_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType> {
+pub(crate) fn get_extrinsic_signature_type(
+    metadata: &RuntimeMetadata,
+) -> anyhow::Result<&PortableType> {
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => v14::get_extrinsic_signature_type(metadata_v14),
         RuntimeMetadata::V15(metadata_v15) => v15::get_extrinsic_signature_type(metadata_v15),
@@ -53,7 +55,7 @@ pub fn get_extrinsic_signature_type(metadata: &RuntimeMetadata) -> anyhow::Resul
     }
 }
 
-pub fn get_extrinsic_extra_type(
+pub(crate) fn get_extrinsic_extra_type(
     metadata: &RuntimeMetadata,
 ) -> anyhow::Result<Option<&PortableType>> {
     match metadata {
@@ -82,7 +84,7 @@ pub fn get_extrinsic_extra_type(
     }
 }
 
-pub fn get_runtime_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType> {
+pub(crate) fn get_runtime_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&PortableType> {
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => {
             let extrinsic_type = v14::get_extrinsic_type(metadata_v14)?;
@@ -109,7 +111,7 @@ pub fn get_runtime_call_type(metadata: &RuntimeMetadata) -> anyhow::Result<&Port
     }
 }
 
-pub fn get_signed_extensions(metadata: &RuntimeMetadata) -> anyhow::Result<Vec<String>> {
+pub(crate) fn get_signed_extensions(metadata: &RuntimeMetadata) -> anyhow::Result<Vec<String>> {
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => Ok(metadata_v14
             .extrinsic
@@ -130,7 +132,9 @@ pub fn get_signed_extensions(metadata: &RuntimeMetadata) -> anyhow::Result<Vec<S
     }
 }
 
-pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Option<&PortableType>> {
+pub(crate) fn get_block_weight_type(
+    metadata: &RuntimeMetadata,
+) -> anyhow::Result<Option<&PortableType>> {
     match metadata {
         RuntimeMetadata::V14(metadata_v14) => {
             if let Some(pallet) = metadata_v14
@@ -184,7 +188,7 @@ pub fn get_block_weight_type(metadata: &RuntimeMetadata) -> anyhow::Result<Optio
     Ok(None)
 }
 
-pub fn get_pallet_storage_item_type_by_name<'a>(
+pub(crate) fn get_pallet_storage_item_type_by_name<'a>(
     metadata: &'a RuntimeMetadata,
     pallet_name: &'a str,
     pallet_storage_item_name: &'a str,
@@ -204,7 +208,7 @@ pub fn get_pallet_storage_item_type_by_name<'a>(
     Ok(maybe_type)
 }
 
-pub fn get_metadata_type_by_id(
+pub(crate) fn get_metadata_type_by_id(
     metadata: &RuntimeMetadata,
     type_id: u32,
 ) -> anyhow::Result<Option<&PortableType>> {

@@ -11,7 +11,7 @@ use crate::types::api::error::APIErrorBody;
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct BadRequest(pub APIErrorBody);
+pub(crate) struct BadRequest(pub APIErrorBody);
 
 /// Rate limit exceeded.
 #[derive(Serialize, ToResponse)]
@@ -23,7 +23,7 @@ pub struct BadRequest(pub APIErrorBody);
         ("Retry-After" = u32),
     ),
 )]
-pub struct TooManyRequests(pub APIErrorBody);
+pub(crate) struct TooManyRequests(pub APIErrorBody);
 
 /// Internal server error.
 #[derive(Serialize, ToResponse)]
@@ -33,7 +33,7 @@ pub struct TooManyRequests(pub APIErrorBody);
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct InternalServerError(pub APIErrorBody);
+pub(crate) struct InternalServerError(pub APIErrorBody);
 
 /// Item not found.
 #[derive(Serialize, ToResponse)]
@@ -43,4 +43,4 @@ pub struct InternalServerError(pub APIErrorBody);
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct NotFound(pub APIErrorBody);
+pub(crate) struct NotFound(pub APIErrorBody);

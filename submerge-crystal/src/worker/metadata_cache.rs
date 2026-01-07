@@ -23,7 +23,7 @@ static PARSED_METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<Metadata>>>> =
 static METADATA_CACHE: LazyLock<RwLock<LruCache<u32, Arc<RuntimeMetadata>>>> =
     LazyLock::new(|| RwLock::new(LruCache::new(METADATA_CACHE_SIZE)));
 
-pub async fn get_parsed_metadata(
+pub(crate) async fn get_parsed_metadata(
     block_hash: &[u8],
     spec_version: u32,
     postgres: &PostgreSQLStorage,
@@ -82,7 +82,7 @@ pub async fn get_parsed_metadata(
     Ok(parsed_metadata_arc)
 }
 
-pub async fn get_metadata(
+pub(crate) async fn get_metadata(
     block_hash: &[u8],
     spec_version: u32,
     postgres: &PostgreSQLStorage,

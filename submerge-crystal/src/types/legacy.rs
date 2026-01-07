@@ -6,7 +6,7 @@ use submerge_base::types::substrate::multi_address::MultiAddress;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegacyEventWrapper {
+pub(crate) struct LegacyEventWrapper {
     phase: JSONValue,
     pub event: LegacyEvent,
 }
@@ -29,7 +29,7 @@ impl LegacyEventWrapper {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegacyEventPhase {
+pub(crate) struct LegacyEventPhase {
     #[serde(rename = "type")]
     pub ty: String,
     pub value: JSONValue,
@@ -37,7 +37,7 @@ pub struct LegacyEventPhase {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegacyEvent {
+pub(crate) struct LegacyEvent {
     #[serde(rename = "method")]
     pub name: String,
     #[serde(rename = "section")]
@@ -49,7 +49,7 @@ pub struct LegacyEvent {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegacyExtrinsicWrapper {
+pub(crate) struct LegacyExtrinsicWrapper {
     pub is_signed: bool,
     #[serde(rename = "method")]
     pub call: LegacyCall,
@@ -62,7 +62,7 @@ pub struct LegacyExtrinsicWrapper {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegacyCall {
+pub(crate) struct LegacyCall {
     #[serde(rename = "method")]
     pub pallet_call_name: String,
     #[serde(rename = "section")]
@@ -71,13 +71,13 @@ pub struct LegacyCall {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum MultiaddressType {
+pub(crate) enum MultiaddressType {
     Id,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LegacyMultiaddress {
+pub(crate) struct LegacyMultiaddress {
     #[serde(rename = "type")]
     pub ty: MultiaddressType,
     pub value: String,

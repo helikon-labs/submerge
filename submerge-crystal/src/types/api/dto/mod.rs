@@ -1,3 +1,3 @@
-pub mod pagination;
-pub mod request;
-pub mod response;
+pub(crate) mod pagination;
+pub(crate) mod request;
+pub(crate) mod response;

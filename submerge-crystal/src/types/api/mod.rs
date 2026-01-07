@@ -1,2 +1,2 @@
-pub mod dto;
-pub mod error;
+pub(crate) mod dto;
+pub(crate) mod error;

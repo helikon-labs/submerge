@@ -15,14 +15,14 @@ use super::BlockProcessor;
 use crate::{
     persistence::CrystalPostgreSQLStorage,
     types::{
-        decode::{Value, ValueVisitor},
+        decode::ValueVisitor,
         legacy::LegacyCall,
         metadata::util::{
             get_extrinsic_extra_type, get_extrinsic_signature_type,
             get_extrinsic_signer_address_type, get_metadata_version, get_runtime_call_type,
             get_signed_extensions,
         },
-        BlockStatus, Call, Event, Extrinsic,
+        BlockStatus, Call, Event, Extrinsic, Value,
     },
     worker::metadata_cache::get_parsed_metadata,
 };
@@ -290,7 +290,7 @@ impl BlockProcessor {
         Ok(value)
     }
 
-    pub async fn convert_legacy_call(
+    pub(crate) async fn convert_legacy_call(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -394,7 +394,7 @@ impl BlockProcessor {
         })
     }
 
-    pub async fn get_extrinsics(
+    pub(crate) async fn get_extrinsics(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -467,7 +467,7 @@ impl BlockProcessor {
         Ok(raw_extrinsic_bytes)
     }
 
-    pub async fn get_extrinsics_from_trace(
+    pub(crate) async fn get_extrinsics_from_trace(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -503,7 +503,7 @@ impl BlockProcessor {
         Ok(extrinsics)
     }
 
-    pub async fn process_extrinsics(
+    pub(crate) async fn process_extrinsics(
         &self,
         block_hash: &[u8],
         block_header: &BlockHeader,
@@ -534,6 +534,7 @@ impl BlockProcessor {
                 block_status,
                 extrinsic,
                 extrinsic.is_successful,
+                extrinsic.signature.is_some(),
                 None,
                 "root",
                 &[0],
@@ -547,7 +548,7 @@ impl BlockProcessor {
 
     #[async_recursion]
     #[allow(clippy::too_many_arguments)]
-    pub async fn process_extrinsic_arg(
+    pub(crate) async fn process_extrinsic_arg(
         &self,
         block_hash: &[u8],
         block_number: u64,
@@ -556,6 +557,7 @@ impl BlockProcessor {
         block_status: BlockStatus,
         extrinsic: &Extrinsic,
         extrinsic_is_successful: bool,
+        extrinsic_is_signed: bool,
         parent_call_hash: Option<&[u8]>,
         call_path: &str,
         call_index: &[u16],
@@ -588,6 +590,12 @@ impl BlockProcessor {
                             call.pallet_call_name,
                             call.pallet_call_index
                         ))?;
+                // TODO call success status identification for nested calls
+                let is_successful = if call_index == [0] {
+                    extrinsic_is_successful
+                } else {
+                    true
+                };
                 let call_hash = self
                     .postgres
                     .ingest_call(
@@ -604,6 +612,8 @@ impl BlockProcessor {
                         pallet_call.id,
                         &call.args.clone().into(),
                         extrinsic_is_successful,
+                        extrinsic_is_signed,
+                        is_successful,
                         tx,
                     )
                     .await?;
@@ -615,6 +625,7 @@ impl BlockProcessor {
                     block_status,
                     extrinsic,
                     extrinsic_is_successful,
+                    extrinsic_is_signed,
                     Some(call_hash.as_slice()),
                     call_path,
                     call_index,
@@ -636,6 +647,7 @@ impl BlockProcessor {
                         block_status,
                         extrinsic,
                         extrinsic_is_successful,
+                        extrinsic_is_signed,
                         parent_call_hash,
                         &call_path,
                         call_index.as_slice(),
@@ -658,6 +670,7 @@ impl BlockProcessor {
                         block_status,
                         extrinsic,
                         extrinsic_is_successful,
+                        extrinsic_is_signed,
                         parent_call_hash,
                         &call_path,
                         call_index.as_slice(),

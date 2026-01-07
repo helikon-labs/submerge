@@ -19,25 +19,29 @@ use crate::types::metadata::util::{
     v15::get_metadata_type_by_id as get_metadata_type_by_id_v15,
 };
 
-pub mod util;
+pub(crate) mod util;
 
 #[derive(Clone, Debug, Default)]
-pub struct Metadata {
+pub(crate) struct Metadata {
     pub pallets: Vec<MetadataPallet>,
 }
 
 impl Metadata {
-    pub fn get_pallet_by_index(&self, index: u8) -> Option<&MetadataPallet> {
+    pub(crate) fn get_pallet_by_index(&self, index: u8) -> Option<&MetadataPallet> {
         self.pallets.iter().find(|pallet| pallet.index == index)
     }
 
-    pub fn get_pallet_by_name(&self, name: &str) -> Option<&MetadataPallet> {
+    pub(crate) fn get_pallet_by_name(&self, name: &str) -> Option<&MetadataPallet> {
         self.pallets
             .iter()
             .find(|pallet| pallet.name.eq_ignore_ascii_case(name))
     }
 
-    pub fn has_storage_item(&self, pallet_name: &str, pallet_storage_item_name: &str) -> bool {
+    pub(crate) fn has_storage_item(
+        &self,
+        pallet_name: &str,
+        pallet_storage_item_name: &str,
+    ) -> bool {
         self.get_pallet_by_name(pallet_name)
             .map(|pallet| pallet.get_storage_item_by_name(pallet_storage_item_name))
             .is_some()
@@ -45,7 +49,7 @@ impl Metadata {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataPallet {
+pub(crate) struct MetadataPallet {
     pub id: u32,
     pub index: u8,
     pub name: String,
@@ -57,27 +61,27 @@ pub struct MetadataPallet {
 }
 
 impl MetadataPallet {
-    pub fn get_event_by_index(&self, index: u8) -> Option<&MetadataEvent> {
+    pub(crate) fn get_event_by_index(&self, index: u8) -> Option<&MetadataEvent> {
         self.events.iter().find(|event| event.index == index)
     }
 
-    pub fn get_call_by_index(&self, index: u8) -> Option<&MetadataCall> {
+    pub(crate) fn get_call_by_index(&self, index: u8) -> Option<&MetadataCall> {
         self.calls.iter().find(|call| call.index == index)
     }
 
-    pub fn get_call_by_name(&self, name: &str) -> Option<&MetadataCall> {
+    pub(crate) fn get_call_by_name(&self, name: &str) -> Option<&MetadataCall> {
         self.calls
             .iter()
             .find(|call| call.name.eq_ignore_ascii_case(name))
     }
 
-    pub fn get_event_by_name(&self, name: &str) -> Option<&MetadataEvent> {
+    pub(crate) fn get_event_by_name(&self, name: &str) -> Option<&MetadataEvent> {
         self.events
             .iter()
             .find(|event| event.name.eq_ignore_ascii_case(name))
     }
 
-    pub fn get_storage_item_by_name(&self, name: &str) -> Option<&MetadataStorageItem> {
+    pub(crate) fn get_storage_item_by_name(&self, name: &str) -> Option<&MetadataStorageItem> {
         self.storage_items
             .iter()
             .find(|storage_item| storage_item.name.eq_ignore_ascii_case(name))
@@ -85,7 +89,7 @@ impl MetadataPallet {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataEvent {
+pub(crate) struct MetadataEvent {
     pub id: u32,
     pub index: u8,
     pub name: String,
@@ -93,7 +97,7 @@ pub struct MetadataEvent {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataConstant {
+pub(crate) struct MetadataConstant {
     pub id: u32,
     pub index: u8,
     pub name: String,
@@ -105,7 +109,7 @@ pub struct MetadataConstant {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataCall {
+pub(crate) struct MetadataCall {
     pub id: u32,
     pub index: u8,
     pub name: String,
@@ -113,7 +117,7 @@ pub struct MetadataCall {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataStorageItem {
+pub(crate) struct MetadataStorageItem {
     pub id: u32,
     pub index: u8,
     pub name: String,
@@ -122,7 +126,7 @@ pub struct MetadataStorageItem {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MetadataError {
+pub(crate) struct MetadataError {
     pub id: u32,
     pub index: u8,
     pub name: String,

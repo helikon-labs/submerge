@@ -13,9 +13,9 @@ use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
 use uuid::Uuid as UUID;
 
-pub mod api;
+pub(crate) mod api;
+pub use api::docs::APIDoc;
 pub mod args;
-pub mod metadata_cache;
 mod metrics;
 mod persistence;
 mod types;

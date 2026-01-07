@@ -24,12 +24,12 @@ mod subscription;
 const TRANSACTION_LEVEL_KEY: &[u8] = b":transaction_level:";
 
 #[derive(Error, Debug)]
-pub enum WorkerError {
+pub(crate) enum WorkerError {
     #[error("Start block number {0} should be less than or equal to end block number {1}.")]
     InvalidFinalizedRange(u64, u64),
 }
 
-pub enum WorkerType {
+pub(crate) enum WorkerType {
     GenesisProcessor(Chainspec),
     ProcessFinalizedRange {
         maybe_start_block_number: Option<u64>,
@@ -42,7 +42,7 @@ pub enum WorkerType {
 }
 
 #[derive(Clone)]
-pub struct WorkerConfig {
+pub(crate) struct WorkerConfig {
     pub chain_name: String,
     pub postgres: Arc<PostgreSQLStorage>,
     pub rpc_config: RPCConfig,
@@ -54,7 +54,7 @@ pub struct WorkerConfig {
 
 #[allow(dead_code)]
 #[derive(Clone, Default)]
-pub enum WorkerStatus {
+pub(crate) enum WorkerStatus {
     #[default]
     Idle,
     Running {
@@ -80,7 +80,7 @@ impl WorkerStatus {
     }
 }
 
-pub struct Worker {
+pub(crate) struct Worker {
     chain_name: String,
     id: UUID,
     ty: WorkerType,
@@ -105,7 +105,7 @@ impl Worker {
         *self.status.write().await = state;
     }
 
-    pub async fn get_status(&self) -> WorkerStatus {
+    pub(crate) async fn get_status(&self) -> WorkerStatus {
         self.status.read().await.clone()
     }
 
@@ -278,7 +278,7 @@ impl Worker {
         Ok(())
     }
 
-    pub async fn start_failable(&self) -> anyhow::Result<()> {
+    pub(crate) async fn start_failable(&self) -> anyhow::Result<()> {
         tracing::info!("Start failable worker {}.", self.id);
         match &self.ty {
             WorkerType::GenesisProcessor(chainspec) => self
@@ -289,7 +289,7 @@ impl Worker {
         }
     }
 
-    pub async fn start(&self) {
+    pub(crate) async fn start(&self) {
         tracing::info!("Start worker {}.", self.id);
         if let Err(error) = self.check_rpc_compatibility().await {
             tracing::error!("{error}");
@@ -379,18 +379,18 @@ impl Worker {
 }
 
 #[derive(Default)]
-pub struct WorkerManager {
+pub(crate) struct WorkerManager {
     workers: RwLock<HashMap<UUID, Arc<Worker>>>,
 }
 
 #[allow(dead_code)]
 impl WorkerManager {
-    pub async fn get_ids(&self) -> Vec<UUID> {
+    pub(crate) async fn get_ids(&self) -> Vec<UUID> {
         let map = self.workers.read().await;
         map.keys().copied().collect()
     }
 
-    pub async fn spawn(&self, ty: WorkerType, config: WorkerConfig) {
+    pub(crate) async fn spawn(&self, ty: WorkerType, config: WorkerConfig) {
         let worker_id = UUID::new_v4();
         let worker = Arc::new(Worker::new(
             config.chain_name.clone(),
@@ -405,7 +405,7 @@ impl WorkerManager {
         self.workers.write().await.insert(worker_id, worker);
     }
 
-    pub async fn cancel(&self, id: UUID) -> anyhow::Result<()> {
+    pub(crate) async fn cancel(&self, id: UUID) -> anyhow::Result<()> {
         let workers = self.workers.read().await;
         let worker = workers
             .get(&id)
@@ -417,7 +417,7 @@ impl WorkerManager {
         Ok(())
     }
 
-    pub async fn remove_terminated(&self) -> Vec<UUID> {
+    pub(crate) async fn remove_terminated(&self) -> Vec<UUID> {
         let ids = self.get_ids().await;
         let mut terminated_ids = Vec::new();
         for id in ids {
@@ -437,7 +437,7 @@ impl WorkerManager {
         removed_ids
     }
 
-    pub async fn cancel_all(&self) {
+    pub(crate) async fn cancel_all(&self) {
         let workers = self.workers.read().await;
         for worker in workers.values() {
             if worker.get_status().await.is_running() {
@@ -447,7 +447,7 @@ impl WorkerManager {
         }
     }
 
-    pub async fn get_status(&self, id: UUID) -> Option<WorkerStatus> {
+    pub(crate) async fn get_status(&self, id: UUID) -> Option<WorkerStatus> {
         let workers = self.workers.read().await;
         if let Some(worker) = workers.get(&id) {
             Some(worker.get_status().await)

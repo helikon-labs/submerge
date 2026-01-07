@@ -7,7 +7,7 @@ use utoipa::IntoParams;
 /// Query parameters for fetching and filtering extrinsics.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct ExtrinsicQuery {
+pub(crate) struct ExtrinsicQuery {
     /// Extrinsic list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -85,7 +85,7 @@ impl ExtrinsicQuery {
 /// Query parameters for fetching and filtering extrinsics within a block.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct BlockExtrinsicQuery {
+pub(crate) struct BlockExtrinsicQuery {
     /// Block call list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -116,7 +116,7 @@ pub struct BlockExtrinsicQuery {
 }
 
 impl BlockExtrinsicQuery {
-    pub fn get_signer_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
+    pub(crate) fn get_signer_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
         let signer = if let Some(signer) = &self.signer {
             Some(MultiAddress::from_str(signer)?)
         } else {

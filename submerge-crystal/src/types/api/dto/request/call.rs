@@ -4,7 +4,7 @@ use utoipa::IntoParams;
 /// Query parameters for fetching and filtering calls.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct CallQuery {
+pub(crate) struct CallQuery {
     /// Call list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -69,7 +69,7 @@ pub struct CallQuery {
 /// Query parameters for fetching and filtering calls within a block.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct BlockCallQuery {
+pub(crate) struct BlockCallQuery {
     /// Block call list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -106,7 +106,7 @@ pub struct BlockCallQuery {
 /// Query parameter for definining whether the endpoint should include call arguments
 /// within the returned call(s).
 #[derive(Debug, Deserialize, IntoParams)]
-pub struct IncludeCallArgsParam {
+pub(crate) struct IncludeCallArgsParam {
     /// Whether to include call arguments in the call(s) in the response.
     /// Default is `false`. Setting this to `true` increases the response size considerably.
     /// Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.

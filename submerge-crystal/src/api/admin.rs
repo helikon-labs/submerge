@@ -5,7 +5,7 @@ use axum_embed::ServeEmbed;
 #[folder = "./admin/dist"]
 struct Admin;
 
-pub fn admin_router() -> Router {
+pub(crate) fn admin_router() -> Router {
     let path = "/admin".to_string();
     let index = "index.html".to_string();
     let assets = ServeEmbed::<Admin>::with_parameters(

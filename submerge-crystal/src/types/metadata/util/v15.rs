@@ -1,14 +1,14 @@
 use frame_metadata::v15::{PalletMetadata as PalletMetadataV15, RuntimeMetadataV15};
 use scale_info::{form::PortableForm, PortableType, Variant};
 
-pub fn get_metadata_type_by_id(
+pub(crate) fn get_metadata_type_by_id(
     metadata_v15: &RuntimeMetadataV15,
     type_id: u32,
 ) -> Option<&PortableType> {
     metadata_v15.types.types.iter().find(|ty| ty.id == type_id)
 }
 
-pub fn get_pallet_metadata(
+pub(crate) fn get_pallet_metadata(
     metadata_v15: &RuntimeMetadataV15,
     pallet_index: u8,
 ) -> Option<&PalletMetadataV15<PortableForm>> {
@@ -30,7 +30,7 @@ fn get_pallet_events_type<'a>(
     }
 }
 
-pub fn get_event_variant<'a>(
+pub(crate) fn get_event_variant<'a>(
     metadata_v15: &'a RuntimeMetadataV15,
     pallet_metadata: &PalletMetadataV15<PortableForm>,
     event_index: u8,
@@ -54,7 +54,7 @@ pub fn get_event_variant<'a>(
     }
 }
 
-pub fn get_extrinsic_signer_address_type(
+pub(crate) fn get_extrinsic_signer_address_type(
     metadata_v15: &RuntimeMetadataV15,
 ) -> anyhow::Result<&PortableType> {
     get_metadata_type_by_id(metadata_v15, metadata_v15.extrinsic.address_ty.id).ok_or(
@@ -62,7 +62,7 @@ pub fn get_extrinsic_signer_address_type(
     )
 }
 
-pub fn get_extrinsic_signature_type(
+pub(crate) fn get_extrinsic_signature_type(
     metadata_v15: &RuntimeMetadataV15,
 ) -> anyhow::Result<&PortableType> {
     get_metadata_type_by_id(metadata_v15, metadata_v15.extrinsic.signature_ty.id).ok_or(
@@ -70,7 +70,7 @@ pub fn get_extrinsic_signature_type(
     )
 }
 
-pub fn get_storage_item_type_by_name<'a>(
+pub(crate) fn get_storage_item_type_by_name<'a>(
     metadata_v15: &'a RuntimeMetadataV15,
     pallet_name: &'a str,
     pallet_storage_item_name: &'a str,

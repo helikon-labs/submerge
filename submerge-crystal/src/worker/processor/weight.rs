@@ -42,7 +42,7 @@ impl BlockProcessor {
         }
     }
 
-    pub async fn get_block_weight_from_rpc(
+    pub(crate) async fn get_block_weight_from_rpc(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -63,7 +63,7 @@ impl BlockProcessor {
         }
     }
 
-    pub async fn get_block_weight_from_trace(
+    pub(crate) async fn get_block_weight_from_trace(
         &self,
         block_hash: &[u8],
         spec_version: u32,

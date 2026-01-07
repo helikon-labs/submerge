@@ -18,7 +18,7 @@ use crate::types::{
     as = Call,
     example = call_example,
 )]
-pub struct CallDTO {
+pub(crate) struct CallDTO {
     /// Artificial call hash.
     pub hash: Hash256Hex,
     /// Hash of the call's block.
@@ -63,6 +63,10 @@ pub struct CallDTO {
     /// Whether the call's extrinsic was successful.
     /// Note: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).
     pub extrinsic_is_successful: bool,
+    /// Whether the call's extrinsic was signed.
+    pub extrinsic_is_signed: bool,
+    /// Whether the call was successful.
+    pub is_successful: bool,
     /// Call arguments.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schema(schema_with = call_args_schema)]
@@ -95,6 +99,8 @@ impl From<&CallRow> for CallDTO {
             pallet_call_index: row.pallet_call_index as u32,
             pallet_call_name: row.pallet_call_name.clone(),
             extrinsic_is_successful: row.extrinsic_is_successful,
+            extrinsic_is_signed: row.extrinsic_is_signed,
+            is_successful: row.is_successful,
             args: row.args.clone(),
         }
     }
@@ -108,7 +114,7 @@ impl From<&CallRow> for CallDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedCallList {
+pub(crate) struct PaginatedCallList {
     #[schema(example = json!([call_example()]))]
     pub data: Vec<CallDTO>,
     pub pagination: PaginationData,
@@ -117,4 +123,4 @@ pub struct PaginatedCallList {
 /// Call arguments wrapper.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(value_type = Object)]
-pub struct CallArgs(pub JSONValue);
+pub(crate) struct CallArgs(pub JSONValue);

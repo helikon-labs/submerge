@@ -1,5 +1,5 @@
-pub mod block;
-pub mod call;
-pub mod event;
-pub mod extrinsic;
-pub mod metadata;
+pub(crate) mod block;
+pub(crate) mod call;
+pub(crate) mod event;
+pub(crate) mod extrinsic;
+pub(crate) mod metadata;

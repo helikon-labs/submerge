@@ -1,20 +1,9 @@
-use super::Call;
+use super::{Call, Value};
 use convert_case::{Case, Casing};
 use rustc_hash::FxHashMap as HashMap;
 use scale_info::PortableRegistry;
-use serde::Serialize;
 use serde_json::Map as JsonMap;
 use serde_json::Value as JSONValue;
-
-#[derive(Clone, Debug, Serialize)]
-pub enum Value {
-    Null,
-    Call(Box<Call>),
-    Bool(bool),
-    String(String),
-    Array(Vec<Value>),
-    Object(HashMap<String, Box<Value>>),
-}
 
 impl From<Value> for JSONValue {
     fn from(value: Value) -> Self {
@@ -58,7 +47,7 @@ impl From<Value> for JSONValue {
     }
 }
 
-pub struct ValueVisitor {
+pub(crate) struct ValueVisitor {
     call_type_id: u32,
     call_pallet: Option<(u8, String)>,
 }

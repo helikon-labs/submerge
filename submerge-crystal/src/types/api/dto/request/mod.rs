@@ -1,7 +1,6 @@
-pub mod block;
-pub mod call;
-pub mod event;
-pub mod extrinsic;
-pub mod genesis;
-pub mod metadata;
-pub mod trace;
+pub(crate) mod block;
+pub(crate) mod call;
+pub(crate) mod event;
+pub(crate) mod extrinsic;
+pub(crate) mod genesis;
+pub(crate) mod trace;

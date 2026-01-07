@@ -1,4 +1,4 @@
-pub fn event_args_schema() -> utoipa::openapi::Object {
+pub(crate) fn event_args_schema() -> utoipa::openapi::Object {
     use utoipa::openapi::ObjectBuilder;
 
     ObjectBuilder::new()

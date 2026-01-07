@@ -10,7 +10,7 @@ use serde_json::Value as JSONValue;
 use std::time::Duration;
 
 #[derive(Debug)]
-pub struct ClientConfig {
+pub(crate) struct ClientConfig {
     pub timeout: Duration,
     pub _retries: u32,
 }
@@ -25,7 +25,7 @@ impl Default for ClientConfig {
 }
 
 #[derive(Clone)]
-pub struct LegacyDecodeAPIClient {
+pub(crate) struct LegacyDecodeAPIClient {
     url: String,
     http_client: reqwest::Client,
 }
@@ -54,11 +54,11 @@ struct DecodeRequest {
 }
 
 impl LegacyDecodeAPIClient {
-    pub fn new(url: &str) -> Result<Self> {
+    pub(crate) fn new(url: &str) -> Result<Self> {
         Self::new_with_config(url, ClientConfig::default())
     }
 
-    pub fn new_with_config(url: &str, config: ClientConfig) -> Result<Self> {
+    pub(crate) fn new_with_config(url: &str, config: ClientConfig) -> Result<Self> {
         if url.is_empty() {
             anyhow::bail!("URL cannot be empty");
         }
@@ -128,7 +128,7 @@ impl LegacyDecodeAPIClient {
         }
     }
 
-    pub async fn decode_extrinsic(
+    pub(crate) async fn decode_extrinsic(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -156,7 +156,7 @@ impl LegacyDecodeAPIClient {
         })
     }
 
-    pub async fn decode_event(
+    pub(crate) async fn decode_event(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -168,7 +168,7 @@ impl LegacyDecodeAPIClient {
             .context("Failed to decode event")
     }
 
-    pub async fn decode_events(
+    pub(crate) async fn decode_events(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -180,7 +180,7 @@ impl LegacyDecodeAPIClient {
             .context("Failed to decode events")
     }
 
-    pub async fn decode_block_weight(
+    pub(crate) async fn decode_block_weight(
         &self,
         block_hash: &[u8],
         spec_version: u32,
@@ -192,7 +192,7 @@ impl LegacyDecodeAPIClient {
             .context("Failed to decode event")
     }
 
-    pub async fn decode_type(
+    pub(crate) async fn decode_type(
         &self,
         block_hash: &[u8],
         spec_version: u32,

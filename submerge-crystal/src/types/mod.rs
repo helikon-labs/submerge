@@ -1,19 +1,29 @@
 use std::fmt::{Display, Formatter};
 
-use decode::Value;
 use frame_system::Phase;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use submerge_base::types::substrate::signature::Signature;
 use utoipa::ToSchema;
 
 pub(crate) mod api;
-pub mod decode;
-pub mod legacy;
-pub mod metadata;
-pub mod persistence;
+pub(crate) mod decode;
+pub(crate) mod legacy;
+pub(crate) mod metadata;
+pub(crate) mod persistence;
 
-pub struct GenesisItem {
+#[derive(Clone, Debug, Serialize)]
+pub(crate) enum Value {
+    Null,
+    Call(Box<Call>),
+    Bool(bool),
+    String(String),
+    Array(Vec<Value>),
+    Object(HashMap<String, Box<Value>>),
+}
+
+pub(crate) struct GenesisItem {
     pub key_prefix: Vec<u8>,
     pub key_params: Option<Vec<u8>>,
     pub value: Vec<u8>,
@@ -22,7 +32,7 @@ pub struct GenesisItem {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Call {
+pub(crate) struct Call {
     pub pallet_index: u8,
     pub pallet_name: String,
     pub pallet_call_index: u8,
@@ -31,7 +41,7 @@ pub struct Call {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Extrinsic {
+pub(crate) struct Extrinsic {
     pub index: u32,
     pub trace_index: Option<u32>,
     pub hash: [u8; 32],
@@ -42,7 +52,7 @@ pub struct Extrinsic {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Event {
+pub(crate) struct Event {
     pub trace_index: Option<u32>,
     pub pallet_index: u8,
     pub pallet_name: String,
@@ -61,7 +71,7 @@ pub struct Event {
 #[sqlx(type_name = "BLOCK_STATUS", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 #[schema(example = "finalized")]
-pub enum BlockStatus {
+pub(crate) enum BlockStatus {
     Proposed,
     Pruned,
     Finalized,

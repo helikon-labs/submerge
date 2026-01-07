@@ -22,7 +22,7 @@ use crate::types::{persistence::BlockRow, BlockStatus};
     as = Block,
     example = block_example,
 )]
-pub struct BlockDTO {
+pub(crate) struct BlockDTO {
     /// Block hash (Blake2 256-bit).
     pub hash: Hash256Hex,
     /// Parent block hash.
@@ -98,7 +98,7 @@ impl TryFrom<&BlockRow> for BlockDTO {
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct BlockList(pub Vec<BlockDTO>);
+pub(crate) struct BlockList(pub Vec<BlockDTO>);
 
 #[derive(Debug, Serialize, ToResponse, ToSchema)]
 #[response(
@@ -108,7 +108,7 @@ pub struct BlockList(pub Vec<BlockDTO>);
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub struct PaginatedBlockList {
+pub(crate) struct PaginatedBlockList {
     #[schema(example = json!([block_example()]))]
     pub data: Vec<BlockDTO>,
     pub pagination: PaginationData,

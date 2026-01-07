@@ -7,14 +7,14 @@ use super::hex::{AccountIdHex, Address20Hex, Address32Hex, HexString};
 /// Multi-address 32-byte account id type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub enum MultiAddressAccountIdType {
+pub(crate) enum MultiAddressAccountIdType {
     AccountId,
 }
 
 /// 32-byte account id.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiAddressAccountId)]
-pub struct MultiAddressAccountIdDTO {
+pub(crate) struct MultiAddressAccountIdDTO {
     /// Must be `accountId`.
     #[serde(rename = "type")]
     pub r#type: MultiAddressAccountIdType,
@@ -26,14 +26,14 @@ pub struct MultiAddressAccountIdDTO {
 /// Multi-address account index type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub enum MultiAddressIndexType {
+pub(crate) enum MultiAddressIndexType {
     Index,
 }
 
 /// Account index.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiAddressAccountIndex)]
-pub struct MultiAddressIndexDTO {
+pub(crate) struct MultiAddressIndexDTO {
     /// Must be `index`.
     #[serde(rename = "type")]
     pub r#type: MultiAddressIndexType,
@@ -46,14 +46,14 @@ pub struct MultiAddressIndexDTO {
 /// Multi-address raw account address type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub enum MultiAddressRawType {
+pub(crate) enum MultiAddressRawType {
     Raw,
 }
 
 /// Raw account address.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiAddressRaw)]
-pub struct MultiAddressRawDTO {
+pub(crate) struct MultiAddressRawDTO {
     /// Must be `raw`.
     #[serde(rename = "type")]
     pub r#type: MultiAddressRawType,
@@ -63,14 +63,14 @@ pub struct MultiAddressRawDTO {
 /// Multi-address 20-byte address type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub enum MultiAddress20Type {
+pub(crate) enum MultiAddress20Type {
     Address20,
 }
 
 /// 20-byte address.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiAddress20)]
-pub struct MultiAddress20DTO {
+pub(crate) struct MultiAddress20DTO {
     /// Must be `address20`.
     #[serde(rename = "type")]
     pub r#type: MultiAddress20Type,
@@ -80,14 +80,14 @@ pub struct MultiAddress20DTO {
 /// Multi-address 32-byte address type.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub enum MultiAddress32Type {
+pub(crate) enum MultiAddress32Type {
     Address32,
 }
 
 /// 32-byte address.
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(as = MultiAddress32)]
-pub struct MultiAddress32DTO {
+pub(crate) struct MultiAddress32DTO {
     /// Must be `address32`.
     #[serde(rename = "type")]
     pub r#type: MultiAddress32Type,
@@ -112,7 +112,7 @@ pub struct MultiAddress32DTO {
         "value": "0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a",
     })
 )]
-pub enum MultiAddressDTO {
+pub(crate) enum MultiAddressDTO {
     AccountId(MultiAddressAccountIdDTO),
     Index(MultiAddressIndexDTO),
     Raw(MultiAddressRawDTO),

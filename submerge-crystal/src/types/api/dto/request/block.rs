@@ -6,7 +6,7 @@ use utoipa::IntoParams;
 
 use crate::types::BlockStatus;
 
-pub enum BlockReference {
+pub(crate) enum BlockReference {
     Hash(Vec<u8>),
     Number(u64),
 }
@@ -28,7 +28,7 @@ impl TryFrom<&str> for BlockReference {
 /// Query parameters for fetching and filtering blocks.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct BlockQuery {
+pub(crate) struct BlockQuery {
     /// Block list page number to retrieve. 1-indexed.
     #[param(
         required = false,
@@ -93,7 +93,7 @@ pub struct BlockQuery {
 }
 
 impl BlockQuery {
-    pub fn get_author_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
+    pub(crate) fn get_author_multi_address(&self) -> anyhow::Result<Option<MultiAddress>> {
         let author = if let Some(author) = &self.author {
             Some(MultiAddress::from_str(author)?)
         } else {

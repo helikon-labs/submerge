@@ -1,4 +1,4 @@
-pub fn metadata_constant_value_schema() -> utoipa::openapi::Object {
+pub(crate) fn metadata_constant_value_schema() -> utoipa::openapi::Object {
     use utoipa::openapi::ObjectBuilder;
 
     ObjectBuilder::new()

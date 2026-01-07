@@ -5,7 +5,7 @@ use crate::types::{
     BlockStatus,
 };
 
-pub fn call_example() -> JSONValue {
+pub(crate) fn call_example() -> JSONValue {
     let call = CallDTO {
         hash: Hash256Hex(
             "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca".to_string(),
@@ -31,6 +31,8 @@ pub fn call_example() -> JSONValue {
         pallet_call_index: 0,
         pallet_call_name: "TransferKeepAlive".to_string(),
         extrinsic_is_successful: true,
+        extrinsic_is_signed: true,
+        is_successful: true,
         args: Some(serde_json::json!({
             "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011",
             "args": {

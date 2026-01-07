@@ -4,7 +4,7 @@ use utoipa::IntoParams;
 /// Query parameters for fetching and filtering extrinsics.
 #[derive(Debug, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
-pub struct GenesisRecordQuery {
+pub(crate) struct GenesisRecordQuery {
     /// Genesis record list page number to retrieve. 1-indexed.
     #[param(
         required = false,

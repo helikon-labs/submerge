@@ -5,7 +5,7 @@ use crate::types::{
     BlockStatus,
 };
 
-pub fn event_example() -> JSONValue {
+pub(crate) fn event_example() -> JSONValue {
     let event = EventDTO {
         hash: Hash256Hex(
             "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc".to_string(),

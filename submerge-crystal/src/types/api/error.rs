@@ -12,14 +12,14 @@ use utoipa::ToSchema;
 /// Generic error type.
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[schema(as = Error)]
-pub struct APIErrorBody {
+pub(crate) struct APIErrorBody {
     /// Error message.
     #[schema(format = "text", example = "Error message.")]
     pub message: String,
 }
 
 #[derive(Clone, Debug, ToSchema)]
-pub enum APIError {
+pub(crate) enum APIError {
     NotFound,
     SerializationError,
     BadRequest(String),

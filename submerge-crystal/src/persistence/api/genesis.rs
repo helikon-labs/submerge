@@ -2,7 +2,7 @@ use sqlx::FromRow;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
 #[derive(Clone, Debug, FromRow)]
-pub struct GenesisRecordRow {
+pub(crate) struct GenesisRecordRow {
     #[allow(dead_code)]
     pub id: i32,
     pub key_prefix: Vec<u8>,

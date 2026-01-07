@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Deserialize, ToSchema, IntoParams)]
-pub struct PaginationQuery {
+pub(crate) struct PaginationQuery {
     /// Page number to retrieve. 1-indexed.
     #[param(required = false, nullable = false, example = 1)]
     pub page: Option<u32>,
@@ -19,7 +19,7 @@ pub struct PaginationQuery {
     "pageSize": 1,
     "total": 324,
 }))]
-pub struct PaginationData {
+pub(crate) struct PaginationData {
     /// Current page number. 1-indexed.
     #[schema(minimum = 1, example = 1)]
     pub page: u32,
