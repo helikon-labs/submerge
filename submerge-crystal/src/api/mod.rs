@@ -54,7 +54,7 @@ use tower_http::cors::{Any, CorsLayer};
 mod admin;
 pub mod docs;
 pub(crate) mod legacy;
-pub(crate) mod v1;
+pub mod v1;
 
 const DEFAULT_PAGE: u32 = 1;
 const DEFAULT_PAGE_SIZE: u32 = 25;
