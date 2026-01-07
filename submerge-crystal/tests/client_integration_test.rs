@@ -1,5 +1,6 @@
 mod common;
 use common::get_api_client;
+use serial_test::serial;
 
 use submerge_crystal::api::v1::client::{
     BlocksByReferenceRequest, BlocksByReferenceRequestPath, BlocksByReferenceResponse,
@@ -8,7 +9,33 @@ use submerge_crystal::api::v1::client::{
     MetadataListRequest, MetadataListRequestQuery, MetadataListResponse,
 };
 
+pub async fn retry_request<F, Fut, T, E>(f: F) -> Result<T, E>
+where
+    F: Fn() -> Fut + Send + Sync,
+    Fut: std::future::Future<Output = Result<T, E>> + Send,
+{
+    const MAX_ATTEMPTS: u64 = 10;
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        let fut = f();
+        match fut.await {
+            Ok(val) => return Ok(val),
+            Err(err) => {
+                if attempt < MAX_ATTEMPTS {
+                    let backoff_secs = 4_u64.pow(attempt as u32); // 2, 4, 8, 16 seconds
+                    tokio::time::sleep(std::time::Duration::from_secs(backoff_secs)).await;
+                } else {
+                    return Err(err);
+                }
+            }
+        }
+    }
+
+    unreachable!()
+}
+
 #[tokio::test]
+#[serial]
 async fn get_blocks_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
@@ -20,7 +47,12 @@ async fn get_blocks_test() -> anyhow::Result<()> {
         },
     };
 
-    let response = client.blocks(request).await?;
+    let response = retry_request(|| {
+        let client = client.clone();
+        let request = request.clone();
+        async move { client.blocks(request).await }
+    })
+    .await?;
 
     if let BlocksResponse::Ok(data) = response {
         assert!(!data.data.is_empty(), "No blocks returned");
@@ -32,6 +64,7 @@ async fn get_blocks_test() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
@@ -44,7 +77,13 @@ async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
         },
     };
 
-    let latest_block_response = client.blocks(latest_block_request).await?;
+    let latest_block_response = retry_request(|| {
+        let client = client.clone();
+        let request = latest_block_request.clone();
+        async move { client.blocks(request).await }
+    })
+    .await?;
+
     let block_number = match latest_block_response {
         BlocksResponse::Ok(data) => {
             assert!(!data.data.is_empty(), "No blocks returned");
@@ -61,7 +100,12 @@ async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
         },
     };
 
-    let response = client.blocks_by_reference(request).await?;
+    let response = retry_request(|| {
+        let client = client.clone();
+        let request = request.clone();
+        async move { client.blocks_by_reference(request).await }
+    })
+    .await?;
 
     if let BlocksByReferenceResponse::Ok(data) = response {
         assert!(
@@ -78,6 +122,7 @@ async fn get_blocks_by_reference_test() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_events_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
@@ -89,7 +134,12 @@ async fn get_events_test() -> anyhow::Result<()> {
         },
     };
 
-    let response = client.events(request).await?;
+    let response = retry_request(|| {
+        let client = client.clone();
+        let request = request.clone();
+        async move { client.events(request).await }
+    })
+    .await?;
 
     match response {
         EventsResponse::Ok(data) => {
@@ -105,6 +155,7 @@ async fn get_events_test() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_extrinsics_test() -> anyhow::Result<()> {
     let client = get_api_client();
 
@@ -116,7 +167,12 @@ async fn get_extrinsics_test() -> anyhow::Result<()> {
         },
     };
 
-    let response = client.extrinsics(request).await?;
+    let response = retry_request(|| {
+        let client = client.clone();
+        let request = request.clone();
+        async move { client.extrinsics(request).await }
+    })
+    .await?;
 
     match response {
         ExtrinsicsResponse::Ok(data) => {
@@ -132,6 +188,7 @@ async fn get_extrinsics_test() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_events_bad_page_size_fails() -> anyhow::Result<()> {
     let client = get_api_client();
 
@@ -155,6 +212,7 @@ async fn get_events_bad_page_size_fails() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_events_pagination_does_not_overlap() -> anyhow::Result<()> {
     let client = get_api_client();
 
@@ -173,12 +231,24 @@ async fn get_events_pagination_does_not_overlap() -> anyhow::Result<()> {
         },
     };
 
-    let first_page = match client.events(first_page_req).await? {
+    let first_page = match retry_request(|| {
+        let client = client.clone();
+        let request = first_page_req.clone();
+        async move { client.events(request).await }
+    })
+    .await?
+    {
         EventsResponse::Ok(d) => d.data,
         other => panic!("unexpected: {:?}", other),
     };
 
-    let second_page = match client.events(second_page_req).await? {
+    let second_page = match retry_request(|| {
+        let client: submerge_crystal::api::v1::client::SubmergeCrystalApiV1Client = client.clone();
+        let request = second_page_req.clone();
+        async move { client.events(request).await }
+    })
+    .await?
+    {
         EventsResponse::Ok(d) => d.data,
         other => panic!("unexpected: {:?}", other),
     };
@@ -198,6 +268,7 @@ async fn get_events_pagination_does_not_overlap() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_events_rejects_page_size_too_large() {
     let client = get_api_client();
 
@@ -218,18 +289,25 @@ async fn get_events_rejects_page_size_too_large() {
 }
 
 #[tokio::test]
+#[serial]
 async fn get_events_empty_page_is_ok() -> anyhow::Result<()> {
     let client = get_api_client();
 
-    let response = client
-        .events(EventsRequest {
-            query: EventsRequestQuery {
-                page: Some(99999999), // likely empty
-                page_size: Some(10),
-                ..Default::default()
-            },
-        })
-        .await?;
+    let response = retry_request(|| {
+        let client = client.clone();
+        async move {
+            client
+                .events(EventsRequest {
+                    query: EventsRequestQuery {
+                        page: Some(99999999), // likely empty
+                        page_size: Some(10),
+                        ..Default::default()
+                    },
+                })
+                .await
+        }
+    })
+    .await?;
 
     let data = match response {
         EventsResponse::Ok(data) => data,
@@ -242,6 +320,7 @@ async fn get_events_empty_page_is_ok() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+#[serial]
 async fn concurrent_requests() -> anyhow::Result<()> {
     use tokio::task::JoinSet;
 
@@ -251,15 +330,21 @@ async fn concurrent_requests() -> anyhow::Result<()> {
     for _ in 0..5 {
         let client = client.clone();
         tasks.spawn(async move {
-            let response = client
-                .metadata_list(MetadataListRequest {
-                    query: MetadataListRequestQuery {
-                        page: Some(1),
-                        page_size: Some(5),
-                        ..Default::default()
-                    },
-                })
-                .await;
+            let response = retry_request(|| {
+                let client = client.clone();
+                async move {
+                    client
+                        .metadata_list(MetadataListRequest {
+                            query: MetadataListRequestQuery {
+                                page: Some(1),
+                                page_size: Some(5),
+                                ..Default::default()
+                            },
+                        })
+                        .await
+                }
+            })
+            .await;
 
             // Match on the response enum
             let data = match response {

@@ -67,3 +67,4 @@ bon = "3.8.1"
 
 [dev-dependencies]
 serde_json = { workspace = true }
+serial_test = "3.0"
