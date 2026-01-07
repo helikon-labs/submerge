@@ -13,7 +13,7 @@ use submerge_persistence::postgres::PostgreSQLStorage;
 use submerge_substrate_client::RPCConfig;
 use uuid::Uuid as UUID;
 
-pub(crate) mod api;
+pub mod api;
 pub use api::docs::APIDoc;
 pub mod args;
 mod metrics;
