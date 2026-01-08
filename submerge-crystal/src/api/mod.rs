@@ -57,13 +57,18 @@ pub(crate) mod legacy;
 pub(crate) mod v1;
 
 const DEFAULT_PAGE: u32 = 1;
-const DEFAULT_PAGE_SIZE: u32 = 1000;
-const MAX_PAGE_SIZE: u32 = 1000;
+const DEFAULT_PAGE_SIZE: u32 = 100;
+const MAX_PAGE_SIZE: u32 = 250;
+const DEFAULT_PAGE_SIZE_WITH_ARGS: u32 = 25;
 const MAX_PAGE_SIZE_WITH_ARGS: u32 = 25;
 const MAX_RESPONSE_MESSAGE_BYTES: usize = 64 * 1024;
 
 fn get_page_size(page_size: Option<u32>, include_args: bool) -> Result<u32, APIError> {
-    let page_size = page_size.unwrap_or(DEFAULT_PAGE_SIZE);
+    let page_size = page_size.unwrap_or(if include_args {
+        DEFAULT_PAGE_SIZE_WITH_ARGS
+    } else {
+        DEFAULT_PAGE_SIZE
+    });
     if page_size < 1 {
         Err(APIError::BadRequest(
             "Page size cannot be less than 1.".to_string(),
@@ -87,25 +92,12 @@ fn get_page_number_and_size(
     include_args: bool,
 ) -> Result<(u32, u32), APIError> {
     let page = page.unwrap_or(DEFAULT_PAGE);
-    let page_size = page_size.unwrap_or(DEFAULT_PAGE_SIZE);
     if page < 1 {
         Err(APIError::BadRequest(
             "Page number cannot be less than 1.".to_string(),
         ))
-    } else if page_size < 1 {
-        Err(APIError::BadRequest(
-            "Page size cannot be less than 1.".to_string(),
-        ))
-    } else if !include_args && page_size > MAX_PAGE_SIZE {
-        Err(APIError::BadRequest(format!(
-            "Page size cannot be greater than {MAX_PAGE_SIZE}."
-        )))
-    } else if include_args && page_size > MAX_PAGE_SIZE_WITH_ARGS {
-        Err(APIError::BadRequest(format!(
-            "Page size for requests with arguments included cannot be greater than {MAX_PAGE_SIZE_WITH_ARGS}."
-        )))
     } else {
-        Ok((page, page_size))
+        Ok((page, get_page_size(page_size, include_args)?))
     }
 }
 

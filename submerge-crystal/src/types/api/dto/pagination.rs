@@ -45,5 +45,6 @@ pub(crate) struct CursorPaginationData {
     #[schema(example = 1)]
     pub page_size: u32,
     /// Cursor for the next page, `null` if there's no next page.
+    #[schema(required = false, nullable = false)]
     pub next_cursor: Option<String>,
 }

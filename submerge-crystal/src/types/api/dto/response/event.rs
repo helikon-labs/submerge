@@ -1,10 +1,11 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use utoipa::{ToResponse, ToSchema};
 
 use crate::types::{
     api::dto::{
         pagination::{CursorPaginationData, PaginationData},
+        request::event::EventQuery,
         response::{
             example::event::event_example, hex::Hash256Hex, schema::event::event_args_schema,
         },
@@ -106,6 +107,25 @@ pub(crate) struct PaginatedEventList {
     #[schema(example = json!([event_example()]))]
     pub data: Vec<EventDTO>,
     pub pagination: PaginationData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct EventCursorPosition {
+    pub(crate) block_number: u64,
+    pub(crate) block_hash_hex: String,
+    pub(crate) index: u32,
+}
+
+impl EventCursorPosition {
+    pub(crate) fn get_block_hash(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(hex::decode(self.block_hash_hex.trim_start_matches("0x"))?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct EventCursorPayload {
+    pub(crate) cursor_position: EventCursorPosition,
+    pub(crate) query: EventQuery,
 }
 
 #[derive(Debug, Serialize, ToResponse, ToSchema)]

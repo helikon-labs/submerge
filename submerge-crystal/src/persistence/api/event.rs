@@ -1,4 +1,6 @@
-use crate::types::{api::dto::request::event::EventCursorPosition, persistence::EventCompositeRow};
+use crate::types::{
+    api::dto::response::event::EventCursorPosition, persistence::EventCompositeRow,
+};
 use serde_json::Value as JSONValue;
 use sqlx::{Postgres, QueryBuilder};
 use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
@@ -31,7 +33,7 @@ fn get_select_query(include_args: bool) -> String {
 pub(crate) trait CrystalEventAPIPostgreSQLStorage {
     async fn get_events(
         &self,
-        cursor: Option<EventCursorPosition>,
+        cursor_position: Option<EventCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
@@ -141,7 +143,7 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
 impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
     async fn get_events(
         &self,
-        cursor: Option<EventCursorPosition>,
+        cursor_position: Option<EventCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
@@ -159,28 +161,28 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             query_builder.push(" AND E.block_number <= ").push_bind(max);
         }
 
-        if let Some(cursor) = cursor {
-            let block_hash = hex::decode(cursor.block_hash_hex.trim_start_matches("0x"))?;
+        if let Some(cursor_position) = cursor_position {
+            let block_hash = cursor_position.get_block_hash()?;
             query_builder.push(" AND (");
             query_builder
                 .push("E.block_number < ")
-                .push_bind(cursor.block_number as i64);
+                .push_bind(cursor_position.block_number as i64);
             query_builder
                 .push(" OR (E.block_number = ")
-                .push_bind(cursor.block_number as i64);
+                .push_bind(cursor_position.block_number as i64);
             query_builder
                 .push(" AND E.block_hash > ")
                 .push_bind(block_hash.clone());
             query_builder.push(")");
             query_builder
                 .push(" OR (E.block_number = ")
-                .push_bind(cursor.block_number as i64);
+                .push_bind(cursor_position.block_number as i64);
             query_builder
                 .push(" AND E.block_hash = ")
                 .push_bind(block_hash.clone());
             query_builder
                 .push(" AND E.index > ")
-                .push_bind(cursor.index as i32);
+                .push_bind(cursor_position.index as i32);
             query_builder.push(")");
             query_builder.push(")");
         }

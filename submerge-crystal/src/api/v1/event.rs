@@ -17,14 +17,14 @@ use crate::{
             pagination::{CursorPaginationData, PaginationData},
             request::{
                 block::BlockReference,
-                event::{
-                    BlockEventQuery, EventCursorPayload, EventCursorPosition, EventQuery,
-                    IncludeEventArgsParam,
-                },
+                event::{BlockEventQuery, EventQuery, IncludeEventArgsParam},
             },
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
-                event::{CursorEventList, EventArgs, EventDTO, EventList, PaginatedEventList},
+                event::{
+                    CursorEventList, EventArgs, EventCursorPayload, EventCursorPosition, EventDTO,
+                    EventList, PaginatedEventList,
+                },
             },
         },
         error::APIError,
@@ -61,6 +61,7 @@ pub(crate) async fn get_events(
     State(state): State<ServiceState>,
     Query(query): Query<EventQuery>,
 ) -> Result<Json<CursorEventList>, APIError> {
+    query.validate_next_cursor_mutually_exclusive()?;
     let (cursor_position, query) = if let Some(cursor) = query.next_cursor {
         // TODO validate that no other query params are set
         let decoded = URL_SAFE_NO_PAD.decode(cursor)?;

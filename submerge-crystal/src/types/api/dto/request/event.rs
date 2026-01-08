@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 
+use crate::types::api::error::APIError;
+
 /// Query parameters for fetching and filtering events.
 #[derive(Debug, Serialize, Deserialize, IntoParams)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct EventQuery {
-    /// Opaque cursor for pagination. If provided, all filter params are ignored.
+    /// Opaque cursor for pagination - returned in the endpoint response.
+    /// This parameter is mutually exclusive with all other parameters,
+    /// and will return bad request if any other parameter is set.
     #[param(required = false, nullable = false)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub next_cursor: Option<String>,
@@ -70,17 +74,48 @@ pub(crate) struct EventQuery {
     pub include_args: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct EventCursorPosition {
-    pub(crate) block_number: u64,
-    pub(crate) block_hash_hex: String,
-    pub(crate) index: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct EventCursorPayload {
-    pub(crate) cursor_position: EventCursorPosition,
-    pub(crate) query: EventQuery,
+impl EventQuery {
+    pub(crate) fn validate_next_cursor_mutually_exclusive(&self) -> Result<(), APIError> {
+        if self.next_cursor.is_some() {
+            let mut other_fields = Vec::new();
+            if self.page_size.is_some() {
+                other_fields.push("page_size");
+            }
+            if self.min_block_number.is_some() {
+                other_fields.push("min_block_number");
+            }
+            if self.max_block_number.is_some() {
+                other_fields.push("max_block_number");
+            }
+            if self.min_block_timestamp.is_some() {
+                other_fields.push("min_block_timestamp");
+            }
+            if self.max_block_timestamp.is_some() {
+                other_fields.push("max_block_timestamp");
+            }
+            if self.min_spec_version.is_some() {
+                other_fields.push("min_spec_version");
+            }
+            if self.max_spec_version.is_some() {
+                other_fields.push("max_spec_version");
+            }
+            if self.pallet_name.is_some() {
+                other_fields.push("pallet_name");
+            }
+            if self.event_name.is_some() {
+                other_fields.push("event_name");
+            }
+            if !other_fields.is_empty() {
+                return Err(APIError::BadRequest(
+                    format!(
+                        "No other parameter should not be set when next_cursor is set. Please remove these parameters and try again: {}",
+                        other_fields.join(", ")
+                    )
+                ));
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Query parameters for fetching and filtering events within a block.

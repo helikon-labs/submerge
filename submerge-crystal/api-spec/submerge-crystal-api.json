@@ -1440,7 +1440,7 @@
           {
             "name": "next_cursor",
             "in": "query",
-            "description": "Opaque cursor for pagination. If provided, all filter params are ignored.",
+            "description": "Opaque cursor for pagination - returned in the endpoint response.\nThis parameter is mutually exclusive with all other parameters,\nand will return bad request if any other parameter is set.",
             "required": false,
             "schema": {
               "type": "string"
@@ -3545,10 +3545,7 @@
         ],
         "properties": {
           "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "description": "Cursor for the next page, `null` if there's no next page."
           },
           "pageSize": {
@@ -4752,7 +4749,7 @@
       },
       "SignatureHexString": {
         "type": "string",
-        "description": "and ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.",
+        "description": "Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)\nand ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.",
         "examples": [
           "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
           "0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
