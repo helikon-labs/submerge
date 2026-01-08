@@ -39,6 +39,7 @@ pub(crate) enum APIError {
     InvalidUTF8(String),
     InvalidBlockAuthor(String),
     InvalidExtrinsicSigner(String),
+    JSONError(String),
 }
 
 impl APIError {
@@ -99,6 +100,9 @@ impl APIError {
             APIError::InvalidExtrinsicSigner(author) => {
                 format!("Invalid extrinsic signer: {author}. Enter valid SS58 address or hexadecimal string.")
             }
+            APIError::JSONError(error) => {
+                format!("JSON error: {error}")
+            }
         }
     }
 
@@ -123,6 +127,7 @@ impl APIError {
             APIError::InvalidUTF8(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidBlockAuthor(_) => StatusCode::BAD_REQUEST,
             APIError::InvalidExtrinsicSigner(_) => StatusCode::BAD_REQUEST,
+            APIError::JSONError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
@@ -153,6 +158,20 @@ impl From<string::FromUtf8Error> for APIError {
     fn from(error: string::FromUtf8Error) -> Self {
         tracing::error!("UTF-8 conversion error: {}", error);
         APIError::InvalidUTF8(error.to_string())
+    }
+}
+
+impl From<serde_json::Error> for APIError {
+    fn from(error: serde_json::Error) -> Self {
+        tracing::error!("Serde JSON error: {}", error);
+        APIError::JSONError(error.to_string())
+    }
+}
+
+impl From<base64::DecodeError> for APIError {
+    fn from(error: base64::DecodeError) -> Self {
+        tracing::error!("Base64 decode error: {}", error);
+        APIError::BadRequest(error.to_string())
     }
 }
 

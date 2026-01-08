@@ -1,11 +1,11 @@
 use crate::types::api::{
     dto::{
-        pagination::PaginationData,
+        pagination::{CursorPaginationData, PaginationData},
         response::{
             block::{BlockDTO, BlockList, PaginatedBlockList},
             call::{CallDTO, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
-            event::{EventDTO, EventList, PaginatedEventList},
+            event::{CursorEventList, EventDTO, EventList, PaginatedEventList},
             extrinsic::{ExtrinsicList, PaginatedExtrinsicList},
             genesis::{GenesisRecordDTO, PaginatedGenesisRecordList},
             hex::HexStringParam,
@@ -127,12 +127,12 @@ use crate::types::api::{
     components(
         schemas(
             BlockDTO, CallDTO, EventDTO, TraceDTO, GenesisRecordDTO, MetadataSummaryDTO, MetadataPalletSummaryDTO, MetadataPalletDTO,
-            PaginationData, APIErrorBody, MetadataJSON, HexStringParam,
+            PaginationData, CursorPaginationData, APIErrorBody, MetadataJSON, HexStringParam,
         ),
         responses(
             BlockList, PaginatedBlockList, PaginatedCallList,
             ExtrinsicList, PaginatedExtrinsicList,
-            EventList, PaginatedEventList,
+            EventList, PaginatedEventList, CursorEventList,
             PaginatedTraceList,
             PaginatedGenesisRecordList,
             PaginatedMetadataList, MetadataPalletSummaryList, MetadataPalletCallList,

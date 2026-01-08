@@ -110,7 +110,7 @@ pub(crate) async fn get_extrinsics(
 #[utoipa::path(
     get,
     path = "/blocks/{block_ref}/extrinsics",
-    tag = "call",
+    tag = "extrinsic",
     summary = "Get block extrinsics",
     description = "If a hash is passed, returns the extrinsics for the matching block. If a number is passed, gives the extrinsis for the block by that number - could be multiple blocks if there's a pruned block in that slot.",
     params(

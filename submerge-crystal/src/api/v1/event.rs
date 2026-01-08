@@ -2,9 +2,10 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 
 use crate::{
-    api::{get_page_number_and_size, ServiceState},
+    api::{get_page_number_and_size, get_page_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, event::CrystalEventAPIPostgreSQLStorage,
@@ -13,14 +14,17 @@ use crate::{
     },
     types::api::{
         dto::{
-            pagination::PaginationData,
+            pagination::{CursorPaginationData, PaginationData},
             request::{
                 block::BlockReference,
                 event::{BlockEventQuery, EventQuery, IncludeEventArgsParam},
             },
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
-                event::{EventArgs, EventDTO, EventList, PaginatedEventList},
+                event::{
+                    CursorEventList, EventArgs, EventCursorPayload, EventCursorPosition, EventDTO,
+                    EventList, PaginatedEventList,
+                },
             },
         },
         error::APIError,
@@ -37,7 +41,7 @@ use crate::{
     responses(
         (
             status = 200,
-            response = PaginatedEventList,
+            response = CursorEventList,
         ),
         (
             status = 400,
@@ -56,9 +60,18 @@ use crate::{
 pub(crate) async fn get_events(
     State(state): State<ServiceState>,
     Query(query): Query<EventQuery>,
-) -> Result<Json<PaginatedEventList>, APIError> {
-    let (page, page_size) =
-        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
+) -> Result<Json<CursorEventList>, APIError> {
+    query.validate_next_cursor_mutually_exclusive()?;
+    let (cursor_position, query) = if let Some(cursor) = query.next_cursor {
+        // TODO validate that no other query params are set
+        let decoded = URL_SAFE_NO_PAD.decode(cursor)?;
+        let cursor_payload: EventCursorPayload = serde_json::from_slice(&decoded)?;
+        (Some(cursor_payload.cursor_position), cursor_payload.query)
+    } else {
+        (None, query)
+    };
+    let page_size = get_page_size(query.page_size, query.include_args)?;
+
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -71,34 +84,46 @@ pub(crate) async fn get_events(
         )
         .await?;
 
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_event_count(
+    // max block number, block hash, event index
+    let rows = state
+        .postgres
+        .get_events(
+            cursor_position,
             min_block_number,
             max_block_number,
             &query.pallet_name,
             &query.event_name,
-        ),
-        state.postgres.get_events(
-            min_block_number,
-            max_block_number,
-            &query.pallet_name,
-            &query.event_name,
-            page,
             page_size,
             query.include_args,
-        ),
-    )?;
-    let mut data = Vec::new();
+        )
+        .await?;
+    let mut data: Vec<EventDTO> = Vec::new();
     for row in rows.iter() {
         data.push(row.into());
     }
-    let response = PaginatedEventList {
-        pagination: PaginationData {
-            page,
-            page_size,
-            total: total_count,
-        },
+    let next_cursor = if data.len() < page_size as usize {
+        None
+    } else if let Some(last_event) = data.last() {
+        let cursor_payload = EventCursorPayload {
+            cursor_position: EventCursorPosition {
+                block_number: last_event.block_number,
+                block_hash_hex: last_event.block_hash.0.clone(),
+                index: last_event.index,
+            },
+            query,
+        };
+        let cursor = serde_json::to_string(&cursor_payload)?;
+        let cursor_encoded = URL_SAFE_NO_PAD.encode(cursor.as_bytes());
+        Some(cursor_encoded)
+    } else {
+        None
+    };
+    let response = CursorEventList {
         data,
+        pagination: CursorPaginationData {
+            page_size,
+            next_cursor,
+        },
     };
     Ok(Json(response))
 }
@@ -304,7 +329,7 @@ pub(crate) async fn get_events_by_block_reference_and_index(
 #[utoipa::path(
     get,
     path = "/blocks/{block_ref}/extrinsics/{extrinsic_index}/events",
-    tag = "call",
+    tag = "event",
     summary = "Get block extrinsic events",
     description = "Returns the events for extrinsic in a block by block reference and 0-based extrinsic index.",
     params(

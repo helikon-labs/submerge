@@ -1,4 +1,6 @@
-use crate::types::persistence::EventCompositeRow;
+use crate::types::{
+    api::dto::response::event::EventCursorPosition, persistence::EventCompositeRow,
+};
 use serde_json::Value as JSONValue;
 use sqlx::{Postgres, QueryBuilder};
 use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
@@ -29,20 +31,13 @@ fn get_select_query(include_args: bool) -> String {
 }
 
 pub(crate) trait CrystalEventAPIPostgreSQLStorage {
-    async fn get_event_count(
-        &self,
-        min_block_number: Option<i64>,
-        max_block_number: Option<i64>,
-        pallet_name: &Option<String>,
-        pallet_event_name: &Option<String>,
-    ) -> anyhow::Result<u64>;
     async fn get_events(
         &self,
+        cursor_position: Option<EventCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u32,
         page_size: u32,
         include_args: bool,
     ) -> anyhow::Result<Vec<EventCompositeRow>>;
@@ -146,49 +141,16 @@ pub(crate) trait CrystalEventAPIPostgreSQLStorage {
 }
 
 impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
-    async fn get_event_count(
-        &self,
-        min_block_number: Option<i64>,
-        max_block_number: Option<i64>,
-        pallet_name: &Option<String>,
-        pallet_event_name: &Option<String>,
-    ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{COUNT} WHERE 1=1"));
-        if let Some(min) = min_block_number {
-            query_builder.push(" AND E.block_number >= ").push_bind(min);
-        }
-        if let Some(max) = max_block_number {
-            query_builder.push(" AND E.block_number <= ").push_bind(max);
-        }
-        if let Some(pallet_name) = pallet_name {
-            query_builder
-                .push(" AND MP.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
-        }
-        if let Some(pallet_event_name) = pallet_event_name {
-            query_builder
-                .push(" AND ME.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_event_name)));
-        }
-        let count: i64 = query_builder
-            .build_query_scalar()
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(count as u64)
-    }
-
     async fn get_events(
         &self,
+        cursor_position: Option<EventCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_event_name: &Option<String>,
-        page: u32,
         page_size: u32,
         include_args: bool,
     ) -> anyhow::Result<Vec<EventCompositeRow>> {
-        let offset = (page - 1) * page_size;
         let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!("{query} WHERE 1=1"));
@@ -198,6 +160,33 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         if let Some(max) = max_block_number {
             query_builder.push(" AND E.block_number <= ").push_bind(max);
         }
+
+        if let Some(cursor_position) = cursor_position {
+            let block_hash = cursor_position.get_block_hash()?;
+            query_builder.push(" AND (");
+            query_builder
+                .push("E.block_number < ")
+                .push_bind(cursor_position.block_number as i64);
+            query_builder
+                .push(" OR (E.block_number = ")
+                .push_bind(cursor_position.block_number as i64);
+            query_builder
+                .push(" AND E.block_hash > ")
+                .push_bind(block_hash.clone());
+            query_builder.push(")");
+            query_builder
+                .push(" OR (E.block_number = ")
+                .push_bind(cursor_position.block_number as i64);
+            query_builder
+                .push(" AND E.block_hash = ")
+                .push_bind(block_hash.clone());
+            query_builder
+                .push(" AND E.index > ")
+                .push_bind(cursor_position.index as i32);
+            query_builder.push(")");
+            query_builder.push(")");
+        }
+
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
@@ -210,7 +199,6 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         }
         query_builder.push(" ORDER BY E.block_number DESC, E.block_hash ASC, E.index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
-        query_builder.push(" OFFSET ").push_bind(offset as i64);
 
         let rows: Vec<EventCompositeRow> = query_builder
             .build_query_as()
