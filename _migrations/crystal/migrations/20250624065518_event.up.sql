@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS event
     index               INTEGER NOT NULL,
     args                JSONB NOT NULL,
     created_at          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT event_pk PRIMARY KEY (block_number, hash),
+    CONSTRAINT event_pk PRIMARY KEY (block_number, hash), -- block_number has to be in the primary key due to partitioning
     CONSTRAINT event_fk_block
         FOREIGN KEY (block_hash)
             REFERENCES block (hash)

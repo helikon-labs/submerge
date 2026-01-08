@@ -5585,6 +5585,7 @@ dependencies = [
  "async-trait",
  "axum",
  "axum-embed",
+ "base64",
  "clap",
  "convert_case",
  "frame-metadata",

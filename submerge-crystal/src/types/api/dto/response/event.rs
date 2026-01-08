@@ -4,7 +4,7 @@ use utoipa::{ToResponse, ToSchema};
 
 use crate::types::{
     api::dto::{
-        pagination::PaginationData,
+        pagination::{CursorPaginationData, PaginationData},
         response::{
             example::event::event_example, hex::Hash256Hex, schema::event::event_args_schema,
         },
@@ -106,6 +106,20 @@ pub(crate) struct PaginatedEventList {
     #[schema(example = json!([event_example()]))]
     pub data: Vec<EventDTO>,
     pub pagination: PaginationData,
+}
+
+#[derive(Debug, Serialize, ToResponse, ToSchema)]
+#[response(
+    description = "List of matching events, with a cursor for the next page.",
+    headers(
+        ("X-RateLimit-Limit" = u32),
+        ("X-RateLimit-Remaining" = u32),
+    ),
+)]
+pub(crate) struct CursorEventList {
+    #[schema(example = json!([event_example()]))]
+    pub data: Vec<EventDTO>,
+    pub pagination: CursorPaginationData,
 }
 
 /// Event arguments wrapper.

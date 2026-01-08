@@ -483,7 +483,7 @@
     "/blocks/{block_ref}/extrinsics": {
       "get": {
         "tags": [
-          "call"
+          "extrinsic"
         ],
         "summary": "Get block extrinsics",
         "description": "If a hash is passed, returns the extrinsics for the matching block. If a number is passed, gives the extrinsis for the block by that number - could be multiple blocks if there's a pruned block in that slot.",
@@ -729,7 +729,7 @@
     "/blocks/{block_ref}/extrinsics/{extrinsic_index}/events": {
       "get": {
         "tags": [
-          "call"
+          "event"
         ],
         "summary": "Get block extrinsic events",
         "description": "Returns the events for extrinsic in a block by block reference and 0-based extrinsic index.",
@@ -1438,17 +1438,13 @@
         "operationId": "get_events",
         "parameters": [
           {
-            "name": "page",
+            "name": "next_cursor",
             "in": "query",
-            "description": "Events list page number to retrieve. 1-indexed.",
+            "description": "Opaque cursor for pagination. If provided, all filter params are ignored.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1,
-              "minimum": 1
-            },
-            "example": 1
+              "type": "string"
+            }
           },
           {
             "name": "page_size",
@@ -1569,7 +1565,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/PaginatedEventList"
+            "$ref": "#/components/responses/CursorEventList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -3541,6 +3537,33 @@
         "type": "object",
         "description": "Call arguments wrapper."
       },
+      "CursorPaginationData": {
+        "type": "object",
+        "description": "Pagination data for cursor responses.",
+        "required": [
+          "pageSize"
+        ],
+        "properties": {
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Cursor for the next page, `null` if there's no next page."
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items per cursor page.",
+            "example": 1,
+            "minimum": 1
+          }
+        },
+        "example": {
+          "nextCursor": "eyJjdXJzb3JfcG9zaXRpb24iOnsiYmxvY2tfbnVtYmVyIjozMzY0MzMzLCJibG9ja19oYXNoX2hleCI6IjB4ZjdlMjkyYWQ3ZDNkYzE4MzUzOWYwOGM4NDgwMmNiMDc2ZTc5NjNkYjA2NTA3MjAwNTY1M2NjNWU4YzdkMTE3MyIsImluZGV4IjowfSwicXVlcnkiOnsiaW5jbHVkZV9hcmdzIjpmYWxzZX19",
+          "pageSize": 1
+        }
+      },
       "Error": {
         "type": "object",
         "description": "Generic error type.",
@@ -4913,6 +4936,82 @@
               "type": "array",
               "items": {
                 "$ref": "#/components/schemas/Block"
+              }
+            }
+          }
+        }
+      },
+      "CursorEventList": {
+        "description": "List of matching events, with a cursor for the next page.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  },
+                  "example": [
+                    {
+                      "args": {
+                        "dispatchInfo": {
+                          "class": {
+                            "type": "Mandatory",
+                            "value": []
+                          },
+                          "paysFee": {
+                            "type": "Yes",
+                            "value": []
+                          },
+                          "weight": {
+                            "proofSize": "0",
+                            "refTime": "125000000"
+                          }
+                        }
+                      },
+                      "blockHash": "0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa",
+                      "blockNumber": 10758052,
+                      "blockStatus": "proposed",
+                      "blockTimestamp": 1765456362000,
+                      "extrinsicHash": "0x6963ce866a54258d9d6ca9222060f7270a8f5f6b83eaac88e899bb73fbbb68cb",
+                      "extrinsicIndex": 0,
+                      "hash": "0x2c923bb54d06dfb649aaaf1c198eb1af9e19ec52b8e90267984496c128ee7adc",
+                      "index": 1,
+                      "palletEventIndex": 0,
+                      "palletEventName": "ExtrinsicSuccess",
+                      "palletIndex": 0,
+                      "palletName": "System",
+                      "phase": "ApplyExtrinsic",
+                      "specVersion": 2000003,
+                      "traceIndex": 78
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/CursorPaginationData"
+                }
               }
             }
           }
