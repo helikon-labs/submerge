@@ -909,17 +909,13 @@
         "operationId": "get_calls",
         "parameters": [
           {
-            "name": "page",
+            "name": "next_cursor",
             "in": "query",
-            "description": "Call list page number to retrieve. 1-indexed.",
+            "description": "Opaque cursor for call pagination - returned in the endpoint response.\nThis parameter is mutually exclusive with all other parameters,\nand will return bad request if any other parameter is set.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1,
-              "minimum": 1
-            },
-            "example": 1
+              "type": "string"
+            }
           },
           {
             "name": "page_size",
@@ -1040,7 +1036,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/PaginatedCallList"
+            "$ref": "#/components/responses/CursorCallList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -4933,6 +4929,81 @@
               "type": "array",
               "items": {
                 "$ref": "#/components/schemas/Block"
+              }
+            }
+          }
+        }
+      },
+      "CursorCallList": {
+        "description": "List of matching events, with a cursor for the next page.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Call"
+                  },
+                  "example": [
+                    {
+                      "args": {
+                        "args": {
+                          "dest": {
+                            "type": "Id",
+                            "value": "0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a"
+                          },
+                          "value": "117284000000"
+                        },
+                        "hash": "0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011"
+                      },
+                      "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
+                      "blockNumber": 3172595,
+                      "blockStatus": "proposed",
+                      "blockTimestamp": 1765432302000,
+                      "callIndex": [
+                        0
+                      ],
+                      "callPath": "root",
+                      "extrinsicHash": "0x18acc73c8e38351bc5b266cffacf39944945dd66342dab8ce2f86f2c97b3006f",
+                      "extrinsicIndex": 0,
+                      "extrinsicIsSigned": true,
+                      "extrinsicIsSuccessful": true,
+                      "hash": "0xf54535692c6b98bf9198d98ee28af8bc4d0753da6d42912042561dd8d32f4eca",
+                      "isSuccessful": true,
+                      "palletCallIndex": 0,
+                      "palletCallName": "TransferKeepAlive",
+                      "palletIndex": 1,
+                      "palletName": "Balances",
+                      "parentCallHash": "0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f",
+                      "specVersion": 2000000
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/CursorPaginationData"
+                }
               }
             }
           }

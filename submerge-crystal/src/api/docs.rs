@@ -3,7 +3,7 @@ use crate::types::api::{
         pagination::{CursorPaginationData, PaginationData},
         response::{
             block::{BlockDTO, BlockList, PaginatedBlockList},
-            call::{CallDTO, PaginatedCallList},
+            call::{CallDTO, CursorCallList, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
             event::{CursorEventList, EventDTO, EventList, PaginatedEventList},
             extrinsic::{ExtrinsicList, PaginatedExtrinsicList},
@@ -130,7 +130,8 @@ use crate::types::api::{
             PaginationData, CursorPaginationData, APIErrorBody, MetadataJSON, HexStringParam,
         ),
         responses(
-            BlockList, PaginatedBlockList, PaginatedCallList,
+            BlockList, PaginatedBlockList,
+            CursorCallList, PaginatedCallList,
             ExtrinsicList, PaginatedExtrinsicList,
             EventList, PaginatedEventList, CursorEventList,
             PaginatedTraceList,

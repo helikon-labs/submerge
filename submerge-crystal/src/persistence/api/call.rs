@@ -2,7 +2,7 @@ use serde_json::Value as JSONValue;
 use sqlx::{Postgres, QueryBuilder};
 use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
 
-use crate::types::persistence::CallRow;
+use crate::types::{api::dto::response::call::CallCursorPosition, persistence::CallRow};
 
 const COUNT: &str = r#"
     SELECT COUNT(*)
@@ -31,20 +31,13 @@ fn get_select_query(include_args: bool) -> String {
 }
 
 pub(crate) trait CrystalCallAPIPostgreSQLStorage {
-    async fn get_call_count(
-        &self,
-        min_block_number: Option<i64>,
-        max_block_number: Option<i64>,
-        pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
-    ) -> anyhow::Result<u64>;
     async fn get_calls(
         &self,
+        cursor_position: Option<CallCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u32,
         page_size: u32,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
@@ -162,49 +155,16 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
 }
 
 impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
-    async fn get_call_count(
-        &self,
-        min_block_number: Option<i64>,
-        max_block_number: Option<i64>,
-        pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
-    ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{COUNT} WHERE 1=1"));
-        if let Some(min) = min_block_number {
-            query_builder.push(" AND C.block_number >= ").push_bind(min);
-        }
-        if let Some(max) = max_block_number {
-            query_builder.push(" AND C.block_number <= ").push_bind(max);
-        }
-        if let Some(pallet_name) = pallet_name {
-            query_builder
-                .push(" AND MP.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
-        }
-        if let Some(pallet_call_name) = pallet_call_name {
-            query_builder
-                .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
-        }
-        let count: i64 = query_builder
-            .build_query_scalar()
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(count as u64)
-    }
-
     async fn get_calls(
         &self,
+        cursor_position: Option<CallCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
-        page: u32,
         page_size: u32,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
-        let offset = (page - 1) * page_size;
         let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!("{query} WHERE 1=1"));
@@ -214,6 +174,37 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         if let Some(max) = max_block_number {
             query_builder.push(" AND C.block_number <= ").push_bind(max);
         }
+
+        if let Some(cursor_position) = cursor_position {
+            let block_hash = cursor_position.get_block_hash()?;
+            query_builder.push(" AND (");
+            query_builder
+                .push("C.block_number < ")
+                .push_bind(cursor_position.block_number as i64);
+            query_builder
+                .push(" OR (C.block_number = ")
+                .push_bind(cursor_position.block_number as i64);
+            query_builder
+                .push(" AND C.block_hash > ")
+                .push_bind(block_hash.clone());
+            query_builder.push(")");
+            query_builder
+                .push(" OR (C.block_number = ")
+                .push_bind(cursor_position.block_number as i64);
+            query_builder
+                .push(" AND C.block_hash = ")
+                .push_bind(block_hash.clone());
+            query_builder.push(" AND C.call_index > ").push_bind(
+                cursor_position
+                    .call_index
+                    .iter()
+                    .map(|i| *i as i16)
+                    .collect::<Vec<i16>>(),
+            );
+            query_builder.push(")");
+            query_builder.push(")");
+        }
+
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
@@ -225,9 +216,8 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
         }
         query_builder
-            .push(" ORDER BY C.block_number DESC, C.extrinsic_index ASC, C.call_index ASC");
+            .push(" ORDER BY C.block_number DESC, C.block_hash ASC, C.extrinsic_index ASC, C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
-        query_builder.push(" OFFSET ").push_bind(offset as i64);
 
         let rows: Vec<CallRow> = query_builder
             .build_query_as()

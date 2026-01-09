@@ -41,8 +41,6 @@ CREATE INDEX IF NOT EXISTS event_idx_block_number
     ON event (block_number DESC, block_hash ASC, index ASC);
 CREATE INDEX IF NOT EXISTS event_idx_metadata_event_id_block_number
     ON event (metadata_event_id, block_number DESC, block_hash ASC, index ASC);
-CREATE INDEX IF NOT EXISTS event_idx_metadata_event_id
-    ON event (metadata_event_id, block_number DESC, block_hash ASC, index ASC);
 CREATE INDEX IF NOT EXISTS event_idx_extrinsic_hash
     ON event (extrinsic_hash, index ASC) WHERE extrinsic_hash IS NOT NULL;
 

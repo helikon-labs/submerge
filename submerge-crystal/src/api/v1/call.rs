@@ -2,9 +2,10 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 
 use crate::{
-    api::{get_page_number_and_size, ServiceState},
+    api::{get_page_number_and_size, get_page_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, call::CrystalCallAPIPostgreSQLStorage,
@@ -14,13 +15,16 @@ use crate::{
     },
     types::api::{
         dto::{
-            pagination::PaginationData,
+            pagination::{CursorPaginationData, PaginationData},
             request::{
                 block::BlockReference,
                 call::{BlockCallQuery, CallQuery, IncludeCallArgsParam},
             },
             response::{
-                call::{CallArgs, CallDTO, PaginatedCallList},
+                call::{
+                    CallArgs, CallCursorPayload, CallCursorPosition, CallDTO, CursorCallList,
+                    PaginatedCallList,
+                },
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
                 extrinsic::ExtrinsicDTO,
             },
@@ -39,7 +43,7 @@ use crate::{
     responses(
         (
             status = 200,
-            response = PaginatedCallList,
+            response = CursorCallList,
         ),
         (
             status = 400,
@@ -58,9 +62,17 @@ use crate::{
 pub(crate) async fn get_calls(
     State(state): State<ServiceState>,
     Query(query): Query<CallQuery>,
-) -> Result<Json<PaginatedCallList>, APIError> {
-    let (page, page_size) =
-        get_page_number_and_size(query.page, query.page_size, query.include_args)?;
+) -> Result<Json<CursorCallList>, APIError> {
+    query.validate_next_cursor_mutually_exclusive()?;
+    let (cursor_position, query) = if let Some(cursor) = query.next_cursor {
+        // TODO validate that no other query params are set
+        let decoded = URL_SAFE_NO_PAD.decode(cursor)?;
+        let cursor_payload: CallCursorPayload = serde_json::from_slice(&decoded)?;
+        (Some(cursor_payload.cursor_position), cursor_payload.query)
+    } else {
+        (None, query)
+    };
+    let page_size = get_page_size(query.page_size, query.include_args)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -73,33 +85,44 @@ pub(crate) async fn get_calls(
         )
         .await?;
 
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_call_count(
+    let rows = state
+        .postgres
+        .get_calls(
+            cursor_position,
             min_block_number,
             max_block_number,
             &query.pallet_name,
             &query.call_name,
-        ),
-        state.postgres.get_calls(
-            min_block_number,
-            max_block_number,
-            &query.pallet_name,
-            &query.call_name,
-            page,
             page_size,
             query.include_args,
-        ),
-    )?;
-    let mut data = Vec::new();
+        )
+        .await?;
+    let mut data: Vec<CallDTO> = Vec::new();
     for row in rows.iter() {
         data.push(row.into());
     }
-    let response = PaginatedCallList {
+    let next_cursor = if data.len() < page_size as usize {
+        None
+    } else if let Some(last_call) = data.last() {
+        let cursor_payload = CallCursorPayload {
+            cursor_position: CallCursorPosition {
+                block_number: last_call.block_number,
+                block_hash_hex: last_call.block_hash.0.clone(),
+                call_index: last_call.call_index.clone(),
+            },
+            query,
+        };
+        let cursor = serde_json::to_string(&cursor_payload)?;
+        let cursor_encoded = URL_SAFE_NO_PAD.encode(cursor.as_bytes());
+        Some(cursor_encoded)
+    } else {
+        None
+    };
+    let response = CursorCallList {
         data,
-        pagination: PaginationData {
-            page,
+        pagination: CursorPaginationData {
             page_size,
-            total: total_count,
+            next_cursor,
         },
     };
     Ok(Json(response))
