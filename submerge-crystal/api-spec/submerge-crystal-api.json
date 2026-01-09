@@ -1727,17 +1727,13 @@
         "operationId": "get_extrinsics",
         "parameters": [
           {
-            "name": "page",
+            "name": "next_cursor",
             "in": "query",
-            "description": "Extrinsic list page number to retrieve. 1-indexed.",
+            "description": "Opaque cursor for extrinsic pagination - returned in the endpoint response.\nThis parameter is mutually exclusive with all other parameters,\nand will return bad request if any other parameter is set.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1,
-              "minimum": 1
-            },
-            "example": 1
+              "type": "string"
+            }
           },
           {
             "name": "page_size",
@@ -1849,7 +1845,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/PaginatedExtrinsicList"
+            "$ref": "#/components/responses/CursorExtrinsicList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -5074,6 +5070,91 @@
                       "phase": "ApplyExtrinsic",
                       "specVersion": 2000003,
                       "traceIndex": 78
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/CursorPaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CursorExtrinsicList": {
+        "description": "List of matching extrinsic, with a cursor for the next page.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Extrinsic"
+                  },
+                  "example": [
+                    {
+                      "blockHash": "0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77",
+                      "blockNumber": 3172595,
+                      "blockStatus": "proposed",
+                      "blockTimestamp": 1765432302000,
+                      "extra": {
+                        "chargeAssetTxPayment": {
+                          "assetId": null,
+                          "tip": "0"
+                        },
+                        "checkGenesis": {},
+                        "checkMetadataHash": {
+                          "mode": {
+                            "type": "Disabled",
+                            "value": []
+                          }
+                        },
+                        "checkMortality": {
+                          "type": "Mortal84",
+                          "value": "0"
+                        },
+                        "checkNonZeroSender": {},
+                        "checkNonce": "8362",
+                        "checkSpecVersion": {},
+                        "checkTxVersion": {},
+                        "checkWeight": {}
+                      },
+                      "hash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+                      "index": 2,
+                      "isSuccessful": true,
+                      "signature": {
+                        "type": "sr25519",
+                        "value": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+                      },
+                      "signer": {
+                        "type": "accountId",
+                        "value": "0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626"
+                      },
+                      "specVersion": 2000000,
+                      "traceIndex": 2,
+                      "version": 4
                     }
                   ]
                 },

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS extrinsic
     is_successful           BOOLEAN NOT NULL,
     extra                   JSONB,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT extrinsic_pk PRIMARY KEY (block_hash, block_number, hash),
+    CONSTRAINT extrinsic_pk PRIMARY KEY (block_hash, block_number, hash), -- block_number has to be in the primary key due to partitioning
     CONSTRAINT extrinsic_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index),
     CONSTRAINT extrinsic_fk_block
         FOREIGN KEY (block_hash)
@@ -28,12 +28,12 @@ CREATE INDEX IF NOT EXISTS extrinsic_idx_hash
 CREATE INDEX IF NOT EXISTS extrinsic_idx_block_hash
     ON extrinsic (block_hash, index ASC);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number
-    ON extrinsic (block_number DESC, index ASC);
+    ON extrinsic (block_number DESC, block_hash ASC, index ASC);
 CREATE INDEX IF NOT EXISTS extrinsic_idx_block_number_signed
-    ON extrinsic (block_number DESC, index ASC)
+    ON extrinsic (block_number DESC, block_hash ASC, index ASC)
     WHERE multi_signature IS NOT NULL;
 CREATE INDEX IF NOT EXISTS extrinsic_idx_signer_block
-    ON extrinsic (signer_multi_address, block_number DESC, index ASC);
+    ON extrinsic (signer_multi_address, block_number DESC, block_hash ASC, index ASC);
 
 CREATE TABLE extrinsic_0_1000000 PARTITION OF extrinsic FOR VALUES FROM (0) TO (1000000);
 CREATE TABLE extrinsic_1000000_2000000 PARTITION OF extrinsic FOR VALUES FROM (1000000) TO (2000000);

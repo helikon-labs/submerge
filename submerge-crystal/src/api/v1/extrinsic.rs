@@ -2,9 +2,10 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 
 use crate::{
-    api::{get_page_number_and_size, ServiceState},
+    api::{get_page_number_and_size, get_page_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage,
@@ -14,14 +15,17 @@ use crate::{
     },
     types::api::{
         dto::{
-            pagination::PaginationData,
+            pagination::{CursorPaginationData, PaginationData},
             request::{
                 block::BlockReference,
                 extrinsic::{BlockExtrinsicQuery, ExtrinsicQuery},
             },
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
-                extrinsic::{ExtrinsicDTO, ExtrinsicList, PaginatedExtrinsicList},
+                extrinsic::{
+                    CursorExtrinsicList, ExtrinsicCursorPayload, ExtrinsicCursorPosition,
+                    ExtrinsicDTO, ExtrinsicList, PaginatedExtrinsicList,
+                },
             },
         },
         error::APIError,
@@ -38,7 +42,7 @@ use crate::{
     responses(
         (
             status = 200,
-            response = PaginatedExtrinsicList,
+            response = CursorExtrinsicList,
         ),
         (
             status = 400,
@@ -57,8 +61,16 @@ use crate::{
 pub(crate) async fn get_extrinsics(
     State(state): State<ServiceState>,
     Query(query): Query<ExtrinsicQuery>,
-) -> Result<Json<PaginatedExtrinsicList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
+) -> Result<Json<CursorExtrinsicList>, APIError> {
+    query.validate_next_cursor_mutually_exclusive()?;
+    let (cursor_position, query) = if let Some(cursor) = query.next_cursor {
+        let decoded = URL_SAFE_NO_PAD.decode(cursor)?;
+        let cursor_payload: ExtrinsicCursorPayload = serde_json::from_slice(&decoded)?;
+        (Some(cursor_payload.cursor_position), cursor_payload.query)
+    } else {
+        (None, query)
+    };
+    let page_size = get_page_size(query.page_size, false)?;
     let Ok(signer_multi_address) = query.get_signer_multi_address() else {
         return Err(APIError::InvalidExtrinsicSigner(
             query.signer.unwrap_or("".to_string()),
@@ -76,31 +88,43 @@ pub(crate) async fn get_extrinsics(
         )
         .await?;
 
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_extrinsic_count(
+    let rows = state
+        .postgres
+        .get_extrinsics(
+            cursor_position,
             min_block_number,
             max_block_number,
             query.is_signed,
             &signer_multi_address,
-        ),
-        state.postgres.get_extrinsics(
-            min_block_number,
-            max_block_number,
-            query.is_signed,
-            &signer_multi_address,
-            page,
             page_size,
-        ),
-    )?;
-    let mut data = Vec::new();
+        )
+        .await?;
+    let mut data: Vec<ExtrinsicDTO> = Vec::new();
     for row in rows.iter() {
         data.push(row.try_into()?);
     }
-    let response = PaginatedExtrinsicList {
-        pagination: PaginationData {
-            page,
+    let next_cursor = if data.len() < page_size as usize {
+        None
+    } else if let Some(last_extrinsic) = data.last() {
+        let cursor_payload = ExtrinsicCursorPayload {
+            cursor_position: ExtrinsicCursorPosition {
+                block_number: last_extrinsic.block_number,
+                block_hash_hex: last_extrinsic.block_hash.0.clone(),
+                index: last_extrinsic.index,
+            },
+            query,
+        };
+        let cursor = serde_json::to_string(&cursor_payload)?;
+        let cursor_encoded = URL_SAFE_NO_PAD.encode(cursor.as_bytes());
+        Some(cursor_encoded)
+    } else {
+        None
+    };
+
+    let response = CursorExtrinsicList {
+        pagination: CursorPaginationData {
             page_size,
-            total: total_count,
+            next_cursor,
         },
         data,
     };

@@ -6,7 +6,7 @@ use crate::types::api::{
             call::{CallDTO, CursorCallList, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
             event::{CursorEventList, EventDTO, EventList, PaginatedEventList},
-            extrinsic::{ExtrinsicList, PaginatedExtrinsicList},
+            extrinsic::{CursorExtrinsicList, ExtrinsicList, PaginatedExtrinsicList},
             genesis::{GenesisRecordDTO, PaginatedGenesisRecordList},
             hex::HexStringParam,
             metadata::{
@@ -132,7 +132,7 @@ use crate::types::api::{
         responses(
             BlockList, PaginatedBlockList,
             CursorCallList, PaginatedCallList,
-            ExtrinsicList, PaginatedExtrinsicList,
+            ExtrinsicList, PaginatedExtrinsicList, CursorExtrinsicList,
             EventList, PaginatedEventList, CursorEventList,
             PaginatedTraceList,
             PaginatedGenesisRecordList,
