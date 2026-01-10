@@ -1,11 +1,12 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::string;
 use submerge_base::types::substrate::trace::TraceStorageMethod;
 use utoipa::{ToResponse, ToSchema};
 
 use crate::types::{
     api::dto::{
-        pagination::PaginationData,
+        pagination::{CursorPaginationData, PaginationData},
+        request::trace::TraceQuery,
         response::{
             example::trace::trace_example,
             hex::{Hash256Hex, HexString},
@@ -111,4 +112,37 @@ pub(crate) struct PaginatedTraceList {
     #[schema(example = json!([trace_example()]))]
     pub data: Vec<TraceDTO>,
     pub pagination: PaginationData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct TraceCursorPosition {
+    pub(crate) block_number: u64,
+    pub(crate) block_hash_hex: String,
+    pub(crate) index: u32,
+}
+
+impl TraceCursorPosition {
+    pub(crate) fn get_block_hash(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(hex::decode(self.block_hash_hex.trim_start_matches("0x"))?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct TraceCursorPayload {
+    pub(crate) cursor_position: TraceCursorPosition,
+    pub(crate) query: TraceQuery,
+}
+
+#[derive(Debug, Serialize, ToResponse, ToSchema)]
+#[response(
+    description = "List of matching traces, with a cursor for the next page.",
+    headers(
+        ("X-RateLimit-Limit" = u32),
+        ("X-RateLimit-Remaining" = u32),
+    ),
+)]
+pub(crate) struct CursorTraceList {
+    #[schema(example = json!([trace_example()]))]
+    pub data: Vec<TraceDTO>,
+    pub pagination: CursorPaginationData,
 }

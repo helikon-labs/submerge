@@ -148,7 +148,7 @@ pub(crate) struct ExtrinsicCursorPayload {
 
 #[derive(Debug, Serialize, ToResponse, ToSchema)]
 #[response(
-    description = "List of matching extrinsic, with a cursor for the next page.",
+    description = "List of matching extrinsics, with a cursor for the next page.",
     headers(
         ("X-RateLimit-Limit" = u32),
         ("X-RateLimit-Remaining" = u32),

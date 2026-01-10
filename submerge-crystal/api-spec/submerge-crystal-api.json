@@ -2933,17 +2933,13 @@
         "operationId": "get_traces",
         "parameters": [
           {
-            "name": "page",
+            "name": "next_cursor",
             "in": "query",
-            "description": "Trace list page number to retrieve. 1-indexed.",
+            "description": "Opaque cursor for trace pagination - returned in the endpoint response.\nThis parameter is mutually exclusive with all other parameters,\nand will return bad request if any other parameter is set.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1,
-              "minimum": 1
-            },
-            "example": 1
+              "type": "string"
+            }
           },
           {
             "name": "page_size",
@@ -3052,7 +3048,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/PaginatedTraceList"
+            "$ref": "#/components/responses/CursorTraceList"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -5082,7 +5078,7 @@
         }
       },
       "CursorExtrinsicList": {
-        "description": "List of matching extrinsic, with a cursor for the next page.",
+        "description": "List of matching extrinsics, with a cursor for the next page.",
         "headers": {
           "X-RateLimit-Limit": {
             "schema": {
@@ -5155,6 +5151,65 @@
                       "specVersion": 2000000,
                       "traceIndex": 2,
                       "version": 4
+                    }
+                  ]
+                },
+                "pagination": {
+                  "$ref": "#/components/schemas/CursorPaginationData"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CursorTraceList": {
+        "description": "List of matching traces, with a cursor for the next page.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "data",
+                "pagination"
+              ],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Trace"
+                  },
+                  "example": [
+                    {
+                      "blockHash": "0x2f08d6887f29369af351118631221891b47ca5f0c2ef14f4da0dd32c3bed0d77",
+                      "blockNumber": 3213251,
+                      "extId": "0x3e44",
+                      "hash": "0xebae2efe1479e7e4535c8ffb337359e252a54ac77a13c6095c9bbc5e78622daa",
+                      "index": 20,
+                      "keyParams": "0x5a3fb8de4321e12fad081eaeece61bc56d6f646c506f745374616b650000000000000000000000000000000000000000",
+                      "keyPrefix": "0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9",
+                      "palletIndex": 0,
+                      "palletName": "System",
+                      "palletStorageItemIndex": 0,
+                      "palletStorageItemName": "Account",
+                      "parentId": null,
+                      "specVersion": 2000000,
+                      "storageMethod": "Put"
                     }
                   ]
                 },

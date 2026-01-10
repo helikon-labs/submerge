@@ -20,24 +20,24 @@ CREATE TABLE IF NOT EXISTS trace
     metadata_storage_item_id    INTEGER,
     is_known_key                BOOLEAN NOT NULL,
     created_at                  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT trace_pk PRIMARY KEY (hash, block_number),
+    CONSTRAINT trace_pk PRIMARY KEY (hash, block_number), -- block_number has to be in the primary key due to partitioning
     CONSTRAINT trace_u_block_hash_block_number_index UNIQUE (block_hash, block_number, index)
 ) PARTITION BY RANGE (block_number);
 
 CREATE INDEX IF NOT EXISTS trace_idx_hash
     ON trace (hash);
 CREATE INDEX IF NOT EXISTS trace_idx_kprefix_kparams_null_blockn_index
-    ON trace (key_prefix, key_params, block_number DESC, index ASC)
+    ON trace (key_prefix, key_params, block_number DESC, block_hash ASC, index ASC)
     WHERE key_params IS NOT NULL;
 CREATE INDEX IF NOT EXISTS trace_idx_kprefix_kparams_not_null_blockn_index
-    ON trace (key_prefix, key_params, block_number DESC, index ASC)
+    ON trace (key_prefix, key_params, block_number DESC, block_hash ASC, index ASC)
     WHERE key_params IS NULL;
 CREATE INDEX IF NOT EXISTS trace_idx_block_hash_index
     ON trace (block_hash, index ASC);
 CREATE INDEX IF NOT EXISTS trace_idx_block_number_index
-    ON trace (block_number DESC, index ASC);
+    ON trace (block_number DESC, block_hash ASC, index ASC);
 CREATE INDEX IF NOT EXISTS trace_idx_metadata_storage_item_id
-    ON trace (metadata_storage_item_id, block_number DESC, index ASC);
+    ON trace (metadata_storage_item_id, block_number DESC, block_hash ASC, index ASC);
 
 CREATE TABLE trace_0_500000 PARTITION OF trace FOR VALUES FROM (0) TO (500000);
 CREATE TABLE trace_500000_1000000 PARTITION OF trace FOR VALUES FROM (500000) TO (1000000);

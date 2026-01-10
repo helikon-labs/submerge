@@ -4,10 +4,11 @@ use axum::{
     response::{IntoResponse as _, Response},
     Json,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use reqwest::StatusCode;
 
 use crate::{
-    api::{get_page_number_and_size, ServiceState},
+    api::{get_page_number_and_size, get_page_size, ServiceState},
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, trace::CrystalTraceAPIPostgreSQLStorage,
@@ -16,7 +17,7 @@ use crate::{
     },
     types::api::{
         dto::{
-            pagination::PaginationData,
+            pagination::{CursorPaginationData, PaginationData},
             request::{
                 block::BlockReference,
                 trace::{BlockTraceQuery, TraceQuery},
@@ -24,7 +25,10 @@ use crate::{
             response::{
                 error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
                 hex::HexString,
-                trace::{PaginatedTraceList, TraceDTO},
+                trace::{
+                    CursorTraceList, PaginatedTraceList, TraceCursorPayload, TraceCursorPosition,
+                    TraceDTO,
+                },
             },
         },
         error::APIError,
@@ -41,7 +45,7 @@ use crate::{
     responses(
         (
             status = 200,
-            response = PaginatedTraceList,
+            response = CursorTraceList,
         ),
         (
             status = 400,
@@ -60,8 +64,16 @@ use crate::{
 pub(crate) async fn get_traces(
     State(state): State<ServiceState>,
     Query(query): Query<TraceQuery>,
-) -> Result<Json<PaginatedTraceList>, APIError> {
-    let (page, page_size) = get_page_number_and_size(query.page, query.page_size, false)?;
+) -> Result<Json<CursorTraceList>, APIError> {
+    query.validate_next_cursor_mutually_exclusive()?;
+    let (cursor_position, query) = if let Some(cursor) = query.next_cursor {
+        let decoded = URL_SAFE_NO_PAD.decode(cursor)?;
+        let cursor_payload: TraceCursorPayload = serde_json::from_slice(&decoded)?;
+        (Some(cursor_payload.cursor_position), cursor_payload.query)
+    } else {
+        (None, query)
+    };
+    let page_size = get_page_size(query.page_size, false)?;
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -84,31 +96,42 @@ pub(crate) async fn get_traces(
     } else {
         None
     };
-    let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_trace_count(
+    let rows = state
+        .postgres
+        .get_traces(
+            cursor_position,
             min_block_number,
             max_block_number,
             key_prefix.as_deref(),
             key_params.as_deref(),
-        ),
-        state.postgres.get_traces(
-            min_block_number,
-            max_block_number,
-            key_prefix.as_deref(),
-            key_params.as_deref(),
-            page,
             page_size,
-        ),
-    )?;
-    let mut data = Vec::new();
+        )
+        .await?;
+    let mut data: Vec<TraceDTO> = Vec::new();
     for row in rows.iter() {
         data.push(row.try_into()?);
     }
-    let response = PaginatedTraceList {
-        pagination: PaginationData {
-            page,
+    let next_cursor = if data.len() < page_size as usize {
+        None
+    } else if let Some(last_trace) = data.last() {
+        let cursor_payload = TraceCursorPayload {
+            cursor_position: TraceCursorPosition {
+                block_number: last_trace.block_number,
+                block_hash_hex: last_trace.block_hash.0.clone(),
+                index: last_trace.index,
+            },
+            query,
+        };
+        let cursor = serde_json::to_string(&cursor_payload)?;
+        let cursor_encoded = URL_SAFE_NO_PAD.encode(cursor.as_bytes());
+        Some(cursor_encoded)
+    } else {
+        None
+    };
+    let response = CursorTraceList {
+        pagination: CursorPaginationData {
             page_size,
-            total: total_count,
+            next_cursor,
         },
         data,
     };
