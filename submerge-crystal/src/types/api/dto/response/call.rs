@@ -1,10 +1,11 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use utoipa::{ToResponse, ToSchema};
 
 use crate::types::{
     api::dto::{
-        pagination::PaginationData,
+        pagination::{CursorPaginationData, PaginationData},
+        request::call::CallQuery,
         response::{example::call::call_example, hex::Hash256Hex, schema::call::call_args_schema},
     },
     persistence::CallRow,
@@ -124,3 +125,36 @@ pub(crate) struct PaginatedCallList {
 #[derive(Debug, Serialize, ToSchema)]
 #[schema(value_type = Object)]
 pub(crate) struct CallArgs(pub JSONValue);
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct CallCursorPosition {
+    pub(crate) block_number: u64,
+    pub(crate) block_hash_hex: String,
+    pub(crate) call_index: Vec<u16>,
+}
+
+impl CallCursorPosition {
+    pub(crate) fn get_block_hash(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(hex::decode(self.block_hash_hex.trim_start_matches("0x"))?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct CallCursorPayload {
+    pub(crate) cursor_position: CallCursorPosition,
+    pub(crate) query: CallQuery,
+}
+
+#[derive(Debug, Serialize, ToResponse, ToSchema)]
+#[response(
+    description = "List of matching events, with a cursor for the next page.",
+    headers(
+        ("X-RateLimit-Limit" = u32),
+        ("X-RateLimit-Remaining" = u32),
+    ),
+)]
+pub(crate) struct CursorCallList {
+    #[schema(example = json!([call_example()]))]
+    pub data: Vec<CallDTO>,
+    pub pagination: CursorPaginationData,
+}

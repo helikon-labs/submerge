@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS call
     is_successful           BOOLEAN NOT NULL, 
     args                    JSONB NOT NULL,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT call_pk PRIMARY KEY (block_number, hash),
+    CONSTRAINT call_pk PRIMARY KEY (block_number, hash), -- block_number has to be in the primary key due to partitioning
     CONSTRAINT call_fk_extrinsic
         FOREIGN KEY (block_hash, block_number, extrinsic_hash)
             REFERENCES extrinsic (block_hash, block_number, hash)
@@ -46,10 +46,8 @@ CREATE INDEX IF NOT EXISTS call_idx_block_hash
 CREATE INDEX IF NOT EXISTS call_idx_extrinsic_hash
     ON call (extrinsic_hash, call_index ASC);
 CREATE INDEX IF NOT EXISTS call_idx_block_number
-    ON call (block_number DESC, extrinsic_index ASC, call_index ASC);
+    ON call (block_number DESC, block_hash ASC, extrinsic_index ASC, call_index ASC);
 CREATE INDEX IF NOT EXISTS call_idx_block_number_metadata_call_id
-    ON call (block_number DESC, metadata_call_id, extrinsic_index ASC, call_index ASC);
-CREATE INDEX IF NOT EXISTS call_idx_metadata_call_id
     ON call (metadata_call_id, block_number DESC, extrinsic_index ASC, call_index ASC);
 
 CREATE TABLE call_0_1000000 PARTITION OF call FOR VALUES FROM (0) TO (1000000);

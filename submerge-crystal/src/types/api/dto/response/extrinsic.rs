@@ -1,11 +1,12 @@
 use parity_scale_codec::Decode as _;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JSONValue;
 use utoipa::{ToResponse, ToSchema};
 
 use crate::types::{
     api::dto::{
-        pagination::PaginationData,
+        pagination::{CursorPaginationData, PaginationData},
+        request::extrinsic::ExtrinsicQuery,
         response::{
             example::extrinsic::extrinsic_example, hex::Hash256Hex, multi_address::MultiAddressDTO,
             multi_signature::MultiSignatureDTO, schema::extrinsic::extrinsic_extra_schema,
@@ -124,4 +125,37 @@ pub(crate) struct PaginatedExtrinsicList {
     #[schema(example = json!([extrinsic_example()]))]
     pub data: Vec<ExtrinsicDTO>,
     pub pagination: PaginationData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct ExtrinsicCursorPosition {
+    pub(crate) block_number: u64,
+    pub(crate) block_hash_hex: String,
+    pub(crate) index: u32,
+}
+
+impl ExtrinsicCursorPosition {
+    pub(crate) fn get_block_hash(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(hex::decode(self.block_hash_hex.trim_start_matches("0x"))?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct ExtrinsicCursorPayload {
+    pub(crate) cursor_position: ExtrinsicCursorPosition,
+    pub(crate) query: ExtrinsicQuery,
+}
+
+#[derive(Debug, Serialize, ToResponse, ToSchema)]
+#[response(
+    description = "List of matching extrinsic, with a cursor for the next page.",
+    headers(
+        ("X-RateLimit-Limit" = u32),
+        ("X-RateLimit-Remaining" = u32),
+    ),
+)]
+pub(crate) struct CursorExtrinsicList {
+    #[schema(example = json!([extrinsic_example()]))]
+    pub data: Vec<ExtrinsicDTO>,
+    pub pagination: CursorPaginationData,
 }
