@@ -23,11 +23,7 @@ export const zAddress32Hex = z.string().regex(/^0x[a-f0-9]{64}$/);
  * - `proposed`: Blocks that have been authored but not yet finalized.
  * - `pruned`: Blocks that have been removed or are no longer accessible.
  */
-export const zBlockStatus = z.enum([
-    'proposed',
-    'pruned',
-    'finalized'
-]);
+export const zBlockStatus = z.enum(['proposed', 'pruned', 'finalized']);
 
 /**
  * Call arguments wrapper.
@@ -39,14 +35,14 @@ export const zCallArgs = z.record(z.string(), z.unknown());
  */
 export const zCursorPaginationData = z.object({
     nextCursor: z.optional(z.string()),
-    pageSize: z.int().gte(1)
+    pageSize: z.int().gte(1),
 });
 
 /**
  * Generic error type.
  */
 export const zError = z.object({
-    message: z.string()
+    message: z.string(),
 });
 
 /**
@@ -82,7 +78,7 @@ export const zCall = z.object({
     palletIndex: z.int().gte(0),
     palletName: z.string(),
     parentCallHash: z.optional(zHash256Hex),
-    specVersion: z.int().gte(0)
+    specVersion: z.int().gte(0),
 });
 
 /**
@@ -104,7 +100,7 @@ export const zEvent = z.object({
     palletName: z.string(),
     phase: z.string(),
     specVersion: z.int().gte(0),
-    traceIndex: z.optional(z.int().gte(0))
+    traceIndex: z.optional(z.int().gte(0)),
 });
 
 /**
@@ -123,7 +119,7 @@ export const zGenesisRecord = z.object({
     palletName: z.optional(z.string()),
     palletStorageItemIndex: z.optional(z.int().gte(0)),
     palletStorageItemName: z.optional(z.string()),
-    value: zHexString
+    value: zHexString,
 });
 
 /**
@@ -142,7 +138,7 @@ export const zMetadataItemDocumentation = z.array(z.string());
 export const zMetadataCall = z.object({
     docs: zMetadataItemDocumentation,
     index: z.int().gte(0),
-    name: z.string()
+    name: z.string(),
 });
 
 /**
@@ -155,7 +151,7 @@ export const zMetadataConstant = z.object({
     typeId: z.optional(z.int().gte(0)),
     typeName: z.string(),
     value: z.optional(z.record(z.string(), z.unknown())),
-    valueHex: zHexString
+    valueHex: zHexString,
 });
 
 /**
@@ -164,7 +160,7 @@ export const zMetadataConstant = z.object({
 export const zMetadataError = z.object({
     docs: zMetadataItemDocumentation,
     index: z.int().gte(0),
-    name: z.string()
+    name: z.string(),
 });
 
 /**
@@ -173,7 +169,7 @@ export const zMetadataError = z.object({
 export const zMetadataEvent = z.object({
     docs: zMetadataItemDocumentation,
     index: z.int().gte(0),
-    name: z.string()
+    name: z.string(),
 });
 
 /**
@@ -186,7 +182,7 @@ export const zMetadataJson = z.unknown();
  */
 export const zMetadataPalletSummary = z.object({
     index: z.int().gte(0),
-    name: z.string()
+    name: z.string(),
 });
 
 /**
@@ -196,7 +192,7 @@ export const zMetadataStorageItem = z.object({
     docs: zMetadataItemDocumentation,
     index: z.int().gte(0),
     keyPrefix: zHexString,
-    name: z.string()
+    name: z.string(),
 });
 
 /**
@@ -209,7 +205,7 @@ export const zMetadataPallet = z.object({
     events: z.array(zMetadataEvent),
     index: z.int().gte(0),
     name: z.string(),
-    storageItems: z.array(zMetadataStorageItem)
+    storageItems: z.array(zMetadataStorageItem),
 });
 
 /**
@@ -218,7 +214,7 @@ export const zMetadataPallet = z.object({
 export const zMetadata = z.object({
     metadataVersion: z.int().gte(0),
     pallets: z.array(zMetadataPallet),
-    specVersion: z.int().gte(0)
+    specVersion: z.int().gte(0),
 });
 
 /**
@@ -226,7 +222,7 @@ export const zMetadata = z.object({
  */
 export const zMetadataSummary = z.object({
     metadataVersion: z.int().gte(0),
-    specVersion: z.int().gte(0)
+    specVersion: z.int().gte(0),
 });
 
 /**
@@ -239,7 +235,7 @@ export const zMultiAddress20Type = z.enum(['address20']);
  */
 export const zMultiAddress20 = z.object({
     type: zMultiAddress20Type,
-    value: zAddress20Hex
+    value: zAddress20Hex,
 });
 
 /**
@@ -252,7 +248,7 @@ export const zMultiAddress32Type = z.enum(['address32']);
  */
 export const zMultiAddress32 = z.object({
     type: zMultiAddress32Type,
-    value: zAddress32Hex
+    value: zAddress32Hex,
 });
 
 /**
@@ -265,7 +261,7 @@ export const zMultiAddressAccountIdType = z.enum(['accountId']);
  */
 export const zMultiAddressAccountId = z.object({
     type: zMultiAddressAccountIdType,
-    value: zAccountIdHex
+    value: zAccountIdHex,
 });
 
 /**
@@ -278,7 +274,7 @@ export const zMultiAddressIndexType = z.enum(['index']);
  */
 export const zMultiAddressAccountIndex = z.object({
     type: zMultiAddressIndexType,
-    value: z.int().gte(0)
+    value: z.int().gte(0),
 });
 
 /**
@@ -291,7 +287,7 @@ export const zMultiAddressRawType = z.enum(['raw']);
  */
 export const zMultiAddressRaw = z.object({
     type: zMultiAddressRawType,
-    value: zHexString
+    value: zHexString,
 });
 
 /**
@@ -299,21 +295,31 @@ export const zMultiAddressRaw = z.object({
  * The `type` tag selects the variant; `value` carries the payload.
  */
 export const zMultiAddress = z.union([
-    z.object({
-        type: z.literal('accountId')
-    }).and(zMultiAddressAccountId),
-    z.object({
-        type: z.literal('MultiAddressAccountIndex')
-    }).and(zMultiAddressAccountIndex),
-    z.object({
-        type: z.literal('raw')
-    }).and(zMultiAddressRaw),
-    z.object({
-        type: z.literal('address20')
-    }).and(zMultiAddress20),
-    z.object({
-        type: z.literal('address32')
-    }).and(zMultiAddress32)
+    z
+        .object({
+            type: z.literal('accountId'),
+        })
+        .and(zMultiAddressAccountId),
+    z
+        .object({
+            type: z.literal('MultiAddressAccountIndex'),
+        })
+        .and(zMultiAddressAccountIndex),
+    z
+        .object({
+            type: z.literal('raw'),
+        })
+        .and(zMultiAddressRaw),
+    z
+        .object({
+            type: z.literal('address20'),
+        })
+        .and(zMultiAddress20),
+    z
+        .object({
+            type: z.literal('address32'),
+        })
+        .and(zMultiAddress32),
 ]);
 
 /**
@@ -331,7 +337,7 @@ export const zBlock = z.object({
     stateRoot: zHash256Hex,
     status: zBlockStatus,
     timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-    weight: z.optional(z.record(z.string(), z.unknown()))
+    weight: z.optional(z.record(z.string(), z.unknown())),
 });
 
 /**
@@ -360,7 +366,7 @@ export const zMultiSignatureSr25519Type = z.enum(['sr25519']);
 export const zPaginationData = z.object({
     page: z.int().gte(1),
     pageSize: z.int().gte(1),
-    total: z.coerce.bigint().gte(BigInt(0))
+    total: z.coerce.bigint().gte(BigInt(0)),
 });
 
 /**
@@ -375,7 +381,7 @@ export const zSignatureHexString = z.string().regex(/^0x([0-9a-f]{128}|[0-9a-f]{
  */
 export const zMultiSignatureEcdsa = z.object({
     type: zMultiSignatureEcdsaType,
-    value: zSignatureHexString
+    value: zSignatureHexString,
 });
 
 /**
@@ -383,7 +389,7 @@ export const zMultiSignatureEcdsa = z.object({
  */
 export const zMultiSignatureEd25519 = z.object({
     type: zMultiSignatureEd25519Type,
-    value: zSignatureHexString
+    value: zSignatureHexString,
 });
 
 /**
@@ -391,7 +397,7 @@ export const zMultiSignatureEd25519 = z.object({
  */
 export const zMultiSignatureEth = z.object({
     type: zMultiSignatureEthType,
-    value: zSignatureHexString
+    value: zSignatureHexString,
 });
 
 /**
@@ -399,7 +405,7 @@ export const zMultiSignatureEth = z.object({
  */
 export const zMultiSignatureSr25519 = z.object({
     type: zMultiSignatureSr25519Type,
-    value: zSignatureHexString
+    value: zSignatureHexString,
 });
 
 /**
@@ -407,18 +413,26 @@ export const zMultiSignatureSr25519 = z.object({
  * The `type` tag selects the variant; `value` carries the payload.
  */
 export const zMultiSignature = z.union([
-    z.object({
-        type: z.literal('ecdsa')
-    }).and(zMultiSignatureEcdsa),
-    z.object({
-        type: z.literal('eth')
-    }).and(zMultiSignatureEth),
-    z.object({
-        type: z.literal('ed25519')
-    }).and(zMultiSignatureEd25519),
-    z.object({
-        type: z.literal('sr25519')
-    }).and(zMultiSignatureSr25519)
+    z
+        .object({
+            type: z.literal('ecdsa'),
+        })
+        .and(zMultiSignatureEcdsa),
+    z
+        .object({
+            type: z.literal('eth'),
+        })
+        .and(zMultiSignatureEth),
+    z
+        .object({
+            type: z.literal('ed25519'),
+        })
+        .and(zMultiSignatureEd25519),
+    z
+        .object({
+            type: z.literal('sr25519'),
+        })
+        .and(zMultiSignatureSr25519),
 ]);
 
 /**
@@ -437,7 +451,7 @@ export const zExtrinsic = z.object({
     signer: z.optional(zMultiAddress),
     specVersion: z.int().gte(0),
     traceIndex: z.optional(z.int().gte(0)),
-    version: z.int().gte(0)
+    version: z.int().gte(0),
 });
 
 /**
@@ -450,7 +464,7 @@ export const zTraceStorageMethod = z.enum([
     'ClearPrefix',
     'ChildClearPrefix',
     'Append',
-    'Genesis'
+    'Genesis',
 ]);
 
 /**
@@ -469,444 +483,484 @@ export const zTrace = z.object({
     palletName: z.optional(z.string()),
     palletStorageItemIndex: z.optional(z.int().gte(0)),
     palletStorageItemName: z.optional(z.string()),
-    parentId: z.optional(z.union([
-        z.string(),
-        z.null()
-    ])),
+    parentId: z.optional(z.union([z.string(), z.null()])),
     specVersion: z.int().gte(0),
-    storageMethod: zTraceStorageMethod
+    storageMethod: zTraceStorageMethod,
 });
 
 export const zGetBlocksData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        status: z.optional(zBlockStatus),
-        min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_spec_version: z.optional(z.int().gte(0)),
-        max_spec_version: z.optional(z.int().gte(0)),
-        author: z.optional(z.string().regex(/^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$/))
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            status: z.optional(zBlockStatus),
+            min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_spec_version: z.optional(z.int().gte(0)),
+            max_spec_version: z.optional(z.int().gte(0)),
+            author: z.optional(
+                z.string().regex(/^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$/),
+            ),
+        }),
+    ),
 });
 
 export const zGetBlocksByReferenceData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetCallsByBlockReferenceData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_call_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_call_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventsByBlockReferenceData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_event_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_event_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventsByBlockReferenceAndIndexData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
-        event_index: z.int().gte(0)
+        event_index: z.int().gte(0),
     }),
-    query: z.optional(z.object({
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetExtrinsicsByBlockReferenceData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        is_signed: z.optional(z.boolean()),
-        signer: z.optional(z.union([
-            z.string(),
-            z.null()
-        ]))
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            is_signed: z.optional(z.boolean()),
+            signer: z.optional(z.union([z.string(), z.null()])),
+        }),
+    ),
 });
 
 export const zGetExtrinsicsByBlockReferenceAndIndexData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
-        extrinsic_index: z.int().gte(0)
+        extrinsic_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetCallsByBlockReferenceAndExtrinsicIndexData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
-        extrinsic_index: z.int().gte(0)
+        extrinsic_index: z.int().gte(0),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_call_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_call_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventsByBlockReferenceAndExtrinsicIndexData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
-        extrinsic_index: z.int().gte(0)
+        extrinsic_index: z.int().gte(0),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_event_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_event_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetTracesByBlockReferenceData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        block_ref: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+        }),
+    ),
 });
 
 export const zGetCallsData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_spec_version: z.optional(z.int().gte(0)),
-        max_spec_version: z.optional(z.int().gte(0)),
-        pallet_name: z.optional(z.string()),
-        call_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            next_cursor: z.optional(z.string()),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_spec_version: z.optional(z.int().gte(0)),
+            max_spec_version: z.optional(z.int().gte(0)),
+            pallet_name: z.optional(z.string()),
+            call_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetCallByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetCallArgsByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetCallExtrinsicByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetParentCallByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetSubCallsByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        call_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_call_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_call_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventsData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        next_cursor: z.optional(z.string()),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_spec_version: z.optional(z.int().gte(0)),
-        max_spec_version: z.optional(z.int().gte(0)),
-        pallet_name: z.optional(z.string()),
-        event_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            next_cursor: z.optional(z.string()),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_spec_version: z.optional(z.int().gte(0)),
+            max_spec_version: z.optional(z.int().gte(0)),
+            pallet_name: z.optional(z.string()),
+            event_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        event_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        event_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventArgsByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        event_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        event_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetExtrinsicsData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_spec_version: z.optional(z.int().gte(0)),
-        max_spec_version: z.optional(z.int().gte(0)),
-        is_signed: z.optional(z.boolean()),
-        signer: z.optional(z.string().regex(/^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$/))
-    }))
+    query: z.optional(
+        z.object({
+            next_cursor: z.optional(z.string()),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_spec_version: z.optional(z.int().gte(0)),
+            max_spec_version: z.optional(z.int().gte(0)),
+            is_signed: z.optional(z.boolean()),
+            signer: z.optional(
+                z.string().regex(/^(?:[1-9A-HJ-NP-Za-km-z]{47,48}|(?:0x)?[0-9a-fA-F]{1-256})$/),
+            ),
+        }),
+    ),
 });
 
 export const zGetExtrinsicByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        extrinsic_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        extrinsic_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetExtrinsicRootCallByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        extrinsic_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        extrinsic_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.object({
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetCallsByExtrinsicHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        extrinsic_hash: z.string().regex(/^(?:0x)?[0-9a-fA-F]{64}$/)
+        extrinsic_hash: z.string().regex(/^(?:0x)?[0-9a-fA-F]{64}$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_call_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_call_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetEventsByExtrinsicHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        extrinsic_hash: z.string().regex(/^(?:0x)?[0-9a-fA-F]{64}$/)
+        extrinsic_hash: z.string().regex(/^(?:0x)?[0-9a-fA-F]{64}$/),
     }),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        pallet_name: z.optional(z.string()),
-        pallet_event_name: z.optional(z.string()),
-        include_args: z.optional(z.boolean()).default(false)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            pallet_name: z.optional(z.string()),
+            pallet_event_name: z.optional(z.string()),
+            include_args: z.optional(z.boolean()).default(false),
+        }),
+    ),
 });
 
 export const zGetGenesisRecordsData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+        }),
+    ),
 });
 
 export const zGetMetadataListData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(0)),
-        page_size: z.optional(z.int().gte(0))
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(0)),
+            page_size: z.optional(z.int().gte(0)),
+        }),
+    ),
 });
 
 export const zGetMetadataData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        spec_version: z.int().gte(0)
+        spec_version: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataHexData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        spec_version: z.int().gte(0)
+        spec_version: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataJsonData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        spec_version: z.int().gte(0)
+        spec_version: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletsData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        spec_version: z.int().gte(0)
+        spec_version: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         spec_version: z.int().gte(0),
-        pallet_index: z.int().gte(0)
+        pallet_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletCallsData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         spec_version: z.int().gte(0),
-        pallet_index: z.int().gte(0)
+        pallet_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletConstantsData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         spec_version: z.int().gte(0),
-        pallet_index: z.int().gte(0)
+        pallet_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletErrorsData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         spec_version: z.int().gte(0),
-        pallet_index: z.int().gte(0)
+        pallet_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletEventsData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         spec_version: z.int().gte(0),
-        pallet_index: z.int().gte(0)
+        pallet_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetMetadataPalletStorageItemsData = z.object({
     body: z.optional(z.never()),
     path: z.object({
         spec_version: z.int().gte(0),
-        pallet_index: z.int().gte(0)
+        pallet_index: z.int().gte(0),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetTracesData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
-    query: z.optional(z.object({
-        page: z.optional(z.int().gte(1)).default(1),
-        page_size: z.optional(z.int().gte(1).lte(100)).default(25),
-        min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
-        min_spec_version: z.optional(z.int().gte(0)),
-        max_spec_version: z.optional(z.int().gte(0)),
-        key_prefix: z.optional(zHexStringParam),
-        key_params: z.optional(zHexStringParam)
-    }))
+    query: z.optional(
+        z.object({
+            page: z.optional(z.int().gte(1)).default(1),
+            page_size: z.optional(z.int().gte(1).lte(100)).default(25),
+            min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            max_block_timestamp: z.optional(z.coerce.bigint().gte(BigInt(0))),
+            min_spec_version: z.optional(z.int().gte(0)),
+            max_spec_version: z.optional(z.int().gte(0)),
+            key_prefix: z.optional(zHexStringParam),
+            key_params: z.optional(zHexStringParam),
+        }),
+    ),
 });
 
 export const zGetTraceByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        trace_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        trace_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });
 
 export const zGetTraceValueByHashData = z.object({
     body: z.optional(z.never()),
     path: z.object({
-        trace_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/)
+        trace_hash: z.string().regex(/^(?:\d+|(0x)?[a-f0-9A-F]{64})$/),
     }),
-    query: z.optional(z.never())
+    query: z.optional(z.never()),
 });

@@ -2,11 +2,199 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import { getBlocksByReferenceResponseTransformer, getBlocksResponseTransformer, getCallByHashResponseTransformer, getCallExtrinsicByHashResponseTransformer, getCallsByBlockReferenceAndExtrinsicIndexResponseTransformer, getCallsByBlockReferenceResponseTransformer, getCallsByExtrinsicHashResponseTransformer, getCallsResponseTransformer, getEventByHashResponseTransformer, getEventsByBlockReferenceAndExtrinsicIndexResponseTransformer, getEventsByBlockReferenceAndIndexResponseTransformer, getEventsByBlockReferenceResponseTransformer, getEventsByExtrinsicHashResponseTransformer, getEventsResponseTransformer, getExtrinsicByHashResponseTransformer, getExtrinsicRootCallByHashResponseTransformer, getExtrinsicsByBlockReferenceAndIndexResponseTransformer, getExtrinsicsByBlockReferenceResponseTransformer, getExtrinsicsResponseTransformer, getGenesisRecordsResponseTransformer, getMetadataListResponseTransformer, getParentCallByHashResponseTransformer, getSubCallsByHashResponseTransformer, getTraceByHashResponseTransformer, getTracesByBlockReferenceResponseTransformer, getTracesResponseTransformer } from './transformers.gen';
-import type { GetBlocksByReferenceData, GetBlocksByReferenceErrors, GetBlocksByReferenceResponses, GetBlocksData, GetBlocksErrors, GetBlocksResponses, GetCallArgsByHashData, GetCallArgsByHashErrors, GetCallArgsByHashResponses, GetCallByHashData, GetCallByHashErrors, GetCallByHashResponses, GetCallExtrinsicByHashData, GetCallExtrinsicByHashErrors, GetCallExtrinsicByHashResponses, GetCallsByBlockReferenceAndExtrinsicIndexData, GetCallsByBlockReferenceAndExtrinsicIndexErrors, GetCallsByBlockReferenceAndExtrinsicIndexResponses, GetCallsByBlockReferenceData, GetCallsByBlockReferenceErrors, GetCallsByBlockReferenceResponses, GetCallsByExtrinsicHashData, GetCallsByExtrinsicHashErrors, GetCallsByExtrinsicHashResponses, GetCallsData, GetCallsErrors, GetCallsResponses, GetEventArgsByHashData, GetEventArgsByHashErrors, GetEventArgsByHashResponses, GetEventByHashData, GetEventByHashErrors, GetEventByHashResponses, GetEventsByBlockReferenceAndExtrinsicIndexData, GetEventsByBlockReferenceAndExtrinsicIndexErrors, GetEventsByBlockReferenceAndExtrinsicIndexResponses, GetEventsByBlockReferenceAndIndexData, GetEventsByBlockReferenceAndIndexErrors, GetEventsByBlockReferenceAndIndexResponses, GetEventsByBlockReferenceData, GetEventsByBlockReferenceErrors, GetEventsByBlockReferenceResponses, GetEventsByExtrinsicHashData, GetEventsByExtrinsicHashErrors, GetEventsByExtrinsicHashResponses, GetEventsData, GetEventsErrors, GetEventsResponses, GetExtrinsicByHashData, GetExtrinsicByHashErrors, GetExtrinsicByHashResponses, GetExtrinsicRootCallByHashData, GetExtrinsicRootCallByHashErrors, GetExtrinsicRootCallByHashResponses, GetExtrinsicsByBlockReferenceAndIndexData, GetExtrinsicsByBlockReferenceAndIndexErrors, GetExtrinsicsByBlockReferenceAndIndexResponses, GetExtrinsicsByBlockReferenceData, GetExtrinsicsByBlockReferenceErrors, GetExtrinsicsByBlockReferenceResponses, GetExtrinsicsData, GetExtrinsicsErrors, GetExtrinsicsResponses, GetGenesisRecordsData, GetGenesisRecordsErrors, GetGenesisRecordsResponses, GetMetadataData, GetMetadataErrors, GetMetadataHexData, GetMetadataHexErrors, GetMetadataHexResponses, GetMetadataJsonData, GetMetadataJsonErrors, GetMetadataJsonResponses, GetMetadataListData, GetMetadataListErrors, GetMetadataListResponses, GetMetadataPalletCallsData, GetMetadataPalletCallsErrors, GetMetadataPalletCallsResponses, GetMetadataPalletConstantsData, GetMetadataPalletConstantsErrors, GetMetadataPalletConstantsResponses, GetMetadataPalletData, GetMetadataPalletErrors, GetMetadataPalletErrorsData, GetMetadataPalletErrorsErrors, GetMetadataPalletErrorsResponses, GetMetadataPalletEventsData, GetMetadataPalletEventsErrors, GetMetadataPalletEventsResponses, GetMetadataPalletResponses, GetMetadataPalletsData, GetMetadataPalletsErrors, GetMetadataPalletsResponses, GetMetadataPalletStorageItemsData, GetMetadataPalletStorageItemsErrors, GetMetadataPalletStorageItemsResponses, GetMetadataResponses, GetParentCallByHashData, GetParentCallByHashErrors, GetParentCallByHashResponses, GetSubCallsByHashData, GetSubCallsByHashErrors, GetSubCallsByHashResponses, GetTraceByHashData, GetTraceByHashErrors, GetTraceByHashResponses, GetTracesByBlockReferenceData, GetTracesByBlockReferenceErrors, GetTracesByBlockReferenceResponses, GetTracesData, GetTracesErrors, GetTracesResponses, GetTraceValueByHashData, GetTraceValueByHashErrors, GetTraceValueByHashResponses } from './types.gen';
-import { zGetBlocksByReferenceData, zGetBlocksData, zGetCallArgsByHashData, zGetCallByHashData, zGetCallExtrinsicByHashData, zGetCallsByBlockReferenceAndExtrinsicIndexData, zGetCallsByBlockReferenceData, zGetCallsByExtrinsicHashData, zGetCallsData, zGetEventArgsByHashData, zGetEventByHashData, zGetEventsByBlockReferenceAndExtrinsicIndexData, zGetEventsByBlockReferenceAndIndexData, zGetEventsByBlockReferenceData, zGetEventsByExtrinsicHashData, zGetEventsData, zGetExtrinsicByHashData, zGetExtrinsicRootCallByHashData, zGetExtrinsicsByBlockReferenceAndIndexData, zGetExtrinsicsByBlockReferenceData, zGetExtrinsicsData, zGetGenesisRecordsData, zGetMetadataData, zGetMetadataHexData, zGetMetadataJsonData, zGetMetadataListData, zGetMetadataPalletCallsData, zGetMetadataPalletConstantsData, zGetMetadataPalletData, zGetMetadataPalletErrorsData, zGetMetadataPalletEventsData, zGetMetadataPalletsData, zGetMetadataPalletStorageItemsData, zGetParentCallByHashData, zGetSubCallsByHashData, zGetTraceByHashData, zGetTracesByBlockReferenceData, zGetTracesData, zGetTraceValueByHashData } from './zod.gen';
+import {
+    getBlocksByReferenceResponseTransformer,
+    getBlocksResponseTransformer,
+    getCallByHashResponseTransformer,
+    getCallExtrinsicByHashResponseTransformer,
+    getCallsByBlockReferenceAndExtrinsicIndexResponseTransformer,
+    getCallsByBlockReferenceResponseTransformer,
+    getCallsByExtrinsicHashResponseTransformer,
+    getCallsResponseTransformer,
+    getEventByHashResponseTransformer,
+    getEventsByBlockReferenceAndExtrinsicIndexResponseTransformer,
+    getEventsByBlockReferenceAndIndexResponseTransformer,
+    getEventsByBlockReferenceResponseTransformer,
+    getEventsByExtrinsicHashResponseTransformer,
+    getEventsResponseTransformer,
+    getExtrinsicByHashResponseTransformer,
+    getExtrinsicRootCallByHashResponseTransformer,
+    getExtrinsicsByBlockReferenceAndIndexResponseTransformer,
+    getExtrinsicsByBlockReferenceResponseTransformer,
+    getExtrinsicsResponseTransformer,
+    getGenesisRecordsResponseTransformer,
+    getMetadataListResponseTransformer,
+    getParentCallByHashResponseTransformer,
+    getSubCallsByHashResponseTransformer,
+    getTraceByHashResponseTransformer,
+    getTracesByBlockReferenceResponseTransformer,
+    getTracesResponseTransformer,
+} from './transformers.gen';
+import type {
+    GetBlocksByReferenceData,
+    GetBlocksByReferenceErrors,
+    GetBlocksByReferenceResponses,
+    GetBlocksData,
+    GetBlocksErrors,
+    GetBlocksResponses,
+    GetCallArgsByHashData,
+    GetCallArgsByHashErrors,
+    GetCallArgsByHashResponses,
+    GetCallByHashData,
+    GetCallByHashErrors,
+    GetCallByHashResponses,
+    GetCallExtrinsicByHashData,
+    GetCallExtrinsicByHashErrors,
+    GetCallExtrinsicByHashResponses,
+    GetCallsByBlockReferenceAndExtrinsicIndexData,
+    GetCallsByBlockReferenceAndExtrinsicIndexErrors,
+    GetCallsByBlockReferenceAndExtrinsicIndexResponses,
+    GetCallsByBlockReferenceData,
+    GetCallsByBlockReferenceErrors,
+    GetCallsByBlockReferenceResponses,
+    GetCallsByExtrinsicHashData,
+    GetCallsByExtrinsicHashErrors,
+    GetCallsByExtrinsicHashResponses,
+    GetCallsData,
+    GetCallsErrors,
+    GetCallsResponses,
+    GetEventArgsByHashData,
+    GetEventArgsByHashErrors,
+    GetEventArgsByHashResponses,
+    GetEventByHashData,
+    GetEventByHashErrors,
+    GetEventByHashResponses,
+    GetEventsByBlockReferenceAndExtrinsicIndexData,
+    GetEventsByBlockReferenceAndExtrinsicIndexErrors,
+    GetEventsByBlockReferenceAndExtrinsicIndexResponses,
+    GetEventsByBlockReferenceAndIndexData,
+    GetEventsByBlockReferenceAndIndexErrors,
+    GetEventsByBlockReferenceAndIndexResponses,
+    GetEventsByBlockReferenceData,
+    GetEventsByBlockReferenceErrors,
+    GetEventsByBlockReferenceResponses,
+    GetEventsByExtrinsicHashData,
+    GetEventsByExtrinsicHashErrors,
+    GetEventsByExtrinsicHashResponses,
+    GetEventsData,
+    GetEventsErrors,
+    GetEventsResponses,
+    GetExtrinsicByHashData,
+    GetExtrinsicByHashErrors,
+    GetExtrinsicByHashResponses,
+    GetExtrinsicRootCallByHashData,
+    GetExtrinsicRootCallByHashErrors,
+    GetExtrinsicRootCallByHashResponses,
+    GetExtrinsicsByBlockReferenceAndIndexData,
+    GetExtrinsicsByBlockReferenceAndIndexErrors,
+    GetExtrinsicsByBlockReferenceAndIndexResponses,
+    GetExtrinsicsByBlockReferenceData,
+    GetExtrinsicsByBlockReferenceErrors,
+    GetExtrinsicsByBlockReferenceResponses,
+    GetExtrinsicsData,
+    GetExtrinsicsErrors,
+    GetExtrinsicsResponses,
+    GetGenesisRecordsData,
+    GetGenesisRecordsErrors,
+    GetGenesisRecordsResponses,
+    GetMetadataData,
+    GetMetadataErrors,
+    GetMetadataHexData,
+    GetMetadataHexErrors,
+    GetMetadataHexResponses,
+    GetMetadataJsonData,
+    GetMetadataJsonErrors,
+    GetMetadataJsonResponses,
+    GetMetadataListData,
+    GetMetadataListErrors,
+    GetMetadataListResponses,
+    GetMetadataPalletCallsData,
+    GetMetadataPalletCallsErrors,
+    GetMetadataPalletCallsResponses,
+    GetMetadataPalletConstantsData,
+    GetMetadataPalletConstantsErrors,
+    GetMetadataPalletConstantsResponses,
+    GetMetadataPalletData,
+    GetMetadataPalletErrors,
+    GetMetadataPalletErrorsData,
+    GetMetadataPalletErrorsErrors,
+    GetMetadataPalletErrorsResponses,
+    GetMetadataPalletEventsData,
+    GetMetadataPalletEventsErrors,
+    GetMetadataPalletEventsResponses,
+    GetMetadataPalletResponses,
+    GetMetadataPalletsData,
+    GetMetadataPalletsErrors,
+    GetMetadataPalletsResponses,
+    GetMetadataPalletStorageItemsData,
+    GetMetadataPalletStorageItemsErrors,
+    GetMetadataPalletStorageItemsResponses,
+    GetMetadataResponses,
+    GetParentCallByHashData,
+    GetParentCallByHashErrors,
+    GetParentCallByHashResponses,
+    GetSubCallsByHashData,
+    GetSubCallsByHashErrors,
+    GetSubCallsByHashResponses,
+    GetTraceByHashData,
+    GetTraceByHashErrors,
+    GetTraceByHashResponses,
+    GetTracesByBlockReferenceData,
+    GetTracesByBlockReferenceErrors,
+    GetTracesByBlockReferenceResponses,
+    GetTracesData,
+    GetTracesErrors,
+    GetTracesResponses,
+    GetTraceValueByHashData,
+    GetTraceValueByHashErrors,
+    GetTraceValueByHashResponses,
+} from './types.gen';
+import {
+    zGetBlocksByReferenceData,
+    zGetBlocksData,
+    zGetCallArgsByHashData,
+    zGetCallByHashData,
+    zGetCallExtrinsicByHashData,
+    zGetCallsByBlockReferenceAndExtrinsicIndexData,
+    zGetCallsByBlockReferenceData,
+    zGetCallsByExtrinsicHashData,
+    zGetCallsData,
+    zGetEventArgsByHashData,
+    zGetEventByHashData,
+    zGetEventsByBlockReferenceAndExtrinsicIndexData,
+    zGetEventsByBlockReferenceAndIndexData,
+    zGetEventsByBlockReferenceData,
+    zGetEventsByExtrinsicHashData,
+    zGetEventsData,
+    zGetExtrinsicByHashData,
+    zGetExtrinsicRootCallByHashData,
+    zGetExtrinsicsByBlockReferenceAndIndexData,
+    zGetExtrinsicsByBlockReferenceData,
+    zGetExtrinsicsData,
+    zGetGenesisRecordsData,
+    zGetMetadataData,
+    zGetMetadataHexData,
+    zGetMetadataJsonData,
+    zGetMetadataListData,
+    zGetMetadataPalletCallsData,
+    zGetMetadataPalletConstantsData,
+    zGetMetadataPalletData,
+    zGetMetadataPalletErrorsData,
+    zGetMetadataPalletEventsData,
+    zGetMetadataPalletsData,
+    zGetMetadataPalletStorageItemsData,
+    zGetParentCallByHashData,
+    zGetSubCallsByHashData,
+    zGetTraceByHashData,
+    zGetTracesByBlockReferenceData,
+    zGetTracesData,
+    zGetTraceValueByHashData,
+} from './zod.gen';
 
-export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+export type Options<
+    TData extends TDataShape = TDataShape,
+    ThrowOnError extends boolean = boolean,
+> = Options2<TData, ThrowOnError> & {
     /**
      * You can provide a client instance returned by `createClient()` instead of
      * individual options. This might be also useful if you want to implement a
@@ -26,54 +214,76 @@ export class BlockService {
      *
      * Returns all blocks from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number.
      */
-    public static getBlocks<ThrowOnError extends boolean = false>(options?: Options<GetBlocksData, ThrowOnError>) {
+    public static getBlocks<ThrowOnError extends boolean = false>(
+        options?: Options<GetBlocksData, ThrowOnError>,
+    ) {
         return (options?.client ?? client).get<GetBlocksResponses, GetBlocksErrors, ThrowOnError>({
             requestValidator: async (data) => await zGetBlocksData.parseAsync(data),
             responseTransformer: getBlocksResponseTransformer,
             url: '/blocks',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get blocks by reference
      *
      * If a hash is passed, returns the matching block. If a number is passed, gives the blocks by that number - could be multiple blocks if there's a pruned block in that slot.
      */
-    public static getBlocksByReference<ThrowOnError extends boolean = false>(options: Options<GetBlocksByReferenceData, ThrowOnError>) {
-        return (options.client ?? client).get<GetBlocksByReferenceResponses, GetBlocksByReferenceErrors, ThrowOnError>({
+    public static getBlocksByReference<ThrowOnError extends boolean = false>(
+        options: Options<GetBlocksByReferenceData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetBlocksByReferenceResponses,
+            GetBlocksByReferenceErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetBlocksByReferenceData.parseAsync(data),
             responseTransformer: getBlocksByReferenceResponseTransformer,
             url: '/blocks/{block_ref}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get block events by index
      *
      * Returns the events in the given block at the given index. It can return multiple events if a number is passed and there's a pruned block in that slot.
      */
-    public static getEventsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(options: Options<GetEventsByBlockReferenceAndIndexData, ThrowOnError>) {
-        return (options.client ?? client).get<GetEventsByBlockReferenceAndIndexResponses, GetEventsByBlockReferenceAndIndexErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetEventsByBlockReferenceAndIndexData.parseAsync(data),
+    public static getEventsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(
+        options: Options<GetEventsByBlockReferenceAndIndexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventsByBlockReferenceAndIndexResponses,
+            GetEventsByBlockReferenceAndIndexErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetEventsByBlockReferenceAndIndexData.parseAsync(data),
             responseTransformer: getEventsByBlockReferenceAndIndexResponseTransformer,
             url: '/blocks/{block_ref}/events/{event_index}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get block extrinsics by index
      *
      * Returns the extrinsics in the given block at the given index. It can return multiple extrinsics if a number is passed and there's a pruned block in that slot.
      */
-    public static getExtrinsicsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(options: Options<GetExtrinsicsByBlockReferenceAndIndexData, ThrowOnError>) {
-        return (options.client ?? client).get<GetExtrinsicsByBlockReferenceAndIndexResponses, GetExtrinsicsByBlockReferenceAndIndexErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetExtrinsicsByBlockReferenceAndIndexData.parseAsync(data),
+    public static getExtrinsicsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(
+        options: Options<GetExtrinsicsByBlockReferenceAndIndexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetExtrinsicsByBlockReferenceAndIndexResponses,
+            GetExtrinsicsByBlockReferenceAndIndexErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetExtrinsicsByBlockReferenceAndIndexData.parseAsync(data),
             responseTransformer: getExtrinsicsByBlockReferenceAndIndexResponseTransformer,
             url: '/blocks/{block_ref}/extrinsics/{extrinsic_index}',
-            ...options
+            ...options,
         });
     }
 }
@@ -84,137 +294,195 @@ export class CallService {
      *
      * If a hash is passed, returns the calls for the matching block. If a number is passed, gives the calls for the blocks with that number - could be multiple blocks if there's a pruned block in that slot.
      */
-    public static getCallsByBlockReference<ThrowOnError extends boolean = false>(options: Options<GetCallsByBlockReferenceData, ThrowOnError>) {
-        return (options.client ?? client).get<GetCallsByBlockReferenceResponses, GetCallsByBlockReferenceErrors, ThrowOnError>({
+    public static getCallsByBlockReference<ThrowOnError extends boolean = false>(
+        options: Options<GetCallsByBlockReferenceData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetCallsByBlockReferenceResponses,
+            GetCallsByBlockReferenceErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetCallsByBlockReferenceData.parseAsync(data),
             responseTransformer: getCallsByBlockReferenceResponseTransformer,
             url: '/blocks/{block_ref}/calls',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get block extrinsic calls
      *
      * Returns the calls for extrinsic in a block by block reference and 0-based extrinsic index.
      */
-    public static getCallsByBlockReferenceAndExtrinsicIndex<ThrowOnError extends boolean = false>(options: Options<GetCallsByBlockReferenceAndExtrinsicIndexData, ThrowOnError>) {
-        return (options.client ?? client).get<GetCallsByBlockReferenceAndExtrinsicIndexResponses, GetCallsByBlockReferenceAndExtrinsicIndexErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetCallsByBlockReferenceAndExtrinsicIndexData.parseAsync(data),
+    public static getCallsByBlockReferenceAndExtrinsicIndex<ThrowOnError extends boolean = false>(
+        options: Options<GetCallsByBlockReferenceAndExtrinsicIndexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetCallsByBlockReferenceAndExtrinsicIndexResponses,
+            GetCallsByBlockReferenceAndExtrinsicIndexErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetCallsByBlockReferenceAndExtrinsicIndexData.parseAsync(data),
             responseTransformer: getCallsByBlockReferenceAndExtrinsicIndexResponseTransformer,
             url: '/blocks/{block_ref}/extrinsics/{extrinsic_index}/calls',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get calls
      *
      * Returns all calls from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number, then call id.
      */
-    public static getCalls<ThrowOnError extends boolean = false>(options?: Options<GetCallsData, ThrowOnError>) {
+    public static getCalls<ThrowOnError extends boolean = false>(
+        options?: Options<GetCallsData, ThrowOnError>,
+    ) {
         return (options?.client ?? client).get<GetCallsResponses, GetCallsErrors, ThrowOnError>({
             requestValidator: async (data) => await zGetCallsData.parseAsync(data),
             responseTransformer: getCallsResponseTransformer,
             url: '/calls',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get call by hash
      *
      * Returns the call by its hash.
      */
-    public static getCallByHash<ThrowOnError extends boolean = false>(options: Options<GetCallByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetCallByHashResponses, GetCallByHashErrors, ThrowOnError>({
+    public static getCallByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetCallByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetCallByHashResponses,
+            GetCallByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetCallByHashData.parseAsync(data),
             responseTransformer: getCallByHashResponseTransformer,
             url: '/calls/{call_hash}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get call arguments
      *
      * Returns the arguments of a runtime call by its hash.
      */
-    public static getCallArgsByHash<ThrowOnError extends boolean = false>(options: Options<GetCallArgsByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetCallArgsByHashResponses, GetCallArgsByHashErrors, ThrowOnError>({
+    public static getCallArgsByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetCallArgsByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetCallArgsByHashResponses,
+            GetCallArgsByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetCallArgsByHashData.parseAsync(data),
             url: '/calls/{call_hash}/args',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get call extrinsic
      *
      * Returns the extrinsic of a call by call hash.
      */
-    public static getCallExtrinsicByHash<ThrowOnError extends boolean = false>(options: Options<GetCallExtrinsicByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetCallExtrinsicByHashResponses, GetCallExtrinsicByHashErrors, ThrowOnError>({
+    public static getCallExtrinsicByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetCallExtrinsicByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetCallExtrinsicByHashResponses,
+            GetCallExtrinsicByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetCallExtrinsicByHashData.parseAsync(data),
             responseTransformer: getCallExtrinsicByHashResponseTransformer,
             url: '/calls/{call_hash}/extrinsic',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get parent call
      *
      * Returns a parent call by the sub call's hash.
      */
-    public static getParentCallByHash<ThrowOnError extends boolean = false>(options: Options<GetParentCallByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetParentCallByHashResponses, GetParentCallByHashErrors, ThrowOnError>({
+    public static getParentCallByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetParentCallByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetParentCallByHashResponses,
+            GetParentCallByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetParentCallByHashData.parseAsync(data),
             responseTransformer: getParentCallByHashResponseTransformer,
             url: '/calls/{call_hash}/parent',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get sub calls
      *
      * Returns sub calls call by a parent call's hash.
      */
-    public static getSubCallsByHash<ThrowOnError extends boolean = false>(options: Options<GetSubCallsByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetSubCallsByHashResponses, GetSubCallsByHashErrors, ThrowOnError>({
+    public static getSubCallsByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetSubCallsByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetSubCallsByHashResponses,
+            GetSubCallsByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetSubCallsByHashData.parseAsync(data),
             responseTransformer: getSubCallsByHashResponseTransformer,
             url: '/calls/{call_hash}/subs',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get extrinsic root call
      *
      * Returns the root call of an extrinsic by its hash.
      */
-    public static getExtrinsicRootCallByHash<ThrowOnError extends boolean = false>(options: Options<GetExtrinsicRootCallByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetExtrinsicRootCallByHashResponses, GetExtrinsicRootCallByHashErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetExtrinsicRootCallByHashData.parseAsync(data),
+    public static getExtrinsicRootCallByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetExtrinsicRootCallByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetExtrinsicRootCallByHashResponses,
+            GetExtrinsicRootCallByHashErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetExtrinsicRootCallByHashData.parseAsync(data),
             responseTransformer: getExtrinsicRootCallByHashResponseTransformer,
             url: '/extrinsics/{extrinsic_hash}/call',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get extrinsic calls
      *
      * Returns the calls in an extrinsic by extrinsic hash.
      */
-    public static getCallsByExtrinsicHash<ThrowOnError extends boolean = false>(options: Options<GetCallsByExtrinsicHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetCallsByExtrinsicHashResponses, GetCallsByExtrinsicHashErrors, ThrowOnError>({
+    public static getCallsByExtrinsicHash<ThrowOnError extends boolean = false>(
+        options: Options<GetCallsByExtrinsicHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetCallsByExtrinsicHashResponses,
+            GetCallsByExtrinsicHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetCallsByExtrinsicHashData.parseAsync(data),
             responseTransformer: getCallsByExtrinsicHashResponseTransformer,
             url: '/extrinsics/{extrinsic_hash}/calls',
-            ...options
+            ...options,
         });
     }
 }
@@ -225,81 +493,114 @@ export class EventService {
      *
      * If a hash is passed, returns the events for the matching block. If a number is passed, gives the events for the block with that number - could be multiple blocks if there's a pruned block in that slot.
      */
-    public static getEventsByBlockReference<ThrowOnError extends boolean = false>(options: Options<GetEventsByBlockReferenceData, ThrowOnError>) {
-        return (options.client ?? client).get<GetEventsByBlockReferenceResponses, GetEventsByBlockReferenceErrors, ThrowOnError>({
+    public static getEventsByBlockReference<ThrowOnError extends boolean = false>(
+        options: Options<GetEventsByBlockReferenceData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventsByBlockReferenceResponses,
+            GetEventsByBlockReferenceErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetEventsByBlockReferenceData.parseAsync(data),
             responseTransformer: getEventsByBlockReferenceResponseTransformer,
             url: '/blocks/{block_ref}/events',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get block extrinsic events
      *
      * Returns the events for extrinsic in a block by block reference and 0-based extrinsic index.
      */
-    public static getEventsByBlockReferenceAndExtrinsicIndex<ThrowOnError extends boolean = false>(options: Options<GetEventsByBlockReferenceAndExtrinsicIndexData, ThrowOnError>) {
-        return (options.client ?? client).get<GetEventsByBlockReferenceAndExtrinsicIndexResponses, GetEventsByBlockReferenceAndExtrinsicIndexErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetEventsByBlockReferenceAndExtrinsicIndexData.parseAsync(data),
+    public static getEventsByBlockReferenceAndExtrinsicIndex<ThrowOnError extends boolean = false>(
+        options: Options<GetEventsByBlockReferenceAndExtrinsicIndexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventsByBlockReferenceAndExtrinsicIndexResponses,
+            GetEventsByBlockReferenceAndExtrinsicIndexErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetEventsByBlockReferenceAndExtrinsicIndexData.parseAsync(data),
             responseTransformer: getEventsByBlockReferenceAndExtrinsicIndexResponseTransformer,
             url: '/blocks/{block_ref}/extrinsics/{extrinsic_index}/events',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get events
      *
      * Returns all events from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number and ascending event index.
      */
-    public static getEvents<ThrowOnError extends boolean = false>(options?: Options<GetEventsData, ThrowOnError>) {
+    public static getEvents<ThrowOnError extends boolean = false>(
+        options?: Options<GetEventsData, ThrowOnError>,
+    ) {
         return (options?.client ?? client).get<GetEventsResponses, GetEventsErrors, ThrowOnError>({
             requestValidator: async (data) => await zGetEventsData.parseAsync(data),
             responseTransformer: getEventsResponseTransformer,
             url: '/events',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get event by hash
      *
      * Returns the event by its hash.
      */
-    public static getEventByHash<ThrowOnError extends boolean = false>(options: Options<GetEventByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetEventByHashResponses, GetEventByHashErrors, ThrowOnError>({
+    public static getEventByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetEventByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventByHashResponses,
+            GetEventByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetEventByHashData.parseAsync(data),
             responseTransformer: getEventByHashResponseTransformer,
             url: '/events/{event_hash}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get event arguments
      *
      * Returns the arguments of a runtime call by its hash.
      */
-    public static getEventArgsByHash<ThrowOnError extends boolean = false>(options: Options<GetEventArgsByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetEventArgsByHashResponses, GetEventArgsByHashErrors, ThrowOnError>({
+    public static getEventArgsByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetEventArgsByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventArgsByHashResponses,
+            GetEventArgsByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetEventArgsByHashData.parseAsync(data),
             url: '/events/{event_hash}/args',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get extrinsic events
      *
      * Returns the events in an extrinsic by extrinsic hash.
      */
-    public static getEventsByExtrinsicHash<ThrowOnError extends boolean = false>(options: Options<GetEventsByExtrinsicHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetEventsByExtrinsicHashResponses, GetEventsByExtrinsicHashErrors, ThrowOnError>({
+    public static getEventsByExtrinsicHash<ThrowOnError extends boolean = false>(
+        options: Options<GetEventsByExtrinsicHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventsByExtrinsicHashResponses,
+            GetEventsByExtrinsicHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetEventsByExtrinsicHashData.parseAsync(data),
             responseTransformer: getEventsByExtrinsicHashResponseTransformer,
             url: '/extrinsics/{extrinsic_hash}/events',
-            ...options
+            ...options,
         });
     }
 }
@@ -310,40 +611,59 @@ export class ExtrinsicService {
      *
      * If a hash is passed, returns the extrinsics for the matching block. If a number is passed, gives the extrinsis for the block by that number - could be multiple blocks if there's a pruned block in that slot.
      */
-    public static getExtrinsicsByBlockReference<ThrowOnError extends boolean = false>(options: Options<GetExtrinsicsByBlockReferenceData, ThrowOnError>) {
-        return (options.client ?? client).get<GetExtrinsicsByBlockReferenceResponses, GetExtrinsicsByBlockReferenceErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetExtrinsicsByBlockReferenceData.parseAsync(data),
+    public static getExtrinsicsByBlockReference<ThrowOnError extends boolean = false>(
+        options: Options<GetExtrinsicsByBlockReferenceData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetExtrinsicsByBlockReferenceResponses,
+            GetExtrinsicsByBlockReferenceErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetExtrinsicsByBlockReferenceData.parseAsync(data),
             responseTransformer: getExtrinsicsByBlockReferenceResponseTransformer,
             url: '/blocks/{block_ref}/extrinsics',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get extrinsics
      *
      * Returns all extrinsics from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number and ascending extrinsic index.
      */
-    public static getExtrinsics<ThrowOnError extends boolean = false>(options?: Options<GetExtrinsicsData, ThrowOnError>) {
-        return (options?.client ?? client).get<GetExtrinsicsResponses, GetExtrinsicsErrors, ThrowOnError>({
+    public static getExtrinsics<ThrowOnError extends boolean = false>(
+        options?: Options<GetExtrinsicsData, ThrowOnError>,
+    ) {
+        return (options?.client ?? client).get<
+            GetExtrinsicsResponses,
+            GetExtrinsicsErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetExtrinsicsData.parseAsync(data),
             responseTransformer: getExtrinsicsResponseTransformer,
             url: '/extrinsics',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get extrinsic by hash
      *
      * Returns the extrinsic by its hash.
      */
-    public static getExtrinsicByHash<ThrowOnError extends boolean = false>(options: Options<GetExtrinsicByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetExtrinsicByHashResponses, GetExtrinsicByHashErrors, ThrowOnError>({
+    public static getExtrinsicByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetExtrinsicByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetExtrinsicByHashResponses,
+            GetExtrinsicByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetExtrinsicByHashData.parseAsync(data),
             responseTransformer: getExtrinsicByHashResponseTransformer,
             url: '/extrinsics/{extrinsic_hash}',
-            ...options
+            ...options,
         });
     }
 }
@@ -354,53 +674,73 @@ export class TraceService {
      *
      * If a hash is passed, returns the traces for the matching block. If a number is passed, returns the traces for the blocks with that number - could be multiple blocks if there's a pruned block in that slot.
      */
-    public static getTracesByBlockReference<ThrowOnError extends boolean = false>(options: Options<GetTracesByBlockReferenceData, ThrowOnError>) {
-        return (options.client ?? client).get<GetTracesByBlockReferenceResponses, GetTracesByBlockReferenceErrors, ThrowOnError>({
+    public static getTracesByBlockReference<ThrowOnError extends boolean = false>(
+        options: Options<GetTracesByBlockReferenceData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetTracesByBlockReferenceResponses,
+            GetTracesByBlockReferenceErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetTracesByBlockReferenceData.parseAsync(data),
             responseTransformer: getTracesByBlockReferenceResponseTransformer,
             url: '/blocks/{block_ref}/traces',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get traces
      *
      * Returns all traces from the database that satisfy the query parameters. It will return a paginated response, ordered descending by block number, then ascending trace index.
      */
-    public static getTraces<ThrowOnError extends boolean = false>(options?: Options<GetTracesData, ThrowOnError>) {
+    public static getTraces<ThrowOnError extends boolean = false>(
+        options?: Options<GetTracesData, ThrowOnError>,
+    ) {
         return (options?.client ?? client).get<GetTracesResponses, GetTracesErrors, ThrowOnError>({
             requestValidator: async (data) => await zGetTracesData.parseAsync(data),
             responseTransformer: getTracesResponseTransformer,
             url: '/traces',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get trace by hash
      *
      * Returns the trace by its hash.
      */
-    public static getTraceByHash<ThrowOnError extends boolean = false>(options: Options<GetTraceByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetTraceByHashResponses, GetTraceByHashErrors, ThrowOnError>({
+    public static getTraceByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetTraceByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetTraceByHashResponses,
+            GetTraceByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetTraceByHashData.parseAsync(data),
             responseTransformer: getTraceByHashResponseTransformer,
             url: '/traces/{trace_hash}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get trace value
      *
      * Returns the value of a trace record by its hash.
      */
-    public static getTraceValueByHash<ThrowOnError extends boolean = false>(options: Options<GetTraceValueByHashData, ThrowOnError>) {
-        return (options.client ?? client).get<GetTraceValueByHashResponses, GetTraceValueByHashErrors, ThrowOnError>({
+    public static getTraceValueByHash<ThrowOnError extends boolean = false>(
+        options: Options<GetTraceValueByHashData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetTraceValueByHashResponses,
+            GetTraceValueByHashErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetTraceValueByHashData.parseAsync(data),
             url: '/traces/{trace_hash}/value',
-            ...options
+            ...options,
         });
     }
 }
@@ -411,12 +751,18 @@ export class GenesisService {
      *
      * Returns a paginated list of all genesis storage records.
      */
-    public static getGenesisRecords<ThrowOnError extends boolean = false>(options?: Options<GetGenesisRecordsData, ThrowOnError>) {
-        return (options?.client ?? client).get<GetGenesisRecordsResponses, GetGenesisRecordsErrors, ThrowOnError>({
+    public static getGenesisRecords<ThrowOnError extends boolean = false>(
+        options?: Options<GetGenesisRecordsData, ThrowOnError>,
+    ) {
+        return (options?.client ?? client).get<
+            GetGenesisRecordsResponses,
+            GetGenesisRecordsErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetGenesisRecordsData.parseAsync(data),
             responseTransformer: getGenesisRecordsResponseTransformer,
             url: '/genesis',
-            ...options
+            ...options,
         });
     }
 }
@@ -427,142 +773,210 @@ export class MetadataService {
      *
      * Returns a list of metadata summaries for all runtime versions.
      */
-    public static getMetadataList<ThrowOnError extends boolean = false>(options?: Options<GetMetadataListData, ThrowOnError>) {
-        return (options?.client ?? client).get<GetMetadataListResponses, GetMetadataListErrors, ThrowOnError>({
+    public static getMetadataList<ThrowOnError extends boolean = false>(
+        options?: Options<GetMetadataListData, ThrowOnError>,
+    ) {
+        return (options?.client ?? client).get<
+            GetMetadataListResponses,
+            GetMetadataListErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataListData.parseAsync(data),
             responseTransformer: getMetadataListResponseTransformer,
             url: '/metadata',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata by spec version
      *
      * Returns the metadata by its spec version.
      */
-    public static getMetadata<ThrowOnError extends boolean = false>(options: Options<GetMetadataData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataResponses, GetMetadataErrors, ThrowOnError>({
+    public static getMetadata<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataResponses,
+            GetMetadataErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataData.parseAsync(data),
             url: '/metadata/{spec_version}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata hex
      *
      * Returns the SCALE-encoded hexadecimal string for the prefixed metadata.
      */
-    public static getMetadataHex<ThrowOnError extends boolean = false>(options: Options<GetMetadataHexData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataHexResponses, GetMetadataHexErrors, ThrowOnError>({
+    public static getMetadataHex<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataHexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataHexResponses,
+            GetMetadataHexErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataHexData.parseAsync(data),
             url: '/metadata/{spec_version}/hex',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata JSON
      *
      * Returns the original Substrate runtime metadata by its spec version in JSON representation.
      */
-    public static getMetadataJson<ThrowOnError extends boolean = false>(options: Options<GetMetadataJsonData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataJsonResponses, GetMetadataJsonErrors, ThrowOnError>({
+    public static getMetadataJson<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataJsonData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataJsonResponses,
+            GetMetadataJsonErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataJsonData.parseAsync(data),
             url: '/metadata/{spec_version}/json',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallets
      *
      * Returns pallets in a metadata version.
      */
-    public static getMetadataPallets<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletsData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletsResponses, GetMetadataPalletsErrors, ThrowOnError>({
+    public static getMetadataPallets<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletsData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletsResponses,
+            GetMetadataPalletsErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataPalletsData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallet
      *
      * Returns the full metadata pallet by metadata spec version and pallet index.
      */
-    public static getMetadataPallet<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletResponses, GetMetadataPalletErrors, ThrowOnError>({
+    public static getMetadataPallet<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletResponses,
+            GetMetadataPalletErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataPalletData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets/{pallet_index}',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallet calls
      *
      * Returns the calls in a pallet in a metadata version.
      */
-    public static getMetadataPalletCalls<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletCallsData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletCallsResponses, GetMetadataPalletCallsErrors, ThrowOnError>({
+    public static getMetadataPalletCalls<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletCallsData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletCallsResponses,
+            GetMetadataPalletCallsErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataPalletCallsData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets/{pallet_index}/calls',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallet constants
      *
      * Returns the constants in a pallet in a metadata version.
      */
-    public static getMetadataPalletConstants<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletConstantsData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletConstantsResponses, GetMetadataPalletConstantsErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetMetadataPalletConstantsData.parseAsync(data),
+    public static getMetadataPalletConstants<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletConstantsData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletConstantsResponses,
+            GetMetadataPalletConstantsErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetMetadataPalletConstantsData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets/{pallet_index}/constants',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallet errors
      *
      * Returns the errors in a pallet in a metadata version.
      */
-    public static getMetadataPalletErrors<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletErrorsData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletErrorsResponses, GetMetadataPalletErrorsErrors, ThrowOnError>({
+    public static getMetadataPalletErrors<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletErrorsData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletErrorsResponses,
+            GetMetadataPalletErrorsErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataPalletErrorsData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets/{pallet_index}/errors',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallet events
      *
      * Returns the events in a pallet in a metadata version.
      */
-    public static getMetadataPalletEvents<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletEventsData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletEventsResponses, GetMetadataPalletEventsErrors, ThrowOnError>({
+    public static getMetadataPalletEvents<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletEventsData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletEventsResponses,
+            GetMetadataPalletEventsErrors,
+            ThrowOnError
+        >({
             requestValidator: async (data) => await zGetMetadataPalletEventsData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets/{pallet_index}/events',
-            ...options
+            ...options,
         });
     }
-    
+
     /**
      * Get metadata pallet storage items
      *
      * Returns the storage items in a pallet in a metadata version.
      */
-    public static getMetadataPalletStorageItems<ThrowOnError extends boolean = false>(options: Options<GetMetadataPalletStorageItemsData, ThrowOnError>) {
-        return (options.client ?? client).get<GetMetadataPalletStorageItemsResponses, GetMetadataPalletStorageItemsErrors, ThrowOnError>({
-            requestValidator: async (data) => await zGetMetadataPalletStorageItemsData.parseAsync(data),
+    public static getMetadataPalletStorageItems<ThrowOnError extends boolean = false>(
+        options: Options<GetMetadataPalletStorageItemsData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetMetadataPalletStorageItemsResponses,
+            GetMetadataPalletStorageItemsErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetMetadataPalletStorageItemsData.parseAsync(data),
             url: '/metadata/{spec_version}/pallets/{pallet_index}/storage',
-            ...options
+            ...options,
         });
     }
 }

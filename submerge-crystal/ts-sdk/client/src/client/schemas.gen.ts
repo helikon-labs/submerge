@@ -2,23 +2,26 @@
 
 export const AccountIdHexSchema = {
     type: 'string',
-    description: '32-byte Substrate account id as lowercase hex, **always** `0x`-prefixed and lowercase in responses.',
+    description:
+        '32-byte Substrate account id as lowercase hex, **always** `0x`-prefixed and lowercase in responses.',
     example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3',
-    pattern: '^0x[a-f0-9]{64}$'
+    pattern: '^0x[a-f0-9]{64}$',
 } as const;
 
 export const Address20HexSchema = {
     type: 'string',
-    description: '20-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.',
+    description:
+        '20-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.',
     example: '0x00112233445566778899aabbccddeeff00112233',
-    pattern: '^0x[a-f0-9]{40}$'
+    pattern: '^0x[a-f0-9]{40}$',
 } as const;
 
 export const Address32HexSchema = {
     type: 'string',
-    description: '32-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.',
+    description:
+        '32-byte address as lowercase hex, **always** `0x`-prefixed and lowercase in responses.',
     example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3',
-    pattern: '^0x[a-f0-9]{64}$'
+    pattern: '^0x[a-f0-9]{64}$',
 } as const;
 
 export const BlockSchema = {
@@ -33,67 +36,67 @@ export const BlockSchema = {
         'specVersion',
         'status',
         'extrinsicCount',
-        'eventCount'
+        'eventCount',
     ],
     properties: {
         author: {
             $ref: '#/components/schemas/MultiAddress',
-            description: 'Authoring validator address.'
+            description: 'Authoring validator address.',
         },
         eventCount: {
             type: 'integer',
             format: 'int32',
             description: 'Number of events in the block.',
             example: 56,
-            minimum: 0
+            minimum: 0,
         },
         extrinsicCount: {
             type: 'integer',
             format: 'int32',
             description: 'Number of extrinsics in the block.',
             example: 2,
-            minimum: 0
+            minimum: 0,
         },
         extrinsicRoot: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Merkle root of included extrinsics.'
+            description: 'Merkle root of included extrinsics.',
         },
         hash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Block hash (Blake2 256-bit).'
+            description: 'Block hash (Blake2 256-bit).',
         },
         number: {
             type: 'integer',
             format: 'int64',
             description: 'Block height.',
             example: 27419831,
-            minimum: 0
+            minimum: 0,
         },
         parentHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Parent block hash.'
+            description: 'Parent block hash.',
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
             description: 'Runtime spec version.',
             example: 1006001,
-            minimum: 0
+            minimum: 0,
         },
         stateRoot: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Root hash of the state trie after executing this block.'
+            description: 'Root hash of the state trie after executing this block.',
         },
         status: {
             $ref: '#/components/schemas/BlockStatus',
-            description: 'Block status.'
+            description: 'Block status.',
         },
         timestamp: {
             type: 'integer',
             format: 'int64',
             description: 'Block timestamp. Milliseconds.',
             example: 1755773684012,
-            minimum: 0
+            minimum: 0,
         },
         weight: {
             type: 'object',
@@ -102,24 +105,24 @@ export const BlockSchema = {
                 {
                     mandatory: {
                         proofSize: '592668',
-                        refTime: '361766342408'
+                        refTime: '361766342408',
                     },
                     normal: {
                         proofSize: '0',
-                        refTime: '0'
+                        refTime: '0',
                     },
                     operational: {
                         proofSize: '0',
-                        refTime: '0'
-                    }
-                }
-            ]
-        }
+                        refTime: '0',
+                    },
+                },
+            ],
+        },
     },
     example: {
         author: {
             type: 'accountId',
-            value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
+            value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626',
         },
         eventCount: 56,
         extrinsicCount: 2,
@@ -134,29 +137,26 @@ export const BlockSchema = {
         weight: {
             mandatory: {
                 proofSize: '204955',
-                refTime: '701777135384'
+                refTime: '701777135384',
             },
             normal: {
                 proofSize: '0',
-                refTime: '0'
+                refTime: '0',
             },
             operational: {
                 proofSize: '0',
-                refTime: '0'
-            }
-        }
-    }
+                refTime: '0',
+            },
+        },
+    },
 } as const;
 
 export const BlockStatusSchema = {
     type: 'string',
-    description: 'Block status.\n- `finalized`: Blocks that have been finalized on chain.\n- `proposed`: Blocks that have been authored but not yet finalized.\n- `pruned`: Blocks that have been removed or are no longer accessible.',
-    enum: [
-        'proposed',
-        'pruned',
-        'finalized'
-    ],
-    example: 'finalized'
+    description:
+        'Block status.\n- `finalized`: Blocks that have been finalized on chain.\n- `proposed`: Blocks that have been authored but not yet finalized.\n- `pruned`: Blocks that have been removed or are no longer accessible.',
+    enum: ['proposed', 'pruned', 'finalized'],
+    example: 'finalized',
 } as const;
 
 export const CallSchema = {
@@ -178,147 +178,144 @@ export const CallSchema = {
         'palletCallName',
         'extrinsicIsSuccessful',
         'extrinsicIsSigned',
-        'isSuccessful'
+        'isSuccessful',
     ],
     properties: {
         args: {
             type: 'object',
-            description: 'Call arguments in JSON format. Schema depends on the call\'s schema definition in the runtime metadata.',
+            description:
+                "Call arguments in JSON format. Schema depends on the call's schema definition in the runtime metadata.",
             examples: [
                 {
                     args: {
                         dest: {
                             type: 'Id',
-                            value: '0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a'
+                            value: '0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a',
                         },
-                        value: '117284000000'
+                        value: '117284000000',
                     },
-                    hash: '0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011'
-                }
-            ]
+                    hash: '0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011',
+                },
+            ],
         },
         blockHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the call\'s block.'
+            description: "Hash of the call's block.",
         },
         blockNumber: {
             type: 'integer',
             format: 'int64',
-            description: 'Number of the call\'s block.',
+            description: "Number of the call's block.",
             example: 3172595,
-            minimum: 0
+            minimum: 0,
         },
         blockStatus: {
             $ref: '#/components/schemas/BlockStatus',
-            description: 'Status of the call\'s block.'
+            description: "Status of the call's block.",
         },
         blockTimestamp: {
             type: 'integer',
             format: 'int64',
-            description: 'Timestamp of the call\'s block. Milliseconds.',
+            description: "Timestamp of the call's block. Milliseconds.",
             example: 1755773684012,
-            minimum: 0
+            minimum: 0,
         },
         callIndex: {
             type: 'array',
             items: {
                 type: 'integer',
                 format: 'int32',
-                minimum: 0
+                minimum: 0,
             },
             description: 'Index of the call, represented as an unsigned integer array.',
-            example: [
-                0,
-                1,
-                0
-            ]
+            example: [0, 1, 0],
         },
         callPath: {
             type: 'string',
             description: 'Rust-style path of the call represented with parameter names or indices.',
-            example: 'root::calls:0'
+            example: 'root::calls:0',
         },
         extrinsicHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the call\'s extrinsic.'
+            description: "Hash of the call's extrinsic.",
         },
         extrinsicIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'Index of the call\'s extrinsic.',
+            description: "Index of the call's extrinsic.",
             example: 1,
-            minimum: 0
+            minimum: 0,
         },
         extrinsicIsSigned: {
             type: 'boolean',
-            description: 'Whether the call\'s extrinsic was signed.'
+            description: "Whether the call's extrinsic was signed.",
         },
         extrinsicIsSuccessful: {
             type: 'boolean',
-            description: 'Whether the call\'s extrinsic was successful.\nNote: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).'
+            description:
+                "Whether the call's extrinsic was successful.\nNote: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).",
         },
         hash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Artificial call hash.'
+            description: 'Artificial call hash.',
         },
         isSuccessful: {
             type: 'boolean',
-            description: 'Whether the call was successful.'
+            description: 'Whether the call was successful.',
         },
         palletCallIndex: {
             type: 'integer',
             format: 'int32',
             description: 'Index of the call in its pallet.',
             example: 5,
-            minimum: 0
+            minimum: 0,
         },
         palletCallName: {
             type: 'string',
             description: 'Name of the call.',
-            example: 'SetCode'
+            example: 'SetCode',
         },
         palletIndex: {
             type: 'integer',
             format: 'int32',
             description: 'Pallet index of the call.',
             example: 14,
-            minimum: 0
+            minimum: 0,
         },
         palletName: {
             type: 'string',
             description: 'Pallet name of the call.',
-            example: 'System'
+            example: 'System',
         },
         parentCallHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the parent call if this call is a nested call (batch, multisig, etc.).'
+            description:
+                'Hash of the parent call if this call is a nested call (batch, multisig, etc.).',
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
-            description: 'Runtime spec version of the call\'s block.',
+            description: "Runtime spec version of the call's block.",
             example: 2000000,
-            minimum: 0
-        }
+            minimum: 0,
+        },
     },
     example: {
         args: {
             args: {
                 dest: {
                     type: 'Id',
-                    value: '0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a'
+                    value: '0xc35b9a45aadc8bb998ba7c4d17bda4d7d8e31f90a754a65709d3a3a71ff8fa7a',
                 },
-                value: '117284000000'
+                value: '117284000000',
             },
-            hash: '0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011'
+            hash: '0xb778a81c1fd06d98b5ba1b37bb274101f7905ad5eca960f56ededf26248c4011',
         },
         blockHash: '0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77',
         blockNumber: 3172595,
         blockStatus: 'proposed',
         blockTimestamp: 1765432302000,
-        callIndex: [
-            0
-        ],
+        callIndex: [0],
         callPath: 'root',
         extrinsicHash: '0x18acc73c8e38351bc5b266cffacf39944945dd66342dab8ce2f86f2c97b3006f',
         extrinsicIndex: 0,
@@ -331,54 +328,51 @@ export const CallSchema = {
         palletIndex: 1,
         palletName: 'Balances',
         parentCallHash: '0x9bacc73c8e38351bc5b756cffacf39944945dd66342dab8ce2f86f2c97b3006f',
-        specVersion: 2000000
-    }
+        specVersion: 2000000,
+    },
 } as const;
 
 export const CallArgsSchema = {
     type: 'object',
-    description: 'Call arguments wrapper.'
+    description: 'Call arguments wrapper.',
 } as const;
 
 export const CursorPaginationDataSchema = {
     type: 'object',
     description: 'Pagination data for cursor responses.',
-    required: [
-        'pageSize'
-    ],
+    required: ['pageSize'],
     properties: {
         nextCursor: {
             type: 'string',
-            description: 'Cursor for the next page, `null` if there\'s no next page.'
+            description: "Cursor for the next page, `null` if there's no next page.",
         },
         pageSize: {
             type: 'integer',
             format: 'int32',
             description: 'Number of items per cursor page.',
             example: 1,
-            minimum: 1
-        }
+            minimum: 1,
+        },
     },
     example: {
-        nextCursor: 'eyJjdXJzb3JfcG9zaXRpb24iOnsiYmxvY2tfbnVtYmVyIjozMzY0MzMzLCJibG9ja19oYXNoX2hleCI6IjB4ZjdlMjkyYWQ3ZDNkYzE4MzUzOWYwOGM4NDgwMmNiMDc2ZTc5NjNkYjA2NTA3MjAwNTY1M2NjNWU4YzdkMTE3MyIsImluZGV4IjowfSwicXVlcnkiOnsiaW5jbHVkZV9hcmdzIjpmYWxzZX19',
-        pageSize: 1
-    }
+        nextCursor:
+            'eyJjdXJzb3JfcG9zaXRpb24iOnsiYmxvY2tfbnVtYmVyIjozMzY0MzMzLCJibG9ja19oYXNoX2hleCI6IjB4ZjdlMjkyYWQ3ZDNkYzE4MzUzOWYwOGM4NDgwMmNiMDc2ZTc5NjNkYjA2NTA3MjAwNTY1M2NjNWU4YzdkMTE3MyIsImluZGV4IjowfSwicXVlcnkiOnsiaW5jbHVkZV9hcmdzIjpmYWxzZX19',
+        pageSize: 1,
+    },
 } as const;
 
 export const ErrorSchema = {
     type: 'object',
     description: 'Generic error type.',
-    required: [
-        'message'
-    ],
+    required: ['message'],
     properties: {
         message: {
             type: 'string',
             format: 'text',
             description: 'Error message.',
-            example: 'Error message.'
-        }
-    }
+            example: 'Error message.',
+        },
+    },
 } as const;
 
 export const EventSchema = {
@@ -395,135 +389,136 @@ export const EventSchema = {
         'palletEventIndex',
         'palletEventName',
         'phase',
-        'index'
+        'index',
     ],
     properties: {
         args: {
             type: 'object',
-            description: 'Call arguments in JSON format. Schema depends on the call\'s schema definition in the runtime metadata.',
+            description:
+                "Call arguments in JSON format. Schema depends on the call's schema definition in the runtime metadata.",
             examples: [
                 {
                     dispatchInfo: {
                         class: {
                             type: 'Mandatory',
-                            value: []
+                            value: [],
                         },
                         paysFee: {
                             type: 'Yes',
-                            value: []
+                            value: [],
                         },
                         weight: {
                             proofSize: '0',
-                            refTime: '125000000'
-                        }
-                    }
-                }
-            ]
+                            refTime: '125000000',
+                        },
+                    },
+                },
+            ],
         },
         blockHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the event\'s block.'
+            description: "Hash of the event's block.",
         },
         blockNumber: {
             type: 'integer',
             format: 'int64',
-            description: 'Number of the event\'s block.',
+            description: "Number of the event's block.",
             example: 3172595,
-            minimum: 0
+            minimum: 0,
         },
         blockStatus: {
             $ref: '#/components/schemas/BlockStatus',
-            description: 'Status of the event\'s block.'
+            description: "Status of the event's block.",
         },
         blockTimestamp: {
             type: 'integer',
             format: 'int64',
-            description: 'Timestamp of the event\'s block. Milliseconds.',
+            description: "Timestamp of the event's block. Milliseconds.",
             example: 1755773684012,
-            minimum: 0
+            minimum: 0,
         },
         extrinsicHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the event\'s extrinsic, if it was output from an extrinsic.'
+            description: "Hash of the event's extrinsic, if it was output from an extrinsic.",
         },
         extrinsicIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'Index of the event\'s extrinsic, if it was output from an extrinsic.',
+            description: "Index of the event's extrinsic, if it was output from an extrinsic.",
             example: 3,
-            minimum: 0
+            minimum: 0,
         },
         hash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Artificial event hash.'
+            description: 'Artificial event hash.',
         },
         index: {
             type: 'integer',
             format: 'int32',
             description: 'Index of the event in block.',
             example: 77,
-            minimum: 0
+            minimum: 0,
         },
         palletEventIndex: {
             type: 'integer',
             format: 'int32',
             description: 'Index of the event in its pallet.',
             example: 12,
-            minimum: 0
+            minimum: 0,
         },
         palletEventName: {
             type: 'string',
             description: 'Name of the event.',
-            example: 'Rewarded'
+            example: 'Rewarded',
         },
         palletIndex: {
             type: 'integer',
             format: 'int32',
             description: 'Pallet index of the event.',
             example: 14,
-            minimum: 0
+            minimum: 0,
         },
         palletName: {
             type: 'string',
             description: 'Pallet name of the event.',
-            example: 'Staking'
+            example: 'Staking',
         },
         phase: {
             type: 'string',
             description: 'Event phase.',
-            example: 'ApplyExtrinsic'
+            example: 'ApplyExtrinsic',
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
-            description: 'Runtime spec version of the event\'s block.',
+            description: "Runtime spec version of the event's block.",
             example: 2000000,
-            minimum: 0
+            minimum: 0,
         },
         traceIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'Index of the event\'s trace, if traces are enabled.',
+            description: "Index of the event's trace, if traces are enabled.",
             example: 78,
-            minimum: 0
-        }
+            minimum: 0,
+        },
     },
     example: {
         args: {
             dispatchInfo: {
                 class: {
                     type: 'Mandatory',
-                    value: []
+                    value: [],
                 },
                 paysFee: {
                     type: 'Yes',
-                    value: []
+                    value: [],
                 },
                 weight: {
                     proofSize: '0',
-                    refTime: '125000000'
-                }
-            }
+                    refTime: '125000000',
+                },
+            },
         },
         blockHash: '0x5c4de7f2cea658d5d3804d495e8246354f709735d371fd54caaf59e80181bcaa',
         blockNumber: 10758052,
@@ -539,13 +534,13 @@ export const EventSchema = {
         palletName: 'System',
         phase: 'ApplyExtrinsic',
         specVersion: 2000003,
-        traceIndex: 78
-    }
+        traceIndex: 78,
+    },
 } as const;
 
 export const EventArgsSchema = {
     type: 'object',
-    description: 'Event arguments wrapper.'
+    description: 'Event arguments wrapper.',
 } as const;
 
 export const ExtrinsicSchema = {
@@ -559,97 +554,98 @@ export const ExtrinsicSchema = {
         'hash',
         'index',
         'version',
-        'isSuccessful'
+        'isSuccessful',
     ],
     properties: {
         blockHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the extrinsic\'s block.'
+            description: "Hash of the extrinsic's block.",
         },
         blockNumber: {
             type: 'integer',
             format: 'int64',
-            description: 'Number of the extrinsic\'s block.',
-            minimum: 0
+            description: "Number of the extrinsic's block.",
+            minimum: 0,
         },
         blockStatus: {
             $ref: '#/components/schemas/BlockStatus',
-            description: 'Status of the extrinsic\'s block.'
+            description: "Status of the extrinsic's block.",
         },
         blockTimestamp: {
             type: 'integer',
             format: 'int64',
-            description: 'Timestamp of the extrinsic\'s block. Milliseconds.',
-            minimum: 0
+            description: "Timestamp of the extrinsic's block. Milliseconds.",
+            minimum: 0,
         },
         extra: {
             type: 'object',
-            description: 'Extrinsic extras in JSON format - checkNonce, checkGenesis, chargeTransactionPayment, etc.',
+            description:
+                'Extrinsic extras in JSON format - checkNonce, checkGenesis, chargeTransactionPayment, etc.',
             examples: [
                 {
                     chargeAssetTxPayment: {
                         assetId: null,
-                        tip: '0'
+                        tip: '0',
                     },
                     checkGenesis: {},
                     checkMetadataHash: {
                         mode: {
                             type: 'Disabled',
-                            value: []
-                        }
+                            value: [],
+                        },
                     },
                     checkMortality: {
                         type: 'Mortal84',
-                        value: '0'
+                        value: '0',
                     },
                     checkNonZeroSender: {},
                     checkNonce: '8362',
                     checkSpecVersion: {},
                     checkTxVersion: {},
-                    checkWeight: {}
-                }
-            ]
+                    checkWeight: {},
+                },
+            ],
         },
         hash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Extrinsic hash.'
+            description: 'Extrinsic hash.',
         },
         index: {
             type: 'integer',
             format: 'int32',
             description: 'Extrinsic index.',
-            minimum: 0
+            minimum: 0,
         },
         isSuccessful: {
             type: 'boolean',
-            description: 'Whether the extrinsic was successful.'
+            description: 'Whether the extrinsic was successful.',
         },
         signature: {
             $ref: '#/components/schemas/MultiSignature',
-            description: 'Extrinsic signature address.'
+            description: 'Extrinsic signature address.',
         },
         signer: {
             $ref: '#/components/schemas/MultiAddress',
-            description: 'Extrinsic signer address.'
+            description: 'Extrinsic signer address.',
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
-            description: 'Runtime spec version of the extrinsic\'s block.',
-            minimum: 0
+            description: "Runtime spec version of the extrinsic's block.",
+            minimum: 0,
         },
         traceIndex: {
             type: 'integer',
             format: 'int32',
             description: 'Trace index for the extrinsic.',
-            minimum: 0
+            minimum: 0,
         },
         version: {
             type: 'integer',
             format: 'int32',
             description: 'Extrinsic version in metadata.',
-            minimum: 0
-        }
+            minimum: 0,
+        },
     },
     example: {
         blockHash: '0x758fadeb5004882de8ba39ee2105302ad0ce93ecd68fe26b6fa09de6608e7a77',
@@ -659,91 +655,92 @@ export const ExtrinsicSchema = {
         extra: {
             chargeAssetTxPayment: {
                 assetId: null,
-                tip: '0'
+                tip: '0',
             },
             checkGenesis: {},
             checkMetadataHash: {
                 mode: {
                     type: 'Disabled',
-                    value: []
-                }
+                    value: [],
+                },
             },
             checkMortality: {
                 type: 'Mortal84',
-                value: '0'
+                value: '0',
             },
             checkNonZeroSender: {},
             checkNonce: '8362',
             checkSpecVersion: {},
             checkTxVersion: {},
-            checkWeight: {}
+            checkWeight: {},
         },
         hash: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3',
         index: 2,
         isSuccessful: true,
         signature: {
             type: 'sr25519',
-            value: '0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab'
+            value: '0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab',
         },
         signer: {
             type: 'accountId',
-            value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626'
+            value: '0x269a84431cd8dfc5762beadfa54a8f21597c12d4f31e51f9f6f985f65ba0c626',
         },
         specVersion: 2000000,
         traceIndex: 2,
-        version: 4
-    }
+        version: 4,
+    },
 } as const;
 
 export const GenesisRecordSchema = {
     type: 'object',
     description: 'A storage item initialized at genesis.',
-    required: [
-        'keyPrefix',
-        'value'
-    ],
+    required: ['keyPrefix', 'value'],
     properties: {
         keyParams: {
             $ref: '#/components/schemas/HexString',
-            description: 'Storage item key parameter(s) for the genesis record.'
+            description: 'Storage item key parameter(s) for the genesis record.',
         },
         keyPrefix: {
             $ref: '#/components/schemas/HexString',
-            description: 'Storage item key prefix for the genesis record.'
+            description: 'Storage item key prefix for the genesis record.',
         },
         knownKey: {
             type: 'string',
-            description: 'If the record is a known UTF-8 key, the string representation of the key.',
-            example: ':extrinsic_index'
+            description:
+                'If the record is a known UTF-8 key, the string representation of the key.',
+            example: ':extrinsic_index',
         },
         palletIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'If the record is a storage item, the storage item\'s pallet index in the metadata.',
+            description:
+                "If the record is a storage item, the storage item's pallet index in the metadata.",
             example: 0,
-            minimum: 0
+            minimum: 0,
         },
         palletName: {
             type: 'string',
-            description: 'If the record is a storage item, the storage item\'s pallet name in the metadata.',
-            example: 'System'
+            description:
+                "If the record is a storage item, the storage item's pallet name in the metadata.",
+            example: 'System',
         },
         palletStorageItemIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'If the record is a storage item, the storage item\'s index in the pallet metadata.',
+            description:
+                "If the record is a storage item, the storage item's index in the pallet metadata.",
             example: 4,
-            minimum: 0
+            minimum: 0,
         },
         palletStorageItemName: {
             type: 'string',
-            description: 'If the record is a storage item, the storage item\'s name.',
-            example: 'BlockHash'
+            description: "If the record is a storage item, the storage item's name.",
+            example: 'BlockHash',
         },
         value: {
             $ref: '#/components/schemas/HexString',
-            description: 'Value of the genesis record.'
-        }
+            description: 'Value of the genesis record.',
+        },
     },
     example: {
         keyParams: '0xb4def25cfda6ef3a00000000',
@@ -752,75 +749,62 @@ export const GenesisRecordSchema = {
         palletName: 'System',
         palletStorageItemIndex: 4,
         palletStorageItemName: 'BlockHash',
-        value: '0x4545454545454545454545454545454545454545454545454545454545454545'
-    }
+        value: '0x4545454545454545454545454545454545454545454545454545454545454545',
+    },
 } as const;
 
 export const Hash256HexSchema = {
     type: 'string',
-    description: '32-byte Blake2b-256, **always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.',
+    description:
+        '32-byte Blake2b-256, **always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.',
     example: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3',
-    pattern: '^0x[a-f0-9]{64}$'
+    pattern: '^0x[a-f0-9]{64}$',
 } as const;
 
 export const HexStringSchema = {
     type: 'string',
     description: 'Arbitrary hex-encoded bytes, `0x`-prefixed.',
-    examples: [
-        '0xdeadbeef',
-        '0x0123456789abcdef'
-    ],
-    pattern: '^0x(?:[0-9a-f]{2})+$'
+    examples: ['0xdeadbeef', '0x0123456789abcdef'],
+    pattern: '^0x(?:[0-9a-f]{2})+$',
 } as const;
 
 export const HexStringParamSchema = {
     type: 'string',
     description: 'Arbitrary hex-encoded bytes, mixed case, optional `0x`-prefix.',
-    examples: [
-        '0xdeadbeef',
-        '0x0123456789abcdef'
-    ],
-    pattern: '^0x(?:[0-9a-f]{2})+$'
+    examples: ['0xdeadbeef', '0x0123456789abcdef'],
+    pattern: '^0x(?:[0-9a-f]{2})+$',
 } as const;
 
 export const MetadataSchema = {
     type: 'object',
     description: 'Parsed metadata specification complete with its pallets.',
-    required: [
-        'specVersion',
-        'metadataVersion',
-        'pallets'
-    ],
+    required: ['specVersion', 'metadataVersion', 'pallets'],
     properties: {
         metadataVersion: {
             type: 'integer',
             format: 'int32',
             description: 'Metadata version.',
             example: 14,
-            minimum: 0
+            minimum: 0,
         },
         pallets: {
             type: 'array',
             items: {
-                $ref: '#/components/schemas/MetadataPallet'
+                $ref: '#/components/schemas/MetadataPallet',
             },
             description: 'Metadata pallets.',
             example: [
                 {
                     calls: [
                         {
-                            docs: [
-                                'Make some on-chain remark.'
-                            ],
+                            docs: ['Make some on-chain remark.'],
                             index: 0,
-                            name: 'Remark'
-                        }
+                            name: 'Remark',
+                        },
                     ],
                     constants: [
                         {
-                            docs: [
-                                'The maximum length of a block (in bytes).'
-                            ],
+                            docs: ['The maximum length of a block (in bytes).'],
                             index: 1,
                             name: 'BlockLength',
                             typeId: 156,
@@ -829,288 +813,254 @@ export const MetadataSchema = {
                                 max: {
                                     mandatory: '5242880',
                                     normal: '3932160',
-                                    operational: '5242880'
-                                }
+                                    operational: '5242880',
+                                },
                             },
-                            valueHex: '0x00003c000000500000005000'
-                        }
+                            valueHex: '0x00003c000000500000005000',
+                        },
                     ],
                     errors: [
                         {
                             docs: [
                                 'The name of specification does not match between the current runtime',
-                                'and the new runtime.'
+                                'and the new runtime.',
                             ],
                             index: 0,
-                            name: 'InvalidSpecName'
-                        }
+                            name: 'InvalidSpecName',
+                        },
                     ],
                     events: [
                         {
-                            docs: [
-                                '`:code` was updated.'
-                            ],
+                            docs: ['`:code` was updated.'],
                             index: 2,
-                            name: 'CodeUpdated'
-                        }
+                            name: 'CodeUpdated',
+                        },
                     ],
                     index: 0,
                     name: 'System',
                     storageItems: [
                         {
-                            docs: [
-                                'Hash of the previous block.'
-                            ],
+                            docs: ['Hash of the previous block.'],
                             index: 8,
-                            keyPrefix: '0x26aa394eea5630e07c48ae0c9558cef78a42f33323cb5ced3b44dd825fda9fcc',
-                            name: 'ParentHash'
-                        }
-                    ]
-                }
-            ]
+                            keyPrefix:
+                                '0x26aa394eea5630e07c48ae0c9558cef78a42f33323cb5ced3b44dd825fda9fcc',
+                            name: 'ParentHash',
+                        },
+                    ],
+                },
+            ],
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
             description: 'Metadata runtime spec version.',
             example: 1001,
-            minimum: 0
-        }
-    }
+            minimum: 0,
+        },
+    },
 } as const;
 
 export const MetadataCallSchema = {
     type: 'object',
     description: 'A call defined in a metadata pallet.',
-    required: [
-        'index',
-        'name',
-        'docs'
-    ],
+    required: ['index', 'name', 'docs'],
     properties: {
         docs: {
             $ref: '#/components/schemas/MetadataItemDocumentation',
-            description: 'Call documentation. One item per line in the array.'
+            description: 'Call documentation. One item per line in the array.',
         },
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Call\'s index inside the metadata pallet.',
+            description: "Call's index inside the metadata pallet.",
             example: 37,
-            minimum: 0
+            minimum: 0,
         },
         name: {
             type: 'string',
             description: 'Call name. Camel case.',
-            example: 'Transfer'
-        }
-    }
+            example: 'Transfer',
+        },
+    },
 } as const;
 
 export const MetadataConstantSchema = {
     type: 'object',
     description: 'A constant defined in a metadata pallet.',
-    required: [
-        'index',
-        'name',
-        'typeName',
-        'valueHex',
-        'docs'
-    ],
+    required: ['index', 'name', 'typeName', 'valueHex', 'docs'],
     properties: {
         docs: {
             $ref: '#/components/schemas/MetadataItemDocumentation',
-            description: 'Constant documentation. One item per line in the array.'
+            description: 'Constant documentation. One item per line in the array.',
         },
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Constant\'s index inside the metadata pallet.',
+            description: "Constant's index inside the metadata pallet.",
             example: 7,
-            minimum: 0
+            minimum: 0,
         },
         name: {
             type: 'string',
             description: 'Constant name. Camel case.',
-            example: 'BountyDepositBase'
+            example: 'BountyDepositBase',
         },
         typeId: {
             type: 'integer',
             format: 'int32',
-            description: 'Id of the constant\'s type.',
+            description: "Id of the constant's type.",
             example: 3,
-            minimum: 0
+            minimum: 0,
         },
         typeName: {
             type: 'string',
-            description: 'Name of the constant\'s type.',
-            example: 'TypeName'
+            description: "Name of the constant's type.",
+            example: 'TypeName',
         },
         value: {
             type: 'object',
-            description: 'Metadata constant value in JSON format. Schema depends on the definition within the runtime metadata.',
+            description:
+                'Metadata constant value in JSON format. Schema depends on the definition within the runtime metadata.',
             examples: [
                 {
                     proofSize: '8388608',
-                    refTime: '1600000000000'
-                }
-            ]
+                    refTime: '1600000000000',
+                },
+            ],
         },
         valueHex: {
             $ref: '#/components/schemas/HexString',
-            description: 'Value of the constant. SCALE-encoded hexadecimal string.'
-        }
-    }
+            description: 'Value of the constant. SCALE-encoded hexadecimal string.',
+        },
+    },
 } as const;
 
 export const MetadataErrorSchema = {
     type: 'object',
     description: 'An error defined in a metadata pallet.',
-    required: [
-        'index',
-        'name',
-        'docs'
-    ],
+    required: ['index', 'name', 'docs'],
     properties: {
         docs: {
             $ref: '#/components/schemas/MetadataItemDocumentation',
-            description: 'Error documentation. One item per line in the array.'
+            description: 'Error documentation. One item per line in the array.',
         },
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Error\'s index inside the metadata pallet.',
+            description: "Error's index inside the metadata pallet.",
             example: 17,
-            minimum: 0
+            minimum: 0,
         },
         name: {
             type: 'string',
             description: 'Error name. Camel case.',
-            example: 'AssignmentsEmpty'
-        }
-    }
+            example: 'AssignmentsEmpty',
+        },
+    },
 } as const;
 
 export const MetadataEventSchema = {
     type: 'object',
     description: 'An event defined in a metadata pallet.',
-    required: [
-        'index',
-        'name',
-        'docs'
-    ],
+    required: ['index', 'name', 'docs'],
     properties: {
         docs: {
             $ref: '#/components/schemas/MetadataItemDocumentation',
-            description: 'Event documentation. One item per line in the array.'
+            description: 'Event documentation. One item per line in the array.',
         },
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Event\'s index inside the metadata pallet.',
+            description: "Event's index inside the metadata pallet.",
             example: 21,
-            minimum: 0
+            minimum: 0,
         },
         name: {
             type: 'string',
             description: 'Event name. Camel case.',
-            example: 'CandidateBacked'
-        }
-    }
+            example: 'CandidateBacked',
+        },
+    },
 } as const;
 
 export const MetadataItemDocumentationSchema = {
     type: 'array',
     items: {
-        type: 'string'
+        type: 'string',
     },
     description: 'Metadata item documentation. One item per line in the array.',
-    example: [
-        'Call documentation line 1.',
-        'Call documentation line 2.'
-    ]
+    example: ['Call documentation line 1.', 'Call documentation line 2.'],
 } as const;
 
 export const MetadataJSONSchema = {
-    description: 'Original Substrate runtime metadata in JSON representation.'
+    description: 'Original Substrate runtime metadata in JSON representation.',
 } as const;
 
 export const MetadataPalletSchema = {
     type: 'object',
-    description: 'A pallet defined in metadata, with its calls, constants, errors, events, and storage items.',
-    required: [
-        'index',
-        'name',
-        'calls',
-        'constants',
-        'errors',
-        'events',
-        'storageItems'
-    ],
+    description:
+        'A pallet defined in metadata, with its calls, constants, errors, events, and storage items.',
+    required: ['index', 'name', 'calls', 'constants', 'errors', 'events', 'storageItems'],
     properties: {
         calls: {
             type: 'array',
             items: {
-                $ref: '#/components/schemas/MetadataCall'
+                $ref: '#/components/schemas/MetadataCall',
             },
-            description: 'Pallet\'s calls.'
+            description: "Pallet's calls.",
         },
         constants: {
             type: 'array',
             items: {
-                $ref: '#/components/schemas/MetadataConstant'
+                $ref: '#/components/schemas/MetadataConstant',
             },
-            description: 'Pallet\'s constants.'
+            description: "Pallet's constants.",
         },
         errors: {
             type: 'array',
             items: {
-                $ref: '#/components/schemas/MetadataError'
+                $ref: '#/components/schemas/MetadataError',
             },
-            description: 'Pallet\'s errors.'
+            description: "Pallet's errors.",
         },
         events: {
             type: 'array',
             items: {
-                $ref: '#/components/schemas/MetadataEvent'
+                $ref: '#/components/schemas/MetadataEvent',
             },
-            description: 'Pallet\'s events.'
+            description: "Pallet's events.",
         },
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Pallet\'s index inside the metadata.',
+            description: "Pallet's index inside the metadata.",
             example: 53,
-            minimum: 0
+            minimum: 0,
         },
         name: {
             type: 'string',
-            description: 'Pallet\'s name.',
-            example: 'Balances'
+            description: "Pallet's name.",
+            example: 'Balances',
         },
         storageItems: {
             type: 'array',
             items: {
-                $ref: '#/components/schemas/MetadataStorageItem'
+                $ref: '#/components/schemas/MetadataStorageItem',
             },
-            description: 'Pallet\'s storage items.'
-        }
+            description: "Pallet's storage items.",
+        },
     },
     example: {
         calls: [
             {
-                docs: [
-                    'Make some on-chain remark.'
-                ],
+                docs: ['Make some on-chain remark.'],
                 index: 0,
-                name: 'Remark'
-            }
+                name: 'Remark',
+            },
         ],
         constants: [
             {
-                docs: [
-                    'The maximum length of a block (in bytes).'
-                ],
+                docs: ['The maximum length of a block (in bytes).'],
                 index: 1,
                 name: 'BlockLength',
                 typeId: 156,
@@ -1119,153 +1069,139 @@ export const MetadataPalletSchema = {
                     max: {
                         mandatory: '5242880',
                         normal: '3932160',
-                        operational: '5242880'
-                    }
+                        operational: '5242880',
+                    },
                 },
-                valueHex: '0x00003c000000500000005000'
-            }
+                valueHex: '0x00003c000000500000005000',
+            },
         ],
         errors: [
             {
                 docs: [
                     'The name of specification does not match between the current runtime',
-                    'and the new runtime.'
+                    'and the new runtime.',
                 ],
                 index: 0,
-                name: 'InvalidSpecName'
-            }
+                name: 'InvalidSpecName',
+            },
         ],
         events: [
             {
-                docs: [
-                    '`:code` was updated.'
-                ],
+                docs: ['`:code` was updated.'],
                 index: 2,
-                name: 'CodeUpdated'
-            }
+                name: 'CodeUpdated',
+            },
         ],
         index: 0,
         name: 'System',
         storageItems: [
             {
-                docs: [
-                    'Hash of the previous block.'
-                ],
+                docs: ['Hash of the previous block.'],
                 index: 8,
                 keyPrefix: '0x26aa394eea5630e07c48ae0c9558cef78a42f33323cb5ced3b44dd825fda9fcc',
-                name: 'ParentHash'
-            }
-        ]
-    }
+                name: 'ParentHash',
+            },
+        ],
+    },
 } as const;
 
 export const MetadataPalletSummarySchema = {
     type: 'object',
     description: 'The summary of a pallet defined in metadata, with only its index and name.',
-    required: [
-        'index',
-        'name'
-    ],
+    required: ['index', 'name'],
     properties: {
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Pallet\'s index inside the metadata.',
+            description: "Pallet's index inside the metadata.",
             example: 53,
-            minimum: 0
+            minimum: 0,
         },
         name: {
             type: 'string',
-            description: 'Pallet\'s name.',
-            example: 'Balances'
-        }
-    }
+            description: "Pallet's name.",
+            example: 'Balances',
+        },
+    },
 } as const;
 
 export const MetadataStorageItemSchema = {
     type: 'object',
     description: 'A storage item defined in a metadata pallet.',
-    required: [
-        'index',
-        'name',
-        'keyPrefix',
-        'docs'
-    ],
+    required: ['index', 'name', 'keyPrefix', 'docs'],
     properties: {
         docs: {
             $ref: '#/components/schemas/MetadataItemDocumentation',
-            description: 'Storage item documentation. One item per line in the array.'
+            description: 'Storage item documentation. One item per line in the array.',
         },
         index: {
             type: 'integer',
             format: 'int32',
-            description: 'Storage item\'s index inside the metadata pallet.',
+            description: "Storage item's index inside the metadata pallet.",
             example: 0,
-            minimum: 0
+            minimum: 0,
         },
         keyPrefix: {
             $ref: '#/components/schemas/HexString',
-            description: 'Storage item Substrate storage key prefix.'
+            description: 'Storage item Substrate storage key prefix.',
         },
         name: {
             type: 'string',
             description: 'Storage item name. Camel case.',
-            example: 'Account'
-        }
-    }
+            example: 'Account',
+        },
+    },
 } as const;
 
 export const MetadataSummarySchema = {
     type: 'object',
     description: 'Basic fields to represent a runtime version metadata.',
-    required: [
-        'specVersion',
-        'metadataVersion'
-    ],
+    required: ['specVersion', 'metadataVersion'],
     properties: {
         metadataVersion: {
             type: 'integer',
             format: 'int32',
             description: 'Metadata version.',
             example: 14,
-            minimum: 0
+            minimum: 0,
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
             description: 'Metadata runtime spec version.',
             example: 1001,
-            minimum: 0
-        }
+            minimum: 0,
+        },
     },
     example: {
         metadataVersion: 14,
-        specVersion: 1001
-    }
+        specVersion: 1001,
+    },
 } as const;
 
 export const MultiAddressSchema = {
     oneOf: [
         {
-            $ref: '#/components/schemas/MultiAddressAccountId'
+            $ref: '#/components/schemas/MultiAddressAccountId',
         },
         {
-            $ref: '#/components/schemas/MultiAddressAccountIndex'
+            $ref: '#/components/schemas/MultiAddressAccountIndex',
         },
         {
-            $ref: '#/components/schemas/MultiAddressRaw'
+            $ref: '#/components/schemas/MultiAddressRaw',
         },
         {
-            $ref: '#/components/schemas/MultiAddress20'
+            $ref: '#/components/schemas/MultiAddress20',
         },
         {
-            $ref: '#/components/schemas/MultiAddress32'
-        }
+            $ref: '#/components/schemas/MultiAddress32',
+        },
     ],
-    description: 'Discriminated union for the Substrate multi-address type.\nThe `type` tag selects the variant; `value` carries the payload.',
+    description:
+        'Discriminated union for the Substrate multi-address type.\nThe `type` tag selects the variant; `value` carries the payload.',
     example: {
         type: 'accountId',
-        value: '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a'
+        value: '0x008d8404893c7b4b80f397605cc96e61fec3c89676c8c2794a2a7d281d678b1a',
     },
     discriminator: {
         propertyName: 'type',
@@ -1274,165 +1210,141 @@ export const MultiAddressSchema = {
             address20: '#/components/schemas/MultiAddress20',
             address32: '#/components/schemas/MultiAddress32',
             index: '#/components/schemas/MultiAddressIndex',
-            raw: '#/components/schemas/MultiAddressRaw'
-        }
-    }
+            raw: '#/components/schemas/MultiAddressRaw',
+        },
+    },
 } as const;
 
 export const MultiAddress20Schema = {
     type: 'object',
     description: '20-byte address.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiAddress20Type',
-            description: 'Must be `address20`.'
+            description: 'Must be `address20`.',
         },
         value: {
-            $ref: '#/components/schemas/Address20Hex'
-        }
-    }
+            $ref: '#/components/schemas/Address20Hex',
+        },
+    },
 } as const;
 
 export const MultiAddress20TypeSchema = {
     type: 'string',
     description: 'Multi-address 20-byte address type.',
-    enum: [
-        'address20'
-    ]
+    enum: ['address20'],
 } as const;
 
 export const MultiAddress32Schema = {
     type: 'object',
     description: '32-byte address.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiAddress32Type',
-            description: 'Must be `address32`.'
+            description: 'Must be `address32`.',
         },
         value: {
-            $ref: '#/components/schemas/Address32Hex'
-        }
-    }
+            $ref: '#/components/schemas/Address32Hex',
+        },
+    },
 } as const;
 
 export const MultiAddress32TypeSchema = {
     type: 'string',
     description: 'Multi-address 32-byte address type.',
-    enum: [
-        'address32'
-    ]
+    enum: ['address32'],
 } as const;
 
 export const MultiAddressAccountIdSchema = {
     type: 'object',
     description: '32-byte account id.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiAddressAccountIdType',
-            description: 'Must be `accountId`.'
+            description: 'Must be `accountId`.',
         },
         value: {
             $ref: '#/components/schemas/AccountIdHex',
-            description: 'Account id as 32-byte hex.'
-        }
-    }
+            description: 'Account id as 32-byte hex.',
+        },
+    },
 } as const;
 
 export const MultiAddressAccountIdTypeSchema = {
     type: 'string',
     description: 'Multi-address 32-byte account id type.',
-    enum: [
-        'accountId'
-    ]
+    enum: ['accountId'],
 } as const;
 
 export const MultiAddressAccountIndexSchema = {
     type: 'object',
     description: 'Account index.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiAddressIndexType',
-            description: 'Must be `index`.'
+            description: 'Must be `index`.',
         },
         value: {
             type: 'integer',
             format: 'int32',
             description: 'Account index value.',
             example: 83,
-            minimum: 0
-        }
-    }
+            minimum: 0,
+        },
+    },
 } as const;
 
 export const MultiAddressIndexTypeSchema = {
     type: 'string',
     description: 'Multi-address account index type.',
-    enum: [
-        'index'
-    ]
+    enum: ['index'],
 } as const;
 
 export const MultiAddressRawSchema = {
     type: 'object',
     description: 'Raw account address.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiAddressRawType',
-            description: 'Must be `raw`.'
+            description: 'Must be `raw`.',
         },
         value: {
-            $ref: '#/components/schemas/HexString'
-        }
-    }
+            $ref: '#/components/schemas/HexString',
+        },
+    },
 } as const;
 
 export const MultiAddressRawTypeSchema = {
     type: 'string',
     description: 'Multi-address raw account address type.',
-    enum: [
-        'raw'
-    ]
+    enum: ['raw'],
 } as const;
 
 export const MultiSignatureSchema = {
     oneOf: [
         {
-            $ref: '#/components/schemas/MultiSignatureECDSA'
+            $ref: '#/components/schemas/MultiSignatureECDSA',
         },
         {
-            $ref: '#/components/schemas/MultiSignatureEth'
+            $ref: '#/components/schemas/MultiSignatureEth',
         },
         {
-            $ref: '#/components/schemas/MultiSignatureEd25519'
+            $ref: '#/components/schemas/MultiSignatureEd25519',
         },
         {
-            $ref: '#/components/schemas/MultiSignatureSr25519'
-        }
+            $ref: '#/components/schemas/MultiSignatureSr25519',
+        },
     ],
-    description: 'Discriminated union for the Substrate multi-signature type.\nThe `type` tag selects the variant; `value` carries the payload.',
+    description:
+        'Discriminated union for the Substrate multi-signature type.\nThe `type` tag selects the variant; `value` carries the payload.',
     example: {
         type: 'sr25519',
-        value: '0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab'
+        value: '0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab',
     },
     discriminator: {
         propertyName: 'type',
@@ -1440,165 +1352,142 @@ export const MultiSignatureSchema = {
             ecdsa: '#/components/schemas/MultiSignatureECDSA',
             ed25519: '#/components/schemas/MultiSignatureEd25519',
             eth: '#/components/schemas/MultiSignatureEth',
-            sr25519: '#/components/schemas/MultiSignatureSr25519'
-        }
-    }
+            sr25519: '#/components/schemas/MultiSignatureSr25519',
+        },
+    },
 } as const;
 
 export const MultiSignatureECDSASchema = {
     type: 'object',
     description: 'ECDSA signature.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiSignatureECDSAType',
-            description: 'Must be `ecdsa`.'
+            description: 'Must be `ecdsa`.',
         },
         value: {
             $ref: '#/components/schemas/SignatureHexString',
-            description: 'ECDSA signature hex.'
-        }
-    }
+            description: 'ECDSA signature hex.',
+        },
+    },
 } as const;
 
 export const MultiSignatureECDSATypeSchema = {
     type: 'string',
     description: 'Multi-signature ECDSA type.',
-    enum: [
-        'ecdsa'
-    ]
+    enum: ['ecdsa'],
 } as const;
 
 export const MultiSignatureEd25519Schema = {
     type: 'object',
     description: 'Ed25519 signature.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiSignatureEd25519Type',
-            description: 'Must be `ed25519`.'
+            description: 'Must be `ed25519`.',
         },
         value: {
             $ref: '#/components/schemas/SignatureHexString',
-            description: 'Ed25519 signature hex.'
-        }
-    }
+            description: 'Ed25519 signature hex.',
+        },
+    },
 } as const;
 
 export const MultiSignatureEd25519TypeSchema = {
     type: 'string',
     description: 'Multi-signature Ed25519 type.',
-    enum: [
-        'ed25519'
-    ]
+    enum: ['ed25519'],
 } as const;
 
 export const MultiSignatureEthSchema = {
     type: 'object',
     description: 'Eth signature.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiSignatureEthType',
-            description: 'Must be `eth`.'
+            description: 'Must be `eth`.',
         },
         value: {
             $ref: '#/components/schemas/SignatureHexString',
-            description: 'Eth signature hex.'
-        }
-    }
+            description: 'Eth signature hex.',
+        },
+    },
 } as const;
 
 export const MultiSignatureEthTypeSchema = {
     type: 'string',
     description: 'Multi-signature Eth type (ECDSA over secp256k1, applied to a Keccak-256 hash).',
-    enum: [
-        'eth'
-    ]
+    enum: ['eth'],
 } as const;
 
 export const MultiSignatureSr25519Schema = {
     type: 'object',
     description: 'Sr25519 signature.',
-    required: [
-        'type',
-        'value'
-    ],
+    required: ['type', 'value'],
     properties: {
         type: {
             $ref: '#/components/schemas/MultiSignatureSr25519Type',
-            description: 'Must be `sr25519`.'
+            description: 'Must be `sr25519`.',
         },
         value: {
             $ref: '#/components/schemas/SignatureHexString',
-            description: 'Sr25519 signature hex.'
-        }
-    }
+            description: 'Sr25519 signature hex.',
+        },
+    },
 } as const;
 
 export const MultiSignatureSr25519TypeSchema = {
     type: 'string',
     description: 'Multi-signature Sr25519 type.',
-    enum: [
-        'sr25519'
-    ]
+    enum: ['sr25519'],
 } as const;
 
 export const PaginationDataSchema = {
     type: 'object',
     description: 'Pagination data for paged responses.',
-    required: [
-        'page',
-        'pageSize',
-        'total'
-    ],
+    required: ['page', 'pageSize', 'total'],
     properties: {
         page: {
             type: 'integer',
             format: 'int32',
             description: 'Current page number. 1-indexed.',
             example: 1,
-            minimum: 1
+            minimum: 1,
         },
         pageSize: {
             type: 'integer',
             format: 'int32',
             description: 'Number of items per page.',
             example: 1,
-            minimum: 1
+            minimum: 1,
         },
         total: {
             type: 'integer',
             format: 'int64',
             description: 'Total number of items across all pages.',
             example: 10467367,
-            minimum: 0
-        }
+            minimum: 0,
+        },
     },
     example: {
         page: 1,
         pageSize: 1,
-        total: 324
-    }
+        total: 324,
+    },
 } as const;
 
 export const SignatureHexStringSchema = {
     type: 'string',
-    description: 'Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)\nand ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.',
+    description:
+        'Hex-encoded Substrate extrinsic signature. Supports Sr25519/Ed25519 (64 bytes → 128 hex chars)\nand ECDSA (65 bytes → 130 hex chars). **Always** `0x`-prefixed and lowercase in responses.\nInputs elsewhere may accept mixed case or missing `0x`; the API normalizes outputs.',
     examples: [
         '0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab',
-        '0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab'
+        '0xababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab',
     ],
-    pattern: '^0x([0-9a-f]{128}|[0-9a-f]{130})$'
+    pattern: '^0x([0-9a-f]{128}|[0-9a-f]{130})$',
 } as const;
 
 export const TraceSchema = {
@@ -1612,89 +1501,91 @@ export const TraceSchema = {
         'index',
         'keyPrefix',
         'extId',
-        'storageMethod'
+        'storageMethod',
     ],
     properties: {
         blockHash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Hash of the trace\'s block.'
+            description: "Hash of the trace's block.",
         },
         blockNumber: {
             type: 'integer',
             format: 'int64',
-            description: 'Number of the trace\'s block.',
+            description: "Number of the trace's block.",
             example: 3172595,
-            minimum: 0
+            minimum: 0,
         },
         extId: {
             $ref: '#/components/schemas/HexString',
-            description: 'ExtId value for the trace record.'
+            description: 'ExtId value for the trace record.',
         },
         hash: {
             $ref: '#/components/schemas/Hash256Hex',
-            description: 'Artificial hash of the trace (`sha256(block_hash || index)`).'
+            description: 'Artificial hash of the trace (`sha256(block_hash || index)`).',
         },
         index: {
             type: 'integer',
             format: 'int32',
             description: 'Index of the trace within the block.',
             example: 83,
-            minimum: 0
+            minimum: 0,
         },
         keyParams: {
             $ref: '#/components/schemas/HexString',
-            description: 'Substrate storage parameters appended to the end of the storage key,\nif the storage item has parameters.'
+            description:
+                'Substrate storage parameters appended to the end of the storage key,\nif the storage item has parameters.',
         },
         keyPrefix: {
             $ref: '#/components/schemas/HexString',
-            description: 'Substrate storage key prefix of the trace record.'
+            description: 'Substrate storage key prefix of the trace record.',
         },
         knownKey: {
             type: 'string',
-            description: 'If the trace record is for a known UTF-8 key, the string representation of the key.',
-            example: ':extrinsic_index'
+            description:
+                'If the trace record is for a known UTF-8 key, the string representation of the key.',
+            example: ':extrinsic_index',
         },
         palletIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'If the trace record is a storage item, the storage item\'s pallet index in the metadata.',
+            description:
+                "If the trace record is a storage item, the storage item's pallet index in the metadata.",
             example: 14,
-            minimum: 0
+            minimum: 0,
         },
         palletName: {
             type: 'string',
-            description: 'If the trace record is a storage item, the storage item\'s pallet name in the metadata.',
-            example: 'System'
+            description:
+                "If the trace record is a storage item, the storage item's pallet name in the metadata.",
+            example: 'System',
         },
         palletStorageItemIndex: {
             type: 'integer',
             format: 'int32',
-            description: 'If the trace record is a storage item, the storage item\'s index in the pallet metadata.',
+            description:
+                "If the trace record is a storage item, the storage item's index in the pallet metadata.",
             example: 4,
-            minimum: 0
+            minimum: 0,
         },
         palletStorageItemName: {
             type: 'string',
-            description: 'If the trace record is a storage item, the storage item\'s name.',
-            example: 'BlockHash'
+            description: "If the trace record is a storage item, the storage item's name.",
+            example: 'BlockHash',
         },
         parentId: {
-            type: [
-                'string',
-                'null'
-            ]
+            type: ['string', 'null'],
         },
         specVersion: {
             type: 'integer',
             format: 'int32',
-            description: 'Runtime spec version of the call\'s block.',
+            description: "Runtime spec version of the call's block.",
             example: 2000000,
-            minimum: 0
+            minimum: 0,
         },
         storageMethod: {
             $ref: '#/components/schemas/TraceStorageMethod',
-            description: 'Trace storage method.'
-        }
+            description: 'Trace storage method.',
+        },
     },
     example: {
         blockHash: '0x2f08d6887f29369af351118631221891b47ca5f0c2ef14f4da0dd32c3bed0d77',
@@ -1702,7 +1593,8 @@ export const TraceSchema = {
         extId: '0x3e44',
         hash: '0xebae2efe1479e7e4535c8ffb337359e252a54ac77a13c6095c9bbc5e78622daa',
         index: 20,
-        keyParams: '0x5a3fb8de4321e12fad081eaeece61bc56d6f646c506f745374616b650000000000000000000000000000000000000000',
+        keyParams:
+            '0x5a3fb8de4321e12fad081eaeece61bc56d6f646c506f745374616b650000000000000000000000000000000000000000',
         keyPrefix: '0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9',
         palletIndex: 0,
         palletName: 'System',
@@ -1710,20 +1602,12 @@ export const TraceSchema = {
         palletStorageItemName: 'Account',
         parentId: null,
         specVersion: 2000000,
-        storageMethod: 'Put'
-    }
+        storageMethod: 'Put',
+    },
 } as const;
 
 export const TraceStorageMethodSchema = {
     type: 'string',
     description: 'Block trace storage method.',
-    enum: [
-        'Put',
-        'ChildPut',
-        'ChildKill',
-        'ClearPrefix',
-        'ChildClearPrefix',
-        'Append',
-        'Genesis'
-    ]
+    enum: ['Put', 'ChildPut', 'ChildKill', 'ClearPrefix', 'ChildClearPrefix', 'Append', 'Genesis'],
 } as const;
