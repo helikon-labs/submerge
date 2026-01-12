@@ -206,6 +206,104 @@ fn decode_extrinsic(
     })
 }
 
+fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &[Event]) -> bool {
+    // Root call: defer to extrinsic status
+    if call_index.len() == 1 && call_index[0] == 0 {
+        return is_extrinsic_successful(extrinsic_index, events);
+    }
+
+    let parse_batch_index = |value: &JSONValue| match value {
+        JSONValue::String(s) => s.parse::<u16>().ok(),
+        _ => None,
+    };
+
+    let extract_dispatch_error = |value: &JSONValue| match value {
+        JSONValue::Object(map) => {
+            if map.contains_key("Err") {
+                Some(true)
+            } else if map.contains_key("Ok") {
+                Some(false)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    };
+
+    let batch_item_index = call_index.get(1).copied();
+
+    for event in events
+        .iter()
+        .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsic_index))
+    {
+        match (event.pallet_name.as_str(), event.pallet_event_name.as_str()) {
+            ("Utility", "BatchInterrupted") => {
+                if let (Some(call_idx), JSONValue::Object(args)) = (batch_item_index, &event.args) {
+                    if let Some(failed_idx) = args.get("index").and_then(|v| parse_batch_index(v)) {
+                        // batch_all: all calls >= failed index failed or were skipped
+                        return call_idx < failed_idx;
+                    }
+                }
+            }
+
+            ("Utility", "ItemFailed") => {
+                // Check if the event corresponds to this call
+                // Event args contain the index of the failed item
+                if let JSONValue::Object(ref args) = &event.args {
+                    if let Some(JSONValue::String(idx)) = args.get("index").map(|v| v) {
+                        if let Ok(failed_idx) = idx.parse::<u16>() {
+                            // Check if this matches our call index, means call was failed
+                            return call_index.get(1) != Some(&failed_idx);
+                        }
+                    }
+                }
+            }
+
+            ("Proxy", "ProxyExecuted") => {
+                if call_index.len() >= 2 {
+                    if let JSONValue::Object(args) = &event.args {
+                        if let Some(is_err) =
+                            args.get("result").and_then(|v| extract_dispatch_error(v))
+                        {
+                            return !is_err;
+                        }
+                    }
+                }
+            }
+
+            ("Multisig", "MultisigExecuted") => {
+                if call_index.len() >= 2 {
+                    if let JSONValue::Object(args) = &event.args {
+                        if let Some(is_err) =
+                            args.get("result").and_then(|v| extract_dispatch_error(v))
+                        {
+                            return !is_err;
+                        }
+                    }
+                }
+            }
+
+            ("Sudo", "Sudid") => {
+                if call_index.len() >= 2 {
+                    if let JSONValue::Object(args) = &event.args {
+                        if let Some(is_err) = args
+                            .get("sudo_result")
+                            .and_then(|v| extract_dispatch_error(v))
+                        {
+                            return !is_err;
+                        }
+                    }
+                }
+            }
+
+            _ => {}
+        }
+    }
+
+    // No failure evidence found → assume success
+    true
+}
+
 impl BlockProcessor {
     #[async_recursion]
     async fn legacy_json_value_to_value(
@@ -511,6 +609,7 @@ impl BlockProcessor {
         spec_version: u32,
         block_status: BlockStatus,
         extrinsics: &[Extrinsic],
+        events: &[Event],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         let block_number = block_header.get_number()?;
@@ -539,6 +638,7 @@ impl BlockProcessor {
                 "root",
                 &[0],
                 &Value::Call(Box::new(extrinsic.call.clone())),
+                events,
                 tx,
             )
             .await?;
@@ -562,6 +662,7 @@ impl BlockProcessor {
         call_path: &str,
         call_index: &[u16],
         arg: &Value,
+        events: &[Event],
         tx: &mut Transaction<'_, Postgres>,
     ) -> anyhow::Result<()> {
         match arg {
@@ -590,11 +691,10 @@ impl BlockProcessor {
                             call.pallet_call_name,
                             call.pallet_call_index
                         ))?;
-                // TODO call success status identification for nested calls
                 let is_successful = if call_index == [0] {
                     extrinsic_is_successful
                 } else {
-                    true
+                    is_nested_call_successful(extrinsic.index, call_index, events)
                 };
                 let call_hash = self
                     .postgres
@@ -630,6 +730,7 @@ impl BlockProcessor {
                     call_path,
                     call_index,
                     &call.args,
+                    events,
                     tx,
                 )
                 .await?;
@@ -652,6 +753,7 @@ impl BlockProcessor {
                         &call_path,
                         call_index.as_slice(),
                         value,
+                        events,
                         tx,
                     )
                     .await?;
@@ -675,6 +777,7 @@ impl BlockProcessor {
                         &call_path,
                         call_index.as_slice(),
                         value,
+                        events,
                         tx,
                     )
                     .await?;

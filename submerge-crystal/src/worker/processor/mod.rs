@@ -736,6 +736,7 @@ impl BlockProcessor {
             spec_version,
             status,
             &extrinsics,
+            &events,
             &mut tx,
         )
         .await?;
