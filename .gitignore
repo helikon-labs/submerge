@@ -11,5 +11,6 @@ _chainspecs/**.json
 _chainspecs/polkadot
 _chainspecs/kusama
 _chainspecs/westend
+_chainspecs/paseo
 *.profraw
 .claude

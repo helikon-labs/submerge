@@ -55,3 +55,14 @@ curl -o ./westend/westend.json https://raw.githubusercontent.com/paritytech/polk
 # westend system chains
 mkdir -p westend/sys
 curl -o ./westend/sys/coretime-westend.json https://raw.githubusercontent.com/paritytech/polkadot-sdk/refs/heads/master/cumulus/parachains/chain-specs/coretime-westend.json
+
+# paseo
+mkdir -p paseo
+curl -o ./paseo/paseo.json https://raw.githubusercontent.com/paseo-network/paseo-chain-specs/refs/heads/main/paseo.raw.json
+# paseo system chains
+mkdir -p paseo/sys
+curl -o ./paseo/sys/asset-hub-paseo.json https://paseo-r2.zondax.ch/chain-specs/paseo-asset-hub.json
+curl -o ./paseo/sys/bridge-hub-paseo.json https://raw.githubusercontent.com/paseo-network/paseo-chain-specs/refs/heads/main/paseo-bridge-hub.raw.json
+curl -o ./paseo/sys/collectives-paseo.json https://raw.githubusercontent.com/paseo-network/paseo-chain-specs/refs/heads/main/paseo-collectives.raw.json
+curl -o ./paseo/sys/coretime-paseo.json https://raw.githubusercontent.com/paseo-network/paseo-chain-specs/refs/heads/main/paseo-coretime.raw.json
+curl -o ./paseo/sys/people-paseo.json https://raw.githubusercontent.com/paseo-network/paseo-chain-specs/refs/heads/main/paseo-people.raw.json

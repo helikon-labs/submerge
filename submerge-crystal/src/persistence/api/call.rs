@@ -39,6 +39,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
         page_size: u32,
+        extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash(
@@ -46,6 +47,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         block_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
+        extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_block_hash(
         &self,
@@ -54,6 +56,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_number(
@@ -61,6 +64,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         block_number: u64,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
+        extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_block_number(
         &self,
@@ -69,6 +73,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>>;
     async fn get_call_count_by_block_hash_and_extrinsic_index(
@@ -163,11 +168,12 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
         page_size: u32,
+        extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{query} WHERE 1=1"));
+            QueryBuilder::new(format!("{query} WHERE 1 = 1"));
         if let Some(min) = min_block_number {
             query_builder.push(" AND C.block_number >= ").push_bind(min);
         }
@@ -205,6 +211,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             query_builder.push(")");
         }
 
+        if let Some(extrinsic_is_signed) = extrinsic_is_signed {
+            query_builder
+                .push(" AND C.extrinsic_is_signed = ")
+                .push_bind(extrinsic_is_signed);
+        }
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
@@ -231,11 +242,17 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
+        extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.block_hash = ")
             .push_bind(block_hash);
+        if let Some(extrinsic_is_signed) = extrinsic_is_signed {
+            query_builder
+                .push(" AND C.extrinsic_is_signed = ")
+                .push_bind(extrinsic_is_signed);
+        }
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
@@ -260,6 +277,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
@@ -268,6 +286,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         query_builder
             .push(" AND C.block_hash = ")
             .push_bind(block_hash);
+        if let Some(extrinsic_is_signed) = extrinsic_is_signed {
+            query_builder
+                .push(" AND C.extrinsic_is_signed = ")
+                .push_bind(extrinsic_is_signed);
+        }
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
@@ -294,11 +317,17 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         pallet_name: &Option<String>,
         pallet_call_name: &Option<String>,
+        extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
             .push(" WHERE C.block_number = ")
             .push_bind(block_number as i64);
+        if let Some(extrinsic_is_signed) = extrinsic_is_signed {
+            query_builder
+                .push(" AND C.extrinsic_is_signed = ")
+                .push_bind(extrinsic_is_signed);
+        }
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")
@@ -323,6 +352,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         pallet_call_name: &Option<String>,
         page: u32,
         page_size: u32,
+        extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
         let offset = (page - 1) * page_size;
@@ -331,6 +361,11 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         query_builder
             .push(" AND C.block_number = ")
             .push_bind(block_number as i64);
+        if let Some(extrinsic_is_signed) = extrinsic_is_signed {
+            query_builder
+                .push(" AND C.extrinsic_is_signed = ")
+                .push_bind(extrinsic_is_signed);
+        }
         if let Some(pallet_name) = pallet_name {
             query_builder
                 .push(" AND MP.name ILIKE ")

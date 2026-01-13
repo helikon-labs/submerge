@@ -94,6 +94,7 @@ pub(crate) async fn get_calls(
             &query.pallet_name,
             &query.call_name,
             page_size,
+            query.is_signed,
             query.include_args,
         )
         .await?;
@@ -183,6 +184,7 @@ pub(crate) async fn get_calls_by_block_reference(
                     block_number,
                     &query.pallet_name,
                     &query.pallet_call_name,
+                    query.is_signed,
                 ),
                 state.postgres.get_calls_by_block_number(
                     block_number,
@@ -190,6 +192,7 @@ pub(crate) async fn get_calls_by_block_reference(
                     &query.pallet_call_name,
                     page,
                     page_size,
+                    query.is_signed,
                     query.include_args,
                 ),
             )?;
@@ -216,6 +219,7 @@ pub(crate) async fn get_calls_by_block_reference(
                     &block_hash,
                     &query.pallet_name,
                     &query.pallet_call_name,
+                    query.is_signed,
                 ),
                 state.postgres.get_calls_by_block_hash(
                     &block_hash,
@@ -223,6 +227,7 @@ pub(crate) async fn get_calls_by_block_reference(
                     &query.pallet_call_name,
                     page,
                     page_size,
+                    query.is_signed,
                     query.include_args,
                 ),
             )?;
