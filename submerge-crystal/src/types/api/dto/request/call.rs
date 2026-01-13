@@ -66,6 +66,10 @@ pub(crate) struct CallQuery {
     #[param(required = false, nullable = false, example = "setcode")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub call_name: Option<String>,
+    /// Whether to include only calls within signed/unsigned extrinsics.
+    #[param(required = false, nullable = false, example = true)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_signed: Option<bool>,
     /// Whether to include call arguments in the calls in the response.
     /// Default is `false`. Setting this to `true` increases the response size considerably.
     /// Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.
@@ -147,6 +151,10 @@ pub(crate) struct BlockCallQuery {
     /// Filter blocks calls by call name. Case insensitive.
     #[param(required = false, nullable = false, example = "setcode")]
     pub pallet_call_name: Option<String>,
+    /// Whether to include only calls within signed/unsigned extrinsics.
+    #[param(required = false, nullable = false, example = true)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_signed: Option<bool>,
     /// Whether to include call arguments in the block calls in the response.
     /// Default is `false`. Setting this to `true` increases the response size considerably.
     /// Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.
