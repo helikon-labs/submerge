@@ -85,7 +85,7 @@ impl CrystalExtrinsicAPIPostgreSQLStorage for PostgreSQLStorage {
         page_size: u32,
     ) -> anyhow::Result<Vec<ExtrinsicRow>> {
         let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{SELECT} WHERE 1=1"));
+            QueryBuilder::new(format!("{SELECT} WHERE 1 = 1"));
         if let Some(min) = min_block_number {
             query_builder.push(" AND E.block_number >= ").push_bind(min);
         }

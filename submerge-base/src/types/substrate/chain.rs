@@ -33,6 +33,13 @@ pub enum Chain {
     // Westend and parachains
     Westend,
     CoretimeWestend,
+    // Paseo and parachains
+    Paseo,
+    AssetHubPaseo,
+    BridgeHubPaseo,
+    CollectivesPaseo,
+    CoretimePaseo,
+    PeoplePaseo,
 }
 
 impl FromStr for Chain {
@@ -73,6 +80,12 @@ impl Chain {
             Chain::BifrostKusama | Chain::Moonriver => "kusama/para",
             Chain::Westend => "westend",
             Chain::CoretimeWestend => "westend/sys",
+            Chain::Paseo => "paseo",
+            Chain::AssetHubPaseo
+            | Chain::BridgeHubPaseo
+            | Chain::CollectivesPaseo
+            | Chain::CoretimePaseo
+            | Chain::PeoplePaseo => "paseo/sys",
         };
         format!("{dir}/{}.json", self.to_string().to_case(Case::Kebab))
     }

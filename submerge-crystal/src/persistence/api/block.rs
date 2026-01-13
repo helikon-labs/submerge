@@ -133,7 +133,7 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
             r#"
             SELECT COUNT(*)
             FROM block
-            WHERE 1=1
+            WHERE 1 = 1
             "#,
         );
         if let Some(status) = status {
@@ -173,7 +173,7 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
                 hash, parent_hash, state_root, extrinsic_root, number, timestamp, spec_version, status, weight,
                 extrinsic_count, event_count, author_multi_address
             FROM block
-            WHERE 1=1
+            WHERE 1 = 1
             "#,
         );
         if let Some(status) = status {

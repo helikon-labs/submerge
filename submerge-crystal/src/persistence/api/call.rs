@@ -167,7 +167,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
     ) -> anyhow::Result<Vec<CallRow>> {
         let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
-            QueryBuilder::new(format!("{query} WHERE 1=1"));
+            QueryBuilder::new(format!("{query} WHERE 1 = 1"));
         if let Some(min) = min_block_number {
             query_builder.push(" AND C.block_number >= ").push_bind(min);
         }
