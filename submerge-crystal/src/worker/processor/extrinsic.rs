@@ -207,9 +207,14 @@ fn decode_extrinsic(
 }
 
 fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &[Event]) -> bool {
-    // Root call: defer to extrinsic status
+    // If the extrinsic failed, ALL nested calls failed
+    if !is_extrinsic_successful(extrinsic_index, events) {
+        return false;
+    }
+
+    // Root call (call_index == [0]): defer to extrinsic status
     if call_index.len() == 1 && call_index[0] == 0 {
-        return is_extrinsic_successful(extrinsic_index, events);
+        return true; // We already checked extrinsic succeeded above
     }
 
     let parse_batch_index = |value: &JSONValue| match value {
@@ -230,7 +235,7 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
         _ => None,
     };
 
-    let batch_item_index = call_index.get(1).copied();
+    let batch_item_index = call_index.get(2).copied();
 
     for event in events
         .iter()
@@ -239,32 +244,57 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
         match (event.pallet_name.as_str(), event.pallet_event_name.as_str()) {
             ("Utility", "BatchInterrupted") => {
                 if let (Some(call_idx), JSONValue::Object(args)) = (batch_item_index, &event.args) {
-                    if let Some(failed_idx) = args.get("index").and_then(|v| parse_batch_index(v)) {
-                        // batch_all: all calls >= failed index failed or were skipped
+                    if let Some(failed_idx) = args.get("index").and_then(parse_batch_index) {
+                        // In batch_all: calls at failed_idx and after all failed
+                        // Calls before failed_idx succeeded
                         return call_idx < failed_idx;
                     }
                 }
             }
 
             ("Utility", "ItemFailed") => {
-                // Check if the event corresponds to this call
-                // Event args contain the index of the failed item
-                if let JSONValue::Object(ref args) = &event.args {
-                    if let Some(JSONValue::String(idx)) = args.get("index").map(|v| v) {
-                        if let Ok(failed_idx) = idx.parse::<u16>() {
-                            // Check if this matches our call index, means call was failed
-                            return call_index.get(1) != Some(&failed_idx);
+                // ItemFailed events are emitted in order as batch items fail
+                // We need to count which ItemFailed this is to match it to our call
+                if call_index.len() >= 2 {
+                    // Count ItemFailed events before this one for this extrinsic
+                    let item_failed_index = events
+                        .iter()
+                        .take_while(|e| !std::ptr::eq(*e, event))
+                        .filter(|e| {
+                            e.phase == frame_system::Phase::ApplyExtrinsic(extrinsic_index)
+                                && e.pallet_name == "Utility"
+                                && e.pallet_event_name == "ItemFailed"
+                        })
+                        .count() as u16;
+
+                    // Prefer explicit index if present (newer runtimes)
+                    let failed_idx = if let JSONValue::Object(args) = &event.args {
+                        args.get("index")
+                            .and_then(parse_batch_index)
+                            .unwrap_or(item_failed_index)
+                    } else {
+                        item_failed_index
+                    };
+
+                    if let Some(call_idx) = batch_item_index {
+                        if call_idx == failed_idx {
+                            return false;
                         }
                     }
+                }
+            }
+
+            ("Utility", "BatchCompleted") => {
+                // All items in the batch succeeded
+                if call_index.len() >= 2 {
+                    return true;
                 }
             }
 
             ("Proxy", "ProxyExecuted") => {
                 if call_index.len() >= 2 {
                     if let JSONValue::Object(args) = &event.args {
-                        if let Some(is_err) =
-                            args.get("result").and_then(|v| extract_dispatch_error(v))
-                        {
+                        if let Some(is_err) = args.get("result").and_then(extract_dispatch_error) {
                             return !is_err;
                         }
                     }
@@ -274,9 +304,7 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
             ("Multisig", "MultisigExecuted") => {
                 if call_index.len() >= 2 {
                     if let JSONValue::Object(args) = &event.args {
-                        if let Some(is_err) =
-                            args.get("result").and_then(|v| extract_dispatch_error(v))
-                        {
+                        if let Some(is_err) = args.get("result").and_then(extract_dispatch_error) {
                             return !is_err;
                         }
                     }
@@ -286,9 +314,8 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
             ("Sudo", "Sudid") => {
                 if call_index.len() >= 2 {
                     if let JSONValue::Object(args) = &event.args {
-                        if let Some(is_err) = args
-                            .get("sudo_result")
-                            .and_then(|v| extract_dispatch_error(v))
+                        if let Some(is_err) =
+                            args.get("sudo_result").and_then(extract_dispatch_error)
                         {
                             return !is_err;
                         }
@@ -301,6 +328,7 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
     }
 
     // No failure evidence found → assume success
+    // (extrinsic succeeded and no failure event for this specific call)
     true
 }
 
@@ -691,11 +719,9 @@ impl BlockProcessor {
                             call.pallet_call_name,
                             call.pallet_call_index
                         ))?;
-                let is_successful = if call_index == [0] {
-                    extrinsic_is_successful
-                } else {
-                    is_nested_call_successful(extrinsic.index, call_index, events)
-                };
+
+                let is_successful = is_nested_call_successful(extrinsic.index, call_index, events);
+
                 let call_hash = self
                     .postgres
                     .ingest_call(
