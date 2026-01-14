@@ -48,7 +48,7 @@ paste = "1.0"
 parity-scale-codec = { version = "3.7", default-features = false, features = ["derive", "full"] }
 prometheus = "0.14"
 reqwest = { version = "0.13", features = ["blocking", "json", "gzip", "brotli"] }
-rust-embed = { version = "8.8", features = ["include-exclude"] }
+rust-embed = { version = "8.11", features = ["include-exclude"] }
 rustc-hash = "2.1"
 scale-decode = { git = "https://github.com/helikon-labs/scale-decode.git", branch = "submerge-expose-bitvector-format" }
 scale-info = "2.11"
