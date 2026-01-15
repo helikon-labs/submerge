@@ -18,3 +18,8 @@ cd "${0%/*}" || exit
 docker build -t helikon/submerge-lib:"$1" --no-cache --build-arg version="$1" -f ./01-base/01-submerge-lib.dockerfile ..
 # base
 docker build -t helikon/submerge-base:"$1" --no-cache --build-arg version="$1" -f ./01-base/02-submerge-base.dockerfile ..
+
+# crystal postgres
+docker build -t helikon/submerge-crystal-postgres:"$1" --no-cache --build-arg version="$1" -f ./02-crystal/01-submerge-crystal-postgres.dockerfile ..
+# crystal
+docker build -t helikon/submerge-crystal:"$1" --no-cache --build-arg version="$1" -f ./02-crystal/02-submerge-crystal.dockerfile ..

@@ -12,3 +12,9 @@ node_modules
 .docusaurus
 build
 dist
+_chainspecs/kusama
+_chainspecs/paseo
+_chainspecs/polkadot
+_chainspecs/westend
+_readme_files/
+_scripts/
