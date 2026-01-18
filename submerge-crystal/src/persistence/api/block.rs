@@ -3,7 +3,9 @@ use sqlx::{Pool, Postgres, QueryBuilder};
 use submerge_base::types::substrate::multi_address::MultiAddress;
 use submerge_persistence::postgres::PostgreSQLStorage;
 
-use crate::types::{persistence::BlockRow, BlockStatus};
+use crate::types::{
+    api::dto::response::block::BlockCursorPosition, persistence::BlockRow, BlockStatus,
+};
 
 async fn get_max_number_before_timestamp(
     connection_pool: &Pool<Postgres>,
@@ -94,20 +96,13 @@ async fn get_max_number_with_spec_version(
 }
 
 pub(crate) trait CrystalBlockAPIPostgreSQLStorage {
-    async fn get_block_count(
-        &self,
-        status: Option<BlockStatus>,
-        min_block_number: Option<i64>,
-        max_block_number: Option<i64>,
-        author_multi_address: &Option<MultiAddress>,
-    ) -> anyhow::Result<u64>;
     async fn get_block_rows(
         &self,
+        cursor_position: Option<BlockCursorPosition>,
         status: Option<BlockStatus>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         author_multi_address: &Option<MultiAddress>,
-        page: u32,
         page_size: u32,
     ) -> anyhow::Result<Vec<BlockRow>>;
     async fn get_block_number_range(
@@ -122,51 +117,15 @@ pub(crate) trait CrystalBlockAPIPostgreSQLStorage {
 }
 
 impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
-    async fn get_block_count(
-        &self,
-        status: Option<BlockStatus>,
-        min_block_number: Option<i64>,
-        max_block_number: Option<i64>,
-        author_multi_address: &Option<MultiAddress>,
-    ) -> anyhow::Result<u64> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            SELECT COUNT(*)
-            FROM block
-            WHERE 1 = 1
-            "#,
-        );
-        if let Some(status) = status {
-            query_builder.push(" AND status = ").push_bind(status);
-        }
-        if let Some(min) = min_block_number {
-            query_builder.push(" AND number >= ").push_bind(min);
-        }
-        if let Some(max) = max_block_number {
-            query_builder.push(" AND number <= ").push_bind(max);
-        }
-        if let Some(multi_address) = author_multi_address {
-            query_builder
-                .push(" AND author_multi_address = ")
-                .push_bind(multi_address.encode());
-        }
-        let count: i64 = query_builder
-            .build_query_scalar()
-            .fetch_one(&self.connection_pool)
-            .await?;
-        Ok(count as u64)
-    }
-
     async fn get_block_rows(
         &self,
+        cursor_position: Option<BlockCursorPosition>,
         status: Option<BlockStatus>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
         author_multi_address: &Option<MultiAddress>,
-        page: u32,
         page_size: u32,
     ) -> anyhow::Result<Vec<BlockRow>> {
-        let offset = (page - 1) * page_size;
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
             SELECT
@@ -185,6 +144,21 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         if let Some(max) = max_block_number {
             query_builder.push(" AND number <= ").push_bind(max);
         }
+
+        if let Some(cursor_position) = cursor_position {
+            let hash = cursor_position.get_hash()?;
+            query_builder.push(" AND (");
+            query_builder
+                .push("number < ")
+                .push_bind(cursor_position.number as i64);
+            query_builder
+                .push(" OR (number = ")
+                .push_bind(cursor_position.number as i64);
+            query_builder.push(" AND hash > ").push_bind(hash.clone());
+            query_builder.push(")");
+            query_builder.push(")");
+        }
+
         if let Some(multi_address) = author_multi_address {
             query_builder
                 .push(" AND author_multi_address = ")
@@ -192,7 +166,6 @@ impl CrystalBlockAPIPostgreSQLStorage for PostgreSQLStorage {
         }
         query_builder.push(" ORDER BY number DESC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
-        query_builder.push(" OFFSET ").push_bind(offset as i64);
 
         let rows: Vec<BlockRow> = query_builder
             .build_query_as()

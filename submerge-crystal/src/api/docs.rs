@@ -2,7 +2,7 @@ use crate::types::api::{
     dto::{
         pagination::{CursorPaginationData, PaginationData},
         response::{
-            block::{BlockDTO, BlockList, PaginatedBlockList},
+            block::{BlockDTO, BlockList, CursorBlockList},
             call::{CallDTO, CursorCallList, PaginatedCallList},
             error::{BadRequest, InternalServerError, NotFound, TooManyRequests},
             event::{CursorEventList, EventDTO, EventList, PaginatedEventList},
@@ -130,7 +130,7 @@ use crate::types::api::{
             PaginationData, CursorPaginationData, APIErrorBody, MetadataJSON, HexStringParam,
         ),
         responses(
-            BlockList, PaginatedBlockList,
+            BlockList, CursorBlockList,
             CursorCallList, PaginatedCallList,
             ExtrinsicList, PaginatedExtrinsicList, CursorExtrinsicList,
             EventList, PaginatedEventList, CursorEventList,

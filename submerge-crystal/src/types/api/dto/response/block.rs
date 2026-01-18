@@ -1,8 +1,9 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToResponse;
 
 use crate::types::api::dto::{
-    pagination::PaginationData,
+    pagination::CursorPaginationData,
+    request::block::BlockQuery,
     response::{example::block::block_example, schema::block::block_weight_schema},
 };
 
@@ -100,16 +101,34 @@ impl TryFrom<&BlockRow> for BlockDTO {
 )]
 pub(crate) struct BlockList(pub Vec<BlockDTO>);
 
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct BlockCursorPosition {
+    pub(crate) number: u64,
+    pub(crate) hash_hex: String,
+}
+
+impl BlockCursorPosition {
+    pub(crate) fn get_hash(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(hex::decode(self.hash_hex.trim_start_matches("0x"))?)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct BlockCursorPayload {
+    pub(crate) cursor_position: BlockCursorPosition,
+    pub(crate) query: BlockQuery,
+}
+
 #[derive(Debug, Serialize, ToResponse, ToSchema)]
 #[response(
-    description = "Paginated list of matching blocks.",
+    description = "List of matching blocks, with a cursor for the next page.",
     headers(
         ("X-RateLimit-Limit" = u32),
         ("X-RateLimit-Remaining" = u32),
     ),
 )]
-pub(crate) struct PaginatedBlockList {
+pub(crate) struct CursorBlockList {
     #[schema(example = json!([block_example()]))]
     pub data: Vec<BlockDTO>,
-    pub pagination: PaginationData,
+    pub pagination: CursorPaginationData,
 }
