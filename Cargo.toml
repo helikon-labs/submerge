@@ -35,7 +35,7 @@ axum-embed = "0.1"
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["env", "derive"] }
-convert_case = "0.10"
+convert_case = "0.11"
 frame-metadata = { version = "23.0", default-features = true, features = ["legacy"] }
 frame-system = "45.0"
 futures = "0.3"
