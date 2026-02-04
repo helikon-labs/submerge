@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-set -e
+set -euxo pipefail
+# check version parameter
 if [[ $1 == "" ]]
-    then
+then
     echo "Version parameter does not exist (eg 0.1.5)."
     exit 1
 elif [[ $1 =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Building and publishing SubVT Docker images v$1."
+    echo "Building Submerge v$1 Docker images."
 else
     echo "Invalid version parameter: $1. Enter a valid semver version (eg 0.1.5)."
     exit 1
 fi
-
 # cd to script directory
 cd "${0%/*}" || exit
-
-# backend base
-docker build -t helikon/submerge-base:"$1" -t helikon/submerge-base:latest --no-cache --build-arg version="$1" -f ./base/02-submerge-base.dockerfile ..
-# backend lib
-docker build -t helikon/submerge-lib:"$1" -t helikon/submerge-lib:latest --no-cache --build-arg version="$1" -f ./base/01-submerge-lib.dockerfile ..
+# lib
+docker build -t helikon/submerge-lib:"$1" --no-cache --build-arg version="$1" -f ./01-base/01-submerge-lib.dockerfile ..
+# base
+docker build -t helikon/submerge-base:"$1" --no-cache --build-arg version="$1" -f ./01-base/02-submerge-base.dockerfile ..
+# crystal legacy decoder
+docker build -t helikon/submerge-crystal-legacy-decoder:"$1" --no-cache --build-arg version="$1" -f ./02-crystal/01-submerge-crystal-legacy-decoder.dockerfile ../submerge-crystal/legacy-decoder
+docker push --all-tags helikon/submerge-crystal-legacy-decoder
+# crystal
+docker build -t helikon/submerge-crystal:"$1" --no-cache --build-arg version="$1" -f ./02-crystal/02-submerge-crystal.dockerfile ..
+docker push --all-tags helikon/submerge-crystal

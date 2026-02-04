@@ -50,7 +50,8 @@ class API {
     async start(port: number, rpcURL: string) {
         await this.setup(rpcURL);
         this.app.listen(port, () => {
-            console.log(`Submerge legacy decode server is listening on port ${port}.`);
+            console.log(`Submerge legacy decode server is initialized with RPC URL ${rpcURL}.`);
+            console.log(`Listening on port ${port}.`);
         });
     }
 

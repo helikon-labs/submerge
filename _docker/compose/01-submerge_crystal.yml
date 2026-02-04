@@ -1,5 +1,4 @@
 services:
-  # tune params @ https://pgtune.leopard.in.ua/
   submerge_crystal_postgres:
     networks:
       - submerge_crystal
@@ -13,6 +12,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_USER}
       POSTGRES_DB: ${CRYSTAL_POSTGRES_DB}
+    # tuning parameters @ https://pgtune.leopard.in.ua/
     command: |
       postgres -c max_connections=32
                -c shared_buffers=2GB
@@ -29,6 +29,7 @@ services:
                -c max_wal_size=2GB
 volumes:
   submerge_crystal_postgres_data:
+    external: false
 networks:
   submerge_crystal:
     driver: bridge
