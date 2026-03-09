@@ -54,11 +54,9 @@ where
 
 pub fn strip_nuls(value: &mut JSONValue) {
     match value {
-        JSONValue::String(str) => {
-            if str.contains('\0') {
-                // often these are right-padded; trim_end_matches is safest
-                *str = str.replace('\0', "");
-            }
+        JSONValue::String(str) if str.contains('\0') => {
+            // often these are right-padded; trim_end_matches is safest
+            *str = str.replace('\0', "");
         }
         JSONValue::Array(array) => array.iter_mut().for_each(strip_nuls),
         JSONValue::Object(map) => map.values_mut().for_each(strip_nuls),
