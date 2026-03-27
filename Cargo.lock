@@ -1723,7 +1723,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-crypto-hashing-proc-macro",
- "sp-debug-derive",
+ "sp-debug-derive 14.0.0",
  "sp-genesis-builder",
  "sp-inherents",
  "sp-io",
@@ -4836,10 +4836,10 @@ dependencies = [
  "serde",
  "sha2 0.10.9",
  "sp-crypto-hashing",
- "sp-debug-derive",
+ "sp-debug-derive 14.0.0",
  "sp-externalities",
  "sp-std",
- "sp-storage",
+ "sp-storage 22.0.0",
  "ss58-registry",
  "substrate-bip39",
  "thiserror 1.0.69",
@@ -4885,6 +4885,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-debug-derive"
+version = "15.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d61809bf52be994e4d0a0485bb18a78509ed185e1418736c1ff9011bd1528999"
+dependencies = [
+ "proc-macro-warning",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "sp-externalities"
 version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4892,7 +4904,7 @@ checksum = "76b67582d8eb400e730d4abaa9f8841898fa36782a2c6b7f61676e5dd6f8166c"
 dependencies = [
  "environmental",
  "parity-scale-codec",
- "sp-storage",
+ "sp-storage 22.0.0",
 ]
 
 [[package]]
@@ -5027,7 +5039,7 @@ dependencies = [
  "sp-externalities",
  "sp-runtime-interface-proc-macro",
  "sp-std",
- "sp-storage",
+ "sp-storage 22.0.0",
  "sp-tracing",
  "sp-wasm-interface",
  "static_assertions",
@@ -5098,7 +5110,20 @@ dependencies = [
  "parity-scale-codec",
  "ref-cast",
  "serde",
- "sp-debug-derive",
+ "sp-debug-derive 14.0.0",
+]
+
+[[package]]
+name = "sp-storage"
+version = "23.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5e5c9fb0016b49765f89d23e4869ee616e1317de8f75b59babb721ccc27d2af"
+dependencies = [
+ "impl-serde",
+ "parity-scale-codec",
+ "ref-cast",
+ "serde",
+ "sp-debug-derive 15.0.0",
 ]
 
 [[package]]
@@ -5208,7 +5233,7 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-arithmetic",
- "sp-debug-derive",
+ "sp-debug-derive 14.0.0",
 ]
 
 [[package]]
@@ -5606,7 +5631,7 @@ dependencies = [
  "serde_yaml",
  "sp-core",
  "sp-runtime",
- "sp-storage",
+ "sp-storage 23.0.0",
  "sqlx",
  "submerge-base",
  "submerge-metrics",
