@@ -10,7 +10,6 @@ const jsTarget = 'es2022';
 
 export default defineConfig({
     cacheDir: '.vite',
-    base: '/admin/',
     server: {
         // auto-open the default browser on server start
         open: true,
@@ -30,7 +29,7 @@ export default defineConfig({
         target: jsTarget,
         sourcemap: true,
         cssMinify: 'lightningcss',
-        minify: 'esbuild', // use 'terser' for max compression
+        minify: 'oxc',
     },
     resolve: {
         alias: {

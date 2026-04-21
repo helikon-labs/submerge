@@ -29,7 +29,7 @@ export default defineConfig({
         target: jsTarget,
         sourcemap: true,
         cssMinify: 'lightningcss',
-        minify: 'esbuild', // use 'terser' for max compression
+        minify: 'oxc',
     },
     resolve: {
         alias: {
