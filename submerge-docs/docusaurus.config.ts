@@ -183,7 +183,7 @@ const config: Config = {
                 config: {
                     crystal: {
                         specPath: '../submerge-crystal/api-spec/submerge-crystal-api.json',
-                        outputDir: './docs/crystal-api',
+                        outputDir: 'docs/crystal-api',
                         infoTemplate: './templates/crystal-api-info.mustache',
                         sidebarOptions: {
                             groupPathsBy: 'tag',
