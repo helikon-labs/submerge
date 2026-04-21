@@ -4,8 +4,8 @@ use std::time::Instant;
 #[tokio::test]
 #[ignore] // Run with: cargo test --test concurrent_test -- --ignored --nocapture
 async fn test_concurrent_vs_sequential() -> anyhow::Result<()> {
-    let rpc_url =
-        std::env::var("RPC_URL").unwrap_or_else(|_| "wss://polkadot.dotters.network".to_string());
+    let rpc_url = std::env::var("RPC_URL")
+        .unwrap_or_else(|_| "wss://asset-hub.polkadot.rpc.deserve.network".to_string());
 
     println!("\nConnecting to {}...", rpc_url);
 

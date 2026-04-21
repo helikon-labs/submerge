@@ -5,8 +5,8 @@ use std::sync::Arc;
 async fn test_block_count_verification() -> anyhow::Result<()> {
     println!("\nTesting block count verification safety...");
 
-    let rpc_url =
-        std::env::var("RPC_URL").unwrap_or_else(|_| "wss://polkadot.dotters.network".to_string());
+    let rpc_url = std::env::var("RPC_URL")
+        .unwrap_or_else(|_| "wss://asset-hub.polkadot.rpc.deserve.network".to_string());
 
     let config = submerge_substrate_client::RPCConfig {
         rpc_url,
