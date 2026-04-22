@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.ts",
     "scripts": {
-        "openapi-ts": "openapi-ts && pnpm lint && pnpm format",
+        "openapi-ts": "openapi-ts && prettier --write .",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "lint": "eslint .",

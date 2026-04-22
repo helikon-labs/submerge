@@ -927,9 +927,11 @@ export type GetBlocksData = {
     path?: never;
     query?: {
         /**
-         * Block list page number to retrieve. 1-indexed.
+         * Opaque cursor for block pagination - returned in the endpoint response.
+         * This parameter is mutually exclusive with all other parameters,
+         * and will return bad request if any other parameter is set.
          */
-        page?: number;
+        next_cursor?: string;
         /**
          * Number of blocks per page to be returned.
          */
@@ -992,11 +994,11 @@ export type GetBlocksError = GetBlocksErrors[keyof GetBlocksErrors];
 
 export type GetBlocksResponses = {
     /**
-     * Paginated list of matching blocks.
+     * List of matching blocks, with a cursor for the next page.
      */
     200: {
         data: Array<Block>;
-        pagination: PaginationData;
+        pagination: CursorPaginationData;
     };
 };
 
@@ -1071,6 +1073,10 @@ export type GetCallsByBlockReferenceData = {
          * Filter blocks calls by call name. Case insensitive.
          */
         pallet_call_name?: string;
+        /**
+         * Whether to include only calls within signed/unsigned extrinsics.
+         */
+        is_signed?: boolean;
         /**
          * Whether to include call arguments in the block calls in the response.
          * Default is `false`. Setting this to `true` increases the response size considerably.
@@ -1386,6 +1392,10 @@ export type GetCallsByBlockReferenceAndExtrinsicIndexData = {
          */
         pallet_call_name?: string;
         /**
+         * Whether to include only calls within signed/unsigned extrinsics.
+         */
+        is_signed?: boolean;
+        /**
          * Whether to include call arguments in the block calls in the response.
          * Default is `false`. Setting this to `true` increases the response size considerably.
          * Prefer to use the `GET /call/{call_hash}/args` endpoint per call instead.
@@ -1606,6 +1616,10 @@ export type GetCallsData = {
          * Filter calls by call name. Case insensitive. Stored in `camelCase`.
          */
         call_name?: string;
+        /**
+         * Whether to include only calls within signed/unsigned extrinsics.
+         */
+        is_signed?: boolean;
         /**
          * Whether to include call arguments in the calls in the response.
          * Default is `false`. Setting this to `true` increases the response size considerably.
@@ -1856,6 +1870,10 @@ export type GetSubCallsByHashData = {
          * Filter blocks calls by call name. Case insensitive.
          */
         pallet_call_name?: string;
+        /**
+         * Whether to include only calls within signed/unsigned extrinsics.
+         */
+        is_signed?: boolean;
         /**
          * Whether to include call arguments in the block calls in the response.
          * Default is `false`. Setting this to `true` increases the response size considerably.
@@ -2149,7 +2167,7 @@ export type GetExtrinsicsError = GetExtrinsicsErrors[keyof GetExtrinsicsErrors];
 
 export type GetExtrinsicsResponses = {
     /**
-     * List of matching extrinsic, with a cursor for the next page.
+     * List of matching extrinsics, with a cursor for the next page.
      */
     200: {
         data: Array<Extrinsic>;
@@ -2278,6 +2296,10 @@ export type GetCallsByExtrinsicHashData = {
          * Filter blocks calls by call name. Case insensitive.
          */
         pallet_call_name?: string;
+        /**
+         * Whether to include only calls within signed/unsigned extrinsics.
+         */
+        is_signed?: boolean;
         /**
          * Whether to include call arguments in the block calls in the response.
          * Default is `false`. Setting this to `true` increases the response size considerably.
@@ -2945,9 +2967,11 @@ export type GetTracesData = {
     path?: never;
     query?: {
         /**
-         * Trace list page number to retrieve. 1-indexed.
+         * Opaque cursor for trace pagination - returned in the endpoint response.
+         * This parameter is mutually exclusive with all other parameters,
+         * and will return bad request if any other parameter is set.
          */
-        page?: number;
+        next_cursor?: string;
         /**
          * Number of traces per page to be returned.
          */
@@ -3007,11 +3031,11 @@ export type GetTracesError = GetTracesErrors[keyof GetTracesErrors];
 
 export type GetTracesResponses = {
     /**
-     * Paginated list of matching traces.
+     * List of matching traces, with a cursor for the next page.
      */
     200: {
         data: Array<Trace>;
-        pagination: PaginationData;
+        pagination: CursorPaginationData;
     };
 };
 

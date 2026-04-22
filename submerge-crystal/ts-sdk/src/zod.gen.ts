@@ -493,7 +493,7 @@ export const zGetBlocksData = z.object({
     path: z.optional(z.never()),
     query: z.optional(
         z.object({
-            page: z.optional(z.int().gte(1)).default(1),
+            next_cursor: z.optional(z.string()),
             page_size: z.optional(z.int().gte(1).lte(100)).default(25),
             status: z.optional(zBlockStatus),
             min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
@@ -528,6 +528,7 @@ export const zGetCallsByBlockReferenceData = z.object({
             page_size: z.optional(z.int().gte(1).lte(100)).default(25),
             pallet_name: z.optional(z.string()),
             pallet_call_name: z.optional(z.string()),
+            is_signed: z.optional(z.boolean()),
             include_args: z.optional(z.boolean()).default(false),
         }),
     ),
@@ -598,6 +599,7 @@ export const zGetCallsByBlockReferenceAndExtrinsicIndexData = z.object({
             page_size: z.optional(z.int().gte(1).lte(100)).default(25),
             pallet_name: z.optional(z.string()),
             pallet_call_name: z.optional(z.string()),
+            is_signed: z.optional(z.boolean()),
             include_args: z.optional(z.boolean()).default(false),
         }),
     ),
@@ -648,6 +650,7 @@ export const zGetCallsData = z.object({
             max_spec_version: z.optional(z.int().gte(0)),
             pallet_name: z.optional(z.string()),
             call_name: z.optional(z.string()),
+            is_signed: z.optional(z.boolean()),
             include_args: z.optional(z.boolean()).default(false),
         }),
     ),
@@ -704,6 +707,7 @@ export const zGetSubCallsByHashData = z.object({
             page_size: z.optional(z.int().gte(1).lte(100)).default(25),
             pallet_name: z.optional(z.string()),
             pallet_call_name: z.optional(z.string()),
+            is_signed: z.optional(z.boolean()),
             include_args: z.optional(z.boolean()).default(false),
         }),
     ),
@@ -801,6 +805,7 @@ export const zGetCallsByExtrinsicHashData = z.object({
             page_size: z.optional(z.int().gte(1).lte(100)).default(25),
             pallet_name: z.optional(z.string()),
             pallet_call_name: z.optional(z.string()),
+            is_signed: z.optional(z.boolean()),
             include_args: z.optional(z.boolean()).default(false),
         }),
     ),
@@ -935,7 +940,7 @@ export const zGetTracesData = z.object({
     path: z.optional(z.never()),
     query: z.optional(
         z.object({
-            page: z.optional(z.int().gte(1)).default(1),
+            next_cursor: z.optional(z.string()),
             page_size: z.optional(z.int().gte(1).lte(100)).default(25),
             min_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),
             max_block_number: z.optional(z.coerce.bigint().gte(BigInt(0))),

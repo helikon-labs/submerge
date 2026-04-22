@@ -37,14 +37,8 @@ const blockSchemaResponseTransformer = (data: any) => {
     return data;
 };
 
-const paginationDataSchemaResponseTransformer = (data: any) => {
-    data.total = BigInt(data.total.toString());
-    return data;
-};
-
 export const getBlocksResponseTransformer = async (data: any): Promise<GetBlocksResponse> => {
     data.data = data.data.map((item: any) => blockSchemaResponseTransformer(item));
-    data.pagination = paginationDataSchemaResponseTransformer(data.pagination);
     return data;
 };
 
@@ -60,6 +54,11 @@ const callSchemaResponseTransformer = (data: any) => {
     if (data.blockTimestamp) {
         data.blockTimestamp = BigInt(data.blockTimestamp.toString());
     }
+    return data;
+};
+
+const paginationDataSchemaResponseTransformer = (data: any) => {
+    data.total = BigInt(data.total.toString());
     return data;
 };
 
@@ -245,7 +244,6 @@ export const getMetadataListResponseTransformer = async (
 
 export const getTracesResponseTransformer = async (data: any): Promise<GetTracesResponse> => {
     data.data = data.data.map((item: any) => traceSchemaResponseTransformer(item));
-    data.pagination = paginationDataSchemaResponseTransformer(data.pagination);
     return data;
 };
 

@@ -1,11 +1,11 @@
 import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-    input: 'https://raw.githubusercontent.com/helikon-labs/submerge/refs/heads/development/submerge-crystal/api-spec/submerge-crystal-api.json',
+    input: '../api-spec/submerge-crystal-api.json',
     output: {
         format: null,
         lint: null,
-        path: './src/client',
+        path: './src',
         preferExportAll: true,
     },
     plugins: [
