@@ -138,7 +138,7 @@ impl BaseService for Crystal {
             },
             legacy_decode_api_url: self.args.legacy_decode_api_url.clone(),
             retry_delay: Duration::from_secs(self.args.service.recovery_sleep_seconds),
-            skip_traces: true,
+            skip_traces: false,
             stop_on_error: false,
         };
         self.print_summary(&chainspec);
