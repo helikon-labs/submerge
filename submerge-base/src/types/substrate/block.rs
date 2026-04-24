@@ -36,10 +36,15 @@ impl BlockHeader {
     }
 
     fn authority_index_from_log_bytes(
-        consensus_engine: &str,
+        consensus_engine_id: [u8; 4],
         mut bytes: &[u8],
-    ) -> anyhow::Result<u32> {
+    ) -> anyhow::Result<Option<u32>> {
+        let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
         match consensus_engine.to_lowercase().as_str() {
+            "aura" => {
+                let authority_index = Decode::decode(&mut bytes)?;
+                Ok(Some(authority_index))
+            }
             "babe" => {
                 let digest: PreDigest = Decode::decode(&mut bytes)?;
                 let authority_index = match digest {
@@ -47,12 +52,9 @@ impl BlockHeader {
                     PreDigest::SecondaryPlain(digest) => digest.authority_index,
                     PreDigest::SecondaryVRF(digest) => digest.authority_index,
                 };
-                Ok(authority_index)
+                Ok(Some(authority_index))
             }
-            "aura" => {
-                let authority_index = Decode::decode(&mut bytes)?;
-                Ok(authority_index)
-            }
+            "cmls" => Ok(None),
             _ => {
                 anyhow::bail!(
                     "Consensus engine [{}] does not support direct author extraction from logs.",
@@ -70,21 +72,21 @@ impl BlockHeader {
             let digest_item: DigestItem = Decode::decode(&mut log_bytes)?;
             match digest_item {
                 DigestItem::PreRuntime(consensus_engine_id, bytes) => {
-                    let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
-                    return Ok(Some(BlockHeader::authority_index_from_log_bytes(
-                        consensus_engine,
-                        &bytes,
-                    )?));
+                    if let Some(authority_index) =
+                        BlockHeader::authority_index_from_log_bytes(consensus_engine_id, &bytes)?
+                    {
+                        return Ok(Some(authority_index));
+                    }
                 }
                 DigestItem::Consensus(consensus_engine_id, bytes) => {
-                    let consensus_engine = std::str::from_utf8(&consensus_engine_id)?;
-                    return Ok(Some(BlockHeader::authority_index_from_log_bytes(
-                        consensus_engine,
-                        &bytes,
-                    )?));
+                    if let Some(authority_index) =
+                        BlockHeader::authority_index_from_log_bytes(consensus_engine_id, &bytes)?
+                    {
+                        return Ok(Some(authority_index));
+                    }
                 }
                 DigestItem::Seal(_, _) => {
-                    // Skipped: Seal does not contain validator index.
+                    // skipped: Seal does not contain validator index
                 }
                 DigestItem::RuntimeEnvironmentUpdated => {
                     tracing::warn!(
