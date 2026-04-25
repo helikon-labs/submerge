@@ -16,28 +16,42 @@
   },
   "servers": [
     {
-      "url": "https://coretime-polkadot.crystal.submerge.io/api/v1",
-      "description": "API preview deployment for Polkadot Coretime."
+      "url": "https://polkadot.crystal.api.submerge.io/v1",
+      "description": "API preview deployment for Polkadot."
     },
     {
-      "url": "https://{chain}.crystal.submerge.io/api/v1",
-      "description": "Submerge Crystal production API per deployed chain.",
+      "url": "https://{polkadot-parachain}.polkadot.crystal.api.submerge.io/v1",
+      "description": "API preview deployment for Polkadot parachains.",
       "variables": {
-        "chain": {
-          "default": "coretime-polkadot",
+        "polkadot-parachain": {
+          "default": "asset-hub",
           "description": "Chain subdomain",
           "enum": [
-            "polkadot",
-            "asset-hub-polkadot",
-            "bridge-hub-polkadot",
-            "collectives-polkadot",
-            "coretime-polkadot",
-            "people-polkadot",
-            "kusama",
-            "asset-hub-kusama",
-            "bridge-hub-kusama",
-            "coretime-kusama",
-            "people-kusama"
+            "asset-hub",
+            "bridge-hub",
+            "collectives",
+            "coretime",
+            "people"
+          ]
+        }
+      }
+    },
+    {
+      "url": "https://kusama.crystal.api.submerge.io/v1",
+      "description": "API preview deployment for Kusama."
+    },
+    {
+      "url": "https://{kusama-parachain}.kusama.crystal.api.submerge.io/v1",
+      "description": "API preview deployment for Kusama parachains.",
+      "variables": {
+        "kusama-parachain": {
+          "default": "asset-hub",
+          "description": "Chain subdomain",
+          "enum": [
+            "asset-hub",
+            "bridge-hub",
+            "coretime",
+            "people"
           ]
         }
       }

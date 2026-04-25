@@ -2,8 +2,10 @@
 
 export type ClientOptions = {
     baseUrl:
-        | 'https://coretime-polkadot.crystal.submerge.io/api/v1'
-        | 'https://{chain}.crystal.submerge.io/api/v1'
+        | 'https://polkadot.crystal.api.submerge.io/v1'
+        | 'https://{polkadot-parachain}.polkadot.crystal.api.submerge.io/v1'
+        | 'https://kusama.crystal.api.submerge.io/v1'
+        | 'https://{kusama-parachain}.kusama.crystal.api.submerge.io/v1'
         | (string & {});
 };
 

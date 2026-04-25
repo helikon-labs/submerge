@@ -357,7 +357,7 @@ pub(crate) async fn run_api(
         .layer(middleware::from_fn(json_error_middleware))
         .layer(middleware::from_fn(metrics_middleware));
     let app = Router::new()
-        .nest("/api/v1", api_v1)
+        .nest("/v1", api_v1)
         .merge(admin_router())
         .layer(cors);
 
