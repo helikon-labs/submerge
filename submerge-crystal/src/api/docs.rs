@@ -39,9 +39,14 @@ use crate::types::api::{
     ),
     servers(
         (
-            url = "https://polkadot.crystal.api.submerge.io/v1",
-            description = "API preview deployment for Polkadot.",
+            url = "https://coretime.polkadot.crystal.api.submerge.io/v1",
+            description = "API preview deployment for Polkadot Coretime.",
         ),
+        (
+            url = "https://people.polkadot.crystal.api.submerge.io/v1",
+            description = "API preview deployment for Polkadot People.",
+        ),
+        /*
         (
             url = "https://{polkadot-parachain}.polkadot.crystal.api.submerge.io/v1",
             description = "API preview deployment for Polkadot parachains.",
@@ -79,6 +84,7 @@ use crate::types::api::{
                 )
             )),
         ),
+        */
     ),
     tags(
         (name = "block", description = "Endpoints related to blocks."),
