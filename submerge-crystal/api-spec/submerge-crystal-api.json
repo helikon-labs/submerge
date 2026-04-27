@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Submerge Crystal API v1",
-    "description": "REST API for Submerge Crystal, the core indexer component of Submerge.\n\nSubmerge API endpoints are grouped under five resource sets:\n- Blocks\n- Calls\n- Events\n- Extrinsics\n- Genesis\n- Metadata\n- Traces\n- System\n\nPublic API is limited by 5 requests per second.\nRequest query parameters use `snake_case`; response fields use `camelCase`.",
+    "description": "REST API for Submerge Crystal, the core indexer component of Submerge.\n\nSubmerge API endpoints are grouped under seven resource sets:\n- Blocks\n- Calls\n- Events\n- Extrinsics\n- Genesis\n- Metadata\n- Traces\n\nPublic API is limited by 5 requests per second.\nRequest query parameters use `snake_case`; response fields use `camelCase`.",
     "contact": {
       "name": "Helikon Labs",
       "url": "https://submerge.io",
@@ -410,7 +410,7 @@
     "/blocks/{block_ref}/events/{event_index}": {
       "get": {
         "tags": [
-          "block"
+          "event"
         ],
         "summary": "Get block events by index",
         "description": "Returns the events in the given block at the given index. It can return multiple events if a number is passed and there's a pruned block in that slot.",
@@ -559,7 +559,7 @@
     "/blocks/{block_ref}/extrinsics/{extrinsic_index}": {
       "get": {
         "tags": [
-          "block"
+          "extrinsic"
         ],
         "summary": "Get block extrinsics by index",
         "description": "Returns the extrinsics in the given block at the given index. It can return multiple extrinsics if a number is passed and there's a pruned block in that slot.",

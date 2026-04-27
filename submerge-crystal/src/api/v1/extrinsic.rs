@@ -253,7 +253,7 @@ pub(crate) async fn get_extrinsics_by_block_reference(
 #[utoipa::path(
     get,
     path = "/blocks/{block_ref}/extrinsics/{extrinsic_index}",
-    tag = "block",
+    tag = "extrinsic",
     summary = "Get block extrinsics by index",
     description = "Returns the extrinsics in the given block at the given index. It can return multiple extrinsics if a number is passed and there's a pruned block in that slot.",
     params(

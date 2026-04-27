@@ -247,7 +247,7 @@ pub(crate) async fn get_events_by_block_reference(
 #[utoipa::path(
     get,
     path = "/blocks/{block_ref}/events/{event_index}",
-    tag = "block",
+    tag = "event",
     summary = "Get block events by index",
     description = "Returns the events in the given block at the given index. It can return multiple events if a number is passed and there's a pruned block in that slot.",
     params(
