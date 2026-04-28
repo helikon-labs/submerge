@@ -177,15 +177,15 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             let mut id_qb: QueryBuilder<Postgres> = QueryBuilder::new(
                 "SELECT MC.id FROM metadata_call MC JOIN metadata_pallet MP ON MC.pallet_id = MP.id WHERE 1 = 1",
             );
-            if let Some(name) = pallet_name {
+            if let Some(pallet_name) = pallet_name {
                 id_qb
                     .push(" AND MP.name ILIKE ")
-                    .push_bind(format!("%{}%", escape_like_pattern(name)));
+                    .push_bind(escape_like_pattern(pallet_name.replace("_", "").as_str()));
             }
             if let Some(call_name) = pallet_call_name {
                 id_qb
                     .push(" AND MC.name ILIKE ")
-                    .push_bind(format!("%{}%", escape_like_pattern(call_name)));
+                    .push_bind(escape_like_pattern(call_name.replace("_", "").as_str()));
             }
             let ids: Vec<i32> = id_qb
                 .build_query_scalar()
