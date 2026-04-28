@@ -171,6 +171,34 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
+        let metadata_call_ids: Option<Vec<i32>> = if pallet_name.is_some()
+            || pallet_call_name.is_some()
+        {
+            let mut id_qb: QueryBuilder<Postgres> = QueryBuilder::new(
+                "SELECT MC.id FROM metadata_call MC JOIN metadata_pallet MP ON MC.pallet_id = MP.id WHERE 1 = 1",
+            );
+            if let Some(name) = pallet_name {
+                id_qb
+                    .push(" AND MP.name ILIKE ")
+                    .push_bind(format!("%{}%", escape_like_pattern(name)));
+            }
+            if let Some(call_name) = pallet_call_name {
+                id_qb
+                    .push(" AND MC.name ILIKE ")
+                    .push_bind(format!("%{}%", escape_like_pattern(call_name)));
+            }
+            let ids: Vec<i32> = id_qb
+                .build_query_scalar()
+                .fetch_all(&self.connection_pool)
+                .await?;
+            if ids.is_empty() {
+                return Ok(Vec::new()); // no matches -> no calls
+            }
+            Some(ids)
+        } else {
+            None
+        };
+
         let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!("{query} WHERE 1 = 1"));
@@ -180,7 +208,6 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         if let Some(max) = max_block_number {
             query_builder.push(" AND C.block_number <= ").push_bind(max);
         }
-
         if let Some(cursor_position) = cursor_position {
             let block_hash = cursor_position.get_block_hash()?;
             query_builder.push(" AND (");
@@ -210,21 +237,20 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             query_builder.push(")");
             query_builder.push(")");
         }
-
         if let Some(extrinsic_is_signed) = extrinsic_is_signed {
             query_builder
                 .push(" AND C.extrinsic_is_signed = ")
                 .push_bind(extrinsic_is_signed);
         }
-        if let Some(pallet_name) = pallet_name {
-            query_builder
-                .push(" AND MP.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
-        }
-        if let Some(pallet_call_name) = pallet_call_name {
-            query_builder
-                .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+
+        if let Some(ids) = &metadata_call_ids {
+            query_builder.push(" AND C.metadata_call_id IN (");
+            let mut separated = query_builder.separated(", ");
+            for id in ids {
+                // literal integer, safe because values come from DB, not user text
+                separated.push(id.to_string());
+            }
+            separated.push_unseparated(")");
         }
         query_builder
             .push(" ORDER BY C.block_number DESC, C.block_hash ASC, C.extrinsic_index ASC, C.call_index ASC");
