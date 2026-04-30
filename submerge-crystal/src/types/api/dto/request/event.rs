@@ -146,7 +146,7 @@ pub(crate) struct BlockEventQuery {
     pub pallet_name: Option<String>,
     /// Filter blocks events by event name. Case insensitive.
     #[param(required = false, nullable = false, example = "bonded")]
-    pub pallet_event_name: Option<String>,
+    pub event_name: Option<String>,
     /// Whether to include event arguments in the block events in the response.
     /// Default is `false`. Setting this to `true` increases response size considerably.
     /// Prefer to use the `GET /event/{event_hash}/args` endpoint per call instead.

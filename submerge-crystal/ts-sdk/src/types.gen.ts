@@ -2,10 +2,8 @@
 
 export type ClientOptions = {
     baseUrl:
-        | 'https://polkadot.crystal.api.submerge.io/v1'
-        | 'https://{polkadot-parachain}.polkadot.crystal.api.submerge.io/v1'
-        | 'https://kusama.crystal.api.submerge.io/v1'
-        | 'https://{kusama-parachain}.kusama.crystal.api.submerge.io/v1'
+        | 'https://coretime.polkadot.crystal.api.submerge.io/v1'
+        | 'https://people.polkadot.crystal.api.submerge.io/v1'
         | (string & {});
 };
 
@@ -123,6 +121,10 @@ export type Call = {
      */
     callIndex: Array<number>;
     /**
+     * Name of the call.
+     */
+    callName: string;
+    /**
      * Rust-style path of the call represented with parameter names or indices.
      */
     callPath: string;
@@ -155,10 +157,6 @@ export type Call = {
      * Index of the call in its pallet.
      */
     palletCallIndex: number;
-    /**
-     * Name of the call.
-     */
-    palletCallName: string;
     /**
      * Pallet index of the call.
      */
@@ -235,6 +233,10 @@ export type Event = {
      */
     blockTimestamp?: bigint;
     /**
+     * Name of the event.
+     */
+    eventName: string;
+    /**
      * Hash of the event's extrinsic, if it was output from an extrinsic.
      */
     extrinsicHash?: Hash256Hex;
@@ -254,10 +256,6 @@ export type Event = {
      * Index of the event in its pallet.
      */
     palletEventIndex: number;
-    /**
-     * Name of the event.
-     */
-    palletEventName: string;
     /**
      * Pallet index of the event.
      */
@@ -1074,7 +1072,7 @@ export type GetCallsByBlockReferenceData = {
         /**
          * Filter blocks calls by call name. Case insensitive.
          */
-        pallet_call_name?: string;
+        call_name?: string;
         /**
          * Whether to include only calls within signed/unsigned extrinsics.
          */
@@ -1148,7 +1146,7 @@ export type GetEventsByBlockReferenceData = {
         /**
          * Filter blocks events by event name. Case insensitive.
          */
-        pallet_event_name?: string;
+        event_name?: string;
         /**
          * Whether to include event arguments in the block events in the response.
          * Default is `false`. Setting this to `true` increases response size considerably.
@@ -1392,7 +1390,7 @@ export type GetCallsByBlockReferenceAndExtrinsicIndexData = {
         /**
          * Filter blocks calls by call name. Case insensitive.
          */
-        pallet_call_name?: string;
+        call_name?: string;
         /**
          * Whether to include only calls within signed/unsigned extrinsics.
          */
@@ -1470,7 +1468,7 @@ export type GetEventsByBlockReferenceAndExtrinsicIndexData = {
         /**
          * Filter blocks events by event name. Case insensitive.
          */
-        pallet_event_name?: string;
+        event_name?: string;
         /**
          * Whether to include event arguments in the block events in the response.
          * Default is `false`. Setting this to `true` increases response size considerably.
@@ -1871,7 +1869,7 @@ export type GetSubCallsByHashData = {
         /**
          * Filter blocks calls by call name. Case insensitive.
          */
-        pallet_call_name?: string;
+        call_name?: string;
         /**
          * Whether to include only calls within signed/unsigned extrinsics.
          */
@@ -2297,7 +2295,7 @@ export type GetCallsByExtrinsicHashData = {
         /**
          * Filter blocks calls by call name. Case insensitive.
          */
-        pallet_call_name?: string;
+        call_name?: string;
         /**
          * Whether to include only calls within signed/unsigned extrinsics.
          */
@@ -2371,7 +2369,7 @@ export type GetEventsByExtrinsicHashData = {
         /**
          * Filter blocks events by event name. Case insensitive.
          */
-        pallet_event_name?: string;
+        event_name?: string;
         /**
          * Whether to include event arguments in the block events in the response.
          * Default is `false`. Setting this to `true` increases response size considerably.

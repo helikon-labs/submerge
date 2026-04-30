@@ -29,7 +29,7 @@ pub(crate) fn call_example() -> JSONValue {
         pallet_index: 1,
         pallet_name: "Balances".to_string(),
         pallet_call_index: 0,
-        pallet_call_name: "TransferKeepAlive".to_string(),
+        call_name: "TransferKeepAlive".to_string(),
         extrinsic_is_successful: true,
         extrinsic_is_signed: true,
         is_successful: true,

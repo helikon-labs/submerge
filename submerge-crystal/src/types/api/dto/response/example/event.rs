@@ -21,7 +21,7 @@ pub(crate) fn event_example() -> JSONValue {
         pallet_index: 0,
         pallet_name: "System".to_string(),
         pallet_event_index: 0,
-        pallet_event_name: "ExtrinsicSuccess".to_string(),
+        event_name: "ExtrinsicSuccess".to_string(),
         extrinsic_index: Some(0),
         extrinsic_hash: Some(Hash256Hex(
             "0x6963ce866a54258d9d6ca9222060f7270a8f5f6b83eaac88e899bb73fbbb68cb".to_string(),

@@ -40,7 +40,7 @@ fn decode_event(
     pallet_index: u8,
     pallet_name: &str,
     pallet_event_index: u8,
-    pallet_event_name: &str,
+    event_name: &str,
     event_variant: &Variant<PortableForm>,
     phase: Phase,
     index: u32,
@@ -65,7 +65,7 @@ fn decode_event(
         pallet_index,
         pallet_name: pallet_name.to_string(),
         pallet_event_index,
-        pallet_event_name: pallet_event_name.to_string(),
+        event_name: event_name.to_string(),
         index,
         phase,
         args,
@@ -87,7 +87,7 @@ fn decode_metadata_v14_event(
     let pallet_name = pallet_metadata.name.to_case(Case::UpperCamel);
     let event_variant = v14::get_event_variant(metadata_v14, pallet_metadata, pallet_event_index)?
         .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
-    let pallet_event_name = event_variant.name.to_case(Case::UpperCamel);
+    let event_name = event_variant.name.to_case(Case::UpperCamel);
 
     decode_event(
         &metadata_v14.types,
@@ -96,7 +96,7 @@ fn decode_metadata_v14_event(
         pallet_index,
         &pallet_name,
         pallet_event_index,
-        &pallet_event_name,
+        &event_name,
         event_variant,
         phase,
         index,
@@ -119,7 +119,7 @@ fn decode_metadata_v15_event(
     let pallet_name = pallet_metadata.name.to_case(Case::UpperCamel);
     let event_variant = v15::get_event_variant(metadata_v15, pallet_metadata, pallet_event_index)?
         .ok_or(anyhow::Error::msg("Event not found in pallet."))?;
-    let pallet_event_name = event_variant.name.to_case(Case::UpperCamel);
+    let event_name = event_variant.name.to_case(Case::UpperCamel);
     decode_event(
         &metadata_v15.types,
         call_type_id,
@@ -127,7 +127,7 @@ fn decode_metadata_v15_event(
         pallet_index,
         &pallet_name,
         pallet_event_index,
-        &pallet_event_name,
+        &event_name,
         event_variant,
         phase,
         index,
@@ -211,19 +211,18 @@ impl BlockProcessor {
             .ok_or(anyhow::Error::msg(format!(
                 "Pallet {pallet_name} not found in metadata database."
             )))?;
-        let pallet_event_name = &event.event.name;
-        let pallet_event =
-            pallet
-                .get_event_by_name(pallet_event_name)
-                .ok_or(anyhow::Error::msg(format!(
-                "Event {pallet_event_name} not found in pallet {pallet_name} in metadata database."
+        let event_name = &event.event.name;
+        let pallet_event = pallet
+            .get_event_by_name(event_name)
+            .ok_or(anyhow::Error::msg(format!(
+                "Event {event_name} not found in pallet {pallet_name} in metadata database."
             )))?;
         Ok(Event {
             trace_index: None,
             pallet_index: pallet.index,
             pallet_name: pallet_name.clone(),
             pallet_event_index: pallet_event.index,
-            pallet_event_name: pallet_event_name.clone(),
+            event_name: event_name.clone(),
             index,
             phase,
             args: event.event.data.clone(),
@@ -419,7 +418,7 @@ impl BlockProcessor {
                 .get_event_by_index(event.pallet_event_index)
                 .ok_or(anyhow::anyhow!(
                     "Event {} with index {} not found in database.",
-                    event.pallet_event_name,
+                    event.event_name,
                     event.pallet_event_index
                 ))?;
             rows.push(EventRow::from_block_event(

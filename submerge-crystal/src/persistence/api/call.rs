@@ -18,7 +18,7 @@ fn get_select_query(include_args: bool) -> String {
             C.extrinsic_index, C.extrinsic_hash, C.parent_call_hash, C.call_path, C.call_index,
             C.extrinsic_is_successful, C.extrinsic_is_signed, C.is_successful, {ARGS_PLACEHOLDER},
             MP.index AS pallet_index, MP.name AS pallet_name,
-            MC.index AS pallet_call_index, MC.name AS pallet_call_name
+            MC.index AS pallet_call_index, MC.name AS call_name
         FROM call C
         JOIN metadata_call MC ON C.metadata_call_id = MC.id
         JOIN metadata_pallet MP ON MC.pallet_id = MP.id
@@ -45,14 +45,14 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         &self,
         block_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_block_hash(
         &self,
         block_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         extrinsic_is_signed: Option<bool>,
@@ -62,14 +62,14 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         &self,
         block_number: u64,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_block_number(
         &self,
         block_number: u64,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         extrinsic_is_signed: Option<bool>,
@@ -80,14 +80,14 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         block_hash: &[u8],
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_block_hash_and_extrinsic_index(
         &self,
         block_hash: &[u8],
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -97,14 +97,14 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         block_number: u64,
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_block_number_and_extrinsic_index(
         &self,
         block_number: u64,
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -113,13 +113,13 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         &self,
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64>;
     async fn get_calls_by_extrinsic_hash(
         &self,
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -135,13 +135,13 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         &self,
         hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64>;
     async fn get_sub_calls_by_hash(
         &self,
         hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -243,7 +243,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
@@ -260,10 +260,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -276,7 +276,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         extrinsic_is_signed: Option<bool>,
@@ -298,10 +298,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         query_builder.push(" ORDER BY C.extrinsic_index ASC, C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
@@ -318,7 +318,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_number: u64,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         extrinsic_is_signed: Option<bool>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
@@ -335,10 +335,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -351,7 +351,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         block_number: u64,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         extrinsic_is_signed: Option<bool>,
@@ -373,10 +373,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         query_builder.push(" ORDER BY C.block_hash ASC, C.extrinsic_index ASC, C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
@@ -394,7 +394,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
@@ -408,10 +408,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -425,7 +425,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_hash: &[u8],
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -444,10 +444,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         query_builder.push(" ORDER BY C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
@@ -465,7 +465,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
@@ -479,10 +479,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -496,7 +496,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         block_number: u64,
         extrinsic_index: u32,
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -515,10 +515,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         query_builder.push(" ORDER BY C.block_hash ASC, C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
@@ -535,7 +535,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
@@ -546,10 +546,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -562,7 +562,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         extrinsic_hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -578,10 +578,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         query_builder.push(" ORDER BY C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
@@ -628,7 +628,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
     ) -> anyhow::Result<u64> {
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(COUNT);
         query_builder
@@ -639,10 +639,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         let count: i64 = query_builder
             .build_query_scalar()
@@ -655,7 +655,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         &self,
         hash: &[u8],
         pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        call_name: &Option<String>,
         page: u32,
         page_size: u32,
         include_args: bool,
@@ -671,10 +671,10 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
                 .push(" AND MP.name ILIKE ")
                 .push_bind(format!("%{}%", escape_like_pattern(pallet_name)));
         }
-        if let Some(pallet_call_name) = pallet_call_name {
+        if let Some(call_name) = call_name {
             query_builder
                 .push(" AND MC.name ILIKE ")
-                .push_bind(format!("%{}%", escape_like_pattern(pallet_call_name)));
+                .push_bind(format!("%{}%", escape_like_pattern(call_name)));
         }
         query_builder.push(" ORDER BY C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);

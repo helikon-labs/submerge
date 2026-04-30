@@ -25,7 +25,7 @@ impl From<Value> for JSONValue {
                 );
                 json_map.insert(
                     "callName".to_string(),
-                    JSONValue::String(call.pallet_call_name.clone()),
+                    JSONValue::String(call.call_name.clone()),
                 );
                 json_map.insert("args".to_string(), call.args.into());
                 JSONValue::Object(json_map)
@@ -296,13 +296,13 @@ impl scale_decode::visitor::Visitor for ValueVisitor {
         if let Some(call_pallet) = self.call_pallet {
             let pallet_index = call_pallet.0;
             let pallet_name = call_pallet.1.clone();
-            let pallet_call_name = name.to_case(Case::UpperCamel);
+            let call_name = name.to_case(Case::UpperCamel);
             let pallet_call_index = value.index();
             Ok(Value::Call(Box::new(Call {
                 pallet_index,
                 pallet_name,
                 pallet_call_index,
-                pallet_call_name,
+                call_name,
                 args: Value::Object(field_map),
             })))
         } else if has_named_fields {

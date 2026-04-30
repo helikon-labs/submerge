@@ -64,7 +64,7 @@ pub(crate) struct LegacyExtrinsicWrapper {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LegacyCall {
     #[serde(rename = "method")]
-    pub pallet_call_name: String,
+    pub call_name: String,
     #[serde(rename = "section")]
     pub pallet_name: String,
     pub args: JsonMap<String, JSONValue>,

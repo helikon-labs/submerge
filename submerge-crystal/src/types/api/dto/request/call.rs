@@ -150,7 +150,7 @@ pub(crate) struct BlockCallQuery {
     pub pallet_name: Option<String>,
     /// Filter blocks calls by call name. Case insensitive.
     #[param(required = false, nullable = false, example = "setcode")]
-    pub pallet_call_name: Option<String>,
+    pub call_name: Option<String>,
     /// Whether to include only calls within signed/unsigned extrinsics.
     #[param(required = false, nullable = false, example = true)]
     #[serde(skip_serializing_if = "Option::is_none")]

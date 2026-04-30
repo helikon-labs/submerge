@@ -43,8 +43,7 @@ fn is_extrinsic_successful(index: u32, events: &[Event]) -> bool {
         .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(index))
         .any(|e| {
             e.pallet_name.eq_ignore_ascii_case(SYSTEM_PALLET_NAME)
-                && e.pallet_event_name
-                    .eq_ignore_ascii_case(EXTRINSIC_SUCCESS_EVENT)
+                && e.event_name.eq_ignore_ascii_case(EXTRINSIC_SUCCESS_EVENT)
         })
 }
 
@@ -241,7 +240,7 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
         .iter()
         .filter(|e| e.phase == frame_system::Phase::ApplyExtrinsic(extrinsic_index))
     {
-        match (event.pallet_name.as_str(), event.pallet_event_name.as_str()) {
+        match (event.pallet_name.as_str(), event.event_name.as_str()) {
             ("Utility", "BatchInterrupted") => {
                 if let (Some(call_idx), JSONValue::Object(args)) = (batch_item_index, &event.args) {
                     if let Some(failed_idx) = args.get("index").and_then(parse_batch_index) {
@@ -263,7 +262,7 @@ fn is_nested_call_successful(extrinsic_index: u32, call_index: &[u16], events: &
                         .filter(|e| {
                             e.phase == frame_system::Phase::ApplyExtrinsic(extrinsic_index)
                                 && e.pallet_name == "Utility"
-                                && e.pallet_event_name == "ItemFailed"
+                                && e.event_name == "ItemFailed"
                         })
                         .count() as u16;
 
@@ -382,7 +381,7 @@ impl BlockProcessor {
                             pallet_index: pallet.index,
                             pallet_name: pallet.name.clone(),
                             pallet_call_index: pallet_call.index,
-                            pallet_call_name: pallet_call.name.clone(),
+                            call_name: pallet_call.name.clone(),
                             args: self
                                 .legacy_json_value_to_value(block_hash, spec_version, args)
                                 .await?,
@@ -426,22 +425,22 @@ impl BlockProcessor {
         )
         .await?;
         let pallet_name = &call.pallet_name;
-        let pallet_call_name = &call.pallet_call_name;
+        let call_name = &call.call_name;
         let pallet = metadata
             .get_pallet_by_name(pallet_name)
             .ok_or(anyhow::Error::msg(format!(
                 "Pallet {pallet_name} not found in metadata database."
             )))?;
         let pallet_call = pallet
-            .get_call_by_name(pallet_call_name)
+            .get_call_by_name(call_name)
             .ok_or(anyhow::Error::msg(format!(
-                "Call {pallet_call_name} not found in pallet {pallet_name} in metadata database."
+                "Call {call_name} not found in pallet {pallet_name} in metadata database."
             )))?;
         Ok(Call {
             pallet_index: pallet.index,
             pallet_name: pallet.name.clone(),
             pallet_call_index: pallet_call.index,
-            pallet_call_name: pallet_call.name.clone(),
+            call_name: pallet_call.name.clone(),
             args: self
                 .legacy_json_value_to_value(
                     block_hash,
@@ -711,7 +710,7 @@ impl BlockProcessor {
                         .get_call_by_index(call.pallet_call_index)
                         .ok_or(anyhow::anyhow!(
                             "Call {} with index {} not found in database.",
-                            call.pallet_call_name,
+                            call.call_name,
                             call.pallet_call_index
                         ))?;
 

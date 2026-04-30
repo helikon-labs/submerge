@@ -244,48 +244,6 @@ export class BlockService {
             ...options,
         });
     }
-
-    /**
-     * Get block events by index
-     *
-     * Returns the events in the given block at the given index. It can return multiple events if a number is passed and there's a pruned block in that slot.
-     */
-    public static getEventsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(
-        options: Options<GetEventsByBlockReferenceAndIndexData, ThrowOnError>,
-    ) {
-        return (options.client ?? client).get<
-            GetEventsByBlockReferenceAndIndexResponses,
-            GetEventsByBlockReferenceAndIndexErrors,
-            ThrowOnError
-        >({
-            requestValidator: async (data) =>
-                await zGetEventsByBlockReferenceAndIndexData.parseAsync(data),
-            responseTransformer: getEventsByBlockReferenceAndIndexResponseTransformer,
-            url: '/blocks/{block_ref}/events/{event_index}',
-            ...options,
-        });
-    }
-
-    /**
-     * Get block extrinsics by index
-     *
-     * Returns the extrinsics in the given block at the given index. It can return multiple extrinsics if a number is passed and there's a pruned block in that slot.
-     */
-    public static getExtrinsicsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(
-        options: Options<GetExtrinsicsByBlockReferenceAndIndexData, ThrowOnError>,
-    ) {
-        return (options.client ?? client).get<
-            GetExtrinsicsByBlockReferenceAndIndexResponses,
-            GetExtrinsicsByBlockReferenceAndIndexErrors,
-            ThrowOnError
-        >({
-            requestValidator: async (data) =>
-                await zGetExtrinsicsByBlockReferenceAndIndexData.parseAsync(data),
-            responseTransformer: getExtrinsicsByBlockReferenceAndIndexResponseTransformer,
-            url: '/blocks/{block_ref}/extrinsics/{extrinsic_index}',
-            ...options,
-        });
-    }
 }
 
 export class CallService {
@@ -509,6 +467,27 @@ export class EventService {
     }
 
     /**
+     * Get block events by index
+     *
+     * Returns the events in the given block at the given index. It can return multiple events if a number is passed and there's a pruned block in that slot.
+     */
+    public static getEventsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(
+        options: Options<GetEventsByBlockReferenceAndIndexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetEventsByBlockReferenceAndIndexResponses,
+            GetEventsByBlockReferenceAndIndexErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetEventsByBlockReferenceAndIndexData.parseAsync(data),
+            responseTransformer: getEventsByBlockReferenceAndIndexResponseTransformer,
+            url: '/blocks/{block_ref}/events/{event_index}',
+            ...options,
+        });
+    }
+
+    /**
      * Get block extrinsic events
      *
      * Returns the events for extrinsic in a block by block reference and 0-based extrinsic index.
@@ -623,6 +602,27 @@ export class ExtrinsicService {
                 await zGetExtrinsicsByBlockReferenceData.parseAsync(data),
             responseTransformer: getExtrinsicsByBlockReferenceResponseTransformer,
             url: '/blocks/{block_ref}/extrinsics',
+            ...options,
+        });
+    }
+
+    /**
+     * Get block extrinsics by index
+     *
+     * Returns the extrinsics in the given block at the given index. It can return multiple extrinsics if a number is passed and there's a pruned block in that slot.
+     */
+    public static getExtrinsicsByBlockReferenceAndIndex<ThrowOnError extends boolean = false>(
+        options: Options<GetExtrinsicsByBlockReferenceAndIndexData, ThrowOnError>,
+    ) {
+        return (options.client ?? client).get<
+            GetExtrinsicsByBlockReferenceAndIndexResponses,
+            GetExtrinsicsByBlockReferenceAndIndexErrors,
+            ThrowOnError
+        >({
+            requestValidator: async (data) =>
+                await zGetExtrinsicsByBlockReferenceAndIndexData.parseAsync(data),
+            responseTransformer: getExtrinsicsByBlockReferenceAndIndexResponseTransformer,
+            url: '/blocks/{block_ref}/extrinsics/{extrinsic_index}',
             ...options,
         });
     }

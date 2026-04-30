@@ -60,7 +60,7 @@ pub(crate) struct CallDTO {
     pub pallet_call_index: u32,
     /// Name of the call.
     #[schema(example = "SetCode")]
-    pub pallet_call_name: String,
+    pub call_name: String,
     /// Whether the call's extrinsic was successful.
     /// Note: The extrinsic can be successful where the call has failed (see the `Utility.ForceBatch`` call).
     pub extrinsic_is_successful: bool,
@@ -98,7 +98,7 @@ impl From<&CallRow> for CallDTO {
             pallet_index: row.pallet_index as u32,
             pallet_name: row.pallet_name.clone(),
             pallet_call_index: row.pallet_call_index as u32,
-            pallet_call_name: row.pallet_call_name.clone(),
+            call_name: row.call_name.clone(),
             extrinsic_is_successful: row.extrinsic_is_successful,
             extrinsic_is_signed: row.extrinsic_is_signed,
             is_successful: row.is_successful,

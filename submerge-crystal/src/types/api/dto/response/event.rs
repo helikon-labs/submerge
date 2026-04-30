@@ -51,7 +51,7 @@ pub(crate) struct EventDTO {
     pub pallet_event_index: u32,
     /// Name of the event.
     #[schema(example = "Rewarded")]
-    pub pallet_event_name: String,
+    pub event_name: String,
     /// Index of the event's extrinsic, if it was output from an extrinsic.
     #[schema(required = false, nullable = false, example = 3)]
     pub extrinsic_index: Option<u32>,
@@ -83,7 +83,7 @@ impl From<&EventCompositeRow> for EventDTO {
             pallet_index: row.pallet_index as u32,
             pallet_name: row.pallet_name.clone(),
             pallet_event_index: row.pallet_event_index as u32,
-            pallet_event_name: row.pallet_event_name.clone(),
+            event_name: row.event_name.clone(),
             extrinsic_index: row.extrinsic_index.map(|i| i as u32),
             extrinsic_hash: row
                 .extrinsic_hash

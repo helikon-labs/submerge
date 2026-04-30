@@ -81,6 +81,13 @@ pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
         pallet_name: Option<&str>,
         call_name: &str,
     ) -> anyhow::Result<Vec<u32>>;
+    async fn get_metadata_event_ids_by_pallet_name_and_call_name(
+        &self,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        pallet_name: Option<&str>,
+        event_name: &str,
+    ) -> anyhow::Result<Vec<u32>>;
 }
 
 impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -382,6 +389,41 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
         query_builder
             .push(" AND MC.name ILIKE ")
             .push_bind(escape_like_pattern(call_name));
+        let metadata_call_ids: Vec<i32> = query_builder
+            .build_query_scalar()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(metadata_call_ids.iter().map(|id| *id as u32).collect())
+    }
+
+    async fn get_metadata_event_ids_by_pallet_name_and_call_name(
+        &self,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        pallet_name: Option<&str>,
+        event_name: &str,
+    ) -> anyhow::Result<Vec<u32>> {
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
+            "SELECT ME.id FROM metadata_event ME JOIN metadata_pallet MP ON ME.pallet_id = MP.id",
+        );
+        query_builder
+            .push(" WHERE ME.name ILIKE ")
+            .push_bind(escape_like_pattern(event_name));
+        if let Some(min_spec_version) = min_spec_version {
+            query_builder
+                .push(" AND MP.spec_version >= ")
+                .push_bind(min_spec_version as i32);
+        }
+        if let Some(max_spec_version) = max_spec_version {
+            query_builder
+                .push(" AND MP.spec_version <= ")
+                .push_bind(max_spec_version as i32);
+        }
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(escape_like_pattern(pallet_name));
+        }
         let metadata_call_ids: Vec<i32> = query_builder
             .build_query_scalar()
             .fetch_all(&self.connection_pool)

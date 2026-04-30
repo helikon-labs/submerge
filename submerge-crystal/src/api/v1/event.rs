@@ -9,6 +9,7 @@ use crate::{
     persistence::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, event::CrystalEventAPIPostgreSQLStorage,
+            metadata::CrystalMetadataAPIPostgreSQLStorage as _,
         },
         CrystalPostgreSQLStorage,
     },
@@ -83,6 +84,29 @@ pub(crate) async fn get_events(
             query.max_spec_version,
         )
         .await?;
+    let metadata_event_ids = if let Some(event_name) = query.event_name.as_deref() {
+        let event_name = event_name.trim();
+        if event_name.is_empty() {
+            None
+        } else {
+            let metadata_event_ids = state
+                .postgres
+                .get_metadata_event_ids_by_pallet_name_and_call_name(
+                    query.min_spec_version,
+                    query.max_spec_version,
+                    query.pallet_name.as_deref(),
+                    event_name,
+                )
+                .await?;
+            Some(metadata_event_ids)
+        }
+    } else if query.pallet_name.is_some() {
+        return Err(APIError::BadRequest(
+            "event_name should not be empty when pallet_name is set.".to_string(),
+        ));
+    } else {
+        None
+    };
 
     // max block number, block hash, event index
     let rows = state
@@ -91,8 +115,7 @@ pub(crate) async fn get_events(
             cursor_position,
             min_block_number,
             max_block_number,
-            &query.pallet_name,
-            &query.event_name,
+            metadata_event_ids,
             page_size,
             query.include_args,
         )
@@ -182,12 +205,12 @@ pub(crate) async fn get_events_by_block_reference(
                 state.postgres.get_event_count_by_block_number(
                     block_number,
                     &query.pallet_name,
-                    &query.pallet_event_name,
+                    &query.event_name,
                 ),
                 state.postgres.get_events_by_block_number(
                     block_number,
                     &query.pallet_name,
-                    &query.pallet_event_name,
+                    &query.event_name,
                     page,
                     page_size,
                     query.include_args,
@@ -215,12 +238,12 @@ pub(crate) async fn get_events_by_block_reference(
                 state.postgres.get_event_count_by_block_hash(
                     &block_hash,
                     &query.pallet_name,
-                    &query.pallet_event_name,
+                    &query.event_name,
                 ),
                 state.postgres.get_events_by_block_hash(
                     &block_hash,
                     &query.pallet_name,
-                    &query.pallet_event_name,
+                    &query.event_name,
                     page,
                     page_size,
                     query.include_args,
@@ -388,7 +411,7 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
                         &query.pallet_name,
-                        &query.pallet_event_name,
+                        &query.event_name,
                     ),
                 state
                     .postgres
@@ -396,7 +419,7 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
                         &query.pallet_name,
-                        &query.pallet_event_name,
+                        &query.event_name,
                         page,
                         page_size,
                         query.include_args,
@@ -427,13 +450,13 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                         &block_hash,
                         extrinsic_index,
                         &query.pallet_name,
-                        &query.pallet_event_name,
+                        &query.event_name,
                     ),
                 state.postgres.get_events_by_block_hash_and_extrinsic_index(
                     &block_hash,
                     extrinsic_index,
                     &query.pallet_name,
-                    &query.pallet_event_name,
+                    &query.event_name,
                     page,
                     page_size,
                     query.include_args,
@@ -520,12 +543,12 @@ pub(crate) async fn get_events_by_extrinsic_hash(
         state.postgres.get_event_count_by_extrinsic_hash(
             &extrinsic_hash,
             &query.pallet_name,
-            &query.pallet_event_name,
+            &query.event_name,
         ),
         state.postgres.get_events_by_extrinsic_hash(
             &extrinsic_hash,
             &query.pallet_name,
-            &query.pallet_event_name,
+            &query.event_name,
             page,
             page_size,
             query.include_args,

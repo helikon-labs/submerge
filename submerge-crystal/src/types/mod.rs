@@ -36,7 +36,7 @@ pub(crate) struct Call {
     pub pallet_index: u8,
     pub pallet_name: String,
     pub pallet_call_index: u8,
-    pub pallet_call_name: String,
+    pub call_name: String,
     pub args: Value,
 }
 
@@ -57,7 +57,7 @@ pub(crate) struct Event {
     pub pallet_index: u8,
     pub pallet_name: String,
     pub pallet_event_index: u8,
-    pub pallet_event_name: String,
+    pub event_name: String,
     pub index: u32,
     pub phase: Phase,
     pub args: JSONValue,

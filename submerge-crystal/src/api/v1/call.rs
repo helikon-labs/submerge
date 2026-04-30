@@ -206,13 +206,13 @@ pub(crate) async fn get_calls_by_block_reference(
                 state.postgres.get_call_count_by_block_number(
                     block_number,
                     &query.pallet_name,
-                    &query.pallet_call_name,
+                    &query.call_name,
                     query.is_signed,
                 ),
                 state.postgres.get_calls_by_block_number(
                     block_number,
                     &query.pallet_name,
-                    &query.pallet_call_name,
+                    &query.call_name,
                     page,
                     page_size,
                     query.is_signed,
@@ -241,13 +241,13 @@ pub(crate) async fn get_calls_by_block_reference(
                 state.postgres.get_call_count_by_block_hash(
                     &block_hash,
                     &query.pallet_name,
-                    &query.pallet_call_name,
+                    &query.call_name,
                     query.is_signed,
                 ),
                 state.postgres.get_calls_by_block_hash(
                     &block_hash,
                     &query.pallet_name,
-                    &query.pallet_call_name,
+                    &query.call_name,
                     page,
                     page_size,
                     query.is_signed,
@@ -344,7 +344,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
                         &query.pallet_name,
-                        &query.pallet_call_name,
+                        &query.call_name,
                     ),
                 state
                     .postgres
@@ -352,7 +352,7 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
                         &query.pallet_name,
-                        &query.pallet_call_name,
+                        &query.call_name,
                         page,
                         page_size,
                         query.include_args,
@@ -393,13 +393,13 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                         &block_hash,
                         extrinsic_index,
                         &query.pallet_name,
-                        &query.pallet_call_name,
+                        &query.call_name,
                     ),
                 state.postgres.get_calls_by_block_hash_and_extrinsic_index(
                     &block_hash,
                     extrinsic_index,
                     &query.pallet_name,
-                    &query.pallet_call_name,
+                    &query.call_name,
                     page,
                     page_size,
                     query.include_args,
@@ -486,12 +486,12 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
         state.postgres.get_call_count_by_extrinsic_hash(
             &extrinsic_hash,
             &query.pallet_name,
-            &query.pallet_call_name,
+            &query.call_name,
         ),
         state.postgres.get_calls_by_extrinsic_hash(
             &extrinsic_hash,
             &query.pallet_name,
-            &query.pallet_call_name,
+            &query.call_name,
             page,
             page_size,
             query.include_args,
@@ -762,15 +762,13 @@ pub(crate) async fn get_sub_calls_by_hash(
     let (page, page_size) =
         get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_sub_call_count_by_hash(
-            &call_hash,
-            &query.pallet_name,
-            &query.pallet_call_name,
-        ),
+        state
+            .postgres
+            .get_sub_call_count_by_hash(&call_hash, &query.pallet_name, &query.call_name,),
         state.postgres.get_sub_calls_by_hash(
             &call_hash,
             &query.pallet_name,
-            &query.pallet_call_name,
+            &query.call_name,
             page,
             page_size,
             query.include_args,
