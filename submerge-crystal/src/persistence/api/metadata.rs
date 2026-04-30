@@ -1,6 +1,6 @@
 use serde_json::Value as JSONValue;
-use sqlx::FromRow;
-use submerge_persistence::postgres::PostgreSQLStorage;
+use sqlx::{FromRow, Postgres, QueryBuilder};
+use submerge_persistence::postgres::{escape_like_pattern, PostgreSQLStorage};
 
 use crate::types::api::dto::response::{
     hex::HexString,
@@ -74,6 +74,13 @@ pub(crate) trait CrystalMetadataAPIPostgreSQLStorage {
         spec_version: u32,
         pallet_index: u32,
     ) -> anyhow::Result<Vec<MetadataStorageItemDTO>>;
+    async fn get_metadata_call_ids_by_pallet_name_and_call_name(
+        &self,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        pallet_name: Option<&str>,
+        call_name: &str,
+    ) -> anyhow::Result<Vec<u32>>;
 }
 
 impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
@@ -345,5 +352,40 @@ impl CrystalMetadataAPIPostgreSQLStorage for PostgreSQLStorage {
                 docs: MetadataItemDocumentation(row.3.clone()),
             })
             .collect())
+    }
+
+    async fn get_metadata_call_ids_by_pallet_name_and_call_name(
+        &self,
+        min_spec_version: Option<u32>,
+        max_spec_version: Option<u32>,
+        pallet_name: Option<&str>,
+        call_name: &str,
+    ) -> anyhow::Result<Vec<u32>> {
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
+            "SELECT MC.id FROM metadata_call MC JOIN metadata_pallet MP ON MC.pallet_id = MP.id WHERE 1 = 1",
+        );
+        if let Some(min_spec_version) = min_spec_version {
+            query_builder
+                .push(" AND MP.spec_version >= ")
+                .push_bind(min_spec_version as i32);
+        }
+        if let Some(max_spec_version) = max_spec_version {
+            query_builder
+                .push(" AND MP.spec_version <= ")
+                .push_bind(max_spec_version as i32);
+        }
+        if let Some(pallet_name) = pallet_name {
+            query_builder
+                .push(" AND MP.name ILIKE ")
+                .push_bind(escape_like_pattern(pallet_name));
+        }
+        query_builder
+            .push(" AND MC.name ILIKE ")
+            .push_bind(escape_like_pattern(call_name));
+        let metadata_call_ids: Vec<i32> = query_builder
+            .build_query_scalar()
+            .fetch_all(&self.connection_pool)
+            .await?;
+        Ok(metadata_call_ids.iter().map(|id| *id as u32).collect())
     }
 }

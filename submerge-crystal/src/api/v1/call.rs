@@ -10,6 +10,7 @@ use crate::{
         api::{
             block::CrystalBlockAPIPostgreSQLStorage as _, call::CrystalCallAPIPostgreSQLStorage,
             extrinsic::CrystalExtrinsicAPIPostgreSQLStorage,
+            metadata::CrystalMetadataAPIPostgreSQLStorage,
         },
         CrystalPostgreSQLStorage as _,
     },
@@ -84,6 +85,29 @@ pub(crate) async fn get_calls(
             query.max_spec_version,
         )
         .await?;
+    let metadata_call_ids = if let Some(call_name) = query.call_name.as_deref() {
+        let call_name = call_name.trim();
+        if call_name.is_empty() {
+            None
+        } else {
+            let metadata_call_ids = state
+                .postgres
+                .get_metadata_call_ids_by_pallet_name_and_call_name(
+                    query.min_spec_version,
+                    query.max_spec_version,
+                    query.pallet_name.as_deref(),
+                    call_name,
+                )
+                .await?;
+            Some(metadata_call_ids)
+        }
+    } else if query.pallet_name.is_some() {
+        return Err(APIError::BadRequest(
+            "call_name should not be empty when pallet_name is set.".to_string(),
+        ));
+    } else {
+        None
+    };
 
     let rows = state
         .postgres
@@ -91,8 +115,7 @@ pub(crate) async fn get_calls(
             cursor_position,
             min_block_number,
             max_block_number,
-            &query.pallet_name,
-            &query.call_name,
+            metadata_call_ids,
             page_size,
             query.is_signed,
             query.include_args,

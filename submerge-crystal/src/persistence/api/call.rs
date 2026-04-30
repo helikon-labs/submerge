@@ -36,8 +36,7 @@ pub(crate) trait CrystalCallAPIPostgreSQLStorage {
         cursor_position: Option<CallCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
-        pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        metadata_call_ids: Option<Vec<u32>>,
         page_size: u32,
         extrinsic_is_signed: Option<bool>,
         include_args: bool,
@@ -165,39 +164,16 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
         cursor_position: Option<CallCursorPosition>,
         min_block_number: Option<i64>,
         max_block_number: Option<i64>,
-        pallet_name: &Option<String>,
-        pallet_call_name: &Option<String>,
+        metadata_call_ids: Option<Vec<u32>>,
         page_size: u32,
         extrinsic_is_signed: Option<bool>,
         include_args: bool,
     ) -> anyhow::Result<Vec<CallRow>> {
-        let metadata_call_ids: Option<Vec<i32>> = if pallet_name.is_some()
-            || pallet_call_name.is_some()
-        {
-            let mut id_qb: QueryBuilder<Postgres> = QueryBuilder::new(
-                "SELECT MC.id FROM metadata_call MC JOIN metadata_pallet MP ON MC.pallet_id = MP.id WHERE 1 = 1",
-            );
-            if let Some(pallet_name) = pallet_name {
-                id_qb
-                    .push(" AND MP.name ILIKE ")
-                    .push_bind(escape_like_pattern(pallet_name.replace("_", "").as_str()));
+        if let Some(metadata_call_ids) = metadata_call_ids.as_deref() {
+            if metadata_call_ids.is_empty() {
+                return Ok(Vec::new()); // no call matches -> no calls
             }
-            if let Some(call_name) = pallet_call_name {
-                id_qb
-                    .push(" AND MC.name ILIKE ")
-                    .push_bind(escape_like_pattern(call_name.replace("_", "").as_str()));
-            }
-            let ids: Vec<i32> = id_qb
-                .build_query_scalar()
-                .fetch_all(&self.connection_pool)
-                .await?;
-            if ids.is_empty() {
-                return Ok(Vec::new()); // no matches -> no calls
-            }
-            Some(ids)
-        } else {
-            None
-        };
+        }
 
         let query = get_select_query(include_args);
         let mut query_builder: QueryBuilder<Postgres> =
