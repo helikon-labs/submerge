@@ -187,11 +187,15 @@ export type CallArgs = {
  */
 export type CursorPaginationData = {
     /**
+     * Number of items on the current page.
+     */
+    count: number;
+    /**
      * Cursor for the next page, `null` if there's no next page.
      */
     nextCursor?: string;
     /**
-     * Number of items per cursor page.
+     * Number of items per page.
      */
     pageSize: number;
 };
@@ -825,6 +829,10 @@ export enum MultiSignatureSr25519Type {
  */
 export type PaginationData = {
     /**
+     * Number of items on the current page.
+     */
+    count: number;
+    /**
      * Current page number. 1-indexed.
      */
     page: number;
@@ -1067,10 +1075,12 @@ export type GetCallsByBlockReferenceData = {
         page_size?: number;
         /**
          * Filter blocks calls by pallet name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
          * Filter blocks calls by call name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         call_name?: string;
         /**
@@ -1140,11 +1150,13 @@ export type GetEventsByBlockReferenceData = {
          */
         page_size?: number;
         /**
-         * Filter events calls by pallet name. Case insensitive.
+         * Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
-         * Filter blocks events by event name. Case insensitive.
+         * Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         event_name?: string;
         /**
@@ -1385,10 +1397,12 @@ export type GetCallsByBlockReferenceAndExtrinsicIndexData = {
         page_size?: number;
         /**
          * Filter blocks calls by pallet name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
          * Filter blocks calls by call name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         call_name?: string;
         /**
@@ -1462,11 +1476,13 @@ export type GetEventsByBlockReferenceAndExtrinsicIndexData = {
          */
         page_size?: number;
         /**
-         * Filter events calls by pallet name. Case insensitive.
+         * Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
-         * Filter blocks events by event name. Case insensitive.
+         * Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         event_name?: string;
         /**
@@ -1610,10 +1626,12 @@ export type GetCallsData = {
         max_spec_version?: number;
         /**
          * Filter calls by pallet name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
          * Filter calls by call name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         call_name?: string;
         /**
@@ -1864,10 +1882,12 @@ export type GetSubCallsByHashData = {
         page_size?: number;
         /**
          * Filter blocks calls by pallet name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
          * Filter blocks calls by call name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         call_name?: string;
         /**
@@ -1958,10 +1978,12 @@ export type GetEventsData = {
         max_spec_version?: number;
         /**
          * Filter events by pallet name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
          * Filter events by event name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         event_name?: string;
         /**
@@ -2290,10 +2312,12 @@ export type GetCallsByExtrinsicHashData = {
         page_size?: number;
         /**
          * Filter blocks calls by pallet name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
          * Filter blocks calls by call name. Case insensitive.
+         * Underscore (`_`) character is ignored.
          */
         call_name?: string;
         /**
@@ -2363,11 +2387,13 @@ export type GetEventsByExtrinsicHashData = {
          */
         page_size?: number;
         /**
-         * Filter events calls by pallet name. Case insensitive.
+         * Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         pallet_name?: string;
         /**
-         * Filter blocks events by event name. Case insensitive.
+         * Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.
+         * Underscore (`_`) character is ignored.
          */
         event_name?: string;
         /**

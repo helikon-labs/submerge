@@ -340,8 +340,15 @@ export const CallArgsSchema = {
 export const CursorPaginationDataSchema = {
     type: 'object',
     description: 'Pagination data for cursor responses.',
-    required: ['pageSize'],
+    required: ['count', 'pageSize'],
     properties: {
+        count: {
+            type: 'integer',
+            format: 'int32',
+            description: 'Number of items on the current page.',
+            example: 1,
+            minimum: 0,
+        },
         nextCursor: {
             type: 'string',
             description: "Cursor for the next page, `null` if there's no next page.",
@@ -349,12 +356,13 @@ export const CursorPaginationDataSchema = {
         pageSize: {
             type: 'integer',
             format: 'int32',
-            description: 'Number of items per cursor page.',
+            description: 'Number of items per page.',
             example: 1,
             minimum: 1,
         },
     },
     example: {
+        count: 57,
         nextCursor:
             'eyJjdXJzb3JfcG9zaXRpb24iOnsiYmxvY2tfbnVtYmVyIjozMzY0MzMzLCJibG9ja19oYXNoX2hleCI6IjB4ZjdlMjkyYWQ3ZDNkYzE4MzUzOWYwOGM4NDgwMmNiMDc2ZTc5NjNkYjA2NTA3MjAwNTY1M2NjNWU4YzdkMTE3MyIsImluZGV4IjowfSwicXVlcnkiOnsiaW5jbHVkZV9hcmdzIjpmYWxzZX19',
         pageSize: 1,
@@ -1448,8 +1456,15 @@ export const MultiSignatureSr25519TypeSchema = {
 export const PaginationDataSchema = {
     type: 'object',
     description: 'Pagination data for paged responses.',
-    required: ['page', 'pageSize', 'total'],
+    required: ['count', 'page', 'pageSize', 'total'],
     properties: {
+        count: {
+            type: 'integer',
+            format: 'int32',
+            description: 'Number of items on the current page.',
+            example: 1,
+            minimum: 0,
+        },
         page: {
             type: 'integer',
             format: 'int32',
@@ -1473,6 +1488,7 @@ export const PaginationDataSchema = {
         },
     },
     example: {
+        count: 57,
         page: 1,
         pageSize: 1,
         total: 324,

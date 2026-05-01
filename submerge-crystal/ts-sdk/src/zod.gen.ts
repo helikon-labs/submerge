@@ -34,6 +34,7 @@ export const zCallArgs = z.record(z.string(), z.unknown());
  * Pagination data for cursor responses.
  */
 export const zCursorPaginationData = z.object({
+    count: z.int().gte(0),
     nextCursor: z.optional(z.string()),
     pageSize: z.int().gte(1),
 });
@@ -364,6 +365,7 @@ export const zMultiSignatureSr25519Type = z.enum(['sr25519']);
  * Pagination data for paged responses.
  */
 export const zPaginationData = z.object({
+    count: z.int().gte(0),
     page: z.int().gte(1),
     pageSize: z.int().gte(1),
     total: z.coerce.bigint().gte(BigInt(0)),
