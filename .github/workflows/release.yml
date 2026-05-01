@@ -12,33 +12,80 @@ jobs:
   release:
     name: Build and release
     runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
     steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git ca-certificates curl xz-utils build-essential \
+            pkg-config musl-tools musl-dev
+          rm -rf /var/lib/apt/lists/*
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: submerge-crystal/admin/package-lock.json
+      - name: Mark workspace as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Get release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_TAG="${{ github.ref_name }}"
+          CURRENT_SHA="$(git rev-list -n 1 "$CURRENT_TAG")"
+          # Previous reachable tag on first-parent history (same release line)
+          PREV_TAG="$(git describe --tags --abbrev=0 --first-parent "${CURRENT_SHA}^" 2>/dev/null || true)"
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..${CURRENT_SHA}"
+          else
+            RANGE="${CURRENT_SHA}"
+          fi
+          COMMITS="$(git log --first-parent --pretty=format:'- %s (%h) — %an' "$RANGE")"
+          {
+            echo "body<<EOF"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Install Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+          . "$HOME/.cargo/env"
+          rustup toolchain install stable
+          rustup default stable
+          rustup target add x86_64-unknown-linux-musl
+          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32v1-none
       - name: Build Crystal admin app
         run: |
           cd submerge-crystal/admin
-          npm install
+          npm ci
           npm run build
-          cd ../..
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-gnu
-      - name: Install Rust targets
+      - name: Build binaries
         run: |
-          rustup target add wasm32-unknown-unknown
-          rustup target add wasm32v1-none
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Build
-        run: cargo build --release --target x86_64-unknown-linux-gnu
+          . "$HOME/.cargo/env"
+          cargo build --release --target x86_64-unknown-linux-musl
+      - name: Build OpenAPI spec
+        run: |
+          . "$HOME/.cargo/env"
+          cd submerge-crystal
+          cargo run --release --bin openapi-gen
+          cd ..
       - name: Rename binary
-        run: cp target/x86_64-unknown-linux-gnu/release/submerge-crystal submerge-crystal-linux-amd64
+        run: cp target/x86_64-unknown-linux-musl/release/submerge-crystal submerge-crystal-linux-amd64-musl
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
-          files: submerge-crystal-linux-amd64
+          # generate_release_notes: true
+          body: ${{ steps.notes.outputs.body }}
+          files: |
+            submerge-crystal-linux-amd64-musl
+            submerge-crystal/api-spec/submerge-crystal-api.json
