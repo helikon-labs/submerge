@@ -15,11 +15,16 @@ pub(crate) struct PaginationQuery {
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(example = json!({
+    "count": 57,
     "page": 1,
     "pageSize": 1,
     "total": 324,
 }))]
 pub(crate) struct PaginationData {
+    /// Number of items on the current page.
+    #[schema(minimum = 0, example = 1)]
+    #[schema(example = 1)]
+    pub count: u32,
     /// Current page number. 1-indexed.
     #[schema(minimum = 1, example = 1)]
     pub page: u32,
@@ -36,11 +41,16 @@ pub(crate) struct PaginationData {
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(example = json!({
+    "count": 57, 
     "pageSize": 1,
     "nextCursor": "eyJjdXJzb3JfcG9zaXRpb24iOnsiYmxvY2tfbnVtYmVyIjozMzY0MzMzLCJibG9ja19oYXNoX2hleCI6IjB4ZjdlMjkyYWQ3ZDNkYzE4MzUzOWYwOGM4NDgwMmNiMDc2ZTc5NjNkYjA2NTA3MjAwNTY1M2NjNWU4YzdkMTE3MyIsImluZGV4IjowfSwicXVlcnkiOnsiaW5jbHVkZV9hcmdzIjpmYWxzZX19",
 }))]
 pub(crate) struct CursorPaginationData {
-    /// Number of items per cursor page.
+    /// Number of items on the current page.
+    #[schema(minimum = 0, example = 1)]
+    #[schema(example = 1)]
+    pub count: u32,
+    /// Number of items per page.
     #[schema(minimum = 1, example = 1)]
     #[schema(example = 1)]
     pub page_size: u32,

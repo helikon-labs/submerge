@@ -128,8 +128,10 @@ pub(crate) async fn get_traces(
     } else {
         None
     };
+    let count = data.len() as u32;
     let response = CursorTraceList {
         pagination: CursorPaginationData {
+            count,
             page_size,
             next_cursor,
         },
@@ -198,8 +200,10 @@ pub(crate) async fn get_traces_by_block_reference(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
+            let count = data.len() as u32;
             let response = PaginatedTraceList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -222,8 +226,10 @@ pub(crate) async fn get_traces_by_block_reference(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
+            let count = data.len() as u32;
             let response = PaginatedTraceList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,

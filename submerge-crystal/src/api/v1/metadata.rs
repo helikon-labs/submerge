@@ -63,8 +63,10 @@ pub(crate) async fn get_metadata_list(
         state.postgres.get_metadata_count(),
         state.postgres.get_metadata_list(page, page_size),
     )?;
+    let count = rows.len() as u32;
     Ok(Json(PaginatedMetadataList {
         pagination: PaginationData {
+            count,
             page,
             page_size,
             total: total_count,

@@ -75,9 +75,10 @@ pub(crate) async fn get_genesis_records(
             pallet_storage_item_name: row.pallet_storage_item_name.clone(),
         });
     }
-
+    let count = data.len() as u32;
     let response = PaginatedGenesisRecordList {
         pagination: PaginationData {
+            count,
             page,
             page_size,
             total: total_count,

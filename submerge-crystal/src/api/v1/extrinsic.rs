@@ -120,9 +120,10 @@ pub(crate) async fn get_extrinsics(
     } else {
         None
     };
-
+    let count = data.len() as u32;
     let response = CursorExtrinsicList {
         pagination: CursorPaginationData {
+            count,
             page_size,
             next_cursor,
         },
@@ -204,8 +205,10 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
+            let count = data.len() as u32;
             let response = PaginatedExtrinsicList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -236,8 +239,10 @@ pub(crate) async fn get_extrinsics_by_block_reference(
             for row in rows.iter() {
                 data.push(row.try_into()?);
             }
+            let count = data.len() as u32;
             let response = PaginatedExtrinsicList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,

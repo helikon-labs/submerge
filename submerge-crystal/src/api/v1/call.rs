@@ -146,9 +146,11 @@ pub(crate) async fn get_calls(
     } else {
         None
     };
+    let count = data.len() as u32;
     let response = CursorCallList {
         data,
         pagination: CursorPaginationData {
+            count,
             page_size,
             next_cursor,
         },
@@ -232,8 +234,10 @@ pub(crate) async fn get_calls_by_block_reference(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedCallList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -267,8 +271,10 @@ pub(crate) async fn get_calls_by_block_reference(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedCallList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -376,8 +382,10 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedCallList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -423,8 +431,10 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedCallList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -518,8 +528,10 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     for row in rows.iter() {
         data.push(row.into());
     }
+    let count = data.len() as u32;
     let response = PaginatedCallList {
         pagination: PaginationData {
+            count,
             page,
             page_size,
             total: total_count,
@@ -800,8 +812,10 @@ pub(crate) async fn get_sub_calls_by_hash(
     for row in rows.iter() {
         data.push(row.into());
     }
+    let count = data.len() as u32;
     let response: PaginatedCallList = PaginatedCallList {
         pagination: PaginationData {
+            count,
             page,
             page_size,
             total: total_count,

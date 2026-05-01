@@ -254,7 +254,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "description": "Filter blocks calls by pallet name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -264,7 +264,7 @@
           {
             "name": "call_name",
             "in": "query",
-            "description": "Filter blocks calls by call name. Case insensitive.",
+            "description": "Filter blocks calls by call name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -360,7 +360,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter events calls by pallet name. Case insensitive.",
+            "description": "Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -370,7 +370,7 @@
           {
             "name": "event_name",
             "in": "query",
-            "description": "Filter blocks events by event name. Case insensitive.",
+            "description": "Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -666,7 +666,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "description": "Filter blocks calls by pallet name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -676,7 +676,7 @@
           {
             "name": "call_name",
             "in": "query",
-            "description": "Filter blocks calls by call name. Case insensitive.",
+            "description": "Filter blocks calls by call name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -783,7 +783,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter events calls by pallet name. Case insensitive.",
+            "description": "Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -793,7 +793,7 @@
           {
             "name": "event_name",
             "in": "query",
-            "description": "Filter blocks events by event name. Case insensitive.",
+            "description": "Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1003,7 +1003,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter calls by pallet name. Case insensitive. Stored in `camelCase`.",
+            "description": "Filter calls by pallet name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1013,7 +1013,7 @@
           {
             "name": "call_name",
             "in": "query",
-            "description": "Filter calls by call name. Case insensitive. Stored in `camelCase`.",
+            "description": "Filter calls by call name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1384,7 +1384,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "description": "Filter blocks calls by pallet name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1394,7 +1394,7 @@
           {
             "name": "call_name",
             "in": "query",
-            "description": "Filter blocks calls by call name. Case insensitive.",
+            "description": "Filter blocks calls by call name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1548,7 +1548,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter events by pallet name. Case insensitive. Stored in `camelCase`.",
+            "description": "Filter events by pallet name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -1558,7 +1558,7 @@
           {
             "name": "event_name",
             "in": "query",
-            "description": "Filter events by event name. Case insensitive. Stored in `camelCase`.",
+            "description": "Filter events by event name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -2059,7 +2059,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter blocks calls by pallet name. Case insensitive.",
+            "description": "Filter blocks calls by pallet name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -2069,7 +2069,7 @@
           {
             "name": "call_name",
             "in": "query",
-            "description": "Filter blocks calls by call name. Case insensitive.",
+            "description": "Filter blocks calls by call name. Case insensitive.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -2165,7 +2165,7 @@
           {
             "name": "pallet_name",
             "in": "query",
-            "description": "Filter events calls by pallet name. Case insensitive.",
+            "description": "Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -2175,7 +2175,7 @@
           {
             "name": "event_name",
             "in": "query",
-            "description": "Filter blocks events by event name. Case insensitive.",
+            "description": "Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.\nUnderscore (`_`) character is ignored.",
             "required": false,
             "schema": {
               "type": "string"
@@ -3556,9 +3556,17 @@
         "type": "object",
         "description": "Pagination data for cursor responses.",
         "required": [
+          "count",
           "pageSize"
         ],
         "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items on the current page.",
+            "example": 1,
+            "minimum": 0
+          },
           "nextCursor": {
             "type": "string",
             "description": "Cursor for the next page, `null` if there's no next page."
@@ -3566,12 +3574,13 @@
           "pageSize": {
             "type": "integer",
             "format": "int32",
-            "description": "Number of items per cursor page.",
+            "description": "Number of items per page.",
             "example": 1,
             "minimum": 1
           }
         },
         "example": {
+          "count": 57,
           "nextCursor": "eyJjdXJzb3JfcG9zaXRpb24iOnsiYmxvY2tfbnVtYmVyIjozMzY0MzMzLCJibG9ja19oYXNoX2hleCI6IjB4ZjdlMjkyYWQ3ZDNkYzE4MzUzOWYwOGM4NDgwMmNiMDc2ZTc5NjNkYjA2NTA3MjAwNTY1M2NjNWU4YzdkMTE3MyIsImluZGV4IjowfSwicXVlcnkiOnsiaW5jbHVkZV9hcmdzIjpmYWxzZX19",
           "pageSize": 1
         }
@@ -4729,11 +4738,19 @@
         "type": "object",
         "description": "Pagination data for paged responses.",
         "required": [
+          "count",
           "page",
           "pageSize",
           "total"
         ],
         "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items on the current page.",
+            "example": 1,
+            "minimum": 0
+          },
           "page": {
             "type": "integer",
             "format": "int32",
@@ -4757,6 +4774,7 @@
           }
         },
         "example": {
+          "count": 57,
           "page": 1,
           "pageSize": 1,
           "total": 324

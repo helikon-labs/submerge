@@ -110,9 +110,11 @@ pub(crate) async fn get_blocks(
         None
     };
 
+    let count = data.len() as u32;
     let response = CursorBlockList {
         data,
         pagination: CursorPaginationData {
+            count,
             page_size,
             next_cursor,
         },

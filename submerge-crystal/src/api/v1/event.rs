@@ -146,9 +146,11 @@ pub(crate) async fn get_events(
     } else {
         None
     };
+    let count = data.len() as u32;
     let response = CursorEventList {
         data,
         pagination: CursorPaginationData {
+            count,
             page_size,
             next_cursor,
         },
@@ -230,8 +232,10 @@ pub(crate) async fn get_events_by_block_reference(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedEventList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -263,8 +267,10 @@ pub(crate) async fn get_events_by_block_reference(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedEventList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -444,8 +450,10 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedEventList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -481,8 +489,10 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
             for row in rows.iter() {
                 data.push(row.into());
             }
+            let count = data.len() as u32;
             let response = PaginatedEventList {
                 pagination: PaginationData {
+                    count,
                     page,
                     page_size,
                     total: total_count,
@@ -578,8 +588,10 @@ pub(crate) async fn get_events_by_extrinsic_hash(
     for row in rows.iter() {
         data.push(row.into());
     }
+    let count = data.len() as u32;
     let response = PaginatedEventList {
         pagination: PaginationData {
+            count,
             page,
             page_size,
             total: total_count,
