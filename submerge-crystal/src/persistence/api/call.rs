@@ -175,7 +175,7 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             }
         }
 
-        let query = get_select_query(include_args);
+        let query = get_select_query(false);
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!("{query} WHERE 1 = 1"));
         if let Some(min) = min_block_number {
@@ -232,10 +232,15 @@ impl CrystalCallAPIPostgreSQLStorage for PostgreSQLStorage {
             .push(" ORDER BY C.block_number DESC, C.block_hash ASC, C.extrinsic_index ASC, C.call_index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
 
-        let rows: Vec<CallRow> = query_builder
+        let mut rows: Vec<CallRow> = query_builder
             .build_query_as()
             .fetch_all(&self.connection_pool)
             .await?;
+        if include_args {
+            for row in rows.iter_mut() {
+                row.args = self.get_call_args_by_hash(&row.hash).await?;
+            }
+        }
         Ok(rows)
     }
 

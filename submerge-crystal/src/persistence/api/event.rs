@@ -155,7 +155,7 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
             }
         }
 
-        let query = get_select_query(include_args);
+        let query = get_select_query(false);
         let mut query_builder: QueryBuilder<Postgres> =
             QueryBuilder::new(format!("{query} WHERE 1 = 1"));
         if let Some(min) = min_block_number {
@@ -203,10 +203,15 @@ impl CrystalEventAPIPostgreSQLStorage for PostgreSQLStorage {
         query_builder.push(" ORDER BY E.block_number DESC, E.block_hash ASC, E.index ASC");
         query_builder.push(" LIMIT ").push_bind(page_size as i64);
 
-        let rows: Vec<EventCompositeRow> = query_builder
+        let mut rows: Vec<EventCompositeRow> = query_builder
             .build_query_as()
             .fetch_all(&self.connection_pool)
             .await?;
+        if include_args {
+            for row in rows.iter_mut() {
+                row.args = self.get_event_args_by_hash(&row.hash).await?;
+            }
+        }
         Ok(rows)
     }
 
