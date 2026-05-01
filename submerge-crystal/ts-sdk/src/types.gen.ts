@@ -2,6 +2,8 @@
 
 export type ClientOptions = {
     baseUrl:
+        | 'https://bridge-hub.polkadot.crystal.api.submerge.io/v1'
+        | 'https://collectives.polkadot.crystal.api.submerge.io/v1'
         | 'https://coretime.polkadot.crystal.api.submerge.io/v1'
         | 'https://people.polkadot.crystal.api.submerge.io/v1'
         | (string & {});

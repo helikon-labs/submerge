@@ -17,6 +17,6 @@ export type CreateClientConfig<T extends ClientOptions = ClientOptions2> = (
 
 export const client = createClient(
     createConfig<ClientOptions2>({
-        baseUrl: 'https://coretime.polkadot.crystal.api.submerge.io/v1',
+        baseUrl: 'https://bridge-hub.polkadot.crystal.api.submerge.io/v1',
     }),
 );

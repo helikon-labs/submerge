@@ -39,6 +39,14 @@ use crate::types::api::{
     ),
     servers(
         (
+            url = "https://bridge-hub.polkadot.crystal.api.submerge.io/v1",
+            description = "API preview deployment for Polkadot Bridge Hub.",
+        ),
+        (
+            url = "https://collectives.polkadot.crystal.api.submerge.io/v1",
+            description = "API preview deployment for Polkadot Collectives.",
+        ),
+        (
             url = "https://coretime.polkadot.crystal.api.submerge.io/v1",
             description = "API preview deployment for Polkadot Coretime.",
         ),
