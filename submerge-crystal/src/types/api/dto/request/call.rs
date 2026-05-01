@@ -58,11 +58,13 @@ pub(crate) struct CallQuery {
     #[param(required = false, nullable = false, minimum = 0, example = 1090)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_spec_version: Option<u32>,
-    /// Filter calls by pallet name. Case insensitive. Stored in `camelCase`.
+    /// Filter calls by pallet name. Case insensitive. Stored in `CapitalCase`.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "system")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pallet_name: Option<String>,
-    /// Filter calls by call name. Case insensitive. Stored in `camelCase`.
+    /// Filter calls by call name. Case insensitive. Stored in `CapitalCase`.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "setcode")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub call_name: Option<String>,
@@ -146,9 +148,11 @@ pub(crate) struct BlockCallQuery {
     )]
     pub page_size: Option<u32>,
     /// Filter blocks calls by pallet name. Case insensitive.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "system")]
     pub pallet_name: Option<String>,
     /// Filter blocks calls by call name. Case insensitive.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "setcode")]
     pub call_name: Option<String>,
     /// Whether to include only calls within signed/unsigned extrinsics.

@@ -58,11 +58,13 @@ pub(crate) struct EventQuery {
     #[param(required = false, nullable = false, minimum = 0, example = 1090)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_spec_version: Option<u32>,
-    /// Filter events by pallet name. Case insensitive. Stored in `camelCase`.
+    /// Filter events by pallet name. Case insensitive. Stored in `CapitalCase`.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "balances")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pallet_name: Option<String>,
-    /// Filter events by event name. Case insensitive. Stored in `camelCase`.
+    /// Filter events by event name. Case insensitive. Stored in `CapitalCase`.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "transfer")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub event_name: Option<String>,
@@ -141,10 +143,12 @@ pub(crate) struct BlockEventQuery {
         example = 50
     )]
     pub page_size: Option<u32>,
-    /// Filter events calls by pallet name. Case insensitive.
+    /// Filter events calls by pallet name. Case insensitive. Stored in `CapitalCase`.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "staking")]
     pub pallet_name: Option<String>,
-    /// Filter blocks events by event name. Case insensitive.
+    /// Filter blocks events by event name. Case insensitive. Stored in `CapitalCase`.
+    /// Underscore (`_`) character is ignored.
     #[param(required = false, nullable = false, example = "bonded")]
     pub event_name: Option<String>,
     /// Whether to include event arguments in the block events in the response.

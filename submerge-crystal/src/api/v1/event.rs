@@ -72,6 +72,11 @@ pub(crate) async fn get_events(
         (None, query)
     };
     let page_size = get_page_size(query.page_size, query.include_args)?;
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let event_name = query.event_name.as_ref().map(|n| n.trim().replace("_", ""));
 
     let (min_block_number, max_block_number) = state
         .postgres
@@ -84,7 +89,7 @@ pub(crate) async fn get_events(
             query.max_spec_version,
         )
         .await?;
-    let metadata_event_ids = if let Some(event_name) = query.event_name.as_deref() {
+    let metadata_event_ids = if let Some(event_name) = event_name.as_deref() {
         let event_name = event_name.trim();
         if event_name.is_empty() {
             None
@@ -94,7 +99,7 @@ pub(crate) async fn get_events(
                 .get_metadata_event_ids_by_pallet_name_and_call_name(
                     query.min_spec_version,
                     query.max_spec_version,
-                    query.pallet_name.as_deref(),
+                    pallet_name.as_deref(),
                     event_name,
                 )
                 .await?;
@@ -196,6 +201,11 @@ pub(crate) async fn get_events_by_block_reference(
 ) -> Result<Json<PaginatedEventList>, APIError> {
     let (page, page_size) =
         get_page_number_and_size(query.page, query.page_size, query.include_args)?;
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let event_name = query.event_name.as_ref().map(|n| n.trim().replace("_", ""));
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -204,13 +214,13 @@ pub(crate) async fn get_events_by_block_reference(
             let (total_count, rows) = tokio::try_join!(
                 state.postgres.get_event_count_by_block_number(
                     block_number,
-                    &query.pallet_name,
-                    &query.event_name,
+                    &pallet_name,
+                    &event_name,
                 ),
                 state.postgres.get_events_by_block_number(
                     block_number,
-                    &query.pallet_name,
-                    &query.event_name,
+                    &pallet_name,
+                    &event_name,
                     page,
                     page_size,
                     query.include_args,
@@ -237,13 +247,13 @@ pub(crate) async fn get_events_by_block_reference(
             let (total_count, rows) = tokio::try_join!(
                 state.postgres.get_event_count_by_block_hash(
                     &block_hash,
-                    &query.pallet_name,
-                    &query.event_name,
+                    &pallet_name,
+                    &event_name,
                 ),
                 state.postgres.get_events_by_block_hash(
                     &block_hash,
-                    &query.pallet_name,
-                    &query.event_name,
+                    &pallet_name,
+                    &event_name,
                     page,
                     page_size,
                     query.include_args,
@@ -399,6 +409,11 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
 ) -> Result<Json<PaginatedEventList>, APIError> {
     let (page, page_size) =
         get_page_number_and_size(query.page, query.page_size, query.include_args)?;
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let event_name = query.event_name.as_ref().map(|n| n.trim().replace("_", ""));
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -410,16 +425,16 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                     .get_event_count_by_block_number_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
-                        &query.pallet_name,
-                        &query.event_name,
+                        &pallet_name,
+                        &event_name,
                     ),
                 state
                     .postgres
                     .get_events_by_block_number_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
-                        &query.pallet_name,
-                        &query.event_name,
+                        &pallet_name,
+                        &event_name,
                         page,
                         page_size,
                         query.include_args,
@@ -449,14 +464,14 @@ pub(crate) async fn get_events_by_block_reference_and_extrinsic_index(
                     .get_event_count_by_block_hash_and_extrinsic_index(
                         &block_hash,
                         extrinsic_index,
-                        &query.pallet_name,
-                        &query.event_name,
+                        &pallet_name,
+                        &event_name,
                     ),
                 state.postgres.get_events_by_block_hash_and_extrinsic_index(
                     &block_hash,
                     extrinsic_index,
-                    &query.pallet_name,
-                    &query.event_name,
+                    &pallet_name,
+                    &event_name,
                     page,
                     page_size,
                     query.include_args,
@@ -530,6 +545,11 @@ pub(crate) async fn get_events_by_extrinsic_hash(
     } else {
         return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hexadecimal string (with or without 0x prefix, case-insensitive).".to_string()));
     };
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let event_name = query.event_name.as_ref().map(|n| n.trim().replace("_", ""));
     if !state
         .postgres
         .extrinsic_exists_by_hash(&extrinsic_hash)
@@ -542,13 +562,13 @@ pub(crate) async fn get_events_by_extrinsic_hash(
     let (total_count, rows) = tokio::try_join!(
         state.postgres.get_event_count_by_extrinsic_hash(
             &extrinsic_hash,
-            &query.pallet_name,
-            &query.event_name,
+            &pallet_name,
+            &event_name,
         ),
         state.postgres.get_events_by_extrinsic_hash(
             &extrinsic_hash,
-            &query.pallet_name,
-            &query.event_name,
+            &pallet_name,
+            &event_name,
             page,
             page_size,
             query.include_args,

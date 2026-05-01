@@ -1609,11 +1609,11 @@ export type GetCallsData = {
          */
         max_spec_version?: number;
         /**
-         * Filter calls by pallet name. Case insensitive. Stored in `camelCase`.
+         * Filter calls by pallet name. Case insensitive. Stored in `CapitalCase`.
          */
         pallet_name?: string;
         /**
-         * Filter calls by call name. Case insensitive. Stored in `camelCase`.
+         * Filter calls by call name. Case insensitive. Stored in `CapitalCase`.
          */
         call_name?: string;
         /**
@@ -1957,11 +1957,11 @@ export type GetEventsData = {
          */
         max_spec_version?: number;
         /**
-         * Filter events by pallet name. Case insensitive. Stored in `camelCase`.
+         * Filter events by pallet name. Case insensitive. Stored in `CapitalCase`.
          */
         pallet_name?: string;
         /**
-         * Filter events by event name. Case insensitive. Stored in `camelCase`.
+         * Filter events by event name. Case insensitive. Stored in `CapitalCase`.
          */
         event_name?: string;
         /**

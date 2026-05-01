@@ -74,6 +74,11 @@ pub(crate) async fn get_calls(
         (None, query)
     };
     let page_size = get_page_size(query.page_size, query.include_args)?;
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let call_name = query.call_name.as_ref().map(|n| n.trim().replace("_", ""));
     let (min_block_number, max_block_number) = state
         .postgres
         .get_block_number_range(
@@ -85,8 +90,7 @@ pub(crate) async fn get_calls(
             query.max_spec_version,
         )
         .await?;
-    let metadata_call_ids = if let Some(call_name) = query.call_name.as_deref() {
-        let call_name = call_name.trim();
+    let metadata_call_ids = if let Some(call_name) = call_name.as_deref() {
         if call_name.is_empty() {
             None
         } else {
@@ -95,13 +99,13 @@ pub(crate) async fn get_calls(
                 .get_metadata_call_ids_by_pallet_name_and_call_name(
                     query.min_spec_version,
                     query.max_spec_version,
-                    query.pallet_name.as_deref(),
+                    pallet_name.as_deref(),
                     call_name,
                 )
                 .await?;
             Some(metadata_call_ids)
         }
-    } else if query.pallet_name.is_some() {
+    } else if pallet_name.is_some() {
         return Err(APIError::BadRequest(
             "call_name should not be empty when pallet_name is set.".to_string(),
         ));
@@ -197,6 +201,11 @@ pub(crate) async fn get_calls_by_block_reference(
 ) -> Result<Json<PaginatedCallList>, APIError> {
     let (page, page_size) =
         get_page_number_and_size(query.page, query.page_size, query.include_args)?;
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let call_name = query.call_name.as_ref().map(|n| n.trim().replace("_", ""));
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -205,14 +214,14 @@ pub(crate) async fn get_calls_by_block_reference(
             let (total_count, rows) = tokio::try_join!(
                 state.postgres.get_call_count_by_block_number(
                     block_number,
-                    &query.pallet_name,
-                    &query.call_name,
+                    &pallet_name,
+                    &call_name,
                     query.is_signed,
                 ),
                 state.postgres.get_calls_by_block_number(
                     block_number,
-                    &query.pallet_name,
-                    &query.call_name,
+                    &pallet_name,
+                    &call_name,
                     page,
                     page_size,
                     query.is_signed,
@@ -240,14 +249,14 @@ pub(crate) async fn get_calls_by_block_reference(
             let (total_count, rows) = tokio::try_join!(
                 state.postgres.get_call_count_by_block_hash(
                     &block_hash,
-                    &query.pallet_name,
-                    &query.call_name,
+                    &pallet_name,
+                    &call_name,
                     query.is_signed,
                 ),
                 state.postgres.get_calls_by_block_hash(
                     &block_hash,
-                    &query.pallet_name,
-                    &query.call_name,
+                    &pallet_name,
+                    &call_name,
                     page,
                     page_size,
                     query.is_signed,
@@ -322,6 +331,11 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
 ) -> Result<Json<PaginatedCallList>, APIError> {
     let (page, page_size) =
         get_page_number_and_size(query.page, query.page_size, query.include_args)?;
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let call_name = query.call_name.as_ref().map(|n| n.trim().replace("_", ""));
     match BlockReference::try_from(block_reference.as_str()) {
         Ok(BlockReference::Number(block_number)) => {
             if !state.postgres.block_exists_by_number(block_number).await? {
@@ -343,16 +357,16 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                     .get_call_count_by_block_number_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
-                        &query.pallet_name,
-                        &query.call_name,
+                        &pallet_name,
+                        &call_name,
                     ),
                 state
                     .postgres
                     .get_calls_by_block_number_and_extrinsic_index(
                         block_number,
                         extrinsic_index,
-                        &query.pallet_name,
-                        &query.call_name,
+                        &pallet_name,
+                        &call_name,
                         page,
                         page_size,
                         query.include_args,
@@ -392,14 +406,14 @@ pub(crate) async fn get_calls_by_block_reference_and_extrinsic_index(
                     .get_call_count_by_block_hash_and_extrinsic_index(
                         &block_hash,
                         extrinsic_index,
-                        &query.pallet_name,
-                        &query.call_name,
+                        &pallet_name,
+                        &call_name,
                     ),
                 state.postgres.get_calls_by_block_hash_and_extrinsic_index(
                     &block_hash,
                     extrinsic_index,
-                    &query.pallet_name,
-                    &query.call_name,
+                    &pallet_name,
+                    &call_name,
                     page,
                     page_size,
                     query.include_args,
@@ -473,6 +487,11 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     } else {
         return Err(APIError::BadRequest("Invalid extrinsic hash. It should be a hexadecimal string (with or without 0x prefix, case-insensitive).".to_string()));
     };
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let call_name = query.call_name.as_ref().map(|n| n.trim().replace("_", ""));
     if !state
         .postgres
         .extrinsic_exists_by_hash(&extrinsic_hash)
@@ -483,15 +502,13 @@ pub(crate) async fn get_calls_by_extrinsic_hash(
     let (page, page_size) =
         get_page_number_and_size(query.page, query.page_size, query.include_args)?;
     let (total_count, rows) = tokio::try_join!(
-        state.postgres.get_call_count_by_extrinsic_hash(
-            &extrinsic_hash,
-            &query.pallet_name,
-            &query.call_name,
-        ),
+        state
+            .postgres
+            .get_call_count_by_extrinsic_hash(&extrinsic_hash, &pallet_name, &call_name,),
         state.postgres.get_calls_by_extrinsic_hash(
             &extrinsic_hash,
-            &query.pallet_name,
-            &query.call_name,
+            &pallet_name,
+            &call_name,
             page,
             page_size,
             query.include_args,
@@ -756,6 +773,11 @@ pub(crate) async fn get_sub_calls_by_hash(
     } else {
         return Err(APIError::BadRequest("Invalid call hash. It should be a hexadecimal string (with or without 0x prefix, case-insensitive).".to_string()));
     };
+    let pallet_name = query
+        .pallet_name
+        .as_ref()
+        .map(|n| n.trim().replace("_", ""));
+    let call_name = query.call_name.as_ref().map(|n| n.trim().replace("_", ""));
     if !state.postgres.call_exists_by_hash(&call_hash).await? {
         return Err(APIError::CallNotFoundWithHash(call_hash));
     }
@@ -767,8 +789,8 @@ pub(crate) async fn get_sub_calls_by_hash(
             .get_sub_call_count_by_hash(&call_hash, &query.pallet_name, &query.call_name,),
         state.postgres.get_sub_calls_by_hash(
             &call_hash,
-            &query.pallet_name,
-            &query.call_name,
+            &pallet_name,
+            &call_name,
             page,
             page_size,
             query.include_args,
