@@ -58,7 +58,7 @@ serde_json = "1.0"
 serde_repr = "0.1"
 serde_yaml = "0.9"
 sp-consensus-babe = "0.47"
-sp-core = "40.0"
+sp-core = "41.0"
 sp-storage = "23.0"
 sp-runtime = "46.0"
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "chrono", "macros"] }
